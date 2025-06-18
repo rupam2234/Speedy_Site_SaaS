@@ -31,7 +31,8 @@ export function SelectDemo({ collapsed = false }: { collapsed?: boolean }) {
             <Image
               src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons//${selectedFavicon}`}
               alt="favicon"
-              className="w-4 h-4"
+              width={16}
+              height={16}
             />
           ) : (
             <span className="w-4 h-4 bg-gray-300 rounded" />
@@ -51,7 +52,8 @@ export function SelectDemo({ collapsed = false }: { collapsed?: boolean }) {
                 <Image
                   src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons//${order.favicon_file}`}
                   alt="favicon"
-                  className="w-4 h-4"
+                  width={16}
+                  height={16}
                 />
                 <span>{order.websiteName}</span>
               </div>
