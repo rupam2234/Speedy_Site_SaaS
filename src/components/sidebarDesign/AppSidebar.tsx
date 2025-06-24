@@ -20,16 +20,20 @@ import {
 import { useUser } from "@clerk/nextjs";
 import MainNav from "./Main-Nav";
 import FooterNav from "./Footer-Nav";
-import { SelectDemo } from "../utility/SiteSelect";
+import { SelectSite } from "../utils/SiteSelect";
+import { useSiteContext } from "@/app/(dashboard)/siteContext";
 
 export default function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useUser();
   const { state } = useSidebar();
+  const { selectedSite } = useSiteContext();
 
   const sidebarOpen =
     state === "expanded" ? false : state === "collapsed" ? true : null;
+
+  const site = selectedSite || "default-site"; // or fallback
 
   const data = {
     user: {
@@ -57,11 +61,6 @@ export default function AppSidebar({
         },
       ],
     },
-    // AppHeader: {
-    //   Name: "SpeedySense",
-    //   // logo: GalleryVerticalEnd, // Removed, as SelectSite will handle logo display
-    //   AccountType: "Personal",
-    // },
     navMain: [
       {
         title: "Reports",
@@ -70,35 +69,35 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "CrUX Report",
-            url: "/dashboard/reports",
+            title: "Core Web Vitals",
+            url: `/dashboard/${site}/cwv`,
           },
           {
-            title: "Synthetic Monitoring",
-            url: "/dashboard/monitor",
+            title: "Lab Tests & Monitoring",
+            url: `/dashboard/${site}/monitor`,
           },
           {
-            title: "RUM",
-            url: "/dashboard/rum-monitoring",
+            title: "Real User Monitoring",
+            url: `/dashboard/${site}/rum`,
           },
           {
-            title: "Page Profiling",
-            url: "/dashboard/profiling",
+            title: "Web Analytics",
+            url: `/dashboard/${site}/profiling`,
           },
         ],
       },
       {
-        title: "Websites",
+        title: "Boost Performance",
         url: "#",
         icon: Link2,
         isActive: true,
         items: [
           {
-            title: "Add New Site",
+            title: "Page Profiling",
             url: "/dashboard/new-site",
           },
           {
-            title: "All Sites",
+            title: "Optimization Assistance",
             url: "/dashboard/orders",
           },
           {
@@ -142,11 +141,15 @@ export default function AppSidebar({
   };
 
   return (
-    <Sidebar collapsible="icon" {...props} className="dark:border-muted">
+    <Sidebar
+      collapsible="icon"
+      {...props}
+      className="dark:border-muted bg-muted-foreground"
+    >
       <SidebarHeader className="mb-5 mt-2">
         <div className="flex gap-4 items-center">
           <div className="flex-1">
-            <SelectDemo collapsed={sidebarOpen ?? false} />
+            <SelectSite collapsed={sidebarOpen ?? false} />
           </div>
         </div>
       </SidebarHeader>
@@ -155,7 +158,7 @@ export default function AppSidebar({
           NavItems={data.navMain}
           DashboardItems={{
             title: "Dashboard",
-            url: "/dashboard",
+            url: `/dashboard/${selectedSite}`,
             icon: LayoutDashboardIcon,
             isActive: false,
           }}

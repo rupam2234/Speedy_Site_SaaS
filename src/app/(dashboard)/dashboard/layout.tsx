@@ -9,8 +9,11 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
 import { ReactNode, useEffect } from "react";
-import SiteContextProvider, { useSiteContext } from "../siteContext";
 import { useUser } from "@clerk/nextjs";
+import DashboardToolbar from "@/components/utils/toolbar";
+import SiteContextProvider, {
+  useSiteContext,
+} from "@/app/(dashboard)/siteContext";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -20,6 +23,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const { user, isSignedIn } = useUser();
   const { fetchOrders } = useSiteContext();
 
+  // get the user data
   useEffect(() => {
     if (!user || !isSignedIn) return;
 
@@ -40,7 +44,10 @@ function LayoutContent({ children }: { children: ReactNode }) {
             <ThemeToggle />
           </div>
         </header>
-        <main className="flex-1 dark:bg-background">{children}</main>
+        <main className="flex-1 dark:bg-background bg-background">
+          <DashboardToolbar />
+          {children}
+        </main>
       </SidebarInset>
     </>
   );

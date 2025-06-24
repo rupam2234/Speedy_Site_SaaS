@@ -316,6 +316,8 @@ export default function HomepageComponent() {
                 src="/images/Main_image.png"
                 alt="Main_dashboard"
                 className="w-full h-auto object-cover"
+                width={300}
+                height={250}
               />
             </motion.div>
           </div>

@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import {
   Select,
@@ -6,11 +8,42 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useSiteContext } from "@/app/(dashboard)/siteContext";
 
-export function SelectDemo({ collapsed = false }: { collapsed?: boolean }) {
-  const { selectedSite, setSelectedSite, orders } = useSiteContext();
+export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
+  const { selectedSite, setSelectedSite, orders, setCollapsed } =
+    useSiteContext();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // managing the sidebar state (collapsed or open?)
+  useEffect(() => {
+    setCollapsed(collapsed);
+  }, [collapsed]);
+
+  const handleChange = (value: string) => {
+    setSelectedSite(value);
+  };
+
+  useEffect(() => {
+    if (!selectedSite) return;
+
+    const segments = pathname.split("/").filter(Boolean);
+
+    const currentSite = segments[1]; // dynamic site is in the second segment
+
+    if (segments[0] === "dashboard" && currentSite !== selectedSite) {
+      const newPath = `/${[
+        "dashboard",
+        selectedSite,
+        ...segments.slice(2),
+      ].join("/")}`;
+      router.replace(newPath);
+    }
+  }, [selectedSite, pathname, router]);
 
   const selectedOrder = orders?.find(
     (order) => order.websiteName === selectedSite
@@ -18,7 +51,7 @@ export function SelectDemo({ collapsed = false }: { collapsed?: boolean }) {
   const selectedFavicon = selectedOrder?.favicon_file;
 
   return (
-    <Select value={selectedSite} onValueChange={setSelectedSite}>
+    <Select value={selectedSite} onValueChange={handleChange}>
       <SelectTrigger
         className={`${
           !collapsed
@@ -33,6 +66,7 @@ export function SelectDemo({ collapsed = false }: { collapsed?: boolean }) {
               alt="favicon"
               width={16}
               height={16}
+              className="rounded"
             />
           ) : (
             <span className="w-4 h-4 bg-gray-300 rounded" />
@@ -48,15 +82,16 @@ export function SelectDemo({ collapsed = false }: { collapsed?: boolean }) {
         <SelectGroup>
           {orders?.map((order) => (
             <SelectItem key={order.websiteName} value={order.websiteName}>
-              <div className="flex items-center gap-2">
+              <span className="flex items-center gap-2">
                 <Image
                   src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons//${order.favicon_file}`}
                   alt="favicon"
                   width={16}
                   height={16}
+                  className="rounded"
                 />
                 <span>{order.websiteName}</span>
-              </div>
+              </span>
             </SelectItem>
           ))}
         </SelectGroup>

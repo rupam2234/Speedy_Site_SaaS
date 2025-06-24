@@ -9,6 +9,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        success: "var(--successive)",
         background: "var(--background)",
         foreground: "var(--foreground)",
         primary: "var(--primary)",

@@ -1,0 +1,157 @@
+"use client";
+
+import { CalendarArrowDown, MonitorSmartphone } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useEffect, useState } from "react";
+
+interface DateRangeProps {
+  id: string;
+  range: string;
+}
+
+const DateRangeData: DateRangeProps[] = [
+  { id: "last7", range: "Last 7 Days" },
+  { id: "thisMonth", range: "This Month" },
+  { id: "lastMonth", range: "Last Month" },
+  { id: "last6Months", range: "Last 6 Months" },
+  { id: "last12Months", range: "Last 12 Months" },
+  { id: "thisYear", range: "This Year" },
+];
+
+export default function DashboardToolbar() {
+  const { selectedDevice, setSelectedDevice, setDateRange } = useSiteContext();
+  const [selectedRangeId, setSelectedRangeId] =
+    useState<string>("last12Months");
+
+  function selectDevice(device: "Desktop" | "Mobile") {
+    setSelectedDevice(device);
+  }
+
+  const selectedRange = DateRangeData.find(
+    (item) => item.id === selectedRangeId
+  );
+
+  function GetDateRange(
+    rangeKey: string
+  ): [startDate: string, endDate: string] {
+    const today = new Date();
+    const todayISO = today.toISOString().split("T")[0];
+
+    let startDate = todayISO;
+    let endDate = todayISO;
+
+    switch (rangeKey) {
+      case "last7": {
+        const past = new Date(today);
+        past.setDate(today.getDate() - 6);
+        startDate = past.toISOString().split("T")[0];
+        break;
+      }
+      case "thisMonth":
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1)
+          .toISOString()
+          .split("T")[0];
+        break;
+
+      case "lastMonth":
+        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+          .toISOString()
+          .split("T")[0];
+        endDate = new Date(today.getFullYear(), today.getMonth(), 0)
+          .toISOString()
+          .split("T")[0];
+        break;
+
+      case "last6Months": {
+        const six = new Date(today);
+        six.setMonth(today.getMonth() - 5);
+        six.setDate(1);
+        startDate = six.toISOString().split("T")[0];
+        break;
+      }
+
+      case "last12Months": {
+        const twelve = new Date(today);
+        twelve.setMonth(today.getMonth() - 11);
+        twelve.setDate(1);
+        startDate = twelve.toISOString().split("T")[0];
+        break;
+      }
+
+      case "thisYear":
+        startDate = new Date(today.getFullYear(), 0, 1)
+          .toISOString()
+          .split("T")[0];
+        break;
+    }
+
+    return [startDate, endDate];
+  }
+
+  useEffect(() => {
+    const dateRanges = GetDateRange(selectedRangeId);
+    setDateRange(dateRanges[0], dateRanges[1]);
+  }, [selectedRangeId]);
+
+  return (
+    <div className="flex flex-col md:flex-row p-5 w-full items-start gap-3 md:justify-between bg-transparent">
+      {/* Left: Device Toggle */}
+      <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
+        <div className="flex gap-2 w-full items-center px-2">
+          <MonitorSmartphone size={18} className="mr-2" />
+          <button
+            className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+              selectedDevice === "Desktop"
+                ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                : ``
+            }`}
+            onClick={() => selectDevice("Desktop")}
+          >
+            Desktop
+          </button>
+          <button
+            className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+              selectedDevice === "Mobile"
+                ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                : ``
+            }`}
+            onClick={() => selectDevice("Mobile")}
+          >
+            Mobile
+          </button>
+        </div>
+      </div>
+
+      {/* Right: Date Range Dropdown */}
+      <div className="p-[2px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
+        <div className="flex gap-2 w-[220px] justify-between items-center px-2">
+          <CalendarArrowDown size={18} className="mr-2" />
+          <Select value={selectedRangeId} onValueChange={setSelectedRangeId}>
+            <SelectTrigger className="px-4 py-0 text-sm ring-0 text-primary focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background font-medium rounded-sm bg-transparent border-none focus:ring-0 focus:outline-none">
+              <SelectValue placeholder="Last 7 Days">
+                {selectedRange?.range}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="w-[200px] md:mr-[10px]">
+              <SelectGroup>
+                {DateRangeData.map((item, index) => (
+                  <SelectItem value={item.id} key={index}>
+                    {item.range}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  );
+}

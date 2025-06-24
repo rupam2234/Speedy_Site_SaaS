@@ -13,7 +13,7 @@ export function ThemeToggle() {
       aria-label="Toggle theme"
       role="button"
       tabIndex={0}
-      onKeyPress={(e) => {
+      onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") toggleTheme();
       }}
     >

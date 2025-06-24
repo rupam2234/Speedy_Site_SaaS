@@ -33,7 +33,7 @@ export default function MainNav({
 
   DashboardItems: {
     title: "Dashboard";
-    url: "/dashboard";
+    url: string;
     icon: typeof LayoutDashboardIcon;
     isActive: false;
   };
