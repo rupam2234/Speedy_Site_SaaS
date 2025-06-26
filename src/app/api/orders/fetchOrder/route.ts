@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
 import { OrderData } from "../../dataTypes";
 
 const worker = setupDB();
 
 // to fetch websites under certain users or team
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body: string = await req.json();
 

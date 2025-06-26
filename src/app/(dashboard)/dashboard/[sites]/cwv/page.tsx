@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useSiteContext } from "@/app/(dashboard)/siteContext";
 import { useEffect, useState } from "react";
 import { fetchCrUXData } from "@/app/api/external/fetch_crux";
-import { FlaskRound, GalleryHorizontalEnd, InfoIcon } from "lucide-react";
+import { GalleryHorizontalEnd, InfoIcon } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -22,6 +22,7 @@ import ChartComponent from "./helper/cwvChart";
 import { Helpers } from "./helper/helperFunc";
 import { getColor } from "@/lib/cwv_helper/getColor";
 import { cwv_metrics } from "./helper/cwvMetrics";
+import DistributionChart from "./helper/distributionChart";
 
 // class test
 const helper = new Helpers();
@@ -36,6 +37,7 @@ export default function WebsitePage() {
     dailyCrux,
     selectedDevice,
     setDailyCrux,
+    experienceType,
   } = useSiteContext();
 
   const [selectedMetric, setSelectedMetric] = useState<string>(
@@ -97,11 +99,9 @@ export default function WebsitePage() {
     setNewMetricKey(metricKey ? metricKey.key : "");
   }
 
-  // find ranges for chart background
-  // const ranges = getRanges(newMetricKey);
-
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
+      {/* Origin Web Vital Section */}
       <div className="flex flex-col items-start md:flex-row gap-2 md:items-center md:justify-between">
         <span className="flex gap-2 items-center">
           <GalleryHorizontalEnd
@@ -109,7 +109,7 @@ export default function WebsitePage() {
             className="fill-pink-600 dark:text-accent-foreground"
           />
           <h1 className="text-md md:text-2xl font-bold text-primary">
-            Core Web Vitals (Trend)
+            Origin Web Vitals (Trend)
           </h1>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -128,51 +128,23 @@ export default function WebsitePage() {
           </Tooltip>
         </span>
       </div>
-      {/* Render site-specific content */}
+      {/* Render charts and controls */}
       <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
         <div className="col-span-1 order-2 md:order-1 overflow-hidden overflow-x-clip md:col-span-7 w-full border-gray-500/20 dark:bg-secondary-background bg-primary-foreground border rounded-sm px-4">
-          {/* custom chart background */}
-          <div className="relative w-full h-[400px]">
-            <ChartComponent metric_key={newMetricKey} />
-            {/* {ranges && (
-              <div className="absolute inset-0 z-0 flex items-end">
-                <div
-                  className={`relative w-[82%] ${
-                    collapsed ? `md:w-[94%]` : `md:w-[93%]`
-                  }  mx-6 translate-x-4 -translate-y-9 h-[315px] transition-all duration-500 ease-in-out`}
-                >
-                  <div
-                    className="absolute w-full bg-red-300/20 dark:bg-transparent"
-                    style={{
-                      height: `${100 - percent(ranges.c)}%`,
-                      bottom: `${percent(ranges.c)}%`,
-                    }}
-                  />
-                  <div
-                    className="absolute w-full bg-yellow-200/20 dark:bg-transparent"
-                    style={{
-                      height: `${percent(ranges.c) - percent(ranges.b)}%`,
-                      bottom: `${percent(ranges.b)}%`,
-                    }}
-                  />
-                  <div
-                    className="absolute w-full bg-green-300/20 dark:bg-transparent"
-                    style={{
-                      height: `${percent(ranges.b) - percent(ranges.a)}%`,
-                      bottom: 0,
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="relative z-10 w-full h-[315px]">
+          {/* chart */}
+          {experienceType === "p75" ? (
+            <div className="relative w-full h-[400px]">
               <ChartComponent metric_key={newMetricKey} />
-            </div> */}
-          </div>
+            </div>
+          ) : (
+            <div className="relative w-full h-[400px]">
+              <DistributionChart metric_key={newMetricKey} />
+            </div>
+          )}
         </div>
-        {/* chart controls */}
+        {/* controls */}
         <div className="col-span-1 space-y-7 order-1 md:order-2 md:col-span-3 w-full border-gray-500/20 dark:bg-secondary-background bg-primary-foreground border rounded-sm px-6 py-7">
+          {/* metric controller */}
           <Select value={selectedMetric} onValueChange={setMetricKey}>
             <SelectTrigger className="flex justify-between items-center w-full dark:bg-secondary-background cursor-pointer dark:text-accent-foreground bg-gray-500/10 px-[12px] rounded-sm border-gray-500/20 ring-0 focus-visible:ring-0">
               {selectedMetric}
@@ -192,12 +164,52 @@ export default function WebsitePage() {
               </SelectGroup>
             </SelectContent>
           </Select>
+          {/* active experience module */}
+          <div>
+            <ul className="space-y-1">
+              {[
+                {
+                  label: "75th Percentile (ms)",
+                  key: "p75",
+                },
+                {
+                  label: "Distribution (density)",
+                  key: "Distribution",
+                },
+              ].map(({ label, key }) => {
+                const isActive = experienceType === key;
+                return (
+                  <li
+                    key={key}
+                    className={`flex gap-2 items-center ${
+                      isActive ? "text-foreground" : "text-muted-foreground/80"
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full border ${
+                        isActive
+                          ? "border-accent-foreground bg-gray-500/10 dark:bg-secondary"
+                          : "border-accent-foreground/50 bg-background dark:bg-transparent"
+                      }`}
+                    />
+                    {label}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+          {/* live metric card */}
           <div className="w-full space-y-3 p-3 md:text-md rounded-sm bg-gray-500/10 dark:bg-secondary">
             <Tooltip>
               <TooltipTrigger>
-                <span className="flex gap-2 item-center cursor-help text-accent-foreground/80 dark:text-accent-foreground font-semibold">
-                  <FlaskRound className="fill-blue-500/50" />
-                  <p>LiveTrend ?</p>
+                <span className="flex gap-3 item-center cursor-help text-accent-foreground/80 dark:text-accent-foreground font-semibold">
+                  <div className="relative flex items-center justify-center mt-1 w-4 h-4">
+                    {/* Pulsing effect */}
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
+                    {/* Solid green dot */}
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  </div>
+                  <p>Live Trend</p>
                 </span>
               </TooltipTrigger>
               <TooltipContent className="w-[200px] md:w-[400px] text-[16px]">
@@ -241,6 +253,36 @@ export default function WebsitePage() {
               </span>
             </div>
           </div>
+          {/* color legend */}
+          <div className="flex gap-2 items-center justify-around">
+            {[
+              { color: "bg-[#66cc8f]", label: "Good" },
+              { color: "bg-[#FFEEA9]", label: "Okay" },
+              { color: "bg-[#FF9898]", label: "Poor" },
+            ].map((x, index) => {
+              return (
+                <div className="flex gap-2 items-center mt-3" key={index}>
+                  <div className={`w-7 h-3 rounded-[2px] ${x.color}`} />
+                  <p>{x.label}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      {/* Link to page groups */}
+      <div className="relative group w-fit">
+        {/* Main box */}
+        <div className="w-[200px] h-auto border border-gray-500/20 dark:bg-secondary-background bg-primary-foreground px-4 py-2 flex items-center justify-between">
+          <span>Page Groups</span>
+          {/* Triangle */}
+          <div className="ml-2 w-0 h-0 border-y-8 border-y-transparent border-l-[10px] border-l-gray-400 group-hover:rotate-90 transition-transform duration-300"></div>
+        </div>
+
+        {/* Tooltip or sliding explanation */}
+        <div className=" absolute top-0 left-full ml-2 w-5xl bg-primary-foreground dark:bg-secondary-background text-sm text-gray-800 dark:text-white border border-gray-500/20 p-3 rounded shadow-md opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300 z-10">
+          This section shows how your pages are grouped based on performance or
+          structure.
         </div>
       </div>
     </div>

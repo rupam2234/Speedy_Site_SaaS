@@ -103,7 +103,6 @@ const ChartComponent = ({ metric_key }: ChartProps) => {
   const metricRange = getRanges(metric_key);
 
   // chart config
-
   useEffect(() => {
     if (!chartRef.current || !p75ChartData.length) return;
 
@@ -254,7 +253,7 @@ const ChartComponent = ({ metric_key }: ChartProps) => {
         chartInstanceRef.current.dispose();
         chartInstanceRef.current = null;
       }
-      setCruxData([]);
+      // setCruxData([]); // emptying chart data will impact the change of state p75 and distribution
     };
   }, [setCruxData]);
 

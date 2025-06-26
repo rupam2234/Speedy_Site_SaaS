@@ -27,6 +27,8 @@ type SiteContextType = {
   setDateRange: (startDate: string, endDate: string) => void | [string, string];
   collapsed: boolean;
   setCollapsed: (isCollapsed: boolean) => void;
+  experienceType: "p75" | "Distribution";
+  setExperienceType: (experienceType: "p75" | "Distribution") => void;
 };
 
 export const SiteContext = createContext<SiteContextType>({
@@ -45,6 +47,8 @@ export const SiteContext = createContext<SiteContextType>({
   setDateRange: () => {},
   collapsed: false,
   setCollapsed: () => {},
+  experienceType: "p75",
+  setExperienceType: () => {},
 });
 
 export default function SiteContextProvider({
@@ -62,6 +66,9 @@ export default function SiteContextProvider({
   );
   const [dateRange, setDateRange] = useState<[string, string]>(["", ""]);
   const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [experienceType, setExperienceType] = useState<"p75" | "Distribution">(
+    "p75"
+  );
 
   const pathname = usePathname();
 
@@ -156,6 +163,8 @@ export default function SiteContextProvider({
         setDateRange: updateDateRange,
         collapsed,
         setCollapsed,
+        experienceType,
+        setExperienceType,
       }}
     >
       {children}
