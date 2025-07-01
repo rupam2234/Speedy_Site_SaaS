@@ -73,16 +73,16 @@ export default function AppSidebar({
             url: `/dashboard/${site}/cwv`,
           },
           {
-            title: "Lab Tests & Monitoring",
-            url: `/dashboard/${site}/monitor`,
+            title: "Pages",
+            url: `/dashboard/${site}/pages`,
+          },
+          {
+            title: "Lab Monitoring",
+            url: `/dashboard/${site}/lab`,
           },
           {
             title: "Real User Monitoring",
             url: `/dashboard/${site}/rum`,
-          },
-          {
-            title: "Web Analytics",
-            url: `/dashboard/${site}/profiling`,
           },
         ],
       },

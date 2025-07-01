@@ -10,6 +10,7 @@ export type userData = {
 export type OrderData = {
   orderId?: UUID;
   orderDate?: string;
+  gsc_token?: string;
   websiteName: string;
   websiteAddress: string;
   user_email: string;

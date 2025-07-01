@@ -56,7 +56,6 @@ export default function SiteContextProvider({
 }: {
   children: React.ReactNode;
 }) {
-  // Ungrouped state
   const [orders, setOrders] = useState<OrderData[] | null>(null);
   const [selectedSite, setSelectedSite] = useState("");
   const [dailyCrux, setDailyCrux] = useState<DailyCrux[]>([]);
@@ -72,7 +71,7 @@ export default function SiteContextProvider({
 
   const pathname = usePathname();
 
-  // Load state from sessionStorage once on mount
+  // Load state from sessionStorage on mount
   useEffect(() => {
     const storedOrders = sessionStorage.getItem("orders");
     const storedSite = sessionStorage.getItem("selectedSite");
@@ -81,7 +80,7 @@ export default function SiteContextProvider({
     if (storedSite) setSelectedSite(storedSite);
   }, []);
 
-  // Save to sessionStorage when relevant states change
+  // Save to sessionStorage when states change
   useEffect(() => {
     if (orders) sessionStorage.setItem("orders", JSON.stringify(orders));
   }, [orders]);
@@ -97,9 +96,23 @@ export default function SiteContextProvider({
     });
   };
 
-  // Fetch orders logic
+  // Fetch orders with check to avoid redundant API calls
   const fetchOrders = useCallback(
     async (email: string, siteFromUrl?: string) => {
+      // Skip API call if orders are already in state or sessionStorage
+      if (orders && orders.length > 0) {
+        return;
+      }
+
+      const storedOrders = sessionStorage.getItem("orders");
+      if (storedOrders) {
+        const parsedOrders = JSON.parse(storedOrders);
+        if (parsedOrders && parsedOrders.length > 0) {
+          setOrders(parsedOrders);
+          return;
+        }
+      }
+
       try {
         const response = await fetch("/api/orders/fetchOrder", {
           method: "POST",
@@ -120,7 +133,7 @@ export default function SiteContextProvider({
 
           setOrders(data);
 
-          // if url already have a site set and user is signed in
+          // Handle URL-based site selection
           const segments = pathname.split("/").filter(Boolean);
           const currentSite = segments[1];
 
@@ -130,11 +143,13 @@ export default function SiteContextProvider({
             }
           }
 
-          // Only set selectedSite if not already set or it's invalid
+          // Set selectedSite if not already valid
           setSelectedSite((prev) =>
             data.some((o: any) => o.websiteName === prev) ? prev : matchedSite
           );
         } else if (data?.length === 0) {
+          setOrders(null);
+          setSelectedSite("");
         }
       } catch (error) {
         console.error("Error fetching orders:", error);
@@ -142,7 +157,7 @@ export default function SiteContextProvider({
         setSelectedSite("");
       }
     },
-    []
+    [orders, pathname, selectedSite]
   );
 
   return (

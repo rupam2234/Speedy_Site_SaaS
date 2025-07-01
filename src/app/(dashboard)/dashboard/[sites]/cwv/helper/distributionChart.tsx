@@ -75,10 +75,19 @@ export default function DistributionChart({ metric_key }: ChartProps) {
 
   // filtered data for chart
   const filteredData = filteredDates
-    .map((dates, i) => ({
-      dates,
-      value: [rawData?.[0][i] ?? 0, rawData?.[1][i] ?? 0, rawData?.[2][i] ?? 0],
-    }))
+    .map((dates, i) => {
+      const rawValues = [
+        rawData?.[0]?.[i],
+        rawData?.[1]?.[i],
+        rawData?.[2]?.[i],
+      ];
+
+      const value = rawValues.map((v) =>
+        typeof v === "number" && !isNaN(v) ? v : 0
+      );
+
+      return { dates, value };
+    })
     .filter((x) => x.dates[1] >= dateRange[0] && x.dates[1] <= dateRange[1]);
 
   // configuring for tooltip date readability
@@ -99,9 +108,8 @@ export default function DistributionChart({ metric_key }: ChartProps) {
     return [label, value];
   });
 
-  const totalData: number[] = DistChartData.map(([values]) => {
-    const v = values as unknown as number[];
-
+  const totalData: number[] = DistChartData.map(([, values]) => {
+    const v = values as number[];
     return parseFloat(v.reduce((sum, val) => sum + val, 0).toFixed(2));
   });
 
@@ -122,9 +130,9 @@ export default function DistributionChart({ metric_key }: ChartProps) {
       name,
       type: "bar",
       stack: "total",
-      data: DistChartData.map(([values], index) => {
+      data: DistChartData.map(([, values], index) => {
         const total = totalData[index];
-        const v = values as unknown as number[];
+        const v = values as number[];
         return total <= 0 ? 0 : v[sid] / total;
       }),
       itemStyle: {

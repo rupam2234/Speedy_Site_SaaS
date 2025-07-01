@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSiteContext } from "@/app/(dashboard)/siteContext";
 import { useEffect, useState } from "react";
 import { fetchCrUXData } from "@/app/api/external/fetch_crux";
@@ -29,6 +29,7 @@ const helper = new Helpers();
 
 export default function WebsitePage() {
   const params = useParams();
+  const router = useRouter();
   const { sites } = params;
   const {
     selectedSite,
@@ -84,13 +85,10 @@ export default function WebsitePage() {
     }
   }, [selectedMetric]);
 
-  if (!selectedSite) {
-    return (
-      // instead I want to add a load animation here
-      <div className="p-6 text-muted-foreground">
-        Website &quot;{sites}&quot; not found.
-      </div>
-    );
+  function handleClick() {
+    if (router) {
+      router.push(`/dashboard/${selectedSite}/pages`, { scroll: true });
+    }
   }
 
   function setMetricKey(newMetric: string) {
@@ -99,6 +97,14 @@ export default function WebsitePage() {
     setNewMetricKey(metricKey ? metricKey.key : "");
   }
 
+  if (!selectedSite) {
+    return (
+      // instead I want to add a load animation here
+      <div className="p-6 text-muted-foreground">
+        Website &quot;{sites}&quot; not found.
+      </div>
+    );
+  }
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       {/* Origin Web Vital Section */}
@@ -108,9 +114,9 @@ export default function WebsitePage() {
             size={30}
             className="fill-pink-600 dark:text-accent-foreground"
           />
-          <h1 className="text-md md:text-2xl font-bold text-primary">
+          <h2 className="text-md md:text-2xl font-bold text-primary">
             Origin Web Vitals (Trend)
-          </h1>
+          </h2>
           <Tooltip>
             <TooltipTrigger asChild>
               <InfoIcon size={25} />
@@ -271,19 +277,21 @@ export default function WebsitePage() {
         </div>
       </div>
       {/* Link to page groups */}
-      <div className="relative group w-fit">
-        {/* Main box */}
-        <div className="w-[200px] h-auto border border-gray-500/20 dark:bg-secondary-background bg-primary-foreground px-4 py-2 flex items-center justify-between">
-          <span>Page Groups</span>
-          {/* Triangle */}
-          <div className="ml-2 w-0 h-0 border-y-8 border-y-transparent border-l-[10px] border-l-gray-400 group-hover:rotate-90 transition-transform duration-300"></div>
-        </div>
+      <div
+        className="relative group w-fit cursor-pointer inline-block border dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 px-4 py-2"
+        onClick={handleClick}
+      >
+        <p className="z-10 relative text-sm font-medium">Explore Page Groups</p>
 
-        {/* Tooltip or sliding explanation */}
-        <div className=" absolute top-0 left-full ml-2 w-5xl bg-primary-foreground dark:bg-secondary-background text-sm text-gray-800 dark:text-white border border-gray-500/20 p-3 rounded shadow-md opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300 z-10">
-          This section shows how your pages are grouped based on performance or
-          structure.
-        </div>
+        {/* Sliding text on hover */}
+        <p
+          className="absolute top-1/2 -translate-y-1/2 left-full whitespace-nowrap 
+               translate-x-0 opacity-0 group-hover:translate-x-2 group-hover:opacity-100 
+               transition-all duration-500 ease-in-out"
+        >
+          → Discover core web vitals for individual pages grouped as Good, Okay
+          and Poor so you know where to focus.
+        </p>
       </div>
     </div>
   );

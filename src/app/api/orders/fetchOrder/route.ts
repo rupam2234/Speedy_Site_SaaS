@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
         const typeOrderData: OrderData[] = orderData.map((order: any) => ({
           orderId: order.order_id,
           orderDate: order.order_date,
+          gsc_token: order.gsc_token,
           websiteName: order.website_name,
           websiteAddress: order.website_address,
           favicon_file: order.favicon_file,

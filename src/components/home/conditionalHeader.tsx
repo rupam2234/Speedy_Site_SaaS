@@ -41,9 +41,13 @@ export default function ConditionalHeader() {
   const [isMenuOpen, setMenuOpen] = useState<boolean>(false);
 
   // find the path that matches the strings and mark them to avoid displaying the global header
-  const avoidOnRoute = ["/sign-in", "/dashboard", "/blog", "/sign-up"].some(
-    (path) => pathname.startsWith(path)
-  );
+  const avoidOnRoute = [
+    "/sign-in",
+    "/dashboard",
+    "/blog",
+    "/sign-up",
+    "/oauth2callback",
+  ].some((path) => pathname.startsWith(path));
 
   function handleMenuButton() {
     setMenuOpen((previous) => !previous);

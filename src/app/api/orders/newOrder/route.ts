@@ -16,6 +16,7 @@ export async function POST(req: Request) {
       const { error, status } = await worker.from("orders").insert({
         website_name: body.websiteName,
         website_address: body.websiteAddress,
+        gsc_token: body.gsc_token,
         favicon_file: body.favicon_file,
         order_status: body.order_status,
         user_email: body.user_email,
