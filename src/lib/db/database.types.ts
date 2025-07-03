@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      crux_jobs: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          results: Json | null;
+          status: string | null;
+          updated_at: string | null;
+          urls: string[];
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          results?: Json | null;
+          status?: string | null;
+          updated_at?: string | null;
+          urls: string[];
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          results?: Json | null;
+          status?: string | null;
+          updated_at?: string | null;
+          urls?: string[];
+        };
+        Relationships: [];
+      };
       early_access: {
         Row: {
           created_at: string;

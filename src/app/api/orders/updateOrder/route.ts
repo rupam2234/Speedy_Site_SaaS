@@ -3,7 +3,7 @@ import { setupDB } from "@/lib/db";
 
 export interface TokenProps {
   token: string;
-  websiteName: string;
+  userEmail: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const { error, status } = await worker
       .from("orders")
       .update({ gsc_token: body.token })
-      .eq("website_name", body.websiteName);
+      .eq("user_email", body.userEmail);
 
     if (error) {
       return NextResponse.json(

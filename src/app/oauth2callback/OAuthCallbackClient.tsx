@@ -53,12 +53,6 @@ export default function OAuthCallbackPage() {
         const data = await res.json();
         setSites(data?.sites || []);
         setToken(data?.accessToken || "");
-
-        // save token into database
-        const selectedSite = sessionStorage.getItem("selectedSite");
-        if (selectedSite) {
-          UpdateToken(data?.accessToken, selectedSite);
-        }
       } catch (err: any) {
         setError(err.message || "Something went wrong");
       } finally {
@@ -86,10 +80,16 @@ export default function OAuthCallbackPage() {
     }
 
     // get site from session storage
-    const selectedSite = sessionStorage.getItem("selectedSite");
+    const selectedSite = localStorage.getItem("selectedSite");
+    const gsc_token = localStorage.getItem("gsc_t");
 
     if (selectedSite && url === selectedSite) {
       try {
+        // if the url matches the seleted site we look for token on order, and if token is not available or does not match we update the token
+        if (selectedSite && gsc_token !== token) {
+          UpdateToken(token);
+        }
+
         const fetchedPages = await FetchPageAddresses(site, token);
         window.opener.postMessage(
           {
@@ -98,7 +98,7 @@ export default function OAuthCallbackPage() {
           },
           window.location.origin
         );
-        sessionStorage.removeItem(selectedSite); // clear site from session storage
+        localStorage.removeItem("selectedSite"); // clear site from session storage
         window.close();
       } catch (err) {
         setError(`Failed to fetch pages for the selected site: ${err}`);
@@ -206,13 +206,15 @@ async function FetchPageAddresses(domain: string, token: string) {
   }
 }
 
-async function UpdateToken(token: string, website_name: string) {
-  if (!token || !website_name) {
+async function UpdateToken(token: string) {
+  const userEmail = localStorage.getItem("userEmail");
+
+  if (!token || !userEmail) {
     console.error("Missing website or token");
     return;
   }
 
-  const body: TokenProps = { token: token, websiteName: website_name };
+  const body: TokenProps = { token: token, userEmail: userEmail };
 
   try {
     const response = await fetch("/api/orders/updateOrder", {
@@ -224,8 +226,6 @@ async function UpdateToken(token: string, website_name: string) {
     if (!response.ok) {
       console.error(response.statusText);
     }
-
-    console.log(response.status);
   } catch (error) {
     console.error(error);
   }

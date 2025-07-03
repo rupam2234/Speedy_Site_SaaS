@@ -69,3 +69,9 @@ export type DailyCrux = {
   device_type: "Desktop" | "Mobile";
   record: CruxRecord;
 };
+
+export type PageCrux = {
+  device_type: "Desktop" | "Mobile";
+  record: CruxRecord;
+  page_address: string;
+};

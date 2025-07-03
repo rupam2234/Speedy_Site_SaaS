@@ -33,7 +33,9 @@ export async function POST(req: NextRequest) {
 
     const verifiedSites =
       sitesData?.siteEntry
-        ?.filter((entry: any) => entry.permissionLevel === "siteOwner")
+        ?.filter((entry: any) => entry.permissionLevel === "siteOwner" ||
+                                 entry.permissionLevel === "siteFullUser" ||
+                                 entry.permissionLevel === "siteRestrictedUser")
         .map((entry: any) => entry.siteUrl) || [];
 
     return NextResponse.json(

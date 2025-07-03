@@ -1,5 +1,67 @@
-import { CruxData, DailyCrux } from "@/data/cruxData";
+import { CruxData, DailyCrux, PageCrux } from "@/data/cruxData";
 
+// to fetch crux for gsc pages
+export async function pageCrux(page: string) {
+  const API_KEY = process.env.NEXT_PUBLIC_CrUXHistoryAPI;
+  const API_URL = `https://chromeuxreport.googleapis.com/v1/records:queryRecord?key=${API_KEY}`;
+  const FORM_FACTORS = ["DESKTOP", "PHONE"] as const;
+
+  if (!page || !API_KEY) {
+    console.warn("Missing 'page' parameter or CrUX API key.");
+    return null;
+  }
+
+  const fetchCrUXForPage = async (formFactor: string) => {
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: page,
+          metrics: [
+            "largest_contentful_paint",
+            "cumulative_layout_shift",
+            "interaction_to_next_paint",
+            "experimental_time_to_first_byte",
+          ],
+          formFactor,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error(`CrUX API error (${formFactor}):`, error);
+        return null;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Failed to fetch CrUX data for ${formFactor}:`, error);
+      return null;
+    }
+  };
+
+  try {
+    const results = await Promise.all(FORM_FACTORS.map(fetchCrUXForPage));
+
+    const filtered = results.filter((item) => !!item);
+    const parsedData: PageCrux[] = filtered.map((x) => ({
+      device_type:
+        x?.record?.key?.formFactor === "PHONE" ? "Mobile" : "Desktop",
+      page_address: page,
+      record: x.record,
+    }));
+
+    return {
+      parsedData,
+    };
+  } catch (err) {
+    console.error("Unexpected error in pageCrux:", err);
+    return null;
+  }
+}
+
+// to fetch daily crux for domains
 export async function fetchDailyCrux(
   selectedSite: string,
   setDailyCrux: (data: DailyCrux[]) => void

@@ -44,12 +44,15 @@ export class PageManagementHelper {
 
   // keep the token on db
   public async UpdateToken(token: string, website_name: string) {
+
+    const userEmail = localStorage.getItem("userEmail");
+
     if (!token || !website_name) {
       console.error("Missing website or token");
       return;
     }
 
-    const body: TokenProps = { token: token, websiteName: website_name };
+    const body: TokenProps = { token: token, userEmail: userEmail ?? "" };
 
     try {
       const response = await fetch("/api/orders/updateOrder", {
@@ -62,7 +65,6 @@ export class PageManagementHelper {
         console.error(response.statusText);
       }
 
-      console.log(response.status);
     } catch (error) {
       console.error(error);
     }
