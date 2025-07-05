@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -41,7 +41,7 @@ export default function PageGroups() {
   const [processedPages, setprocessedPages] = useState<PageCrux[] | null>();
 
   // keeping selectedSite on session storage to send over to the popup
-  useEffect(() => {
+  useMemo(() => {
     const email = user?.emailAddresses?.at(-1)?.emailAddress;
     const activeSite = orders?.find((x) => x.user_email === email);
 
