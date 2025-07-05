@@ -17,20 +17,28 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import {
+  AlertTriangle,
+  Bug,
   CircleCheck,
+  Expand,
   FileWarning,
   Group,
-  InfoIcon,
   Loader,
+  LoaderIcon,
+  Trash2,
 } from "lucide-react";
 import { useSiteContext } from "@/app/(dashboard)/siteContext";
 import { useClerk } from "@clerk/nextjs";
+import { PageCrux } from "@/data/cruxData";
+import { getRanges } from "../cwv/helper/referenceAreaHandler";
 
 export default function PageGroups() {
   const [isConnecting, setConnecting] = useState(false);
-  const { selectedSite, orders } = useSiteContext();
+  const { selectedSite, orders, selectedDevice } = useSiteContext();
   const { user } = useClerk();
   const [hasPages, setPages] = useState<Array<{ [key: string]: any }>>();
+  const [, setJobProcessing] = useState<boolean>(false);
+  const [processedPages, setprocessedPages] = useState<PageCrux[] | null>();
 
   // keeping selectedSite on session storage to send over to the popup
   useEffect(() => {
@@ -100,6 +108,7 @@ export default function PageGroups() {
 
     const pages = hasPages.map((x) => x.url);
 
+    setJobProcessing(true);
     // queue the job
     fetch("/api/jobs/queue", {
       method: "POST",
@@ -107,76 +116,291 @@ export default function PageGroups() {
       body: JSON.stringify(pages),
     })
       .then((res) => res.json())
-      .then((data) => {
-        console.log("Job queued with ID:", data.jobId);
-
+      .then(() => {
         // Then: trigger processing immediately
         return fetch("/api/jobs/process", { method: "POST" });
       })
       .then((res) => res.json())
-      .then((processResult) => {
-        console.log("Job processed:", processResult);
-      })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setJobProcessing(false));
   }, [hasPages]);
 
+  // check for available pages on crux_job
+  useEffect(() => {
+    async function fetchPagesWithVitals() {
+      if (selectedSite) {
+        const res = await fetch("/api/jobs/fetch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(selectedSite),
+        });
+
+        const json = await res.json();
+
+        if (!res) {
+          console.error("Missing pages with crux records!");
+          setprocessedPages(null);
+          return;
+        }
+
+        if (json.data[0]?.results.length === undefined) {
+          setprocessedPages(null);
+        } else {
+          setprocessedPages(json.data[0]?.results);
+        }
+      }
+    }
+
+    fetchPagesWithVitals();
+  }, [, selectedSite]);
+
+  // helper functions
+  function PageAddressOrganiser(pageArray: PageCrux[] | null) {
+    if (!pageArray || pageArray === null) return <></>;
+
+    const flattened = pageArray.flat();
+
+    const uniquePaths = [
+      ...new Set(flattened.map((x) => x.page_address.split("/")[3])),
+    ];
+
+    return (
+      <div className="space-y-3 mt-8">
+        {/* Header for desktop only */}
+        <div className="hidden md:grid grid-cols-10 gap-2 items-center px-3 font-semibold">
+          <span className="col-span-4">Page</span>
+          <span className="col-span-1">LCP</span>
+          <span className="col-span-1">INP</span>
+          <span className="col-span-1">CLS</span>
+          <span className="col-span-1">TTFB</span>
+          <span className="col-span-1">STATUS</span>
+        </div>
+
+        {uniquePaths.map((pathSegment, index) => {
+          const match = flattened.find(
+            (x) =>
+              x.page_address?.split("/")[3] === pathSegment &&
+              x.device_type === selectedDevice
+          );
+
+          const deviceBased = match?.record ?? null;
+
+          const lcp =
+            deviceBased?.metrics?.["largest_contentful_paint"]?.percentiles
+              ?.p75;
+          const cls =
+            deviceBased?.metrics?.["cumulative_layout_shift"]?.percentiles?.p75;
+          const inp =
+            deviceBased?.metrics?.["interaction_to_next_paint"]?.percentiles
+              ?.p75;
+          const ttfb =
+            deviceBased?.metrics?.["experimental_time_to_first_byte"]
+              ?.percentiles?.p75;
+
+          const lcp_ranges = getRanges("largest_contentful_paint");
+          const cls_ranges = getRanges("cumulative_layout_shift");
+          const inp_ranges = getRanges("interaction_to_next_paint");
+          const ttfb_ranges = getRanges("experimental_time_to_first_byte");
+
+          let status: string;
+
+          if (lcp == null && cls == null && inp == null) {
+            status = "--";
+          } else if (
+            lcp! <= lcp_ranges.b &&
+            cls! <= cls_ranges.b &&
+            inp! <= inp_ranges.b
+          ) {
+            status = "Passing";
+          } else {
+            status = "Failing";
+          }
+
+          const getColor = (value: number | undefined, ranges: any) => {
+            if (value == null) return "text-gray-400";
+            if (value <= ranges.b) return "text-green-500";
+            if (value <= ranges.c) return "text-yellow-500";
+            return "text-red-400";
+          };
+
+          return (
+            <div key={index} className="p-3 border rounded-sm">
+              {/* Mobile layout */}
+              <div className="md:hidden space-y-1">
+                <div className="text-accent-foreground/70 font-semibold">
+                  /{pathSegment}
+                </div>
+                <div className={`text-sm ${getColor(lcp!, lcp_ranges)}`}>
+                  <strong>LCP:</strong> {lcp ?? "--"}
+                </div>
+                <div className={`text-sm ${getColor(inp!, inp_ranges)}`}>
+                  <strong>INP:</strong> {inp ?? "--"}
+                </div>
+                <div className={`text-sm ${getColor(cls!, cls_ranges)}`}>
+                  <strong>CLS:</strong> {cls ?? "--"}
+                </div>
+                <div className={`text-sm ${getColor(ttfb!, ttfb_ranges)}`}>
+                  <strong>TTFB:</strong> {ttfb ?? "--"}
+                </div>
+                <div
+                  className={`text-sm font-semibold ${
+                    status === "Passing"
+                      ? "text-green-500"
+                      : status === "Failing"
+                      ? "text-red-400"
+                      : "text-gray-400"
+                  }`}
+                >
+                  <strong>Status:</strong> {status}
+                </div>
+                <div
+                  className={`text-sm font-semibold ${
+                    status === "Passing"
+                      ? "text-green-500"
+                      : status === "Failing"
+                      ? "text-red-400"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {status}
+                </div>
+              </div>
+
+              {/* Desktop layout */}
+              <div className="hidden md:grid grid-cols-10 gap-2 items-center font-semibold">
+                <span className="col-span-4 text-accent-foreground/70">
+                  /{pathSegment}
+                </span>
+                <span className={`col-span-1 ${getColor(lcp!, lcp_ranges)}`}>
+                  {lcp ?? "--"}
+                </span>
+                <span className={`col-span-1 ${getColor(inp!, inp_ranges)}`}>
+                  {inp ?? "--"}
+                </span>
+                <span className={`col-span-1 ${getColor(cls!, cls_ranges)}`}>
+                  {cls ?? "--"}
+                </span>
+                <span className={`col-span-1 ${getColor(ttfb!, ttfb_ranges)}`}>
+                  {ttfb ?? "--"}
+                </span>
+                <span
+                  className={`col-span-1 ${
+                    status === "Passing"
+                      ? "text-green-500"
+                      : status === "Failing"
+                      ? "text-red-400"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {status}
+                </span>
+                <span className={`col-span-1`}>
+                  <div className="flex gap-2 items-center text-sm">
+                    <button
+                      title="Expand"
+                      className="p-1 rounded-sm cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Expand size={16} />
+                    </button>
+                    <button
+                      title="Report Bug"
+                      className="p-1 rounded-sm cursor-pointer bg-yellow-500 hover:bg-yellow-600 text-white"
+                    >
+                      <Bug size={16} />
+                    </button>
+                    <button
+                      title="Delete"
+                      className="p-1 rounded-sm cursor-pointer bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // function handleLabView() {
+  //   return <LabView />;
+  // }
+
   return (
-    <div className="p-6">
+    <div className="p-5">
       <div className="flex flex-1 flex-row md:flex-row items-center justify-between gap-6">
         {/* Header */}
         <div className="flex flex-col items-start md:flex-row gap-2 md:items-center md:justify-between">
-          <span className="flex gap-2 items-center">
-            <Group
-              size={30}
-              className="fill-blue-400 dark:text-accent-foreground"
-            />
-            <h2 className="text-md md:text-2xl font-bold text-primary">
-              Page Groups
-            </h2>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <InfoIcon size={25} className="text-primary/70" />
-              </TooltipTrigger>
-              <TooltipContent
-                side="right"
-                className="w-[200px] md:w-[400px] text-[16px]"
-              >
-                Page groups allow you to pinpoint the web vitals of individual
-                pages that are affecting the overall origin-level web vitals.
-                When your origin is underperforming, identifying specific URLs
-                can reveal what&apos;s causing the issue and highlight similar
-                URLs that may also be experiencing problems.
-              </TooltipContent>
-            </Tooltip>
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex gap-2 items-center cursor-help">
+                <Group
+                  size={30}
+                  className="fill-blue-400 dark:text-accent-foreground"
+                />
+                <h2 className="text-md md:text-2xl font-bold text-primary">
+                  Page Groups
+                </h2>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="w-[200px] md:w-[600px] ">
+              Page groups allow you to pinpoint the web vitals of individual
+              pages that are affecting the overall origin-level web vitals. When
+              your origin is underperforming, identifying specific URLs can
+              reveal what&apos;s causing the issue and highlight similar URLs
+              that may also be experiencing problems.
+            </TooltipContent>
+          </Tooltip>
         </div>
 
-        {/* Drawer */}
-        <Drawer>
-          <DrawerTrigger>
-            {hasPages ? (
-              <span
-                className={`border-2 border-green-500 text-green-500 text-sm flex gap-2 items-center font-semibold px-4 py-2 bg-popover dark:bg-secondary-background rounded-md hover:cursor-pointer`}
-              >
-                <CircleCheck
-                  size={20}
-                  className={`fill-background text-green-500`}
-                />
-                <p>Sync Pages</p>
-              </span>
-            ) : (
-              <span
-                className={`border-2 border-yellow-500 text-yellow-500 text-sm flex gap-2 items-center font-semibold px-4 py-2 bg-popover dark:bg-secondary-background rounded-md hover:cursor-pointer`}
-              >
+        <span className="relative group">
+          {processedPages === undefined ? (
+            // Show loader while still processing
+            <Tooltip>
+              <TooltipTrigger>
+                <LoaderIcon size={24} className="animate-spin" />
+              </TooltipTrigger>
+              <TooltipContent side="left">Checking...</TooltipContent>
+            </Tooltip>
+          ) : processedPages !== null ? (
+            // Show success if pages exist
+            <Tooltip>
+              <TooltipTrigger>
+                <CircleCheck size={26} className="text-green-500 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                You have synced pages from GSC ✓
+              </TooltipContent>
+            </Tooltip>
+          ) : processedPages === null ? (
+            // Show warning if processedPages is empty or falsey
+            <Tooltip>
+              <TooltipTrigger>
                 <FileWarning
-                  size={20}
-                  className={`fill-background text-yellow-500`}
+                  size={24}
+                  className="text-yellow-500 cursor-help"
                 />
-                <p>Sync Pages</p>
-              </span>
-            )}
-          </DrawerTrigger>
-          <DrawerContent>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                Missing pages under the selected domain to monitor!
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <></>
+          )}
+        </span>
+      </div>
+
+      {/* Content Section */}
+
+      {processedPages !== null ? (
+        <>{PageAddressOrganiser(processedPages!)}</>
+      ) : (
+        <Drawer>
+          {/* drawer content - conditional*/}
+          <DrawerContent style={{ borderRadius: 0, paddingTop: 0 }}>
             <div className="mx-auto h-[300px] w-full max-w-3xl">
               <DrawerHeader>
                 {hasPages ? (
@@ -207,9 +431,7 @@ export default function PageGroups() {
               </DrawerHeader>
 
               <DrawerFooter>
-                {hasPages ? (
-                  <></>
-                ) : (
+                {!hasPages && (
                   <button
                     onClick={fetchAuthUrl}
                     disabled={isConnecting}
@@ -231,27 +453,40 @@ export default function PageGroups() {
               </DrawerFooter>
             </div>
           </DrawerContent>
+
+          {/* Drawer trigger connected to text */}
+          <div className="mt-6">
+            {hasPages ? (
+              Array.isArray(hasPages) && hasPages.length > 0 ? (
+                <>
+                  {hasPages.map((x) => (
+                    <div className="flex gap-2 items-center" key={x.url}>
+                      <span>{x.url}</span>
+                      <span>{x.clicks}</span>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>No page found!</>
+              )
+            ) : (
+              <div className="p-6 border rounded-sm dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 flex flex-col items-center text-center gap-2">
+                <AlertTriangle className="text-yellow-500" size={32} />
+                <h3 className="font-semibold text-lg">No Pages Found</h3>
+                <p className="text-muted-foreground text-sm">
+                  Please manually assign pages to monitor or fetch pages via{" "}
+                  <DrawerTrigger asChild>
+                    <span className="text-orange-500 font-normal underline hover:cursor-pointer">
+                      Google Search Console
+                    </span>
+                  </DrawerTrigger>{" "}
+                  option at the top right corner to get started.
+                </p>
+              </div>
+            )}
+          </div>
         </Drawer>
-      </div>
-      {/* site section */}
-      <div className="mt-6">
-        {hasPages ? (
-          Array.isArray(hasPages) && hasPages.length > 0 ? (
-            <>
-              {hasPages.map((x) => (
-                <div className="flex gap-2 items-center" key={x.url}>
-                  <span>{x.url}</span>
-                  <span>{x.clicks}</span>
-                </div>
-              ))}
-            </>
-          ) : (
-            <>No page found!</>
-          )
-        ) : (
-          <>Loading Sites</>
-        )}
-      </div>
+      )}
     </div>
   );
 }

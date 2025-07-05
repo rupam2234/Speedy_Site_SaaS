@@ -1,4 +1,3 @@
-import { TokenProps } from "@/app/api/orders/updateOrder/route";
 import { google } from "googleapis";
 
 export class PageManagementHelper {
@@ -39,34 +38,6 @@ export class PageManagementHelper {
     } catch (error) {
       console.log("unable to fetch token!", error);
       return "";
-    }
-  }
-
-  // keep the token on db
-  public async UpdateToken(token: string, website_name: string) {
-
-    const userEmail = localStorage.getItem("userEmail");
-
-    if (!token || !website_name) {
-      console.error("Missing website or token");
-      return;
-    }
-
-    const body: TokenProps = { token: token, userEmail: userEmail ?? "" };
-
-    try {
-      const response = await fetch("/api/orders/updateOrder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body }),
-      });
-
-      if (!response.ok) {
-        console.error(response.statusText);
-      }
-
-    } catch (error) {
-      console.error(error);
     }
   }
 }

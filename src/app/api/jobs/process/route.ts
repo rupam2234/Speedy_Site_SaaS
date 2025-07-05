@@ -28,6 +28,8 @@ export async function POST() {
   const allResults = [];
 
   for (const url of job.urls) {
+    if (allResults.length >= 10) break;
+
     try {
       const results = await pageCrux(url);
 
@@ -35,8 +37,7 @@ export async function POST() {
         allResults.push(results.parsedData);
       }
 
-      // Delay 1 second to avoid rate limits
-      await new Promise((res) => setTimeout(res, 1000));
+      await new Promise((res) => setTimeout(res, 1000)); // 1s delay
     } catch (e) {
       console.error("Error processing url:", url, e);
     }

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (!siteUrl.endsWith("/")) {
       siteUrl += "/";
     }
-  } 
+  }
 
   // Validate domain format
   const domainRegex = isDomainProperty
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       startDate: formatDate(startDate),
       endDate: formatDate(endDate),
       dimensions: ["page"],
-      rowLimit: 50,
+      rowLimit: 100,
       orderBy: [{ fieldName: "clicks", descending: true }],
     };
 
