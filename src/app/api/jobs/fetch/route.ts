@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   try {
     const { error, data } = await worker
       .from("crux_jobs")
-      .select("results")
+      .select("results, urls")
       .eq("domain", body);
 
     if (error) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -31,6 +31,7 @@ import { useSiteContext } from "@/app/(dashboard)/siteContext";
 import { useClerk } from "@clerk/nextjs";
 import { PageCrux } from "@/data/cruxData";
 import { getRanges } from "../cwv/helper/referenceAreaHandler";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function PageGroups() {
   const [isConnecting, setConnecting] = useState(false);
@@ -38,10 +39,14 @@ export default function PageGroups() {
   const { user } = useClerk();
   const [hasPages, setPages] = useState<Array<{ [key: string]: any }>>();
   const [, setJobProcessing] = useState<boolean>(false);
-  const [processedPages, setprocessedPages] = useState<PageCrux[] | null>();
+  const [pagesProcessing, setPagesProcessing] = useState<boolean>(false);
+  const [processedPages, setProcessedPages] = useState<PageCrux[] | null>();
+  const [urls, setUrls] = useState<string[] | null>([]);
+  const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState<boolean>(false);
 
-  // keeping selectedSite on session storage to send over to the popup
-  useMemo(() => {
+  // Save selected site/email to local/session storage
+  useEffect(() => {
     const email = user?.emailAddresses?.at(-1)?.emailAddress;
     const activeSite = orders?.find((x) => x.user_email === email);
 
@@ -53,6 +58,7 @@ export default function PageGroups() {
     }
   }, [selectedSite, user]);
 
+  // Open GSC auth URL in a popup
   async function fetchAuthUrl(): Promise<void> {
     try {
       setConnecting(true);
@@ -70,7 +76,7 @@ export default function PageGroups() {
           const pollTimer = setInterval(() => {
             if (popup.closed) {
               clearInterval(pollTimer);
-              setConnecting(false); // Stop loading once window is closed
+              setConnecting(false);
             }
           }, 500);
         } else {
@@ -87,12 +93,11 @@ export default function PageGroups() {
     }
   }
 
+  // Listen to GSC message after popup
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin) return;
-
       const { status, pages } = event.data;
-
       if (status === "site_selected") {
         setConnecting(false);
         setPages(pages);
@@ -103,116 +108,187 @@ export default function PageGroups() {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  // Send pages to processing queue when they are received
   useEffect(() => {
     if (!hasPages || hasPages.length === 0) return;
 
     const pages = hasPages.map((x) => x.url);
-
     setJobProcessing(true);
-    // queue the job
+    setPagesProcessing(true);
+
     fetch("/api/jobs/queue", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(pages),
     })
       .then((res) => res.json())
-      .then(() => {
-        // Then: trigger processing immediately
-        return fetch("/api/jobs/process", { method: "POST" });
-      })
+      .then(() => fetch("/api/jobs/process", { method: "POST" }))
       .then((res) => res.json())
       .catch(console.error)
-      .finally(() => setJobProcessing(false));
+      .finally(() => {
+        setJobProcessing(false);
+        // Give backend time to process
+        setTimeout(() => setPagesProcessing(false), 20000);
+      });
   }, [hasPages]);
 
-  // check for available pages on crux_job
+  // Fetch processed pages only when not in processing
   useEffect(() => {
     async function fetchPagesWithVitals() {
-      if (selectedSite) {
-        const res = await fetch("/api/jobs/fetch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(selectedSite),
-        });
+      if (!selectedSite || pagesProcessing) return;
 
-        const json = await res.json();
+      const res = await fetch("/api/jobs/fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(selectedSite),
+      });
 
-        if (!res) {
-          console.error("Missing pages with crux records!");
-          setprocessedPages(null);
-          return;
-        }
+      const json = await res.json();
 
-        if (json.data[0]?.results.length === undefined) {
-          setprocessedPages(null);
-        } else {
-          setprocessedPages(json.data[0]?.results);
-        }
+      if (
+        !res.ok ||
+        !json.data?.[0]?.urls ||
+        json.data?.[0]?.urls.length === 0 ||
+        (json.data?.[0]?.urls.length === 1 &&
+          json.data?.[0]?.urls?.[0].length === 0)
+      ) {
+        console.error("Missing pages with crux records!");
+        setProcessedPages(null);
+        setUrls(json.data[0]?.urls);
+      } else {
+        setProcessedPages(json.data[0]?.results);
+        setUrls(json.data[0]?.urls);
       }
     }
 
     fetchPagesWithVitals();
-  }, [, selectedSite]);
+  }, [selectedSite, pagesProcessing]);
 
-  // helper functions
-  function PageAddressOrganiser(pageArray: PageCrux[] | null) {
-    if (!pageArray || pageArray === null) return <></>;
+  // Checkbox URL handler
+  function handleCheck(url: string, isChecked: boolean) {
+    setSelectedUrls((prev) =>
+      isChecked ? [...prev, url] : prev.filter((d) => d !== url)
+    );
+  }
 
-    const flattened = pageArray.flat();
+  function handlePageDelete() {
+    if (!processedPages || !urls) return;
 
-    const uniquePaths = [
-      ...new Set(flattened.map((x) => x.page_address.split("/")[3])),
-    ];
+    // Remove pages with addresses in selectedUrls
+    const updatedPages = urls.filter((page) => !selectedUrls.includes(page));
+
+    // setProcessedPages(updatedResult);
+    setUrls(updatedPages);
+    setSelectedUrls([]);
+    setIsConfirmingDelete(false);
+
+    fetch("/api/pages/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        domain: selectedSite,
+        urls: selectedUrls,
+      }),
+    }).catch(console.error);
+  }
+
+  // Main renderer
+  function PageAddressOrganiser(
+    urls: string[] | null,
+    pageArray: PageCrux[] | null
+  ) {
+    if (!urls || urls.length === 0) return <></>;
+
+    function getPathSegment(url: string): string {
+      try {
+        const path = new URL(url).pathname;
+        const segments = path.split("/").filter(Boolean);
+        return segments[0] || "";
+      } catch {
+        return "";
+      }
+    }
+
+    const flattened = pageArray?.flat() || [];
+
+    const uniquePaths = [...new Set(urls.map(getPathSegment))].filter(Boolean);
 
     return (
       <div className="space-y-3 mt-8">
-        {/* Header for desktop only */}
-        <div className="hidden md:grid grid-cols-10 gap-2 items-center px-3 font-semibold">
-          <span className="col-span-4">Page</span>
-          <span className="col-span-1">LCP</span>
-          <span className="col-span-1">INP</span>
-          <span className="col-span-1">CLS</span>
-          <span className="col-span-1">TTFB</span>
-          <span className="col-span-1">STATUS</span>
+        {/* Header */}
+        <div className="hidden h-7 md:grid grid-cols-20 gap-2 items-center px-3 font-semibold">
+          <span className="col-span-1">
+            {selectedUrls.length > 0 && (
+              <div className="relative ml-[-3px]">
+                {!isConfirmingDelete ? (
+                  <button
+                    title="Delete pages"
+                    className="dark:bg-secondary-background hover:bg-gray-200/40 bg-background p-1 rounded-sm cursor-pointer border text-primary"
+                    onClick={() => setIsConfirmingDelete(true)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                ) : (
+                  <div className="absolute mt-[-15px] text-sm left-0 top-0 bg-white dark:bg-secondary-background rounded-sm flex gap-2 items-center">
+                    <button
+                      onClick={handlePageDelete}
+                      className="text-red-600 px-2 py-1 border rounded-sm cursor-pointer bg-red-100 hover:bg-red-200"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => setIsConfirmingDelete(false)}
+                      className="text-muted-foreground px-2 py-1 border cursor-pointer rounded-sm bg-gray-100 hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </span>
+          <span className="col-span-7">Page</span>
+          <span className="col-span-2">LCP</span>
+          <span className="col-span-2">INP</span>
+          <span className="col-span-2">CLS</span>
+          <span className="col-span-2">TTFB</span>
+          <span className="col-span-2">STATUS</span>
         </div>
 
+        {/* Cards */}
         {uniquePaths.map((pathSegment, index) => {
           const match = flattened.find(
             (x) =>
-              x.page_address?.split("/")[3] === pathSegment &&
+              getPathSegment(x.page_address || "") === pathSegment &&
               x.device_type === selectedDevice
           );
 
-          const deviceBased = match?.record ?? null;
+          const record = match?.record ?? null;
+          const fullUrl =
+            urls.find((url) => getPathSegment(url) === pathSegment) ?? "";
 
-          const lcp =
-            deviceBased?.metrics?.["largest_contentful_paint"]?.percentiles
-              ?.p75;
-          const cls =
-            deviceBased?.metrics?.["cumulative_layout_shift"]?.percentiles?.p75;
-          const inp =
-            deviceBased?.metrics?.["interaction_to_next_paint"]?.percentiles
-              ?.p75;
-          const ttfb =
-            deviceBased?.metrics?.["experimental_time_to_first_byte"]
-              ?.percentiles?.p75;
+          const get = (metric: string) =>
+            record?.metrics?.[metric]?.percentiles?.p75;
 
-          const lcp_ranges = getRanges("largest_contentful_paint");
-          const cls_ranges = getRanges("cumulative_layout_shift");
-          const inp_ranges = getRanges("interaction_to_next_paint");
-          const ttfb_ranges = getRanges("experimental_time_to_first_byte");
+          const lcp = get("largest_contentful_paint");
+          const cls = get("cumulative_layout_shift");
+          const inp = get("interaction_to_next_paint");
+          const ttfb = get("experimental_time_to_first_byte");
 
-          let status: string;
+          const lcpRange = getRanges("largest_contentful_paint");
+          const clsRange = getRanges("cumulative_layout_shift");
+          const inpRange = getRanges("interaction_to_next_paint");
+          const ttfbRange = getRanges("experimental_time_to_first_byte");
 
-          if (lcp == null && cls == null && inp == null) {
-            status = "--";
-          } else if (
-            lcp! <= lcp_ranges.b &&
-            cls! <= cls_ranges.b &&
-            inp! <= inp_ranges.b
-          ) {
-            status = "Passing";
-          } else {
+          let status = "--";
+          const hasAnyValue = lcp != null || cls != null || inp != null;
+
+          if (lcp != null && cls != null && inp != null) {
+            status =
+              lcp <= lcpRange.b && cls <= clsRange.b && inp <= inpRange.b
+                ? "Passing"
+                : "Failing";
+          } else if (hasAnyValue) {
             status = "Failing";
           }
 
@@ -225,21 +301,29 @@ export default function PageGroups() {
 
           return (
             <div key={index} className="p-3 border rounded-sm">
-              {/* Mobile layout */}
+              {/* Mobile */}
               <div className="md:hidden space-y-1">
-                <div className="text-accent-foreground/70 font-semibold">
-                  /{pathSegment}
+                <div className="flex gap-2 items-center">
+                  <Checkbox
+                    checked={selectedUrls.includes(fullUrl)}
+                    onCheckedChange={(checked) =>
+                      handleCheck(fullUrl, checked as boolean)
+                    }
+                  />
+                  <span className="text-accent-foreground/70 font-semibold">
+                    /{pathSegment}
+                  </span>
                 </div>
-                <div className={`text-sm ${getColor(lcp!, lcp_ranges)}`}>
+                <div className={`text-sm ${getColor(lcp!, lcpRange)}`}>
                   <strong>LCP:</strong> {lcp ?? "--"}
                 </div>
-                <div className={`text-sm ${getColor(inp!, inp_ranges)}`}>
+                <div className={`text-sm ${getColor(inp!, inpRange)}`}>
                   <strong>INP:</strong> {inp ?? "--"}
                 </div>
-                <div className={`text-sm ${getColor(cls!, cls_ranges)}`}>
+                <div className={`text-sm ${getColor(cls!, clsRange)}`}>
                   <strong>CLS:</strong> {cls ?? "--"}
                 </div>
-                <div className={`text-sm ${getColor(ttfb!, ttfb_ranges)}`}>
+                <div className={`text-sm ${getColor(ttfb!, ttfbRange)}`}>
                   <strong>TTFB:</strong> {ttfb ?? "--"}
                 </div>
                 <div
@@ -253,38 +337,33 @@ export default function PageGroups() {
                 >
                   <strong>Status:</strong> {status}
                 </div>
-                <div
-                  className={`text-sm font-semibold ${
-                    status === "Passing"
-                      ? "text-green-500"
-                      : status === "Failing"
-                      ? "text-red-400"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {status}
-                </div>
               </div>
 
-              {/* Desktop layout */}
-              <div className="hidden md:grid grid-cols-10 gap-2 items-center font-semibold">
-                <span className="col-span-4 text-accent-foreground/70">
+              {/* Desktop */}
+              <div className="hidden md:grid grid-cols-20 gap-2 items-center font-semibold">
+                <Checkbox
+                  checked={selectedUrls.includes(fullUrl)}
+                  onCheckedChange={(checked) =>
+                    handleCheck(fullUrl, checked as boolean)
+                  }
+                />
+                <span className="col-span-7 text-accent-foreground/70">
                   /{pathSegment}
                 </span>
-                <span className={`col-span-1 ${getColor(lcp!, lcp_ranges)}`}>
+                <span className={`col-span-2 ${getColor(lcp!, lcpRange)}`}>
                   {lcp ?? "--"}
                 </span>
-                <span className={`col-span-1 ${getColor(inp!, inp_ranges)}`}>
+                <span className={`col-span-2 ${getColor(inp!, inpRange)}`}>
                   {inp ?? "--"}
                 </span>
-                <span className={`col-span-1 ${getColor(cls!, cls_ranges)}`}>
+                <span className={`col-span-2 ${getColor(cls!, clsRange)}`}>
                   {cls ?? "--"}
                 </span>
-                <span className={`col-span-1 ${getColor(ttfb!, ttfb_ranges)}`}>
+                <span className={`col-span-2 ${getColor(ttfb!, ttfbRange)}`}>
                   {ttfb ?? "--"}
                 </span>
                 <span
-                  className={`col-span-1 ${
+                  className={`col-span-2 ${
                     status === "Passing"
                       ? "text-green-500"
                       : status === "Failing"
@@ -294,28 +373,20 @@ export default function PageGroups() {
                 >
                   {status}
                 </span>
-                <span className={`col-span-1`}>
-                  <div className="flex gap-2 items-center text-sm">
-                    <button
-                      title="Expand"
-                      className="p-1 rounded-sm cursor-pointer bg-blue-500 hover:bg-blue-600 text-white"
-                    >
-                      <Expand size={16} />
-                    </button>
-                    <button
-                      title="Report Bug"
-                      className="p-1 rounded-sm cursor-pointer bg-yellow-500 hover:bg-yellow-600 text-white"
-                    >
-                      <Bug size={16} />
-                    </button>
-                    <button
-                      title="Delete"
-                      className="p-1 rounded-sm cursor-pointer bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </span>
+                <div className="col-span-2 flex gap-2">
+                  <button
+                    title="Expand"
+                    className="p-1 rounded-sm bg-blue-500 hover:bg-blue-600 text-white"
+                  >
+                    <Expand size={16} />
+                  </button>
+                  <button
+                    title="Report Bug"
+                    className="p-1 rounded-sm bg-yellow-500 hover:bg-yellow-600 text-white"
+                  >
+                    <Bug size={16} />
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -324,40 +395,22 @@ export default function PageGroups() {
     );
   }
 
-  // function handleLabView() {
-  //   return <LabView />;
-  // }
-
   return (
     <div className="p-5">
-      <div className="flex flex-1 flex-row md:flex-row items-center justify-between gap-6">
+      <div className="flex justify-between items-center gap-6">
         {/* Header */}
-        <div className="flex flex-col items-start md:flex-row gap-2 md:items-center md:justify-between">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex gap-2 items-center cursor-help">
-                <Group
-                  size={30}
-                  className="fill-blue-400 dark:text-accent-foreground"
-                />
-                <h2 className="text-md md:text-2xl font-bold text-primary">
-                  Page Groups
-                </h2>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="w-[200px] md:w-[600px] ">
-              Page groups allow you to pinpoint the web vitals of individual
-              pages that are affecting the overall origin-level web vitals. When
-              your origin is underperforming, identifying specific URLs can
-              reveal what&apos;s causing the issue and highlight similar URLs
-              that may also be experiencing problems.
-            </TooltipContent>
-          </Tooltip>
+        <div className="flex items-center gap-2">
+          <Group
+            size={30}
+            className="fill-blue-400 dark:text-accent-foreground"
+          />
+          <h2 className="text-md md:text-2xl font-bold text-primary">
+            Page Groups
+          </h2>
         </div>
 
         <span className="relative group">
           {processedPages === undefined ? (
-            // Show loader while still processing
             <Tooltip>
               <TooltipTrigger>
                 <LoaderIcon size={24} className="animate-spin" />
@@ -365,7 +418,6 @@ export default function PageGroups() {
               <TooltipContent side="left">Checking...</TooltipContent>
             </Tooltip>
           ) : processedPages !== null ? (
-            // Show success if pages exist
             <Tooltip>
               <TooltipTrigger>
                 <CircleCheck size={26} className="text-green-500 cursor-help" />
@@ -374,8 +426,7 @@ export default function PageGroups() {
                 You have synced pages from GSC ✓
               </TooltipContent>
             </Tooltip>
-          ) : processedPages === null ? (
-            // Show warning if processedPages is empty or falsey
+          ) : (
             <Tooltip>
               <TooltipTrigger>
                 <FileWarning
@@ -387,19 +438,42 @@ export default function PageGroups() {
                 Missing pages under the selected domain to monitor!
               </TooltipContent>
             </Tooltip>
-          ) : (
-            <></>
           )}
         </span>
       </div>
 
-      {/* Content Section */}
-
-      {processedPages !== null ? (
-        <>{PageAddressOrganiser(processedPages!)}</>
+      {/* Main display logic */}
+      {urls === undefined ? (
+        <div className="p-6 border rounded-sm bg-gray-100 dark:bg-secondary-background text-center">
+          <AlertTriangle className="text-yellow-500 mx-auto" size={32} />
+          <h3 className="font-semibold text-lg">No Pages Found</h3>
+          <p className="text-sm text-muted-foreground">
+            Fetch from{" "}
+            <Drawer>
+              <DrawerTrigger asChild>
+                <span className="text-orange-500 underline hover:cursor-pointer">
+                  Google Search Console
+                </span>
+              </DrawerTrigger>{" "}
+              or manually add pages to monitor.
+            </Drawer>
+          </p>
+        </div>
+      ) : urls!.length === 0 ? (
+        <div className="mt-6 flex items-center justify-center text-muted-foreground">
+          <LoaderIcon className="animate-spin inline-block mr-2" />
+          Checking pages...
+        </div>
+      ) : urls!.length > 0 ? (
+        PageAddressOrganiser(urls, processedPages!)
+      ) : hasPages && pagesProcessing ? (
+        <div className="mt-6 flex items-center justify-center text-muted-foreground">
+          <LoaderIcon className="animate-spin inline-block mr-2" />
+          Processing pages for Core Web Vitals. This process requires at least
+          60 seconds to complete.
+        </div>
       ) : (
         <Drawer>
-          {/* drawer content - conditional*/}
           <DrawerContent style={{ borderRadius: 0, paddingTop: 0 }}>
             <div className="mx-auto h-[300px] w-full max-w-3xl">
               <DrawerHeader>
@@ -408,10 +482,8 @@ export default function PageGroups() {
                     <DrawerTitle className="text-xl mb-5 text-green-500">
                       Pages Acquired.
                     </DrawerTitle>
-                    <DrawerDescription className="text-primary dark:text-primary">
-                      We have acquired page samples from your site and sent them
-                      to process web vital status. You can now close this
-                      drawer. Click on close or somewhere outside.
+                    <DrawerDescription>
+                      Pages are being processed. You can now close this drawer.
                     </DrawerDescription>
                   </>
                 ) : (
@@ -419,72 +491,33 @@ export default function PageGroups() {
                     <DrawerTitle className="text-xl mb-5 text-red-500">
                       Access Required
                     </DrawerTitle>
-                    <DrawerDescription className="text-primary dark:text-primary">
-                      To identify the pages most impacting your Core Web Vitals,
-                      we need access to your Google Search Console. This lets us
-                      analyze your high-traffic pages, find url groups with the
-                      most impact and then run our tests to help you find out
-                      what and where to fix issues.
+                    <DrawerDescription>
+                      Connect to Google Search Console to fetch pages for
+                      analysis.
                     </DrawerDescription>
                   </>
                 )}
               </DrawerHeader>
-
               <DrawerFooter>
                 {!hasPages && (
                   <button
                     onClick={fetchAuthUrl}
                     disabled={isConnecting}
-                    className="flex justify-center items-center gap-2 border py-[6px] px-4 cursor-pointer hover:dark:bg-secondary-background/70 hover:bg-gray-500/30 rounded-sm dark:bg-secondary-background bg-gray-500/10 border-gray-500/20"
+                    className="flex items-center justify-center gap-2 border px-4 py-2 rounded-sm bg-gray-500/10 hover:bg-gray-500/20 dark:bg-secondary-background"
                   >
                     {isConnecting ? (
-                      <div className="animate-spin">
-                        <Loader size={25} />
-                      </div>
+                      <Loader className="animate-spin" size={20} />
                     ) : (
                       "Connect Google Search Console"
                     )}
                   </button>
                 )}
-
                 <DrawerClose>
-                  <div className="hover: cursor-pointer">Close</div>
+                  <div className="hover:cursor-pointer">Close</div>
                 </DrawerClose>
               </DrawerFooter>
             </div>
           </DrawerContent>
-
-          {/* Drawer trigger connected to text */}
-          <div className="mt-6">
-            {hasPages ? (
-              Array.isArray(hasPages) && hasPages.length > 0 ? (
-                <>
-                  {hasPages.map((x) => (
-                    <div className="flex gap-2 items-center" key={x.url}>
-                      <span>{x.url}</span>
-                      <span>{x.clicks}</span>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <>No page found!</>
-              )
-            ) : (
-              <div className="p-6 border rounded-sm dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 flex flex-col items-center text-center gap-2">
-                <AlertTriangle className="text-yellow-500" size={32} />
-                <h3 className="font-semibold text-lg">No Pages Found</h3>
-                <p className="text-muted-foreground text-sm">
-                  Please manually assign pages to monitor or fetch pages via{" "}
-                  <DrawerTrigger asChild>
-                    <span className="text-orange-500 font-normal underline hover:cursor-pointer">
-                      Google Search Console
-                    </span>
-                  </DrawerTrigger>{" "}
-                  option at the top right corner to get started.
-                </p>
-              </div>
-            )}
-          </div>
         </Drawer>
       )}
     </div>

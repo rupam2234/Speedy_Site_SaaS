@@ -25,30 +25,65 @@ export async function POST() {
     .update({ status: "processing" })
     .eq("id", job.id);
 
-  const allResults = [];
+  const processedUrls: string[] = [];
+  const resultsWithData: { url: string; data: any }[] = [];
+  const resultsWithoutData: { url: string; data: any }[] = [];
 
-  for (const url of job.urls) {
-    if (allResults.length >= 10) break;
+  const urlsToProcess = job.urls.slice(0, 100);
+
+  for (const url of urlsToProcess) {
+    processedUrls.push(url);
 
     try {
       const results = await pageCrux(url);
+      const hasData = results?.parsedData?.some((r: any) => r.record !== null);
 
-      if (results?.parsedData.some((r) => r.record !== null)) {
-        allResults.push(results.parsedData);
+      if (hasData) {
+        resultsWithData.push({ url, data: results!.parsedData });
+      } else {
+        resultsWithoutData.push({ url, data: results!.parsedData });
       }
 
-      await new Promise((res) => setTimeout(res, 1000)); // 1s delay
+      if (resultsWithData.length >= 10) break;
+
+      await new Promise((res) => setTimeout(res, 1000));
     } catch (e) {
       console.error("Error processing url:", url, e);
     }
   }
 
-  // Save results and mark job done
+  // Combine results up to 10: first those with data, then those without
+  const finalResults: any[] = [];
+  const finalUrls: string[] = [];
+
+  for (const item of resultsWithData) {
+    if (finalResults.length >= 10) break;
+    finalResults.push(item.data);
+    finalUrls.push(item.url);
+  }
+
+  for (const item of resultsWithoutData) {
+    if (finalResults.length >= 10) break;
+    finalResults.push(item.data);
+    finalUrls.push(item.url);
+  }
+
+  // If still less than 10, fill from top of processedUrls (but not already in finalUrls)
+  for (const url of processedUrls) {
+    if (finalUrls.length >= 10) break;
+    if (!finalUrls.includes(url)) {
+      finalUrls.push(url);
+      finalResults.push([]); // No data available
+    }
+  }
+
+  // Update job with exactly 10 urls and their results
   await supabase
     .from("crux_jobs")
     .update({
       status: "done",
-      results: JSON.parse(JSON.stringify(allResults)),
+      results: JSON.parse(JSON.stringify(finalResults)),
+      urls: finalUrls,
       updated_at: new Date().toISOString(),
     })
     .eq("id", job.id);
@@ -56,6 +91,6 @@ export async function POST() {
   return NextResponse.json({
     message: "Job processed",
     jobId: job.id,
-    resultsCount: allResults.length,
+    resultsCount: finalResults.length,
   });
 }
