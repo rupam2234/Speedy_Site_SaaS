@@ -33,7 +33,7 @@ export default function AppSidebar({
   const sidebarOpen =
     state === "expanded" ? false : state === "collapsed" ? true : null;
 
-  const site = selectedSite || "default-site"; // or fallback
+  const site = selectedSite || "speedysense.com"; // or fallback
 
   const data = {
     user: {
@@ -73,16 +73,16 @@ export default function AppSidebar({
             url: `/dashboard/${site}/cwv`,
           },
           {
-            title: "Pages",
+            title: "Page Benchmarks",
             url: `/dashboard/${site}/pages`,
-          },
-          {
-            title: "Lab Monitoring",
-            url: `/dashboard/${site}/lab`,
           },
           {
             title: "Real User Monitoring",
             url: `/dashboard/${site}/rum`,
+          },
+          {
+            title: "Settings",
+            url: `/dashboard/${site}/settings`,
           },
         ],
       },
@@ -99,10 +99,6 @@ export default function AppSidebar({
           {
             title: "Optimization Assistance",
             url: "/dashboard/orders",
-          },
-          {
-            title: "Settings",
-            url: "/dashboard/project-settings",
           },
         ],
       },

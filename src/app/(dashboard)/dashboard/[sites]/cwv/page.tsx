@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useSiteContext } from "@/app/(dashboard)/siteContext";
 import { useEffect, useState } from "react";
 import { fetchCrUXData } from "@/app/api/external/fetch_crux";
@@ -23,14 +23,13 @@ import { Helpers } from "./helper/helperFunc";
 import { getColor } from "@/lib/cwv_helper/getColor";
 import { cwv_metrics } from "./helper/cwvMetrics";
 import DistributionChart from "./helper/distributionChart";
+import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 
 // class test
 const helper = new Helpers();
 
 export default function WebsitePage() {
-  const params = useParams();
   const router = useRouter();
-  const { sites } = params;
   const {
     selectedSite,
     setCruxData,
@@ -99,9 +98,9 @@ export default function WebsitePage() {
 
   if (!selectedSite) {
     return (
-      // instead I want to add a load animation here
-      <div className="p-6 text-muted-foreground">
-        Website &quot;{sites}&quot; not found.
+      <div className="mt-6 flex items-center justify-center text-muted-foreground">
+        {/* loading animation */}
+        <LoadingAnimation />
       </div>
     );
   }

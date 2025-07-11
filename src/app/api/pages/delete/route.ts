@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       (result: any) => !body.urls.includes(result.page_address)
     );
 
-    // Filter urls
+    // Filter urls that does not match selected urls
     const filteredUrls = existingUrls.filter(
       (url: string) => !body.urls.includes(url)
     );
@@ -63,6 +63,26 @@ export async function POST(req: NextRequest) {
         { message: "Error updating database." },
         { status: 500 }
       );
+    }
+
+    // Filter urls that does not match selected urls
+    const urlsToDelete = existingUrls.filter((url: string) =>
+      body.urls.includes(url)
+    );
+
+    // delete all matching url from page_address
+    for (const url of urlsToDelete) {
+      const { error: deleteError } = await worker
+        .from("pageperf_data")
+        .delete()
+        .eq("page_address", url.replace(/\/$/, ""));
+
+      if (deleteError) {
+        return NextResponse.json(
+          { message: "Some URLs failed to delete", errors: deleteError },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({ message: "Pages deleted successfully." });

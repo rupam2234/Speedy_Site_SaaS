@@ -31,7 +31,6 @@ const DateRangeData: DateRangeProps[] = [
 export default function DashboardToolbar() {
   const params = useParams();
   const pathname = usePathname();
-
   const {
     selectedDevice,
     setSelectedDevice,
@@ -42,7 +41,23 @@ export default function DashboardToolbar() {
   const [selectedRangeId, setSelectedRangeId] =
     useState<string>("last12Months");
 
-  // determine if we are on cwv page (boolean)
+  useEffect(() => {
+    const dateRanges = GetDateRange(selectedRangeId);
+    setDateRange(dateRanges[0], dateRanges[1]);
+  }, [selectedRangeId]);
+
+  // ✅ Define allowed paths for toolbar visibility
+  const allowedPaths = [
+    `/dashboard/${params.sites}/cwv`,
+    `/dashboard/${params.sites}/pages`,
+    `/dashboard/${params.sites}/rum`,
+    `/dashboard/${params.sites}`,
+  ];
+
+  const isToolbarVisible = allowedPaths.includes(pathname);
+
+  if (!isToolbarVisible) return null;
+
   const isOnCWVPage = pathname === `/dashboard/${params.sites}/cwv`;
 
   function selectDevice(device: "Desktop" | "Mobile") {
@@ -110,16 +125,11 @@ export default function DashboardToolbar() {
     return [startDate, endDate];
   }
 
-  useEffect(() => {
-    const dateRanges = GetDateRange(selectedRangeId);
-    setDateRange(dateRanges[0], dateRanges[1]);
-  }, [selectedRangeId]);
-
   return (
     <div className="flex flex-col md:flex-row p-5 w-full items-start gap-3 md:justify-between bg-transparent">
       {/* Left Section */}
       <div className="flex gap-3 md:items-center items-start flex-col md:flex-row">
-        {/* for device toggle */}
+        {/* Device toggle */}
         <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
           <div className="flex gap-2 w-full items-center px-2">
             <MonitorSmartphone size={18} className="mr-2" />
@@ -145,11 +155,11 @@ export default function DashboardToolbar() {
             </button>
           </div>
         </div>
-        {/* for distribution toggle */}
-        {isOnCWVPage ? (
+
+        {/* Distribution toggle (only for CWV page) */}
+        {isOnCWVPage && (
           <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-[160px] border-[1px] px-1 rounded-sm">
             <div className="flex justify-between items-center pl-2 py-[2px] w-full">
-              {/* Left: Split Icon with Tooltip */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Split size={18} className="cursor-help " />
@@ -173,7 +183,6 @@ export default function DashboardToolbar() {
                 </TooltipContent>
               </Tooltip>
 
-              {/* Right: Text and Dropdown */}
               <Select value={experienceType} onValueChange={setExperienceType}>
                 <SelectTrigger className="py-0 cursor-pointer border-0 ring-0 shadow-none focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background rounded-sm border-none focus:ring-0 focus:outline-none">
                   <span className="text-primary font-medium">
@@ -196,8 +205,6 @@ export default function DashboardToolbar() {
               </Select>
             </div>
           </div>
-        ) : (
-          <></>
         )}
       </div>
 
