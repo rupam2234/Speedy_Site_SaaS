@@ -10,8 +10,6 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
 
-  console.log(body.domain);
-
   if (body) {
     try {
       const { data, error } = await worker

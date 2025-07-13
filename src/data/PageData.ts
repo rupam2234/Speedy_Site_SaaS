@@ -4,7 +4,6 @@ export type performance_data = {
   [key: string]: any; // for dynamic access to properties
   browser?: string | null;
   browser_version?: string | null;
-  cookies_count?: number | null;
   created_at: string;
   crux_cls_avg?: number | null;
   crux_cls_good?: number | null;
@@ -31,7 +30,6 @@ export type performance_data = {
   document_encodedbody_size?: number | null;
   document_timing?: Json | null;
   document_transfersize?: number | null;
-  documentheight?: number | null;
   documenttitle?: string | null;
   dom_complete_max?: number | null;
   dom_complete_mean?: number | null;
@@ -43,9 +41,6 @@ export type performance_data = {
   dom_interactive_mean?: number | null;
   dom_interactive_min?: number | null;
   domains?: Json | null;
-  inp_eventtime_max?: number | null;
-  inp_eventtime_mean?: number | null;
-  inp_eventtime_min?: number | null;
   inp_latency_max?: number | null;
   inp_latency_mean?: number | null;
   inp_latency_min?: number | null;
@@ -156,17 +151,12 @@ export type performance_data = {
   lab_ttfb_max?: number | null;
   lab_ttfb_mean?: number | null;
   lab_ttfb_min?: number | null;
-  last_visual_change_max?: number | null;
-  last_visual_change_mean?: number | null;
-  last_visual_change_min?: number | null;
   lcp_element_size_max?: number | null;
   lcp_element_size_mean?: number | null;
   lcp_element_size_min?: number | null;
   longtaskcount?: number | null;
-  longtasks?: Json | null;
   page_address?: string;
   page_filmstrip?: string | null;
-  page_generator?: string | null;
   page_loading_video_max?: string | null;
   page_loading_video_mean?: string | null;
   page_loading_video_min?: string | null;
@@ -176,7 +166,6 @@ export type performance_data = {
   performance_score_mean?: number | null;
   performance_score_min?: number | null;
   record_id?: string;
-  resource_count?: number | null;
   third_party_content_size_max?: number | null;
   third_party_content_size_mean?: number | null;
   third_party_content_size_min?: number | null;
@@ -188,6 +177,10 @@ export type performance_data = {
   third_party_transfer_size_min?: number | null;
   useragent?: string | null;
   windowsize?: string | null;
+  lcp_data?: Json | null;
+  blocking_scripts?: Json | null;
+  lcp_timing?: Json | null;
+  pageload_timing?: Json | null;
 };
 
 export type DataByDeviceType = {
@@ -197,13 +190,11 @@ export type DataByDeviceType = {
 };
 
 export type PageData = {
-
   perf_data: DataByDeviceType[];
   url: string;
   imageDesktop?: string;
   imageMobile?: string;
   page_title?: string;
-  //   quota?: string; // need to move this into url main table
   desktopUserAgent?: string;
   mobileUserAgent?: string;
   windowSizeMobile?: string;

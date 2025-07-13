@@ -5,7 +5,6 @@ import { useState } from "react";
 import CWVChart from "../charts/cwvChart";
 
 interface CWVProps {
-  url: string;
   pageData: any;
 }
 

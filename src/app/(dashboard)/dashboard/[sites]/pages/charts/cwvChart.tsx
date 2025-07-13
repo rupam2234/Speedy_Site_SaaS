@@ -15,11 +15,6 @@ import { UniversalTransition } from "echarts/features";
 import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSiteContext } from "@/app/(dashboard)/siteContext";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface ChartProps {
   pageData: any;
@@ -234,7 +229,7 @@ export default function CWVChart({ pageData, metric_key }: ChartProps) {
         trigger: "axis",
         backgroundColor: "rgba(50, 50, 50, 0.7)",
         borderWidth: 0,
-        padding: 6,
+        padding: 10,
         textStyle: {
           fontSize: 12,
           color: "#fff",
@@ -306,7 +301,7 @@ export default function CWVChart({ pageData, metric_key }: ChartProps) {
 
     chart.setOption(option, { notMerge: false });
 
-    const debouncedResize = debounce(() => chart.resize(), 100);
+    const debouncedResize = debounce(() => chart.resize(), 0);
     const resizeObserver = new ResizeObserver(debouncedResize);
 
     if (chartRef.current) resizeObserver.observe(chartRef.current);
@@ -325,20 +320,5 @@ export default function CWVChart({ pageData, metric_key }: ChartProps) {
     };
   }, []);
 
-  return (
-    <div style={{ position: "relative" }}>
-      <div className="flex justify-center">
-        <Tooltip>
-          <TooltipTrigger asChild className="mb-[-10px]">
-            <h3 className="font-bold cursor-help">Confidence Band</h3>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="md:w-80 text-sm">
-            The shaded area represents the confidence range between min and max
-            lab values.
-          </TooltipContent>
-        </Tooltip>
-      </div>
-      <div ref={chartRef} style={{ width: "100%", height: "345px" }} />
-    </div>
-  );
+  return <div ref={chartRef} style={{ width: "100%", height: "345px" }} />;
 }

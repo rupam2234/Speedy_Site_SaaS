@@ -7,8 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)";
   };
@@ -105,9 +103,9 @@ export type Database = {
       };
       pageperf_data: {
         Row: {
+          blocking_scripts: Json | null;
           browser: string | null;
           browser_version: string | null;
-          cookies_count: number | null;
           created_at: string;
           crux_cls_avg: number | null;
           crux_cls_good: number | null;
@@ -134,7 +132,6 @@ export type Database = {
           document_encodedbody_size: number | null;
           document_timing: Json | null;
           document_transfersize: number | null;
-          documentheight: number | null;
           documenttitle: string | null;
           dom_complete_max: number | null;
           dom_complete_mean: number | null;
@@ -147,9 +144,6 @@ export type Database = {
           dom_interactive_min: number | null;
           domain: string | null;
           domains: Json | null;
-          inp_eventtime_max: number | null;
-          inp_eventtime_mean: number | null;
-          inp_eventtime_min: number | null;
           inp_latency_max: number | null;
           inp_latency_mean: number | null;
           inp_latency_min: number | null;
@@ -260,27 +254,21 @@ export type Database = {
           lab_ttfb_max: number | null;
           lab_ttfb_mean: number | null;
           lab_ttfb_min: number | null;
-          last_visual_change_max: number | null;
-          last_visual_change_mean: number | null;
-          last_visual_change_min: number | null;
+          lcp_data: Json | null;
           lcp_element_size_max: number | null;
           lcp_element_size_mean: number | null;
           lcp_element_size_min: number | null;
+          lcp_timing: Json | null;
           longtaskcount: number | null;
-          longtasks: Json | null;
           page_address: string;
           page_filmstrip: string | null;
-          page_generator: string | null;
-          page_loading_video_max: string | null;
-          page_loading_video_mean: string | null;
-          page_loading_video_min: string | null;
           page_screenshot: string | null;
+          pageload_timing: Json | null;
           pageweight: number | null;
           performance_score_max: number | null;
           performance_score_mean: number | null;
           performance_score_min: number | null;
           record_id: string;
-          resource_count: number | null;
           third_party_content_size_max: number | null;
           third_party_content_size_mean: number | null;
           third_party_content_size_min: number | null;
@@ -294,9 +282,9 @@ export type Database = {
           windowsize: string | null;
         };
         Insert: {
+          blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
-          cookies_count?: number | null;
           created_at: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -323,7 +311,6 @@ export type Database = {
           document_encodedbody_size?: number | null;
           document_timing?: Json | null;
           document_transfersize?: number | null;
-          documentheight?: number | null;
           documenttitle?: string | null;
           dom_complete_max?: number | null;
           dom_complete_mean?: number | null;
@@ -336,9 +323,6 @@ export type Database = {
           dom_interactive_min?: number | null;
           domain?: string | null;
           domains?: Json | null;
-          inp_eventtime_max?: number | null;
-          inp_eventtime_mean?: number | null;
-          inp_eventtime_min?: number | null;
           inp_latency_max?: number | null;
           inp_latency_mean?: number | null;
           inp_latency_min?: number | null;
@@ -449,27 +433,21 @@ export type Database = {
           lab_ttfb_max?: number | null;
           lab_ttfb_mean?: number | null;
           lab_ttfb_min?: number | null;
-          last_visual_change_max?: number | null;
-          last_visual_change_mean?: number | null;
-          last_visual_change_min?: number | null;
+          lcp_data?: Json | null;
           lcp_element_size_max?: number | null;
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
           longtaskcount?: number | null;
-          longtasks?: Json | null;
           page_address: string;
           page_filmstrip?: string | null;
-          page_generator?: string | null;
-          page_loading_video_max?: string | null;
-          page_loading_video_mean?: string | null;
-          page_loading_video_min?: string | null;
           page_screenshot?: string | null;
+          pageload_timing?: Json | null;
           pageweight?: number | null;
           performance_score_max?: number | null;
           performance_score_mean?: number | null;
           performance_score_min?: number | null;
           record_id?: string;
-          resource_count?: number | null;
           third_party_content_size_max?: number | null;
           third_party_content_size_mean?: number | null;
           third_party_content_size_min?: number | null;
@@ -483,9 +461,9 @@ export type Database = {
           windowsize?: string | null;
         };
         Update: {
+          blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
-          cookies_count?: number | null;
           created_at?: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -512,7 +490,6 @@ export type Database = {
           document_encodedbody_size?: number | null;
           document_timing?: Json | null;
           document_transfersize?: number | null;
-          documentheight?: number | null;
           documenttitle?: string | null;
           dom_complete_max?: number | null;
           dom_complete_mean?: number | null;
@@ -525,9 +502,6 @@ export type Database = {
           dom_interactive_min?: number | null;
           domain?: string | null;
           domains?: Json | null;
-          inp_eventtime_max?: number | null;
-          inp_eventtime_mean?: number | null;
-          inp_eventtime_min?: number | null;
           inp_latency_max?: number | null;
           inp_latency_mean?: number | null;
           inp_latency_min?: number | null;
@@ -638,27 +612,21 @@ export type Database = {
           lab_ttfb_max?: number | null;
           lab_ttfb_mean?: number | null;
           lab_ttfb_min?: number | null;
-          last_visual_change_max?: number | null;
-          last_visual_change_mean?: number | null;
-          last_visual_change_min?: number | null;
+          lcp_data?: Json | null;
           lcp_element_size_max?: number | null;
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
           longtaskcount?: number | null;
-          longtasks?: Json | null;
           page_address?: string;
           page_filmstrip?: string | null;
-          page_generator?: string | null;
-          page_loading_video_max?: string | null;
-          page_loading_video_mean?: string | null;
-          page_loading_video_min?: string | null;
           page_screenshot?: string | null;
+          pageload_timing?: Json | null;
           pageweight?: number | null;
           performance_score_max?: number | null;
           performance_score_mean?: number | null;
           performance_score_min?: number | null;
           record_id?: string;
-          resource_count?: number | null;
           third_party_content_size_max?: number | null;
           third_party_content_size_mean?: number | null;
           third_party_content_size_min?: number | null;
@@ -675,9 +643,9 @@ export type Database = {
       };
       pageperf_data_desktop: {
         Row: {
+          blocking_scripts: Json | null;
           browser: string | null;
           browser_version: string | null;
-          cookies_count: number | null;
           created_at: string;
           crux_cls_avg: number | null;
           crux_cls_good: number | null;
@@ -704,7 +672,6 @@ export type Database = {
           document_encodedbody_size: number | null;
           document_timing: Json | null;
           document_transfersize: number | null;
-          documentheight: number | null;
           documenttitle: string | null;
           dom_complete_max: number | null;
           dom_complete_mean: number | null;
@@ -717,9 +684,6 @@ export type Database = {
           dom_interactive_min: number | null;
           domain: string | null;
           domains: Json | null;
-          inp_eventtime_max: number | null;
-          inp_eventtime_mean: number | null;
-          inp_eventtime_min: number | null;
           inp_latency_max: number | null;
           inp_latency_mean: number | null;
           inp_latency_min: number | null;
@@ -830,27 +794,21 @@ export type Database = {
           lab_ttfb_max: number | null;
           lab_ttfb_mean: number | null;
           lab_ttfb_min: number | null;
-          last_visual_change_max: number | null;
-          last_visual_change_mean: number | null;
-          last_visual_change_min: number | null;
+          lcp_data: Json | null;
           lcp_element_size_max: number | null;
           lcp_element_size_mean: number | null;
           lcp_element_size_min: number | null;
+          lcp_timing: Json | null;
           longtaskcount: number | null;
-          longtasks: Json | null;
           page_address: string;
           page_filmstrip: string | null;
-          page_generator: string | null;
-          page_loading_video_max: string | null;
-          page_loading_video_mean: string | null;
-          page_loading_video_min: string | null;
           page_screenshot: string | null;
+          pageload_timing: Json | null;
           pageweight: number | null;
           performance_score_max: number | null;
           performance_score_mean: number | null;
           performance_score_min: number | null;
           record_id: string;
-          resource_count: number | null;
           third_party_content_size_max: number | null;
           third_party_content_size_mean: number | null;
           third_party_content_size_min: number | null;
@@ -864,9 +822,9 @@ export type Database = {
           windowsize: string | null;
         };
         Insert: {
+          blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
-          cookies_count?: number | null;
           created_at: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -893,7 +851,6 @@ export type Database = {
           document_encodedbody_size?: number | null;
           document_timing?: Json | null;
           document_transfersize?: number | null;
-          documentheight?: number | null;
           documenttitle?: string | null;
           dom_complete_max?: number | null;
           dom_complete_mean?: number | null;
@@ -906,9 +863,6 @@ export type Database = {
           dom_interactive_min?: number | null;
           domain?: string | null;
           domains?: Json | null;
-          inp_eventtime_max?: number | null;
-          inp_eventtime_mean?: number | null;
-          inp_eventtime_min?: number | null;
           inp_latency_max?: number | null;
           inp_latency_mean?: number | null;
           inp_latency_min?: number | null;
@@ -1019,27 +973,21 @@ export type Database = {
           lab_ttfb_max?: number | null;
           lab_ttfb_mean?: number | null;
           lab_ttfb_min?: number | null;
-          last_visual_change_max?: number | null;
-          last_visual_change_mean?: number | null;
-          last_visual_change_min?: number | null;
+          lcp_data?: Json | null;
           lcp_element_size_max?: number | null;
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
           longtaskcount?: number | null;
-          longtasks?: Json | null;
           page_address: string;
           page_filmstrip?: string | null;
-          page_generator?: string | null;
-          page_loading_video_max?: string | null;
-          page_loading_video_mean?: string | null;
-          page_loading_video_min?: string | null;
           page_screenshot?: string | null;
+          pageload_timing?: Json | null;
           pageweight?: number | null;
           performance_score_max?: number | null;
           performance_score_mean?: number | null;
           performance_score_min?: number | null;
           record_id?: string;
-          resource_count?: number | null;
           third_party_content_size_max?: number | null;
           third_party_content_size_mean?: number | null;
           third_party_content_size_min?: number | null;
@@ -1053,9 +1001,9 @@ export type Database = {
           windowsize?: string | null;
         };
         Update: {
+          blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
-          cookies_count?: number | null;
           created_at?: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -1082,7 +1030,6 @@ export type Database = {
           document_encodedbody_size?: number | null;
           document_timing?: Json | null;
           document_transfersize?: number | null;
-          documentheight?: number | null;
           documenttitle?: string | null;
           dom_complete_max?: number | null;
           dom_complete_mean?: number | null;
@@ -1095,9 +1042,6 @@ export type Database = {
           dom_interactive_min?: number | null;
           domain?: string | null;
           domains?: Json | null;
-          inp_eventtime_max?: number | null;
-          inp_eventtime_mean?: number | null;
-          inp_eventtime_min?: number | null;
           inp_latency_max?: number | null;
           inp_latency_mean?: number | null;
           inp_latency_min?: number | null;
@@ -1208,27 +1152,21 @@ export type Database = {
           lab_ttfb_max?: number | null;
           lab_ttfb_mean?: number | null;
           lab_ttfb_min?: number | null;
-          last_visual_change_max?: number | null;
-          last_visual_change_mean?: number | null;
-          last_visual_change_min?: number | null;
+          lcp_data?: Json | null;
           lcp_element_size_max?: number | null;
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
           longtaskcount?: number | null;
-          longtasks?: Json | null;
           page_address?: string;
           page_filmstrip?: string | null;
-          page_generator?: string | null;
-          page_loading_video_max?: string | null;
-          page_loading_video_mean?: string | null;
-          page_loading_video_min?: string | null;
           page_screenshot?: string | null;
+          pageload_timing?: Json | null;
           pageweight?: number | null;
           performance_score_max?: number | null;
           performance_score_mean?: number | null;
           performance_score_min?: number | null;
           record_id?: string;
-          resource_count?: number | null;
           third_party_content_size_max?: number | null;
           third_party_content_size_mean?: number | null;
           third_party_content_size_min?: number | null;
@@ -1245,9 +1183,9 @@ export type Database = {
       };
       pageperf_data_mobile: {
         Row: {
+          blocking_scripts: Json | null;
           browser: string | null;
           browser_version: string | null;
-          cookies_count: number | null;
           created_at: string;
           crux_cls_avg: number | null;
           crux_cls_good: number | null;
@@ -1274,7 +1212,6 @@ export type Database = {
           document_encodedbody_size: number | null;
           document_timing: Json | null;
           document_transfersize: number | null;
-          documentheight: number | null;
           documenttitle: string | null;
           dom_complete_max: number | null;
           dom_complete_mean: number | null;
@@ -1287,9 +1224,6 @@ export type Database = {
           dom_interactive_min: number | null;
           domain: string | null;
           domains: Json | null;
-          inp_eventtime_max: number | null;
-          inp_eventtime_mean: number | null;
-          inp_eventtime_min: number | null;
           inp_latency_max: number | null;
           inp_latency_mean: number | null;
           inp_latency_min: number | null;
@@ -1400,27 +1334,21 @@ export type Database = {
           lab_ttfb_max: number | null;
           lab_ttfb_mean: number | null;
           lab_ttfb_min: number | null;
-          last_visual_change_max: number | null;
-          last_visual_change_mean: number | null;
-          last_visual_change_min: number | null;
+          lcp_data: Json | null;
           lcp_element_size_max: number | null;
           lcp_element_size_mean: number | null;
           lcp_element_size_min: number | null;
+          lcp_timing: Json | null;
           longtaskcount: number | null;
-          longtasks: Json | null;
           page_address: string;
           page_filmstrip: string | null;
-          page_generator: string | null;
-          page_loading_video_max: string | null;
-          page_loading_video_mean: string | null;
-          page_loading_video_min: string | null;
           page_screenshot: string | null;
+          pageload_timing: Json | null;
           pageweight: number | null;
           performance_score_max: number | null;
           performance_score_mean: number | null;
           performance_score_min: number | null;
           record_id: string;
-          resource_count: number | null;
           third_party_content_size_max: number | null;
           third_party_content_size_mean: number | null;
           third_party_content_size_min: number | null;
@@ -1434,9 +1362,9 @@ export type Database = {
           windowsize: string | null;
         };
         Insert: {
+          blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
-          cookies_count?: number | null;
           created_at: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -1463,7 +1391,6 @@ export type Database = {
           document_encodedbody_size?: number | null;
           document_timing?: Json | null;
           document_transfersize?: number | null;
-          documentheight?: number | null;
           documenttitle?: string | null;
           dom_complete_max?: number | null;
           dom_complete_mean?: number | null;
@@ -1476,9 +1403,6 @@ export type Database = {
           dom_interactive_min?: number | null;
           domain?: string | null;
           domains?: Json | null;
-          inp_eventtime_max?: number | null;
-          inp_eventtime_mean?: number | null;
-          inp_eventtime_min?: number | null;
           inp_latency_max?: number | null;
           inp_latency_mean?: number | null;
           inp_latency_min?: number | null;
@@ -1589,27 +1513,21 @@ export type Database = {
           lab_ttfb_max?: number | null;
           lab_ttfb_mean?: number | null;
           lab_ttfb_min?: number | null;
-          last_visual_change_max?: number | null;
-          last_visual_change_mean?: number | null;
-          last_visual_change_min?: number | null;
+          lcp_data?: Json | null;
           lcp_element_size_max?: number | null;
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
           longtaskcount?: number | null;
-          longtasks?: Json | null;
           page_address: string;
           page_filmstrip?: string | null;
-          page_generator?: string | null;
-          page_loading_video_max?: string | null;
-          page_loading_video_mean?: string | null;
-          page_loading_video_min?: string | null;
           page_screenshot?: string | null;
+          pageload_timing?: Json | null;
           pageweight?: number | null;
           performance_score_max?: number | null;
           performance_score_mean?: number | null;
           performance_score_min?: number | null;
           record_id?: string;
-          resource_count?: number | null;
           third_party_content_size_max?: number | null;
           third_party_content_size_mean?: number | null;
           third_party_content_size_min?: number | null;
@@ -1623,9 +1541,9 @@ export type Database = {
           windowsize?: string | null;
         };
         Update: {
+          blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
-          cookies_count?: number | null;
           created_at?: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -1652,7 +1570,6 @@ export type Database = {
           document_encodedbody_size?: number | null;
           document_timing?: Json | null;
           document_transfersize?: number | null;
-          documentheight?: number | null;
           documenttitle?: string | null;
           dom_complete_max?: number | null;
           dom_complete_mean?: number | null;
@@ -1665,9 +1582,6 @@ export type Database = {
           dom_interactive_min?: number | null;
           domain?: string | null;
           domains?: Json | null;
-          inp_eventtime_max?: number | null;
-          inp_eventtime_mean?: number | null;
-          inp_eventtime_min?: number | null;
           inp_latency_max?: number | null;
           inp_latency_mean?: number | null;
           inp_latency_min?: number | null;
@@ -1778,27 +1692,21 @@ export type Database = {
           lab_ttfb_max?: number | null;
           lab_ttfb_mean?: number | null;
           lab_ttfb_min?: number | null;
-          last_visual_change_max?: number | null;
-          last_visual_change_mean?: number | null;
-          last_visual_change_min?: number | null;
+          lcp_data?: Json | null;
           lcp_element_size_max?: number | null;
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
           longtaskcount?: number | null;
-          longtasks?: Json | null;
           page_address?: string;
           page_filmstrip?: string | null;
-          page_generator?: string | null;
-          page_loading_video_max?: string | null;
-          page_loading_video_mean?: string | null;
-          page_loading_video_min?: string | null;
           page_screenshot?: string | null;
+          pageload_timing?: Json | null;
           pageweight?: number | null;
           performance_score_max?: number | null;
           performance_score_mean?: number | null;
           performance_score_min?: number | null;
           record_id?: string;
-          resource_count?: number | null;
           third_party_content_size_max?: number | null;
           third_party_content_size_mean?: number | null;
           third_party_content_size_min?: number | null;

@@ -5,6 +5,15 @@ import { Button } from "@/components/ui/button";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import { useEffect, useState } from "react";
 import CWV from "./cwv";
+import PageAssets from "./assets";
+import Timings from "./timings";
+import { MonitorCheck, Smartphone } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useSiteContext } from "@/app/(dashboard)/siteContext";
 
 interface LabViewProps {
   url: string;
@@ -12,20 +21,23 @@ interface LabViewProps {
 }
 
 export default function LabView({ url, device }: LabViewProps) {
+  const { selectedDevice, setSelectedDevice } = useSiteContext();
   const pageMetric = pageMetricCache((state) => state.pageMetric);
 
   const [pageData, setPageData] = useState<any>(); // individual pages (filtered)
   const [activeDataClass, setActiveDataClass] = useState<
-    "Web Vitals" | "Page Weight" | "Server"
+    "Web Vitals" | "Page Weight" | "Timings"
   >("Web Vitals");
 
-  const dataClassButtons: ("Web Vitals" | "Page Weight" | "Server")[] = [
+  const dataClassButtons: ("Web Vitals" | "Page Weight" | "Timings")[] = [
     "Web Vitals",
     "Page Weight",
-    "Server",
+    "Timings",
   ];
 
-  function handleDataClassButton(key: "Web Vitals" | "Page Weight" | "Server") {
+  function handleDataClassButton(
+    key: "Web Vitals" | "Page Weight" | "Timings"
+  ) {
     setActiveDataClass(key);
   }
 
@@ -47,32 +59,66 @@ export default function LabView({ url, device }: LabViewProps) {
       {Array.isArray(pageData) ? (
         <div className="w-full m-auto md:mx-auto md:my-0 overflow-hidden">
           {/* Toolbar at the Top */}
-          <div className="flex flex-wrap gap-2 mt-3 p-4 justify-between dark:bg-secondary-background bg-gray-300/10 border sm:justify-end">
-            {dataClassButtons?.map((x) => {
-              const isActive = x === activeDataClass;
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 p-4 dark:bg-secondary-background bg-gray-300/10 border">
+            <div className="flex items-center justify-start gap-2 cursor-pointer">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <MonitorCheck
+                    onClick={() => setSelectedDevice("Desktop")}
+                    size={24}
+                    className={`p-[2px] ${
+                      selectedDevice === "Desktop"
+                        ? "text-primary"
+                        : "text-gray-400"
+                    } hover:bg-secondary-background/5 rounded-sm`}
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="top">Desktop</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Smartphone
+                    onClick={() => setSelectedDevice("Mobile")}
+                    size={24}
+                    className={`p-[2px] ${
+                      selectedDevice === "Mobile"
+                        ? "text-primary"
+                        : "text-gray-400"
+                    } hover:bg-secondary-background/5 rounded-sm`}
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="top">Mobile</TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 justify-start sm:justify-end">
+              {dataClassButtons?.map((x) => {
+                const isActive = x === activeDataClass;
 
-              return (
-                <Button
-                  key={x}
-                  className={`px-4 py-1 text-primary ${
-                    isActive ? "bg-transparent" : "bg-blue-300 dark:bg-blue-900"
-                  } rounded-[2px] hover:text-accent dark:hover:bg-blue-700 dark:hover:text-primary cursor-pointer`}
-                  onClick={() => handleDataClassButton(x)}
-                >
-                  {x}
-                </Button>
-              );
-            })}
+                return (
+                  <Button
+                    key={x}
+                    className={`px-4 py-1 text-primary ${
+                      isActive
+                        ? "bg-transparent"
+                        : "bg-blue-300 dark:bg-blue-900"
+                    } rounded-[2px] hover:text-accent dark:hover:bg-blue-700 dark:hover:text-primary cursor-pointer`}
+                    onClick={() => handleDataClassButton(x)}
+                  >
+                    {x}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Content Section */}
 
           {activeDataClass === "Web Vitals" ? (
-            <CWV url={url} pageData={pageData} />
+            <CWV pageData={pageData} />
           ) : activeDataClass === "Page Weight" ? (
-            <div className="p-6 h-max">Page Weight</div>
-          ) : activeDataClass === "Server" ? (
-            <div className="p-6 h-max">Server</div>
+            <PageAssets pageData={pageData} />
+          ) : activeDataClass === "Timings" ? (
+            <Timings pageData={pageData} />
           ) : (
             <LoadingAnimation />
           )}
