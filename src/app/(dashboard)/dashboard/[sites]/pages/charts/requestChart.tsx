@@ -66,10 +66,6 @@ export default function RequestsChart({ pageData }: RequestsChartProps) {
   ];
 
   useEffect(() => {
-    console.log(pageData);
-  });
-
-  useEffect(() => {
     if (!chartRef.current || !chartData.length) return;
 
     if (!chartInstanceRef.current) {
@@ -86,7 +82,7 @@ export default function RequestsChart({ pageData }: RequestsChartProps) {
       areaStyle: {},
       emphasis: { focus: "series" },
       data: chartData.map((item: any) => item[key]),
-      smooth: 0.6,
+      // smooth: 0.6,
       lineStyle: {
         width: 0,
       },

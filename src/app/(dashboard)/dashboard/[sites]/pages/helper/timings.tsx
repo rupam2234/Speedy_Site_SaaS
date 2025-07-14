@@ -6,8 +6,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
-import TimingPieChart from "../charts/timingChart";
+import { useEffect, useState } from "react";
+import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import TimingPieChart from "../charts/docTimingChart";
+import LCPPieChart from "../charts/lcpTimingChart";
 
 interface TimingProps {
   pageData: any;
@@ -20,24 +22,23 @@ const TimingType = [
   },
   {
     key: "LCP Timing",
-    tooltip: "###",
-  },
-  {
-    key: "INP timing",
-    tooltip: "###",
+    tooltip: "Help your discover LCP element timing breakdown & their types",
   },
 ];
 
 export default function Timings({ pageData }: TimingProps) {
   const [activeModule, setActiveModule] = useState<
-    "Document Timing" | "LCP Timing" | "INP timing"
+    "Document Timing" | "LCP Timing"
   >("Document Timing");
+  const { selectedDevice } = useSiteContext();
 
-  function handleActiveAsset(
-    key: "Document Timing" | "LCP Timing" | "INP timing"
-  ) {
+  function handleActiveAsset(key: "Document Timing" | "LCP Timing") {
     setActiveModule(key);
   }
+
+  useEffect(() => {
+    console.log(pageData);
+  }, [pageData, selectedDevice]);
 
   return (
     <div className="p-4 h-max">
@@ -45,6 +46,8 @@ export default function Timings({ pageData }: TimingProps) {
         <div className="col-span-1 md:col-span-9 mt-3">
           {activeModule === "Document Timing" ? (
             <TimingPieChart pageData={pageData} activeModule={activeModule} />
+          ) : activeModule === "LCP Timing" ? (
+            <LCPPieChart pageData={pageData} activeModule={activeModule} />
           ) : (
             <></>
           )}

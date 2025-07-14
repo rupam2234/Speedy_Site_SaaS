@@ -175,7 +175,7 @@ export default function CWVChart({ pageData, metric_key }: ChartProps) {
         name: cruxName,
         type: "line",
         data: chartData.map((item) => item[cruxKey]),
-        smooth: 0.6,
+        // smooth: 0.6,
         showSymbol: true,
         symbol: "circle",
         symbolSize: 2,
@@ -201,7 +201,7 @@ export default function CWVChart({ pageData, metric_key }: ChartProps) {
         name: meanName,
         type: "line",
         data: chartData.map((item) => item[meanKey]),
-        smooth: 0.6,
+        // smooth: 0.6,
         showSymbol: true,
         symbol: "circle",
         symbolSize: 2,
@@ -265,7 +265,9 @@ export default function CWVChart({ pageData, metric_key }: ChartProps) {
 
               tooltipText += `
                 <div>
-                  <span style="color:${color};">&#9679;</span> ${name}: ${value}
+                  <span style="color:${color};">&#9679;</span> ${name}: ${value.toFixed(
+                2
+              )}
                 </div>
               `;
             }

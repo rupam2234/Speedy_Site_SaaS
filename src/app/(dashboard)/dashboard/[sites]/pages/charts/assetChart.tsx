@@ -160,7 +160,7 @@ export default function AssetChart({ pageData, assetKey }: AssetChartProps) {
       type: "line",
       stack: "Total",
       areaStyle: {},
-      smooth: 0.6,
+      // smooth: 0.6,
       emphasis: {
         focus: "series",
       },
@@ -281,5 +281,15 @@ export default function AssetChart({ pageData, assetKey }: AssetChartProps) {
     };
   }, []);
 
-  return <div ref={chartRef} style={{ width: "100%", height: "345px" }} />;
+  return (
+    <>
+      <div ref={chartRef} style={{ width: "100%", height: "345px" }} />
+      <div style={{ marginBottom: "8px", color: "#666", fontSize: "14px" }}>
+        <p>
+          💡 Tip: Monitor and minimize large asset sizes to ensure faster load
+          times and better performance.
+        </p>
+      </div>
+    </>
+  );
 }

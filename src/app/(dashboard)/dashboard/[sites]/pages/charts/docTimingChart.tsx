@@ -11,7 +11,6 @@ import { CanvasRenderer } from "echarts/renderers";
 import { LabelLayout } from "echarts/features";
 import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
 
 echarts.use([
   TitleComponent,
@@ -32,6 +31,17 @@ type DataProps = {
   value: number | string | null;
 };
 
+interface DocumentTiming {
+  blocked: { mean: number };
+  connect: { mean: number };
+  dns: { mean: number };
+  queued: { mean: number };
+  receive: { mean: number };
+  send: { mean: number };
+  ssl: { mean: number };
+  wait: { mean: number };
+}
+
 function debounce(fn: () => void, delay: number) {
   let timer: ReturnType<typeof setTimeout>;
   return () => {
@@ -47,18 +57,13 @@ export default function TimingPieChart({
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const { theme } = useTheme();
-  const { selectedDevice } = useSiteContext();
 
   let chartData: DataProps[] = [];
   let total: number = 0;
 
-  useEffect(() => {
-    console.log(pageData);
-  }, [pageData, selectedDevice]);
-
   switch (activeModule) {
-    case "Document Timing":
-      const x: any = pageData[pageData.length - 1].document_timing;
+    case "Document Timing": {
+      const x: DocumentTiming = pageData[pageData.length - 1].document_timing;
 
       total =
         x.blocked.mean +
@@ -80,6 +85,13 @@ export default function TimingPieChart({
         { value: x.ssl.mean, name: "ssl" },
         { value: x.wait.mean, name: "wait" },
       ];
+      break;
+    }
+
+    default:
+      chartData = [];
+      total = 0;
+      break;
   }
 
   useEffect(() => {
@@ -104,8 +116,12 @@ export default function TimingPieChart({
         trigger: "item",
         formatter: (params: any) => {
           return `
-      ${params.marker} <strong>${params.name}</strong>: ${params.value} ms (${params.percent}%)
-           <br/><span style="padding-left: 16px;"><strong>total:</strong> ${total} ms</span>
+      ${params.marker} <strong>${params.name}</strong>: ${params.value} ms (${
+            params.percent
+          }%)
+           <br/><span style="padding-left: 16px;"><strong>total:</strong> ${total.toFixed(
+             2
+           )} ms</span>
         `;
         },
       },
@@ -157,7 +173,7 @@ export default function TimingPieChart({
   return (
     <>
       <div ref={chartRef} style={{ width: "100%", height: "345px" }} />
-      <div style={{ marginBottom: "8px", color: "#666", fontSize: "14px" }}>
+      <div style={{ marginBottom: "12px", color: "#666", fontSize: "14px" }}>
         <p>
           💡 Tip: In case of bad performance, look for timings above{" "}
           <strong>300 ms</strong>.
