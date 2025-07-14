@@ -1,15 +1,13 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useEffect, useState } from "react";
 import { useSiteContext } from "@/app/(dashboard)/siteContext";
 import TimingPieChart from "../charts/docTimingChart";
 import LCPPieChart from "../charts/lcpTimingChart";
+import PageTimingChart from "../charts/pageTimingChart";
 
 interface TimingProps {
   pageData: any;
@@ -18,36 +16,49 @@ interface TimingProps {
 const TimingType = [
   {
     key: "Document Timing",
-    tooltip: "Breaks down the latest timing main document takes to load",
+    tooltip:
+      "Breakdown of how the main HTML document loads, from request to render.",
   },
   {
     key: "LCP Timing",
-    tooltip: "Help your discover LCP element timing breakdown & their types",
+    tooltip:
+      "Detailed view of the Largest Contentful Paint (LCP) timing phases and resource types.",
+  },
+  {
+    key: "Page Timing",
+    tooltip:
+      "Overall page load metrics including front-end, back-end, and total load time.",
   },
 ];
 
 export default function Timings({ pageData }: TimingProps) {
-  const [activeModule, setActiveModule] = useState<
-    "Document Timing" | "LCP Timing"
-  >("Document Timing");
-  const { selectedDevice } = useSiteContext();
+  const { activeTimingMetric, setActiveTimingMetric } = useSiteContext();
 
-  function handleActiveAsset(key: "Document Timing" | "LCP Timing") {
-    setActiveModule(key);
+  function handleActiveAsset(
+    key: "Document Timing" | "LCP Timing" | "Page Timing"
+  ) {
+    setActiveTimingMetric(key);
   }
-
-  useEffect(() => {
-    console.log(pageData);
-  }, [pageData, selectedDevice]);
 
   return (
     <div className="p-4 h-max">
       <div className="grid md:grid-cols-12 gap-3 grid-cols-1">
         <div className="col-span-1 md:col-span-9 mt-3">
-          {activeModule === "Document Timing" ? (
-            <TimingPieChart pageData={pageData} activeModule={activeModule} />
-          ) : activeModule === "LCP Timing" ? (
-            <LCPPieChart pageData={pageData} activeModule={activeModule} />
+          {activeTimingMetric === "Document Timing" ? (
+            <TimingPieChart
+              pageData={pageData}
+              activeModule={activeTimingMetric}
+            />
+          ) : activeTimingMetric === "LCP Timing" ? (
+            <LCPPieChart
+              pageData={pageData}
+              activeModule={activeTimingMetric}
+            />
+          ) : activeTimingMetric === "Page Timing" ? (
+            <PageTimingChart
+              pageData={pageData}
+              activeModule={activeTimingMetric}
+            />
           ) : (
             <></>
           )}
@@ -59,7 +70,7 @@ export default function Timings({ pageData }: TimingProps) {
                 <Button
                   onClick={() => handleActiveAsset(x.key)}
                   className={`p-4 cursor-pointer mt-3 shadow-none hover:dark:bg-transparent dark:bg-secondary ${
-                    activeModule === x.key
+                    activeTimingMetric === x.key
                       ? "dark:bg-transparent bg-transparent"
                       : "bg-gray-500/10"
                   }  hover:bg-transparent text-primary rounded-[2px] min-w-full`}

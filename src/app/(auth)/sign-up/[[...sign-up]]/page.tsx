@@ -16,7 +16,6 @@ import * as Clerk from "@clerk/elements/common";
 import * as SignUp from "@clerk/elements/sign-up";
 import { useUser } from "@clerk/nextjs";
 import { EyeClosed, EyeIcon } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { handleSignUpValidation } from "./signup_validation";
@@ -47,7 +46,7 @@ export default function SignUpPage() {
 
   return (
     <main className="grid grid-cols-1 sm:grid-cols-2 w-full h-screen sm:h-auto items-center">
-      <div className="order-2 sm:order-1 flex justify-center items-center bg-gradient-to-br from-indigo-600 to-purple-700 text-white h-full sm:h-screen w-full">
+      <div className="order-2 hidden sm:order-1 md:flex justify-center items-center bg-gradient-to-br from-indigo-600 to-purple-700 text-white h-full sm:h-screen w-full">
         <ThemeToggle />
       </div>
 
@@ -200,15 +199,10 @@ export default function SignUpPage() {
                 </SignUp.Step>
 
                 <SignUp.Step name="continue">
-                  <Card className="w-full sm:w-96 shadow-none border-0">
+                  <Card className="w-full bg-transparent sm:w-96 shadow-none border-0">
                     <CardHeader>
                       <div className="flex justify-center items-center mb-9">
-                        <Image
-                          src={"/images/Speedy Vitals Logo.png"}
-                          width={150}
-                          height={20}
-                          alt={"Speedy Vitals Logo"}
-                        ></Image>
+                        <Logo />
                       </div>
                       <CardDescription className="text-center">
                         One final step! Would you like to provide your
@@ -218,7 +212,7 @@ export default function SignUpPage() {
                       <div className="grid gap-x-4 gap-y-4">
                         <Clerk.Field name="firstName" className="space-y-2">
                           <Clerk.Label asChild>
-                            <label className="text-sm font-semibold text-gray-700">
+                            <label className="text-sm font-semibold text-gray-700 dark:text-primary/50">
                               First Name
                             </label>
                           </Clerk.Label>
@@ -237,7 +231,7 @@ export default function SignUpPage() {
                         </Clerk.Field>
                         <Clerk.Field name="lastName" className="space-y-2">
                           <Clerk.Label asChild>
-                            <label className="text-sm font-semibold text-gray-700">
+                            <label className="text-sm font-semibold text-gray-700 dark:text-primary/50">
                               Last Name
                             </label>
                           </Clerk.Label>
@@ -281,17 +275,12 @@ export default function SignUpPage() {
 
                 <SignUp.Step name="verifications">
                   <SignUp.Strategy name="email_code">
-                    <Card className="w-full sm:w-96 shadow-none border-0">
+                    <Card className="w-full bg-transparent sm:w-96 shadow-none border-0">
                       <CardHeader>
                         <div className="flex justify-center items-center mb-9">
-                          <Image
-                            src={"/images/Speedy Vitals Logo.png"}
-                            width={150}
-                            height={20}
-                            alt={"Speedy Vitals Logo"}
-                          ></Image>
+                          <Logo />
                         </div>
-                        <CardTitle className="text-2xl text-gray-700/90 text-center antialiased">
+                        <CardTitle className="text-2xl text-primary text-center antialiased">
                           Please check your email
                         </CardTitle>
                         <CardDescription className="text-center">

@@ -265,9 +265,7 @@ export default function CWVChart({ pageData, metric_key }: ChartProps) {
 
               tooltipText += `
                 <div>
-                  <span style="color:${color};">&#9679;</span> ${name}: ${value.toFixed(
-                2
-              )}
+                  <span style="color:${color};">&#9679;</span> ${name}: ${value}
                 </div>
               `;
             }

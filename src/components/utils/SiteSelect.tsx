@@ -10,12 +10,15 @@ import {
 } from "@/components/ui/select";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { CirclePlus } from "lucide-react";
+import { AddWebsiteModal } from "./addWebsiteModal";
 
 export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
   const { selectedSite, setSelectedSite, orders, setCollapsed } =
     useSiteContext();
+  const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -25,6 +28,12 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
   }, [collapsed]);
 
   const handleChange = (value: string) => {
+    // when someone's adding a site
+    if (value === "__add__") {
+      setShowAddModal(true); // Open modal
+      return;
+    }
+
     setSelectedSite(value);
   };
 
@@ -94,6 +103,14 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
               </span>
             </SelectItem>
           ))}
+          <SelectItem
+            value="__add__"
+            className="text-blue-500 font-medium flex gap-1 items-center"
+          >
+            <CirclePlus />
+            Add New Website
+          </SelectItem>
+          <AddWebsiteModal open={showAddModal} onOpenChange={setShowAddModal} />
         </SelectGroup>
       </SelectContent>
     </Select>

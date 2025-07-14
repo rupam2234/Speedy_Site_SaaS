@@ -18,7 +18,6 @@ export default function WebsitePage() {
   const { selectedSite, setDailyCrux, dailyCrux, selectedDevice } =
     useSiteContext();
 
-  // class test
   const helper = new Helpers();
 
   useEffect(() => {

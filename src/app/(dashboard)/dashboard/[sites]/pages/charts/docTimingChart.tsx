@@ -145,6 +145,13 @@ export default function TimingPieChart({
               shadowOffsetX: 0,
               shadowColor: "rgba(0, 0, 0, 0.5)",
             },
+            label: {
+              show: true,
+              color: theme === "dark" ? "#fff" : "#000",
+            },
+          },
+          label: {
+            color: theme === "dark" ? "#fff" : "#000",
           },
         },
       ],

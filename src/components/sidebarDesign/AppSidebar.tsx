@@ -2,7 +2,6 @@
 
 import {
   BellIcon,
-  BookOpen,
   ChartLine,
   CreditCard,
   GroupIcon,
@@ -92,10 +91,10 @@ export default function AppSidebar({
         icon: Link2,
         isActive: true,
         items: [
-          {
-            title: "Page Profiling",
-            url: "/dashboard/new-site",
-          },
+          // {
+          //   title: "Page Profiling",
+          //   url: "/dashboard/new-site",
+          // },
           {
             title: "Optimization Assistance",
             url: "/dashboard/orders",
@@ -109,30 +108,30 @@ export default function AppSidebar({
         isActive: false,
         items: [{ title: "Manage Teams", url: "#" }],
       },
-      {
-        title: "Documentation",
-        url: "#",
-        icon: BookOpen,
-        isActive: false,
-        items: [
-          {
-            title: "Introduction",
-            url: "#",
-          },
-          {
-            title: "Get Started",
-            url: "#",
-          },
-          {
-            title: "Tutorials",
-            url: "#",
-          },
-          {
-            title: "Changelog",
-            url: "#",
-          },
-        ],
-      },
+      // {
+      //   title: "Documentation",
+      //   url: "#",
+      //   icon: BookOpen,
+      //   isActive: false,
+      //   items: [
+      //     {
+      //       title: "Introduction",
+      //       url: "#",
+      //     },
+      //     {
+      //       title: "Get Started",
+      //       url: "#",
+      //     },
+      //     {
+      //       title: "Tutorials",
+      //       url: "#",
+      //     },
+      //     {
+      //       title: "Changelog",
+      //       url: "#",
+      //     },
+      //   ],
+      // },
     ],
   };
 

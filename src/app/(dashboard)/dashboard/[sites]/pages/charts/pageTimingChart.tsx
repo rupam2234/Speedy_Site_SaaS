@@ -9,9 +9,8 @@ import {
 import { PieChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { LabelLayout } from "echarts/features";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import Link from "next/link";
 
 echarts.use([
   TitleComponent,
@@ -32,19 +31,17 @@ type DataProps = {
   value: number | string | null;
 };
 
-interface LCPTiming {
-  ttfb: number;
-  startTime: number;
-  resourceLoadDuration: number;
-  resourceLoadDelay: number;
-  elementRenderDelay: number;
-  loadTime: number;
-}
-
-interface LCPBlocks {
-  urls: string | null;
-  tags: string | null;
-  sizes: number | null;
+interface PageTimingPrpops {
+  backEndTime: number | null;
+  domContentLoadedTime: number | null;
+  domInteractiveTime: number | null;
+  domainLookupTime: number | null;
+  frontEndTime: number | null;
+  pageDownloadTime: number | null;
+  pageLoadTime: number | null;
+  redirectionTime: number | null;
+  serverConnectionTime: number | null;
+  serverResponseTime: number | null;
 }
 
 function debounce(fn: () => void, delay: number) {
@@ -55,42 +52,33 @@ function debounce(fn: () => void, delay: number) {
   };
 }
 
-export default function LCPPieChart({
+export default function PageTimingChart({
   pageData,
   activeModule,
 }: RequestsChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const { theme } = useTheme();
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Go to next item (wraps around to start)
-  const nextItem = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % lcpBlocks.length);
-  };
-
-  const lcpBlocks: LCPBlocks[] = pageData[pageData.length - 1].lcp_data.map(
-    (x: any) => ({
-      urls: x.url ?? null,
-      tags: x.tag ?? null,
-      sizes: typeof x.size === "number" ? x.size : null,
-    })
-  );
 
   let chartData: DataProps[] = [];
 
   switch (activeModule) {
-    case "LCP Timing": {
-      const y: LCPTiming = pageData[pageData.length - 1].lcp_timing;
+    case "Page Timing": {
+      const x: PageTimingPrpops = pageData[pageData.length - 1].pageload_timing;
 
       chartData = [
-        { value: y.ttfb, name: "TTFB (Time to First Byte)" },
-        { value: y.startTime, name: "LCP Start Time" },
-        { value: y.resourceLoadDelay, name: "Resource Load Delay" },
-        { value: y.resourceLoadDuration, name: "Resource Load Duration" },
-        { value: y.elementRenderDelay, name: "Element Render Delay" },
-        { value: y.loadTime, name: "LCP Load Time" },
+        { value: x.backEndTime, name: "Back-End Processing" },
+        { value: x.frontEndTime, name: "Front-End Rendering" },
+        { value: x.pageLoadTime, name: "Total Page Load" },
+        { value: x.domContentLoadedTime, name: "DOM Content Loaded" },
+        { value: x.domInteractiveTime, name: "DOM Interactive" },
+        { value: x.pageDownloadTime, name: "Content Download" },
+        { value: x.domainLookupTime, name: "DNS Lookup" },
+        { value: x.serverConnectionTime, name: "TCP Connection" },
+        { value: x.serverResponseTime, name: "Server Response" },
+        { value: x.redirectionTime, name: "Redirects" },
       ];
+
       break;
     }
 
@@ -108,7 +96,7 @@ export default function LCPPieChart({
 
     const option = {
       title: {
-        text: "LCP Element Timing Breakdown",
+        text: "Page Timing Breakdown",
         left: "center",
         textStyle: {
           color: theme === "dark" ? "#fff" : "#000",
@@ -178,46 +166,11 @@ export default function LCPPieChart({
   return (
     <>
       <div ref={chartRef} style={{ width: "100%", height: "345px" }} />
-      <div
-        className="flex justify-between items-center mb-3"
-        style={{ color: "#666", fontSize: "14px" }}
-      >
-        <div className="flex gap-1">
-          💡 <span>LCP Asset:</span>{" "}
-          <Link
-            className="underline hover:no-underline text-blue-500"
-            href={lcpBlocks[currentIndex]?.urls || "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {lcpBlocks[currentIndex]?.urls?.split("/")[
-              lcpBlocks[currentIndex]?.urls?.split("/").length - 1
-            ] || "N/A"}
-          </Link>
-          <span>
-            {((lcpBlocks[currentIndex]?.sizes ?? 0) / 1024).toFixed(2)} kb
-          </span>
-          <span>
-            {(lcpBlocks[currentIndex]?.tags?.match(/<\s*(\w+)/g) || []).length >
-              0 && "["}
-            {(lcpBlocks[currentIndex]?.tags?.match(/<\s*(\w+)/g) || [])
-              .map((t) => t.replace(/<\s*/, ""))
-              .join(", ")}
-            {(lcpBlocks[currentIndex]?.tags?.match(/<\s*(\w+)/g) || []).length >
-              0 && "]"}
-          </span>
-        </div>
-
-        {lcpBlocks && (
-          <button
-            className={`px-2 py-[2px] ${
-              lcpBlocks.length! <= 1 ? "hidden" : "block"
-            } rounded-sm dark:bg-secondary-background bg-gray-400/20 hover:bg-gray-400/10 dark:hover:bg-secondary-background/80 text-[#666] text-[14px] dark:text-primary cursor-pointer`}
-            onClick={nextItem}
-          >
-            Next
-          </button>
-        )}
+      <div style={{ marginBottom: "12px", color: "#666", fontSize: "14px" }}>
+        <p>
+          💡 Tip: In case of bad performance, look for timings above{" "}
+          <strong>300 ms</strong>.
+        </p>
       </div>
     </>
   );

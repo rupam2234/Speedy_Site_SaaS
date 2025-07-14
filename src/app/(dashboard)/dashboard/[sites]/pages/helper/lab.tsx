@@ -21,13 +21,15 @@ interface LabViewProps {
 }
 
 export default function LabView({ url, device }: LabViewProps) {
-  const { selectedDevice, setSelectedDevice } = useSiteContext();
+  const {
+    selectedDevice,
+    setSelectedDevice,
+    activeLabMetric,
+    setActiveLabMetric,
+  } = useSiteContext();
   const pageMetric = pageMetricCache((state) => state.pageMetric);
 
-  const [pageData, setPageData] = useState<any>(); // individual pages (filtered)
-  const [activeDataClass, setActiveDataClass] = useState<
-    "Web Vitals" | "Page Weight" | "Timings"
-  >("Web Vitals");
+  const [pageData, setPageData] = useState<any>();
 
   const dataClassButtons: ("Web Vitals" | "Page Weight" | "Timings")[] = [
     "Web Vitals",
@@ -38,7 +40,7 @@ export default function LabView({ url, device }: LabViewProps) {
   function handleDataClassButton(
     key: "Web Vitals" | "Page Weight" | "Timings"
   ) {
-    setActiveDataClass(key);
+    setActiveLabMetric(key);
   }
 
   // collect page data
@@ -92,7 +94,7 @@ export default function LabView({ url, device }: LabViewProps) {
             </div>
             <div className="flex flex-col sm:flex-row flex-wrap gap-2 justify-start sm:justify-end">
               {dataClassButtons?.map((x) => {
-                const isActive = x === activeDataClass;
+                const isActive = x === activeLabMetric;
 
                 return (
                   <Button
@@ -113,11 +115,11 @@ export default function LabView({ url, device }: LabViewProps) {
 
           {/* Content Section */}
 
-          {activeDataClass === "Web Vitals" ? (
+          {activeLabMetric === "Web Vitals" ? (
             <CWV pageData={pageData} />
-          ) : activeDataClass === "Page Weight" ? (
+          ) : activeLabMetric === "Page Weight" ? (
             <PageAssets pageData={pageData} />
-          ) : activeDataClass === "Timings" ? (
+          ) : activeLabMetric === "Timings" ? (
             <Timings pageData={pageData} />
           ) : (
             <LoadingAnimation />
