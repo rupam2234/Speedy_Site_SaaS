@@ -2,7 +2,6 @@
 
 import { OrderData } from "@/app/api/dataTypes";
 import { CruxData, DailyCrux } from "@/data/cruxData";
-import { usePathname } from "next/navigation";
 import React, {
   createContext,
   useContext,
@@ -116,10 +115,7 @@ export default function SiteContextProvider({
     "Document Timing" | "LCP Timing" | "Page Timing"
   >("Document Timing");
 
-  const pathname = usePathname();
-
   // Load from sessionStorage only if it matches the current user email
-
   useEffect(() => {
     const storedOrders = sessionStorage.getItem("orders");
     const storedSite = sessionStorage.getItem("selectedSite");

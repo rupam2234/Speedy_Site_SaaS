@@ -37,6 +37,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
     setSelectedSite(value);
   };
 
+  // to set selected site into the url or vise-versa
   useEffect(() => {
     if (!selectedSite) return;
 
@@ -54,6 +55,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
     }
   }, [selectedSite, pathname, router]);
 
+  // when sites are available on order, auto select the first one
   useEffect(() => {
     if (selectedSite) return; // already selected, no need to auto-select
     if (!orders || orders.length === 0) return;
