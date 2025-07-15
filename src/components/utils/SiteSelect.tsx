@@ -54,6 +54,23 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
     }
   }, [selectedSite, pathname, router]);
 
+  useEffect(() => {
+    if (selectedSite) return; // already selected, no need to auto-select
+    if (!orders || orders.length === 0) return;
+
+    const segments = pathname.split("/").filter(Boolean);
+    const siteFromPath = segments[1]; // "/dashboard/[site]"
+
+    const found = orders.find((o) => o.websiteName === siteFromPath);
+
+    if (found) {
+      setSelectedSite(found.websiteName);
+    } else {
+      // fallback to first order if no match in URL
+      setSelectedSite(orders[0].websiteName);
+    }
+  }, [orders, pathname, selectedSite, setSelectedSite]);
+
   const selectedOrder = orders?.find(
     (order) => order.websiteName === selectedSite
   );

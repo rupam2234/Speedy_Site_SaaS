@@ -28,9 +28,10 @@ function LayoutContent({ children }: { children: ReactNode }) {
     if (!user || !isSignedIn) return;
 
     const email = user.emailAddresses?.[0]?.emailAddress || "";
-    const siteFromUrl = new URLSearchParams(window.location.search).get("site");
-
-    fetchOrders(email, siteFromUrl as string);
+    fetchOrders(
+      email,
+      new URLSearchParams(window.location.search).get("site") || undefined
+    );
   }, [user, isSignedIn, fetchOrders]);
 
   return (

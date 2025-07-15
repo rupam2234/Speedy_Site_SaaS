@@ -119,6 +119,7 @@ export default function SiteContextProvider({
   const pathname = usePathname();
 
   // Load from sessionStorage only if it matches the current user email
+
   useEffect(() => {
     const storedOrders = sessionStorage.getItem("orders");
     const storedSite = sessionStorage.getItem("selectedSite");
@@ -128,13 +129,31 @@ export default function SiteContextProvider({
       setOrders(JSON.parse(storedOrders));
     }
 
-    if (storedSite) {
+    const pathname = window.location.pathname;
+    const pathSegments = pathname.split("/").filter(Boolean);
+    const hasSiteSegment =
+      pathSegments.length >= 2 && pathSegments[0] === "dashboard";
+
+    const activeEmail =
+      typeof window !== "undefined"
+        ? JSON.parse(sessionStorage.getItem("__clerk_db") || "{}")?.user
+            ?.primaryEmailAddress?.emailAddress
+        : "";
+
+    // Only set selectedSite if storedSite exists AND email matches
+    if (
+      storedSite &&
+      hasSiteSegment &&
+      storedEmail &&
+      activeEmail &&
+      storedEmail === activeEmail
+    ) {
       setSelectedSite(storedSite);
     }
   }, []);
 
   useEffect(() => {
-    if (orders) {
+    if (orders?.length !== undefined && orders?.length > 0) {
       sessionStorage.setItem("orders", JSON.stringify(orders));
     }
   }, [orders]);
@@ -154,7 +173,7 @@ export default function SiteContextProvider({
 
   const fetchOrders = useCallback(
     async (email: string, siteFromUrl?: string) => {
-      // ✅ Skip API call if we already fetched orders for this email
+      // Skip API call if we already fetched orders for this email
       const storedOrders = sessionStorage.getItem("orders");
       const storedEmail = sessionStorage.getItem("ordersEmail");
 
@@ -163,19 +182,20 @@ export default function SiteContextProvider({
         if (parsedOrders?.length > 0) {
           setOrders(parsedOrders);
 
-          // ✅ Set selectedSite only if siteFromUrl is valid
           if (
             siteFromUrl &&
             parsedOrders.some((o: OrderData) => o.websiteName === siteFromUrl)
           ) {
             setSelectedSite(siteFromUrl);
+          } else {
+            setSelectedSite("");
           }
 
           return;
         }
       }
 
-      // ✅ Fresh fetch if orders are not cached or email has changed
+      // Fresh fetch if orders are not cached or email has changed
       try {
         const response = await fetch("/api/orders/fetchOrder", {
           method: "POST",
@@ -192,27 +212,16 @@ export default function SiteContextProvider({
           sessionStorage.setItem("ordersEmail", email);
           setOrders(data);
 
-          // ❌ DO NOT auto-select first site
-          // const matchedSite =
-          //   siteFromUrl &&
-          //   data.some((o: OrderData) => o.websiteName === siteFromUrl)
-          //     ? siteFromUrl
-          //     : data[0].websiteName;
-
-          // ❌ Remove this logic that tries to auto-select a site
-          // setSelectedSite((prev) =>
-          //   data.some((o: OrderData) => o.websiteName === prev) ? prev : matchedSite
-          // );
-
-          // ✅ Instead, only set site if siteFromUrl is explicitly valid
           if (
             siteFromUrl &&
             data.some((o: OrderData) => o.websiteName === siteFromUrl)
           ) {
             setSelectedSite(siteFromUrl);
+          } else {
+            setSelectedSite("");
           }
         } else {
-          // ✅ If no orders exist, clear everything
+          // No orders: clear everything
           setOrders(null);
           setSelectedSite("");
           sessionStorage.removeItem("orders");
@@ -226,7 +235,7 @@ export default function SiteContextProvider({
         sessionStorage.removeItem("ordersEmail");
       }
     },
-    [orders, pathname, selectedSite]
+    []
   );
 
   return (
