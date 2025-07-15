@@ -47,6 +47,8 @@ export default function ConditionalHeader() {
     "/blog",
     "/sign-up",
     "/oauth2callback",
+    "/account",
+    "/account/",
   ].some((path) => pathname.startsWith(path));
 
   function handleMenuButton() {

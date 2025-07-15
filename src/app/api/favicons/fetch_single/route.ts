@@ -19,7 +19,9 @@ async function fetchFaviconFromHTML(siteUrl: string): Promise<string | null> {
         // Handle relative URLs
         if (!faviconUrl.startsWith("http")) {
           const url = new URL(siteUrl);
-          faviconUrl = `${url.origin}${faviconUrl.startsWith("/") ? faviconUrl : "/" + faviconUrl}`;
+          faviconUrl = `${url.origin}${
+            faviconUrl.startsWith("/") ? faviconUrl : "/" + faviconUrl
+          }`;
         }
         return faviconUrl;
       }
@@ -53,7 +55,6 @@ async function checkFavicon(siteUrl: string): Promise<string | null> {
 export async function POST(req: Request) {
   try {
     const { website }: { website: string } = await req.json();
-
     if (!website) {
       return NextResponse.json(
         { error: "No valid website data provided" },

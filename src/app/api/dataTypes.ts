@@ -1,3 +1,4 @@
+import { Database } from "@/lib/db/database.types";
 import { UUID } from "crypto";
 
 export type userData = {
@@ -7,22 +8,7 @@ export type userData = {
   id: string;
 };
 
-export type OrderData = {
-  orderId?: UUID;
-  orderDate?: string;
-  gsc_token?: string;
-  websiteName: string;
-  websiteAddress: string;
-  user_email: string;
-  order_status: boolean;
-  cruxData: boolean;
-  dailyMonitoring: boolean;
-  performanceWarning: boolean;
-  allowSpeedySite: boolean;
-  favicon_file: string | null;
-  rank: number | null;
-  page_tracking: number | null;
-};
+export type OrderData = Database["public"]["Tables"]["orders"]["Insert"];
 
 export type originData = {
   data_id: UUID;

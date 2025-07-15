@@ -1,6 +1,6 @@
 import { setupDB } from "@/lib/db";
-import { OrderData } from "../../dataTypes";
 import { NextResponse } from "next/server";
+import { OrderData } from "../../dataTypes";
 const worker = setupDB();
 
 export async function POST(req: Request) {
@@ -14,16 +14,12 @@ export async function POST(req: Request) {
       );
     } else {
       const { error, status } = await worker.from("orders").insert({
-        website_name: body.websiteName,
-        website_address: body.websiteAddress,
+        website_name: body.website_name,
+        website_address: body.website_address,
         gsc_token: body.gsc_token,
         favicon_file: body.favicon_file,
         order_status: body.order_status,
         user_email: body.user_email,
-        cruxData: body.cruxData,
-        dailyMonitoring: body.dailyMonitoring,
-        performanceWarning: body.performanceWarning,
-        allowSpeedySite: body.allowSpeedySite,
         rank: body.rank,
         page_tracking: body.page_tracking,
       });
@@ -38,19 +34,15 @@ export async function POST(req: Request) {
           { status: status || 500 }
         );
       }
-
       // Successful insertion
       return NextResponse.json(
         {
           message: "Order data inserted successfully",
         },
-        { status: 201 }
+        { status: 200 }
       );
     }
   } catch (error) {
-    console.log(
-      "An unexpected error occurred while inserting website data: ",
-      error
-    );
+    NextResponse.json({ message: "Error: ", error }, { status: 500 });
   }
 }

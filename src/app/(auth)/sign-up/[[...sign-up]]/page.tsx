@@ -14,11 +14,9 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import * as Clerk from "@clerk/elements/common";
 import * as SignUp from "@clerk/elements/sign-up";
-import { useUser } from "@clerk/nextjs";
 import { EyeClosed, EyeIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { handleSignUpValidation } from "./signup_validation";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import Logo from "@/components/logo/logo";
 
@@ -27,21 +25,20 @@ export default function SignUpPage() {
   const [firstname, setFirstname] = useState("");
   const [lastname, setLastname] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { user } = useUser();
 
   const handleSignUp = async () => {
     if (!email || !firstname || !lastname) {
       return;
     }
-    if (user) {
-      const userData = {
-        email,
-        firstname,
-        lastname,
-        id: user.id,
-      };
-      await handleSignUpValidation(userData);
-    }
+    const userData = { email: email, firstname: firstname, lastname: lastname };
+
+    await fetch("/api/users/signup-validation", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
   };
 
   return (

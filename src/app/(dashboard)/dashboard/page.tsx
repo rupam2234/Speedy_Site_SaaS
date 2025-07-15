@@ -14,25 +14,25 @@ export default function Dashboard() {
 
   const isDashboardRoot = pathname === "/dashboard";
 
-  // ⏳ Wait for 4 seconds before showing "Select a website" message
+  // Wait for 8 seconds before showing "Select a website" message
   useEffect(() => {
     if (!selectedSite && isDashboardRoot) {
       const timeout = setTimeout(() => {
         setShowPrompt(true);
-      }, 4000);
+      }, 8000);
 
       return () => clearTimeout(timeout);
     }
   }, [selectedSite, isDashboardRoot]);
 
-  // 🔁 Redirect when selectedSite is available and still on /dashboard
+  // Redirect when selectedSite is available and still on /dashboard
   useEffect(() => {
     if (selectedSite && isDashboardRoot) {
       router.replace(`/dashboard/${selectedSite}`);
     }
   }, [selectedSite, isDashboardRoot, router]);
 
-  // 🎯 Render logic
+  // Render logic
   if (!selectedSite && isDashboardRoot && !showPrompt) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">

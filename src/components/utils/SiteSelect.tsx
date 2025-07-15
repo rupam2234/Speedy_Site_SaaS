@@ -63,18 +63,18 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
     const segments = pathname.split("/").filter(Boolean);
     const siteFromPath = segments[1]; // "/dashboard/[site]"
 
-    const found = orders.find((o) => o.websiteName === siteFromPath);
+    const found = orders.find((o) => o.website_name === siteFromPath);
 
     if (found) {
-      setSelectedSite(found.websiteName);
+      setSelectedSite(found.website_name);
     } else {
       // fallback to first order if no match in URL
-      setSelectedSite(orders[0].websiteName);
+      setSelectedSite(orders[0].website_name);
     }
   }, [orders, pathname, selectedSite, setSelectedSite]);
 
   const selectedOrder = orders?.find(
-    (order) => order.websiteName === selectedSite
+    (order) => order.website_name === selectedSite
   );
   const selectedFavicon = selectedOrder?.favicon_file;
 
@@ -109,7 +109,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
       <SelectContent>
         <SelectGroup>
           {orders?.map((order) => (
-            <SelectItem key={order.websiteName} value={order.websiteName}>
+            <SelectItem key={order.website_name} value={order.website_name}>
               <span className="flex items-center gap-2">
                 <Image
                   src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons//${order.favicon_file}`}
@@ -118,7 +118,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                   height={16}
                   className="rounded"
                 />
-                <span>{order.websiteName}</span>
+                <span>{order.website_name}</span>
               </span>
             </SelectItem>
           ))}

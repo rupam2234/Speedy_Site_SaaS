@@ -7,6 +7,7 @@ import {
   GroupIcon,
   LayoutDashboardIcon,
   Link2,
+  Settings,
   User2Icon,
 } from "lucide-react";
 import {
@@ -21,6 +22,8 @@ import MainNav from "./Main-Nav";
 import FooterNav from "./Footer-Nav";
 import { SelectSite } from "../utils/SiteSelect";
 import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { usePathname } from "next/navigation";
+import Logo from "../logo/logo";
 
 export default function AppSidebar({
   ...props
@@ -28,6 +31,8 @@ export default function AppSidebar({
   const { user } = useUser();
   const { state } = useSidebar();
   const { selectedSite } = useSiteContext();
+
+  const pathname = usePathname();
 
   const sidebarOpen =
     state === "expanded" ? false : state === "collapsed" ? true : null;
@@ -50,13 +55,18 @@ export default function AppSidebar({
         },
         {
           title: "Billing",
-          url: "/billing",
+          url: "/account/billing",
           icon: CreditCard,
         },
         {
           title: "Notification",
-          url: "/notification",
+          url: "/account/notification",
           icon: BellIcon,
+        },
+        {
+          title: "Settings",
+          url: "/account/settings",
+          icon: Settings,
         },
       ],
     },
@@ -144,7 +154,14 @@ export default function AppSidebar({
       <SidebarHeader className="mb-5 mt-2">
         <div className="flex gap-4 items-center">
           <div className="flex-1">
-            <SelectSite collapsed={sidebarOpen ?? false} />
+            {/* do not display site selector when we are at account or child pages */}
+            {pathname.includes("/account") === false ? (
+              <SelectSite collapsed={sidebarOpen ?? false} />
+            ) : (
+              <div className="md:ml-2">
+                <Logo />
+              </div>
+            )}
           </div>
         </div>
       </SidebarHeader>

@@ -180,7 +180,7 @@ export default function SiteContextProvider({
 
           if (
             siteFromUrl &&
-            parsedOrders.some((o: OrderData) => o.websiteName === siteFromUrl)
+            parsedOrders.some((o: OrderData) => o.website_name === siteFromUrl)
           ) {
             setSelectedSite(siteFromUrl);
           } else {
@@ -210,7 +210,7 @@ export default function SiteContextProvider({
 
           if (
             siteFromUrl &&
-            data.some((o: OrderData) => o.websiteName === siteFromUrl)
+            data.some((o: OrderData) => o.website_name === siteFromUrl)
           ) {
             setSelectedSite(siteFromUrl);
           } else {

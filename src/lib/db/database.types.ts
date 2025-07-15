@@ -7,6 +7,8 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)";
   };
@@ -44,48 +46,36 @@ export type Database = {
       };
       orders: {
         Row: {
-          allowSpeedySite: boolean;
-          cruxData: boolean;
-          dailyMonitoring: boolean;
           favicon_file: string | null;
           gsc_token: string | null;
           order_date: string;
           order_id: string;
           order_status: boolean;
           page_tracking: number | null;
-          performanceWarning: boolean;
           rank: number | null;
           user_email: string;
           website_address: string;
           website_name: string;
         };
         Insert: {
-          allowSpeedySite: boolean;
-          cruxData: boolean;
-          dailyMonitoring: boolean;
           favicon_file?: string | null;
           gsc_token?: string | null;
           order_date?: string;
           order_id?: string;
           order_status: boolean;
           page_tracking?: number | null;
-          performanceWarning: boolean;
           rank?: number | null;
           user_email: string;
           website_address: string;
           website_name: string;
         };
         Update: {
-          allowSpeedySite?: boolean;
-          cruxData?: boolean;
-          dailyMonitoring?: boolean;
           favicon_file?: string | null;
           gsc_token?: string | null;
           order_date?: string;
           order_id?: string;
           order_status?: boolean;
           page_tracking?: number | null;
-          performanceWarning?: boolean;
           rank?: number | null;
           user_email?: string;
           website_address?: string;
@@ -106,6 +96,7 @@ export type Database = {
           blocking_scripts: Json | null;
           browser: string | null;
           browser_version: string | null;
+          cls_data: Json | null;
           created_at: string;
           crux_cls_avg: number | null;
           crux_cls_good: number | null;
@@ -259,7 +250,6 @@ export type Database = {
           lcp_element_size_mean: number | null;
           lcp_element_size_min: number | null;
           lcp_timing: Json | null;
-          longtaskcount: number | null;
           page_address: string;
           page_filmstrip: string | null;
           page_screenshot: string | null;
@@ -285,6 +275,7 @@ export type Database = {
           blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
+          cls_data?: Json | null;
           created_at: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -438,7 +429,6 @@ export type Database = {
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
           lcp_timing?: Json | null;
-          longtaskcount?: number | null;
           page_address: string;
           page_filmstrip?: string | null;
           page_screenshot?: string | null;
@@ -464,6 +454,7 @@ export type Database = {
           blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
+          cls_data?: Json | null;
           created_at?: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -617,7 +608,6 @@ export type Database = {
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
           lcp_timing?: Json | null;
-          longtaskcount?: number | null;
           page_address?: string;
           page_filmstrip?: string | null;
           page_screenshot?: string | null;
@@ -646,6 +636,7 @@ export type Database = {
           blocking_scripts: Json | null;
           browser: string | null;
           browser_version: string | null;
+          cls_data: Json | null;
           created_at: string;
           crux_cls_avg: number | null;
           crux_cls_good: number | null;
@@ -799,7 +790,6 @@ export type Database = {
           lcp_element_size_mean: number | null;
           lcp_element_size_min: number | null;
           lcp_timing: Json | null;
-          longtaskcount: number | null;
           page_address: string;
           page_filmstrip: string | null;
           page_screenshot: string | null;
@@ -825,6 +815,7 @@ export type Database = {
           blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
+          cls_data?: Json | null;
           created_at: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -978,7 +969,6 @@ export type Database = {
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
           lcp_timing?: Json | null;
-          longtaskcount?: number | null;
           page_address: string;
           page_filmstrip?: string | null;
           page_screenshot?: string | null;
@@ -1004,6 +994,7 @@ export type Database = {
           blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
+          cls_data?: Json | null;
           created_at?: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -1157,7 +1148,6 @@ export type Database = {
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
           lcp_timing?: Json | null;
-          longtaskcount?: number | null;
           page_address?: string;
           page_filmstrip?: string | null;
           page_screenshot?: string | null;
@@ -1186,6 +1176,7 @@ export type Database = {
           blocking_scripts: Json | null;
           browser: string | null;
           browser_version: string | null;
+          cls_data: Json | null;
           created_at: string;
           crux_cls_avg: number | null;
           crux_cls_good: number | null;
@@ -1339,7 +1330,6 @@ export type Database = {
           lcp_element_size_mean: number | null;
           lcp_element_size_min: number | null;
           lcp_timing: Json | null;
-          longtaskcount: number | null;
           page_address: string;
           page_filmstrip: string | null;
           page_screenshot: string | null;
@@ -1365,6 +1355,7 @@ export type Database = {
           blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
+          cls_data?: Json | null;
           created_at: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -1518,7 +1509,6 @@ export type Database = {
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
           lcp_timing?: Json | null;
-          longtaskcount?: number | null;
           page_address: string;
           page_filmstrip?: string | null;
           page_screenshot?: string | null;
@@ -1544,6 +1534,7 @@ export type Database = {
           blocking_scripts?: Json | null;
           browser?: string | null;
           browser_version?: string | null;
+          cls_data?: Json | null;
           created_at?: string;
           crux_cls_avg?: number | null;
           crux_cls_good?: number | null;
@@ -1697,7 +1688,6 @@ export type Database = {
           lcp_element_size_mean?: number | null;
           lcp_element_size_min?: number | null;
           lcp_timing?: Json | null;
-          longtaskcount?: number | null;
           page_address?: string;
           page_filmstrip?: string | null;
           page_screenshot?: string | null;

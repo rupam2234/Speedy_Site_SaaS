@@ -18,11 +18,10 @@ import {
 } from "@/components/ui/drawer";
 import {
   AlertTriangle,
-  CircleCheck,
-  FileWarning,
-  Group,
+  Layers,
   Loader,
   LoaderIcon,
+  SquarePlus,
   Trash2,
 } from "lucide-react";
 import { useSiteContext } from "@/app/(dashboard)/siteContext";
@@ -33,6 +32,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import LabView from "./helper/lab";
 import { pageMetricCache } from "@/components/globalData/cachedPageData";
+import { useRouter } from "next/navigation";
 
 export default function PageGroups() {
   const [isConnecting, setConnecting] = useState(false);
@@ -42,6 +42,7 @@ export default function PageGroups() {
   const [, setJobProcessing] = useState<boolean>(false);
   const [pagesProcessing, setPagesProcessing] = useState<boolean>(false);
   const [processedPages, setProcessedPages] = useState<PageCrux[] | null>();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [urls, setUrls] = useState<string[] | null>([]);
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState<boolean>(false);
@@ -50,6 +51,8 @@ export default function PageGroups() {
     type: "lab" | "todo";
   }>(null);
   const [showNoPagesFallback, setShowNoPagesFallback] = useState(false);
+
+  const router = useRouter();
 
   //#region Zustand Section
   const pageMetric = pageMetricCache((state) => state.pageMetric);
@@ -93,12 +96,21 @@ export default function PageGroups() {
   }, [selectedSite, hasHydrated]);
   //#endregion
 
-  // Show "No Pages Found" fallback after 1.5s if no URLs
+  // auto close the drawer when page is processing
+  useEffect(() => {
+    if (pagesProcessing) {
+      setIsDrawerOpen(false);
+    }
+  }, [pagesProcessing]);
+
+  console.log(urls?.length);
+
+  // Show "No Pages Found" fallback after 4s if no URLs
   useEffect(() => {
     if (urls?.length === 0) {
       const timer = setTimeout(() => {
         setShowNoPagesFallback(true);
-      }, 4000); // 3s delay before showing fallback UI
+      }, 4000); // 4s delay before showing fallback UI
 
       return () => clearTimeout(timer);
     } else {
@@ -173,24 +185,63 @@ export default function PageGroups() {
   useEffect(() => {
     if (!hasPages || hasPages.length === 0) return;
 
-    const pages = hasPages.map((x) => x.url);
-    setJobProcessing(true);
-    setPagesProcessing(true);
+    const runJob = async () => {
+      const pages = hasPages.map((x) => x.url);
 
-    fetch("/api/jobs/queue", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(pages),
-    })
-      .then((res) => res.json())
-      .then(() => fetch("/api/jobs/process", { method: "POST" }))
-      .then((res) => res.json())
-      .catch(console.error)
-      .finally(() => {
+      try {
+        setJobProcessing(true);
+        setPagesProcessing(true);
+
+        const queueRes = await fetch("/api/jobs/queue", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(pages),
+        });
+
+        await queueRes.json();
+
+        const processRes = await fetch("/api/jobs/process", {
+          method: "POST",
+        });
+
+        await processRes.json();
+      } catch (error) {
+        console.error("Job processing failed:", error);
+      } finally {
         setJobProcessing(false);
-        // Give backend time to process
-        setTimeout(() => setPagesProcessing(false), 20000);
-      });
+
+        // Poll for job status every 4 seconds until it's done
+        const pollForJobCompletion = async () => {
+          try {
+            const res = await fetch("/api/jobs/status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ domain: selectedSite }),
+            });
+
+            const json = await res.json();
+
+            if (json.status === "done") {
+              setPagesProcessing(false);
+            } else if (
+              json.status === "processing" ||
+              json.status === "pending"
+            ) {
+              setTimeout(pollForJobCompletion, 4000); // retry after 4 seconds
+            } else {
+              console.warn("Unexpected job status:", json.status);
+              setPagesProcessing(false);
+            }
+          } catch (err) {
+            console.error("Polling error:", err);
+            setPagesProcessing(false);
+          }
+        };
+        pollForJobCompletion();
+      }
+    };
+
+    runJob();
   }, [hasPages]);
 
   // Fetch processed pages only when not in processing
@@ -215,7 +266,7 @@ export default function PageGroups() {
       ) {
         console.error("Missing pages with crux records!");
         setProcessedPages(null);
-        setUrls(json.data[0]?.urls);
+        setUrls([]);
       } else {
         setProcessedPages(json.data[0]?.results);
         setUrls(json.data[0]?.urls);
@@ -233,25 +284,24 @@ export default function PageGroups() {
   }
 
   // delete url handler
-  function handlePageDelete() {
+  async function handlePageDelete() {
     if (!processedPages || !urls) return;
 
     // Remove pages with addresses in selectedUrls
     const updatedPages = urls.filter((page) => !selectedUrls.includes(page));
 
-    // setProcessedPages(updatedResult);
     setUrls(updatedPages);
     setSelectedUrls([]);
     setIsConfirmingDelete(false);
 
-    fetch("/api/pages/delete", {
+    await fetch("/api/pages/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         domain: selectedSite,
         urls: selectedUrls,
       }),
-    }).catch(console.error);
+    });
   }
 
   // to do or lab expand
@@ -504,6 +554,12 @@ export default function PageGroups() {
     );
   }
 
+  function handleManualPageAdd() {
+    const path = `/dashboard/${selectedSite}/add-pages`;
+    router.prefetch(path);
+    router.push(path);
+  }
+
   return (
     <div className="p-5 min-h-screen">
       <div className="flex justify-between items-center gap-6">
@@ -511,7 +567,7 @@ export default function PageGroups() {
         <Tooltip>
           <TooltipTrigger>
             <div className="flex items-center gap-2 cursor-help">
-              <Group
+              <Layers
                 size={30}
                 className="fill-blue-400 dark:text-accent-foreground"
               />
@@ -528,7 +584,8 @@ export default function PageGroups() {
           </TooltipContent>
         </Tooltip>
 
-        <span className="relative group">
+        {/* Pages count badge with status */}
+        <span className="relative flex gap-4 group items-center">
           {processedPages === undefined ? (
             <Tooltip>
               <TooltipTrigger>
@@ -536,47 +593,82 @@ export default function PageGroups() {
               </TooltipTrigger>
               <TooltipContent side="left">Checking...</TooltipContent>
             </Tooltip>
-          ) : processedPages !== null ? (
-            <Tooltip>
-              <TooltipTrigger>
-                <CircleCheck size={26} className="text-green-500 cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                You have synced pages from GSC ✓
-              </TooltipContent>
-            </Tooltip>
           ) : (
             <Tooltip>
-              <TooltipTrigger>
-                <FileWarning
-                  size={24}
-                  className="text-yellow-500 cursor-help"
-                />
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                Missing pages under the selected domain to monitor!
-              </TooltipContent>
+              <div
+                className={`
+                      inline-flex items-center px-3 py-1 text-sm font-medium rounded-full
+                      border
+                      ${
+                        processedPages === null
+                          ? "bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-300"
+                          : "bg-gray-100 border-gray-300 text-gray-800 dark:bg-secondary-background dark:border-gray-700 dark:text-gray-200"
+                      }
+                      cursor-help
+                    `}
+              >
+                {/* Main content for pages count */}
+                {urls?.length ?? 0 <= 10 ? (
+                  <span>{urls?.length}/10 Pages</span>
+                ) : (
+                  <span>0/10 Pages</span>
+                )}
+
+                {/* SquarePlus Icon now inside the same div, with its own styling */}
+                <TooltipTrigger>
+                  {/* Added ml-2 for spacing, and classes for border and rounded corners */}
+                  <SquarePlus
+                    onClick={handleManualPageAdd}
+                    className="ml-2 w-5 h-5 cursor-pointer border border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="top">Add pages manually</TooltipContent>
+              </div>
             </Tooltip>
           )}
         </span>
       </div>
 
       {/* Main display logic */}
-      {urls === undefined || (urls?.length === 0 && showNoPagesFallback) ? (
-        <Drawer>
-          <DrawerTrigger asChild>
-            <div className="p-6 border mt-6 rounded-sm bg-gray-100 dark:bg-secondary-background text-center">
-              <AlertTriangle className="text-yellow-500 mx-auto" size={32} />
-              <h3 className="font-semibold text-lg">No Pages Found</h3>
-              <p className="text-sm text-muted-foreground">
-                Fetch from{" "}
-                <span className="text-orange-500 underline hover:cursor-pointer">
-                  Google Search Console
-                </span>{" "}
-                or manually add pages to monitor.
-              </p>
+      {pagesProcessing ? (
+        <div className="mt-6 flex items-center justify-center text-muted-foreground">
+          <LoaderIcon className="animate-spin inline-block mr-2" />
+          Processing pages for Core Web Vitals. This process requires at least
+          60 seconds to complete.
+        </div>
+      ) : urls === undefined ||
+        urls === null ||
+        (urls?.length === 0 && showNoPagesFallback) ? (
+        <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+          <div className="px-8 py-14 border rounded-md bg-gray-50 dark:bg-secondary-background my-10 text-center max-w-full mx-auto">
+            <div className="flex justify-center mb-4">
+              {/* The AlertTriangle is still appropriate for "No Pages Found" to indicate an unfulfilled state. */}
+              <AlertTriangle className="text-yellow-500" size={36} />
             </div>
-          </DrawerTrigger>
+
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+              No Pages Found
+            </h3>
+
+            <p className="text-base text-gray-700 dark:text-gray-300 mb-6">
+              It looks like no pages are being monitored at the moment but
+              getting started is easy. To begin tracking your website&apos;s
+              performance and gain valuable insights, you can fetch pages from:
+            </p>
+
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+              <DrawerTrigger asChild>
+                <button className="bg-orange-600 cursor-pointer hover:bg-orange-700 text-white font-semibold py-2 px-6 rounded-md transition-colors duration-150 shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                  Connect Google Search Console
+                </button>
+              </DrawerTrigger>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-6">
+              This will help us gather data and provide detailed performance
+              reports for your website.
+            </p>
+          </div>
 
           <DrawerContent style={{ borderRadius: 0, paddingTop: 0 }}>
             <div className="mx-auto h-[300px] w-full max-w-3xl">
@@ -611,14 +703,8 @@ export default function PageGroups() {
         <div className="mt-6 flex items-center justify-center text-muted-foreground">
           <LoadingAnimation />
         </div>
-      ) : urls!.length > 0 && !(urls!.length > 10) ? (
+      ) : urls?.length > 0 && urls.length <= 10 ? (
         PageAddressOrganiser(urls, processedPages!)
-      ) : urls!.length > 10 ? (
-        <div className="mt-6 flex items-center justify-center text-muted-foreground">
-          <LoaderIcon className="animate-spin inline-block mr-2" />
-          Processing pages for Core Web Vitals. This process requires at least
-          60 seconds to complete.
-        </div>
       ) : (
         <></>
       )}
