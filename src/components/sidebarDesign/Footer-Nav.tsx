@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 import { useClerk } from "@clerk/nextjs";
+import { pageMetricCache } from "../globalData/cachedPageData";
 
 export default function FooterNav({
   items,
@@ -33,6 +34,7 @@ export default function FooterNav({
   };
 }) {
   const [NameAvatar, setNameAvatar] = useState<string>("");
+  const resetPageMetric = pageMetricCache((state) => state.reset);
 
   useEffect(() => {
     if (items) {
@@ -103,7 +105,13 @@ export default function FooterNav({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer"
-              onClick={() => signOut({ redirectUrl: "/sign-in" })}
+              onClick={() => {
+                sessionStorage.removeItem("orders");
+                sessionStorage.removeItem("ordersEmail");
+                sessionStorage.removeItem("selectedSite");
+                resetPageMetric();
+                signOut({ redirectUrl: "/sign-in" });
+              }}
             >
               <LogOut />
               <span>Sign Out</span>
