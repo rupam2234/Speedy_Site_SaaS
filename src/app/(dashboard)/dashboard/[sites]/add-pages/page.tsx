@@ -1,40 +1,44 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useSiteContext } from "@/app/(dashboard)/siteContext";
-import { Layers2, PlusCircle, MinusCircle } from "lucide-react"; // Import PlusCircle and MinusCircle for add/remove buttons
+import { Layers2, PlusCircle, MinusCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function AddPagesManually() {
   const { selectedSite } = useSiteContext();
   const [pageUrls, setPageUrls] = useState([""]);
   const [activeUrls, setActiveUrls] = useState<number | null>(null);
+  const [existingUrls, setExistingUrls] = useState<string[]>([]); // for duplicate url detection
 
   useEffect(() => {
-    async function fetchPagesWithVitals() {
-      if (!selectedSite) return;
-
-      const res = await fetch("/api/jobs/active_urls", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(selectedSite),
-      });
-
-      const json = await res.json();
-
-      if (
-        !res.ok ||
-        !json.data?.[0]?.urls ||
-        json.data?.[0]?.urls.length === 0 ||
-        (json.data?.[0]?.urls.length === 1 &&
-          json.data?.[0]?.urls?.[0].length === 0)
-      ) {
-        setActiveUrls(0);
-      } else {
-        setActiveUrls(json.data?.[0]?.urls.length);
-      }
-    }
-
     fetchPagesWithVitals();
   }, [selectedSite]);
+
+  // function to fetch active urls
+  async function fetchPagesWithVitals() {
+    if (!selectedSite) return;
+
+    const res = await fetch("/api/jobs/active_urls", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(selectedSite),
+    });
+
+    const json = await res.json();
+
+    if (
+      !res.ok ||
+      !json.data?.[0]?.urls ||
+      json.data?.[0]?.urls.length === 0 ||
+      (json.data?.[0]?.urls.length === 1 &&
+        json.data?.[0]?.urls?.[0].length === 0)
+    ) {
+      setActiveUrls(0);
+    } else {
+      setActiveUrls(json.data?.[0]?.urls.length);
+      setExistingUrls(json.data[0].urls);
+    }
+  }
 
   // Function to add a new empty URL input field
   const handleAddPage = () => {
@@ -57,6 +61,43 @@ export default function AddPagesManually() {
     newUrls[index] = value;
     setPageUrls(newUrls);
   };
+
+  async function handleSubmit() {
+    const response = await fetch("/api/jobs/add_urls", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        domain: selectedSite,
+        newUrls: pageUrls,
+      }),
+    });
+
+    if (response.ok) {
+      toast("Your pages have been added successfully", {
+        description: `Page added: ${pageUrls.length}`,
+      });
+
+      await fetchPagesWithVitals(); // refetch pages after submission
+      setPageUrls([""]);
+    } else {
+      toast("Error Adding URLs", {
+        description: "Please try again!",
+      });
+    }
+  }
+
+  // prepare duplicates
+  const dbDuplicates = new Set(
+    pageUrls
+      .map((url) => url.trim())
+      .filter((url) => existingUrls.includes(url))
+  );
+
+  const allAreDuplicates = pageUrls.every((url) =>
+    dbDuplicates.has(url.trim())
+  );
 
   return (
     <div className="m-5 border rounded-lg p-6 bg-white dark:bg-secondary-background">
@@ -82,27 +123,41 @@ export default function AddPagesManually() {
           {/* Dynamic URL Input Fields */}
           <div className="space-y-4">
             {pageUrls.map((url, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <input
-                  type="url"
-                  value={url}
-                  onChange={(e) => handleUrlChange(index, e.target.value)}
-                  placeholder={`e.g., https://${selectedSite}/your-page-path`}
-                  className="flex-grow p-3 border border-gray-300 dark:border-gray-700 rounded-md
-                             bg-gray-50 dark:bg-secondary-background/20 text-gray-900 dark:text-gray-100
-                             focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                             transition-all duration-200"
-                />
-                {/* Remove Button (hidden if only one field left) */}
-                {pageUrls.length > 1 && (
-                  <button
-                    onClick={() => handleRemovePage(index)}
-                    className="p-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-600
-                               rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    aria-label={`Remove page ${index + 1}`}
-                  >
-                    <MinusCircle size={24} />
-                  </button>
+              <div key={index}>
+                {/* Input + remove button in flex */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={url}
+                    onChange={(e) => handleUrlChange(index, e.target.value)}
+                    placeholder={`e.g., https://${selectedSite}/your-page-path`}
+                    className={`flex-grow p-3 rounded-md transition-all duration-200
+            ${
+              dbDuplicates.has(url.trim())
+                ? "border-red-500 bg-red-50 dark:border-red-400 dark:bg-red-500/10"
+                : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-secondary-background/20"
+            }
+            text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent
+          `}
+                  />
+                  {/* Remove Button */}
+                  {pageUrls.length > 1 && (
+                    <button
+                      onClick={() => handleRemovePage(index)}
+                      className="p-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-600
+                       rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      aria-label={`Remove page ${index + 1}`}
+                    >
+                      <MinusCircle size={24} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Duplicate warning below input */}
+                {dbDuplicates.has(url.trim()) && (
+                  <p className="text-sm text-red-500 mt-1 ml-1">
+                    This URL is already being monitored.
+                  </p>
                 )}
               </div>
             ))}
@@ -128,18 +183,21 @@ export default function AddPagesManually() {
             </button>
 
             <button
-              // onClick={handleSubmit}
-              disabled={typeof activeUrls === "number" && activeUrls >= 10}
+              onClick={handleSubmit}
+              disabled={
+                (typeof activeUrls === "number" && activeUrls >= 10) ||
+                allAreDuplicates
+              }
               className={`
-      flex items-center cursor-pointer justify-center gap-2 px-4 py-2
-      font-semibold rounded-md transition-colors duration-200 shadow-md focus:outline-none
-      focus:ring-2 focus:ring-offset-2
-      ${
-        typeof activeUrls === "number" && activeUrls >= 10
-          ? "bg-green-300 cursor-not-allowed text-white"
-          : "bg-green-600 hover:bg-green-700 text-white focus:ring-green-500"
-      }
-    `}
+                  flex items-center cursor-pointer justify-center gap-2 px-4 py-2
+                  font-semibold rounded-md transition-colors duration-200 shadow-md focus:outline-none
+                  focus:ring-2 focus:ring-offset-2
+                  ${
+                    typeof activeUrls === "number" && activeUrls >= 10
+                      ? "bg-green-300 cursor-not-allowed text-white"
+                      : "bg-green-600 hover:bg-green-700 text-white focus:ring-green-500"
+                  }
+                `}
             >
               Confirm
             </button>
@@ -169,8 +227,9 @@ export default function AddPagesManually() {
             </p>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-            Your plan allows monitoring up to 10 pages. Upgrade your plan for
-            more capacity.
+            Currently, the default monitoring limit is 10 pages. If you try to
+            add more pages than the remaining available slots, only the top
+            entries (in order) will be added, up to the limit.
           </p>
         </div>
       </div>

@@ -103,8 +103,6 @@ export default function PageGroups() {
     }
   }, [pagesProcessing]);
 
-  console.log(urls?.length);
-
   // Show "No Pages Found" fallback after 4s if no URLs
   useEffect(() => {
     if (urls?.length === 0) {

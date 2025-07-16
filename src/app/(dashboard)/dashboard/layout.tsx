@@ -14,6 +14,7 @@ import DashboardToolbar from "@/components/utils/toolbar";
 import SiteContextProvider, {
   useSiteContext,
 } from "@/app/(dashboard)/siteContext";
+import { Toaster } from "@/components/ui/sonner";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -48,6 +49,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
         <main className="flex-1 dark:bg-background bg-background">
           <DashboardToolbar />
           {children}
+          <Toaster />
         </main>
       </SidebarInset>
     </>
