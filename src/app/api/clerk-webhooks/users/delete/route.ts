@@ -15,15 +15,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { error, status } = await helper
+    const { error } = await helper
       .from("users")
       .delete()
-      .select(id_to_delete);
+      .eq("id", id_to_delete);
 
     if (error) {
       console.error("Supabase delete error:", error);
       return NextResponse.json(
-        { message: "Error upserting user", details: error.message },
+        { message: "Error removing user", details: error.message },
         { status: 500 }
       );
     }
