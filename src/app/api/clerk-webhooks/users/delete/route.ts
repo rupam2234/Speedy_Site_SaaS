@@ -21,7 +21,6 @@ export async function POST(req: NextRequest) {
       .eq("id", id_to_delete);
 
     if (error) {
-      console.error("Supabase delete error:", error);
       return NextResponse.json(
         { message: "Error removing user", details: error.message },
         { status: 500 }
@@ -29,11 +28,10 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "User removed", status },
+      { message: "User removed", success: true },
       { status: 200 }
     );
   } catch (err: any) {
-    console.error("Request error:", err);
     return NextResponse.json(
       { message: "Invalid request", error: err.message },
       { status: 400 }
