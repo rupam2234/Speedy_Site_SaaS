@@ -1,0 +1,42 @@
+import { setupDB } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+
+const helper = setupDB();
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const id_to_delete: string = body.data?.id;
+
+    if (!id_to_delete) {
+      return NextResponse.json(
+        { message: "Missing user id to be removed" },
+        { status: 400 }
+      );
+    }
+
+    const { error, status } = await helper
+      .from("users")
+      .delete()
+      .select(id_to_delete);
+
+    if (error) {
+      console.error("Supabase delete error:", error);
+      return NextResponse.json(
+        { message: "Error upserting user", details: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: "User removed", status },
+      { status: 200 }
+    );
+  } catch (err: any) {
+    console.error("Request error:", err);
+    return NextResponse.json(
+      { message: "Invalid request", error: err.message },
+      { status: 400 }
+    );
+  }
+}
