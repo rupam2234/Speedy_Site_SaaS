@@ -51,15 +51,7 @@ export type Database = {
           user_email?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "credit_user_email_fkey"
-            columns: ["user_email"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["email"]
-          },
-        ]
+        Relationships: []
       }
       crux_jobs: {
         Row: {
@@ -104,6 +96,7 @@ export type Database = {
           order_status: boolean
           subscription_started_at: string | null
           user_email: string
+          user_id: string | null
           website_address: string
           website_name: string
         }
@@ -119,6 +112,7 @@ export type Database = {
           order_status: boolean
           subscription_started_at?: string | null
           user_email: string
+          user_id?: string | null
           website_address: string
           website_name: string
         }
@@ -134,16 +128,17 @@ export type Database = {
           order_status?: boolean
           subscription_started_at?: string | null
           user_email?: string
+          user_id?: string | null
           website_address?: string
           website_name?: string
         }
         Relationships: [
           {
-            foreignKeyName: "orders_user_email_fkey"
-            columns: ["user_email"]
+            foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
-            referencedColumns: ["email"]
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1793,25 +1788,31 @@ export type Database = {
       }
       users: {
         Row: {
+          activePlan: string | null
           created_at: string
           email: string
           firstname: string
-          id: string | null
+          id: string
           lastname: string
+          max_sites: number
         }
         Insert: {
+          activePlan?: string | null
           created_at?: string
           email: string
           firstname: string
-          id?: string | null
+          id: string
           lastname: string
+          max_sites?: number
         }
         Update: {
+          activePlan?: string | null
           created_at?: string
           email?: string
           firstname?: string
-          id?: string | null
+          id?: string
           lastname?: string
+          max_sites?: number
         }
         Relationships: []
       }

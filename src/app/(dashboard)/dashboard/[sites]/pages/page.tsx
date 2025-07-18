@@ -423,7 +423,7 @@ export default function PageGroups() {
                 <div className="flex gap-2 items-center">
                   <Checkbox
                     checked={selectedUrls.includes(fullUrl)}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: any) =>
                       handleCheck(fullUrl, checked as boolean)
                     }
                   />
@@ -475,7 +475,7 @@ export default function PageGroups() {
               <div className="hidden md:grid grid-cols-20 gap-2 items-center font-semibold">
                 <Checkbox
                   checked={selectedUrls.includes(fullUrl)}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={(checked: any) =>
                     handleCheck(fullUrl, checked as boolean)
                   }
                 />

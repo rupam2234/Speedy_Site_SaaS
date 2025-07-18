@@ -35,6 +35,7 @@ export async function POST(req: Request) {
       email: userData.email,
       firstname: userData.firstname,
       lastname: userData.lastname,
+      id: userData.id,
     });
 
     if (error) {

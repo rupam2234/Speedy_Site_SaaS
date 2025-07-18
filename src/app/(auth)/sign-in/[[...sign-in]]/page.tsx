@@ -78,7 +78,7 @@ export default function SignInPage() {
                             </Clerk.Loading>
                           </Button>
                         </SignIn.Action>
-                        <p className="flex items-center gap-x-3 text-sm text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+                        {/* <p className="flex items-center gap-x-3 text-sm text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
                           or
                         </p>
                         <Clerk.Connection name="google" asChild>
@@ -102,7 +102,7 @@ export default function SignInPage() {
                               }
                             </Clerk.Loading>
                           </Button>
-                        </Clerk.Connection>
+                        </Clerk.Connection> */}
                         <p className="my-2 text-[13px] text-center text-muted-foreground">
                           Don&apos;t have an account?{" "}
                           <Link

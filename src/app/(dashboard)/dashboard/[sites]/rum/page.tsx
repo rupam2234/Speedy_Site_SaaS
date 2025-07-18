@@ -1,6 +1,6 @@
 "use client";
 
-import { Protect, useAuth, useClerk } from "@clerk/nextjs";
+import { Protect, useAuth } from "@clerk/nextjs";
 import { useSiteContext } from "../../siteContext";
 import { useEffect, useState } from "react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
@@ -10,12 +10,11 @@ export default function RUM() {
   const { selectedSite } = useSiteContext();
   const [showPrompt, setShowPrompt] = useState(false);
 
-  const user = useAuth();
+  const { userId } = useAuth();
 
-  console.log(user.userId);
+  // console.log(userId);
 
-  const clerk = useClerk();
-  console.log(clerk.billing.getStatements({ pageSize: 1 }));
+  // const clerk = useClerk();
 
   PlanValidation(); // redirect to billing if no active plan
 

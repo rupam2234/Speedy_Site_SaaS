@@ -26,21 +26,6 @@ export default function SignUpPage() {
   const [lastname, setLastname] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSignUp = async () => {
-    if (!email || !firstname || !lastname) {
-      return;
-    }
-    const userData = { email: email, firstname: firstname, lastname: lastname };
-
-    await fetch("/api/users/signup-validation", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    });
-  };
-
   return (
     <main className="grid grid-cols-1 sm:grid-cols-2 w-full h-screen sm:h-auto items-center">
       <div className="order-2 hidden sm:order-1 md:flex justify-center items-center bg-gradient-to-br from-indigo-600 to-purple-700 text-white h-full sm:h-screen w-full">
@@ -139,7 +124,7 @@ export default function SignUpPage() {
                             </Clerk.Loading>
                           </Button>
                         </SignUp.Action>
-                        <p className="flex items-center gap-x-3 text-sm text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+                        {/* <p className="flex items-center gap-x-3 text-sm text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
                           or
                         </p>
                         <Clerk.Connection name="google" asChild>
@@ -163,7 +148,7 @@ export default function SignUpPage() {
                               }
                             </Clerk.Loading>
                           </Button>
-                        </Clerk.Connection>
+                        </Clerk.Connection> */}
                         <p className="my-2 text-[13px] text-center text-muted-foreground">
                           Already have an account?{" "}
                           <Link
@@ -252,7 +237,7 @@ export default function SignUpPage() {
                         <SignUp.Action submit asChild>
                           <Button
                             disabled={isGlobalLoading}
-                            onClick={handleSignUp}
+                            // onClick={handleSignUp}
                           >
                             <Clerk.Loading>
                               {(isLoading) => {
