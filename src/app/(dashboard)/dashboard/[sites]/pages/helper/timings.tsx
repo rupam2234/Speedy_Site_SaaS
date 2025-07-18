@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import TimingPieChart from "../charts/docTimingChart";
 import LCPPieChart from "../charts/lcpTimingChart";
 import PageTimingChart from "../charts/pageTimingChart";
@@ -20,14 +20,14 @@ const TimingType = [
       "Breakdown of how the main HTML document loads, from request to render.",
   },
   {
-    key: "LCP Timing",
-    tooltip:
-      "Detailed view of the Largest Contentful Paint (LCP) timing phases and resource types.",
-  },
-  {
     key: "Page Timing",
     tooltip:
       "Overall page load metrics including front-end, back-end, and total load time.",
+  },
+  {
+    key: "LCP Timing",
+    tooltip:
+      "Detailed view of the Largest Contentful Paint (LCP) timing phases and resource types.",
   },
 ];
 
@@ -35,7 +35,7 @@ export default function Timings({ pageData }: TimingProps) {
   const { activeTimingMetric, setActiveTimingMetric } = useSiteContext();
 
   function handleActiveAsset(
-    key: "Document Timing" | "LCP Timing" | "Page Timing"
+    key: "Document Timing" | "Page Timing" | "LCP Timing"
   ) {
     setActiveTimingMetric(key);
   }

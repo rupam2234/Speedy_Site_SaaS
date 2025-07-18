@@ -5,8 +5,6 @@ export async function GET() {
   const helper = new PageManagementHelper();
   const url = await helper.authenticate();
 
-  console.log(url);
-
   if (!url) {
     return NextResponse.json(
       {

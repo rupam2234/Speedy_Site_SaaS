@@ -11,11 +11,17 @@ import {
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { CirclePlus } from "lucide-react";
 import { AddWebsiteModal } from "./addWebsiteModal";
 
-export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
+export function SelectSite({
+  collapsed = false,
+  disabled,
+}: {
+  collapsed?: boolean;
+  disabled?: boolean;
+}) {
   const { selectedSite, setSelectedSite, orders, setCollapsed } =
     useSiteContext();
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -85,7 +91,9 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
           !collapsed
             ? "w-full border-2 border-gray-300 dark:border-muted gap-2"
             : "w-auto gap-0 pr-2 [&>svg]:hidden"
-        } flex items-center pl-2 cursor-pointer`}
+        } flex items-center pl-2 cursor-pointer ${
+          disabled ? "opacity-50 pointer-events-none" : ""
+        }`}
       >
         <div className="flex items-center gap-2 truncate">
           {selectedFavicon ? (

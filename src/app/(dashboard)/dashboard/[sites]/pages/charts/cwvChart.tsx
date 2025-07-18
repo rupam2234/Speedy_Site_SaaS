@@ -14,7 +14,7 @@ import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
 import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
 interface ChartProps {
   pageData: any;

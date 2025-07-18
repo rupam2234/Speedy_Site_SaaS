@@ -157,3 +157,22 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.cl-cardBox {
+  width: 100% !important; /* Only as wide as the container */
+  max-width: 100% !important;
+  height: 100vh !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  box-sizing: border-box;
+}
+
+.cl-rootBox {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important; /* Prevent scroll bars */
+}
+
+.cl-internal-1dauvpw {
+  display: none;
+}

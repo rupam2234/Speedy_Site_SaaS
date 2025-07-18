@@ -13,7 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
 interface LabViewProps {
   url: string;

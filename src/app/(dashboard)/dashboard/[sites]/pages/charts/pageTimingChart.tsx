@@ -68,15 +68,15 @@ export default function PageTimingChart({
 
       chartData = [
         { value: x.backEndTime, name: "Back-End Processing" },
-        { value: x.frontEndTime, name: "Front-End Rendering" },
-        { value: x.pageLoadTime, name: "Total Page Load" },
-        { value: x.domContentLoadedTime, name: "DOM Content Loaded" },
-        { value: x.domInteractiveTime, name: "DOM Interactive" },
-        { value: x.pageDownloadTime, name: "Content Download" },
+        { value: x.redirectionTime, name: "Redirects" },
         { value: x.domainLookupTime, name: "DNS Lookup" },
         { value: x.serverConnectionTime, name: "TCP Connection" },
         { value: x.serverResponseTime, name: "Server Response" },
-        { value: x.redirectionTime, name: "Redirects" },
+        { value: x.pageDownloadTime, name: "Content Download" },
+        { value: x.domInteractiveTime, name: "DOM Interactive" },
+        { value: x.domContentLoadedTime, name: "DOM Content Loaded" },
+        { value: x.frontEndTime, name: "Front-End Rendering" },
+        { value: x.pageLoadTime, name: "Total Page Load" },
       ];
 
       break;
@@ -168,8 +168,9 @@ export default function PageTimingChart({
       <div ref={chartRef} style={{ width: "100%", height: "345px" }} />
       <div style={{ marginBottom: "12px", color: "#666", fontSize: "14px" }}>
         <p>
-          💡 Tip: In case of bad performance, look for timings above{" "}
-          <strong>300 ms</strong>.
+          💡 <strong>Tip:</strong> The timing cycle starts from{" "}
+          <strong>back-end processing</strong> and continues all the way through
+          to the <strong>total page load</strong>.
         </p>
       </div>
     </>

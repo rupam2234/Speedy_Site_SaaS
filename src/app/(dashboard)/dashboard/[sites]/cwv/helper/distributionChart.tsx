@@ -9,7 +9,7 @@ import {
 import { BarChart, BarSeriesOption } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useRef } from "react";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { Helpers } from "./helperFunc";
 import { cwv_metrics } from "./cwvMetrics";
 

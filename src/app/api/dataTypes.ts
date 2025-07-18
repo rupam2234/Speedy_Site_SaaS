@@ -1,12 +1,7 @@
 import { Database } from "@/lib/db/database.types";
 import { UUID } from "crypto";
 
-export type userData = {
-  email: string;
-  firstname: string;
-  lastname: string;
-  id: string;
-};
+export type userData = Database["public"]["Tables"]["users"]["Insert"];
 
 export type OrderData = Database["public"]["Tables"]["orders"]["Insert"];
 

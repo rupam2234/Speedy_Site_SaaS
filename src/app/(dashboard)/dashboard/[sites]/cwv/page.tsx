@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
 import { useEffect, useState } from "react";
 import { fetchCrUXData } from "@/app/api/external/fetch_crux";
 import { GalleryHorizontalEnd, InfoIcon } from "lucide-react";
@@ -24,12 +23,13 @@ import { getColor } from "@/lib/cwv_helper/getColor";
 import { cwv_metrics } from "./helper/cwvMetrics";
 import DistributionChart from "./helper/distributionChart";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
+import { PlanValidation } from "@/components/utils/activePlanValidation";
 
 // class test
 const helper = new Helpers();
 
 export default function WebsitePage() {
-  const router = useRouter();
   const {
     selectedSite,
     setCruxData,
@@ -50,6 +50,9 @@ export default function WebsitePage() {
   const [unit, setUnit] = useState<string>("");
   const [latestMetric, setlatestMetric] = useState<number | string>(); // state for managing the latest metric data for daily card
   const [CruxChange, setCruxChange] = useState<number>(0);
+  const router = useRouter();
+
+  PlanValidation(); // redirect to billing if no active plan
 
   // set change of crux data and to previous crux data
   useEffect(() => {

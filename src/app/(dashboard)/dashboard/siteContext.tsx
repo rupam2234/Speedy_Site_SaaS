@@ -52,6 +52,8 @@ type SiteContextType = {
   setActiveTimingMetric: (
     metric: "Document Timing" | "LCP Timing" | "Page Timing"
   ) => void;
+  activePlan: "free_user" | "basic_plan" | "pro";
+  setActivePlan: (activePlan: "free_user" | "basic_plan" | "pro") => void;
 };
 
 export const SiteContext = createContext<SiteContextType>({
@@ -80,6 +82,8 @@ export const SiteContext = createContext<SiteContextType>({
   setActiveAssetMetric: () => {},
   activeTimingMetric: "Document Timing",
   setActiveTimingMetric: () => {},
+  activePlan: "basic_plan",
+  setActivePlan: () => {},
 });
 
 export default function SiteContextProvider({
@@ -114,6 +118,9 @@ export default function SiteContextProvider({
   const [activeTimingMetric, setActiveTimingMetric] = useState<
     "Document Timing" | "LCP Timing" | "Page Timing"
   >("Document Timing");
+  const [activePlan, setActivePlan] = useState<
+    "free_user" | "basic_plan" | "pro"
+  >("basic_plan");
 
   // Load from sessionStorage only if it matches the current user email
   useEffect(() => {
@@ -262,6 +269,8 @@ export default function SiteContextProvider({
         setActiveAssetMetric,
         activeTimingMetric,
         setActiveTimingMetric,
+        activePlan,
+        setActivePlan,
       }}
     >
       {children}

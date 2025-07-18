@@ -76,14 +76,14 @@ export default function TimingPieChart({
         x.wait.mean;
 
       chartData = [
-        { value: x.blocked.mean, name: "blocked" },
-        { value: x.connect.mean, name: "connect" },
-        { value: x.dns.mean, name: "dns" },
         { value: x.queued.mean, name: "queued" },
-        { value: x.receive.mean, name: "receive" },
-        { value: x.send.mean, name: "send" },
+        { value: x.blocked.mean, name: "blocked" },
+        { value: x.dns.mean, name: "dns" },
+        { value: x.connect.mean, name: "connect" },
         { value: x.ssl.mean, name: "ssl" },
+        { value: x.send.mean, name: "send" },
         { value: x.wait.mean, name: "wait" },
+        { value: x.receive.mean, name: "receive" },
       ];
       break;
     }
@@ -182,8 +182,10 @@ export default function TimingPieChart({
       <div ref={chartRef} style={{ width: "100%", height: "345px" }} />
       <div style={{ marginBottom: "12px", color: "#666", fontSize: "14px" }}>
         <p>
-          💡 Tip: In case of bad performance, look for timings above{" "}
-          <strong>300 ms</strong>.
+          💡Hint: <strong>queued</strong> → <strong>blocked</strong> →{" "}
+          <strong>dns</strong> → <strong>connect</strong> → <strong>ssl</strong>{" "}
+          → <strong>send</strong> → <strong>wait</strong> →{" "}
+          <strong>receive</strong>
         </p>
       </div>
     </>

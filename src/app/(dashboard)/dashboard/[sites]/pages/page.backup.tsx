@@ -6,7 +6,24 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Layers, Loader, LoaderIcon, SquarePlus, Trash2 } from "lucide-react";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
+  AlertTriangle,
+  Layers,
+  Loader,
+  LoaderIcon,
+  SquarePlus,
+  Trash2,
+} from "lucide-react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { useClerk } from "@clerk/nextjs";
 import { PageCrux } from "@/data/cruxData";
@@ -17,7 +34,6 @@ import LabView from "./helper/lab";
 import { pageMetricCache } from "@/components/globalData/cachedPageData";
 import { useRouter } from "next/navigation";
 import { useCheckPlan } from "@/components/utils/useCheckPlan";
-import { PlanValidation } from "@/components/utils/activePlanValidation";
 
 export default function PageGroups() {
   const [isConnecting, setConnecting] = useState(false);
@@ -27,6 +43,7 @@ export default function PageGroups() {
   const [, setJobProcessing] = useState<boolean>(false);
   const [pagesProcessing, setPagesProcessing] = useState<boolean>(false);
   const [processedPages, setProcessedPages] = useState<PageCrux[] | null>();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [urls, setUrls] = useState<string[] | null>([]);
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState<boolean>(false);
@@ -35,10 +52,7 @@ export default function PageGroups() {
     type: "lab" | "todo";
   }>(null);
   const [showNoPagesFallback, setShowNoPagesFallback] = useState(false);
-  const [planChecked, setPlanChecked] = useState(false);
-  const [hasPlan, setHasPlan] = useState<boolean | null>(null);
-
-  PlanValidation(); // redirect to billing if no active plan
+  const [hasPlan, setHasPlan] = useState<boolean>(false);
 
   useCheckPlan();
   const router = useRouter();
@@ -84,6 +98,13 @@ export default function PageGroups() {
     loadMetricData();
   }, [selectedSite, hasHydrated]);
   //#endregion
+
+  // auto close the drawer when page is processing
+  useEffect(() => {
+    if (pagesProcessing) {
+      setIsDrawerOpen(false);
+    }
+  }, [pagesProcessing]);
 
   // Show "No Pages Found" fallback after 4s if no URLs
   useEffect(() => {
@@ -257,11 +278,11 @@ export default function PageGroups() {
   }, [selectedSite, pagesProcessing]);
 
   useEffect(() => {
-    if (!activePlan) return;
-
+    if (!activePlan) {
+      return;
+    }
     const planStatus = activePlan === "basic_plan" || activePlan === "pro";
     setHasPlan(planStatus);
-    setPlanChecked(true);
   }, [activePlan]);
 
   // Checkbox URL handler
@@ -548,11 +569,6 @@ export default function PageGroups() {
     router.push(path);
   }
 
-  if (!planChecked) {
-    // load nothing
-    return <></>;
-  }
-
   if (!hasPlan) {
     return (
       <div className="flex flex-col items-center justify-center md:mt-[-150px] min-h-screen p-6">
@@ -584,9 +600,11 @@ export default function PageGroups() {
               </h2>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="right">
-            Page Groups help you identify key performance bottlenecks by
-            combining lab tests with real-world Web Vitals data.
+          <TooltipContent side="right" className="max-w-2xl">
+            Page groups help you identify the key contributors to your overall
+            Web Vitals as reported by Google Search Console. You can also use
+            them to monitor local test results and track performance trends over
+            time. Be sure to check URLs for both desktop and mobile views.
           </TooltipContent>
         </Tooltip>
 
@@ -602,18 +620,27 @@ export default function PageGroups() {
           ) : (
             <Tooltip>
               <div
-                className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full border ${
-                  processedPages === null
-                    ? "bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-300"
-                    : "bg-gray-100 border-gray-300 text-gray-800 dark:bg-secondary-background dark:border-gray-700 dark:text-gray-200"
-                } cursor-help`}
+                className={`
+                      inline-flex items-center px-3 py-1 text-sm font-medium rounded-full
+                      border
+                      ${
+                        processedPages === null
+                          ? "bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-300"
+                          : "bg-gray-100 border-gray-300 text-gray-800 dark:bg-secondary-background dark:border-gray-700 dark:text-gray-200"
+                      }
+                      cursor-help
+                    `}
               >
+                {/* Main content for pages count */}
                 {urls?.length ?? 0 <= 10 ? (
                   <span>{urls?.length}/10 Pages</span>
                 ) : (
                   <span>0/10 Pages</span>
                 )}
+
+                {/* SquarePlus Icon now inside the same div, with its own styling */}
                 <TooltipTrigger>
+                  {/* Added ml-2 for spacing, and classes for border and rounded corners */}
                   <SquarePlus
                     onClick={handleManualPageAdd}
                     className="ml-2 w-5 h-5 cursor-pointer border border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
@@ -636,49 +663,68 @@ export default function PageGroups() {
       ) : urls === undefined ||
         urls === null ||
         (urls?.length === 0 && showNoPagesFallback) ? (
-        <div className="max-w-2xl mx-auto mt-24 p-8 border border-border dark:border-gray-700 rounded-md bg-white dark:bg-secondary-background shadow-sm text-center space-y-6">
-          <h2 className="text-muted-foreground font-semibold text-base">
-            You have not assigned any page to monitor yet.
-          </h2>
+        <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+          <div className="px-8 py-14 border rounded-md bg-gray-50 dark:bg-secondary-background my-10 text-center max-w-full mx-auto">
+            <div className="flex justify-center mb-4">
+              {/* The AlertTriangle is still appropriate for "No Pages Found" to indicate an unfulfilled state. */}
+              <AlertTriangle className="text-yellow-500" size={36} />
+            </div>
 
-          <p className="text-muted-foreground text-base">
-            To start tracking, connect Google Search Console and select your
-            website. Speedy Sense will automatically fetch the pages that
-            contribute most to your site&apos;s Web Vitals.
-          </p>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+              No Pages Found
+            </h3>
 
-          {/* Button group with alignment */}
-          <div className="flex flex-wrap justify-center gap-3 items-center">
-            <button
-              onClick={fetchAuthUrl}
-              disabled={isConnecting}
-              className="inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-medium py-2 px-5 rounded-md transition-colors duration-150 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-            >
-              {isConnecting ? (
-                <>
-                  <Loader className="animate-spin" size={18} />
-                  Connecting...
-                </>
-              ) : (
-                "Connect Google Search Console"
-              )}
-            </button>
+            <p className="text-base text-gray-700 dark:text-gray-300 mb-6">
+              It looks like no pages are being monitored at the moment but
+              getting started is easy. To begin tracking your website&apos;s
+              performance and gain valuable insights, you can fetch pages from:
+            </p>
 
-            <button
-              onClick={handleManualPageAdd}
-              className="inline-flex items-center justify-center gap-2 border border-input dark:border-gray-600 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-medium text-primary px-4 py-2 rounded-md transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            >
-              Assign Pages Manually
-            </button>
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+              <DrawerTrigger asChild>
+                <button className="bg-orange-600 cursor-pointer hover:bg-orange-700 text-white font-semibold py-2 px-6 rounded-md transition-colors duration-150 shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                  Connect Google Search Console
+                </button>
+              </DrawerTrigger>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-6">
+              This will help us gather data and provide detailed performance
+              reports for your website.
+            </p>
           </div>
 
-          <p className="text-[14px] text-muted-foreground">
-            We will run scheduled tests on your pages daily. Keeping your
-            assigned pages consistent ensures test history continuity.
-          </p>
-        </div>
+          <DrawerContent style={{ borderRadius: 0, paddingTop: 0 }}>
+            <div className="mx-auto h-[300px] w-full max-w-3xl">
+              <DrawerHeader>
+                <DrawerTitle className="text-xl mb-5 text-red-500">
+                  Access Required
+                </DrawerTitle>
+                <DrawerDescription>
+                  Connect to Google Search Console to fetch pages for analysis.
+                </DrawerDescription>
+              </DrawerHeader>
+              <DrawerFooter>
+                <button
+                  onClick={fetchAuthUrl}
+                  disabled={isConnecting}
+                  className="flex items-center justify-center gap-2 border px-4 py-2 rounded-sm bg-gray-500/10 hover:bg-gray-500/20 dark:bg-secondary-background"
+                >
+                  {isConnecting ? (
+                    <Loader className="animate-spin" size={20} />
+                  ) : (
+                    "Connect Google Search Console"
+                  )}
+                </button>
+                <DrawerClose>
+                  <div className="hover:cursor-pointer">Close</div>
+                </DrawerClose>
+              </DrawerFooter>
+            </div>
+          </DrawerContent>
+        </Drawer>
       ) : urls?.length === 0 ? (
-        <div className="flex items-center min-h-screen md:mt-[-200px] justify-center text-muted-foreground">
+        <div className="mt-6 flex items-center justify-center text-muted-foreground">
           <LoadingAnimation />
         </div>
       ) : urls?.length > 0 && urls.length <= 10 ? (

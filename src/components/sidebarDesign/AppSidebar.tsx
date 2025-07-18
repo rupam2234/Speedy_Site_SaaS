@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  BellIcon,
   ChartLine,
   CreditCard,
   GroupIcon,
@@ -21,9 +20,8 @@ import { useUser } from "@clerk/nextjs";
 import MainNav from "./Main-Nav";
 import FooterNav from "./Footer-Nav";
 import { SelectSite } from "../utils/SiteSelect";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { usePathname } from "next/navigation";
-import Logo from "../logo/logo";
 
 export default function AppSidebar({
   ...props
@@ -37,7 +35,7 @@ export default function AppSidebar({
   const sidebarOpen =
     state === "expanded" ? false : state === "collapsed" ? true : null;
 
-  const site = selectedSite || "speedysense.com"; // or fallback
+  const site = selectedSite; // or fallback
 
   const data = {
     user: {
@@ -57,11 +55,6 @@ export default function AppSidebar({
           title: "Billing",
           url: "/account/billing",
           icon: CreditCard,
-        },
-        {
-          title: "Notification",
-          url: "/account/notification",
-          icon: BellIcon,
         },
         {
           title: "Settings",
@@ -101,10 +94,6 @@ export default function AppSidebar({
         icon: Link2,
         isActive: true,
         items: [
-          // {
-          //   title: "Page Profiling",
-          //   url: "/dashboard/new-site",
-          // },
           {
             title: "Optimization Assistance",
             url: "/dashboard/orders",
@@ -156,11 +145,9 @@ export default function AppSidebar({
           <div className="flex-1">
             {/* do not display site selector when we are at account or child pages */}
             {pathname.includes("/account") === false ? (
-              <SelectSite collapsed={sidebarOpen ?? false} />
+              <SelectSite collapsed={sidebarOpen ?? false} disabled={false} />
             ) : (
-              <div className="md:ml-2">
-                <Logo />
-              </div>
+              <SelectSite collapsed={sidebarOpen ?? false} disabled />
             )}
           </div>
         </div>

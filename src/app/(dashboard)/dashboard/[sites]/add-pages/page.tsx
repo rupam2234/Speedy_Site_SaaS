@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { Layers2, PlusCircle, MinusCircle } from "lucide-react";
 import { toast } from "sonner";
+import { PlanValidation } from "@/components/utils/activePlanValidation";
 
 export default function AddPagesManually() {
   const { selectedSite } = useSiteContext();
@@ -13,6 +14,8 @@ export default function AddPagesManually() {
   useEffect(() => {
     fetchPagesWithVitals();
   }, [selectedSite]);
+
+  PlanValidation(); // redirect to billing if no active plan
 
   // function to fetch active urls
   async function fetchPagesWithVitals() {

@@ -1,3 +1,3 @@
 export default function AccountSettings() {
-  return <div className="p-5"> Settings page</div>;
+  return <div className="m-5">Account settings</div>;
 }

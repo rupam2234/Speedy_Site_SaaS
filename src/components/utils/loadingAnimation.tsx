@@ -2,7 +2,7 @@ import React from "react";
 
 export const LoadingAnimation = () => {
   return (
-    <div className="flex flex-col w-full h-full items-center justify-center mt-6 font-sans">
+    <div className="flex flex-col w-full min-h-full items-center justify-center font-sans">
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');

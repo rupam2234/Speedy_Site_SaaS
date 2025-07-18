@@ -10,7 +10,7 @@ import {
 import { Separator } from "@radix-ui/react-separator";
 import { ReactNode } from "react";
 // import { useUser } from "@clerk/nextjs";
-import SiteContextProvider from "@/app/(dashboard)/siteContext";
+import SiteContextProvider from "@/app/(dashboard)/dashboard/siteContext";
 
 interface AccountLayoutProps {
   children: ReactNode;

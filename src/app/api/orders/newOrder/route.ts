@@ -1,12 +1,20 @@
 import { setupDB } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { OrderData } from "../../dataTypes";
+import { auth } from "@clerk/nextjs/server";
 const worker = setupDB();
 
 export async function POST(req: Request) {
   try {
-    const body: OrderData = await req.json();
+    const { userId, has } = await auth();
+    if (!userId || !has({ feature: "add_website" })) {
+      return NextResponse.json(
+        { error: "Subscription required" },
+        { status: 403 }
+      );
+    }
 
+    const body: OrderData = await req.json();
     if (!body) {
       return NextResponse.json(
         { message: "Invalid website data!" },
@@ -20,8 +28,11 @@ export async function POST(req: Request) {
         favicon_file: body.favicon_file,
         order_status: body.order_status,
         user_email: body.user_email,
-        rank: body.rank,
-        page_tracking: body.page_tracking,
+        has_lab_access: body.has_lab_access,
+        has_rum_access: body.has_rum_access,
+        billing_cycle_start: body.billing_cycle_start,
+        billing_cycle_end: body.billing_cycle_end,
+        subscription_started_at: body.subscription_started_at,
       });
 
       // Handle errors

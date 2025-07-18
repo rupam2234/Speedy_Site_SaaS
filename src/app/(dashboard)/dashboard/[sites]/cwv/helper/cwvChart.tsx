@@ -13,7 +13,7 @@ import { LineChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { getRanges } from "./referenceAreaHandler";
 import { Helpers } from "./helperFunc";
 import { cwv_metrics } from "./cwvMetrics";

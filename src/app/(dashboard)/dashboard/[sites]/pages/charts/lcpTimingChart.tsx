@@ -85,11 +85,9 @@ export default function LCPPieChart({
 
       chartData = [
         { value: y.ttfb, name: "TTFB (Time to First Byte)" },
-        { value: y.startTime, name: "LCP Start Time" },
-        { value: y.resourceLoadDelay, name: "Resource Load Delay" },
         { value: y.resourceLoadDuration, name: "Resource Load Duration" },
+        { value: y.resourceLoadDelay, name: "Resource Load Delay" },
         { value: y.elementRenderDelay, name: "Element Render Delay" },
-        { value: y.loadTime, name: "LCP Load Time" },
       ];
       break;
     }

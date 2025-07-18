@@ -11,10 +11,9 @@ import { Separator } from "@radix-ui/react-separator";
 import { ReactNode, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import DashboardToolbar from "@/components/utils/toolbar";
-import SiteContextProvider, {
-  useSiteContext,
-} from "@/app/(dashboard)/siteContext";
+
 import { Toaster } from "@/components/ui/sonner";
+import SiteContextProvider, { useSiteContext } from "./siteContext";
 
 interface DashboardLayoutProps {
   children: ReactNode;

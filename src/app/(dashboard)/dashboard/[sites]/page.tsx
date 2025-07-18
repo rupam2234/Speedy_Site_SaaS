@@ -1,9 +1,8 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { CircleCheck, HeartPulse, InfoIcon } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getColor } from "@/lib/cwv_helper/getColor";
 import { getCWVStatus } from "@/lib/cwv_helper/checkCwvStatus";
 import SegmentedBar from "@/components/utils/webVitalBars";
@@ -11,20 +10,28 @@ import { Tooltip } from "@radix-ui/react-tooltip";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Helpers } from "./cwv/helper/helperFunc";
 import { cwv_metrics } from "./cwv/helper/cwvMetrics";
+import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import { PlanValidation } from "@/components/utils/activePlanValidation";
 
 export default function WebsitePage() {
-  const params = useParams();
-  const { sites } = params;
   const { selectedSite, setDailyCrux, dailyCrux, selectedDevice } =
     useSiteContext();
+  const [hasTriedToLoad, setHasTriedToLoad] = useState(false);
 
   const helper = new Helpers();
 
+  PlanValidation(); // redirect to billing if no active plan
+
   useEffect(() => {
-    helper.getDailyCrux(selectedSite, setDailyCrux);
+    if (selectedSite) {
+      helper.getDailyCrux(selectedSite, setDailyCrux);
+    }
+    const timeout = setTimeout(() => {
+      setHasTriedToLoad(true);
+    }, 500);
+    return () => clearTimeout(timeout);
   }, [selectedSite]);
 
-  // find data by selected device
   const currentCrux = helper.findDataByDevice(dailyCrux, selectedDevice);
 
   function findDensities(metricKey: string): {
@@ -33,9 +40,8 @@ export default function WebsitePage() {
     const densities = currentCrux?.record?.metrics[metricKey]?.histogram?.map(
       (item) => Number((item.density * 100).toFixed(2))
     );
-
     if (densities) {
-      return { densities: densities };
+      return { densities };
     } else {
       return { densities: [] };
     }
@@ -43,15 +49,36 @@ export default function WebsitePage() {
 
   const status = getCWVStatus(currentCrux?.record.metrics || {});
 
-  // helper function to convert text color into border
   function convertTextToBorderClasses(classString: string) {
     return classString.replace(/(\b(?:dark:)?)(text)(-)/g, "$1border$3");
   }
 
-  if (!selectedSite) {
+  if (!selectedSite && !hasTriedToLoad) {
     return (
-      <div className="px-5 py-6 text-muted-foreground">
-        Website &quot;{sites}&quot; not found.
+      <div className="flex items-center justify-center md:mt-[-100px] min-h-full">
+        <LoadingAnimation />
+      </div>
+    );
+  }
+
+  if (!selectedSite && hasTriedToLoad) {
+    return (
+      <div className="flex flex-col space-y-4 md:mt-[-100px] items-center justify-center min-h-full dark:text-secondary-background p-8">
+        <p
+          className="text-4xl md:text-6xl font-bold"
+          style={{ color: "rgba(0, 0, 0, 0.2)" }}
+        >
+          Website 404
+        </p>
+        <p className="text-center text-muted-foreground w-full">
+          We couldn&apos;t find the website you&apos;re looking for.
+          <br />
+          To get started, try{" "}
+          <span className="font-medium text-foreground">
+            adding a new site
+          </span>{" "}
+          using the left sidebar.
+        </p>
       </div>
     );
   }
@@ -59,7 +86,6 @@ export default function WebsitePage() {
   return (
     <div className="flex flex-1 flex-col gap-6 py-6 px-5">
       <section id="web-vitals">
-        {/* Section Header */}
         <div className="flex flex-col items-start md:flex-row gap-2 md:items-center md:justify-between">
           <span className="flex gap-2 items-center">
             <HeartPulse
@@ -91,13 +117,10 @@ export default function WebsitePage() {
           </span>
         </div>
 
-        {/* Web Vital Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
           {cwv_metrics?.map(({ label, key, unit }) => {
             const value = helper.getMetricValue(key, selectedDevice, dailyCrux);
-
             const data = findDensities(key);
-
             const colorClass =
               typeof value === "number" ? getColor(key, value) : "text-inherit";
 
@@ -106,7 +129,6 @@ export default function WebsitePage() {
                 key={label}
                 className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground"
               >
-                {/* card header */}
                 <div className="flex justify-between items-center">
                   <h3 className="text-sm font-semibold">{label}</h3>
                   <div className="flex gap-2 items-center">
@@ -144,7 +166,6 @@ export default function WebsitePage() {
                     </Tooltip>
                   </div>
                 </div>
-                {/* card bar */}
                 {data.densities !== undefined && (
                   <SegmentedBar
                     good={data.densities[0]}

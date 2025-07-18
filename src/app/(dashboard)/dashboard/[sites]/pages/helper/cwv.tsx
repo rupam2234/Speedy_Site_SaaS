@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import CWVChart from "../charts/cwvChart";
-import { useSiteContext } from "@/app/(dashboard)/siteContext";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
 interface CWVProps {
   pageData: any;
