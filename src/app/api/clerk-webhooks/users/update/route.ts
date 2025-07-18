@@ -20,7 +20,13 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await helper
       .from("users")
-      .upsert(userdata)
+      .update({
+        firstname: userdata.firstname,
+        lastname: userdata.lastname,
+        email: userdata.email,
+        id: userdata.id,
+      })
+      .eq("id", userdata.id)
       .select();
 
     if (error) {
