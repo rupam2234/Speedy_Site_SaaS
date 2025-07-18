@@ -1,6 +1,6 @@
 "use client";
 
-import { Protect, useAuth } from "@clerk/nextjs";
+import { Protect } from "@clerk/nextjs";
 import { useSiteContext } from "../../siteContext";
 import { useEffect, useState } from "react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
@@ -10,7 +10,7 @@ export default function RUM() {
   const { selectedSite } = useSiteContext();
   const [showPrompt, setShowPrompt] = useState(false);
 
-  const { userId } = useAuth();
+  // const { userId } = useAuth();
 
   // console.log(userId);
 
