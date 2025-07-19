@@ -28,12 +28,8 @@ export async function POST(req: NextRequest) {
     const subscription_data = {
       activePlan: activeItem.plan.slug,
       has_lab_access:
-        activeItem.plan.slug === "pro"
-          ? true
-          : activeItem.plan.slug === "basic_plan"
-          ? true
-          : false,
-      has_rum: activeItem.plan.slug === "pro" ? true : false,
+        activeItem.plan.slug === "pro" || activeItem.plan.slug === "basic_plan",
+      has_rum: activeItem.plan.slug === "pro",
       latest_payment_id: body.data?.latest_payment_id ?? "",
       max_sites:
         activeItem.plan.slug === "pro"
@@ -42,9 +38,19 @@ export async function POST(req: NextRequest) {
           ? 2
           : 1,
       plan_id: activeItem.plan?.id ?? "",
-      subscription_created_at: body.data?.created_at ?? null,
-      period_start: activeItem.period_start ?? null,
-      period_end: activeItem.period_end ?? null,
+
+      subscription_created_at: body.data?.created_at
+        ? new Date(body.data.created_at).toISOString()
+        : null,
+
+      period_start: activeItem.period_start
+        ? new Date(activeItem.period_start).toISOString()
+        : null,
+
+      period_end: activeItem.period_end
+        ? new Date(activeItem.period_end).toISOString()
+        : null,
+
       subscription_status: body.data?.status ?? "",
     };
 
@@ -68,9 +74,8 @@ export async function POST(req: NextRequest) {
       .select();
 
     if (error) {
-      console.error("Subscription update error:", error);
       return NextResponse.json(
-        { message: "Error updating user", details: error.message },
+        { message: "Error updating user subscription", details: error.message },
         { status: 500 }
       );
     }
