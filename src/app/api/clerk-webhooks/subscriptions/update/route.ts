@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     if (!activeItem) {
       return NextResponse.json(
-        { message: "No active subscription item found" },
+        { message: "No active subscription plan found" },
         { status: 404 }
       );
     }
@@ -83,7 +83,6 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (err: any) {
-    console.error("Request error:", err);
     return NextResponse.json(
       { message: "Invalid request", error: err.message },
       { status: 400 }
