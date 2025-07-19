@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
+import { auth } from "@clerk/nextjs/server";
 
 export interface TokenProps {
   token: string;
-  userEmail: string;
 }
+const worker = setupDB();
 
 export async function POST(req: NextRequest) {
-  const worker = setupDB();
+  const { userId } = await auth();
+
+  if (!userId) {
+    return NextResponse.json(
+      { message: "Unauthorized: No user ID found" },
+      { status: 401 }
+    );
+  }
 
   if (!req) {
     return NextResponse.json(
@@ -33,7 +41,7 @@ export async function POST(req: NextRequest) {
     const { error, status } = await worker
       .from("orders")
       .update({ gsc_token: body.token })
-      .eq("user_email", body.userEmail);
+      .eq("user_id", userId);
 
     if (error) {
       return NextResponse.json(

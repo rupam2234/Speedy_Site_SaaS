@@ -98,13 +98,12 @@ export default function PageGroups() {
     }
   }, [urls]);
 
-  // Save selected site/email to local/session storage
+  // Save selected site/email to local/session storage for pop up access
   useEffect(() => {
     const email = user?.emailAddresses?.at(-1)?.emailAddress;
     const activeSite = orders?.find((x) => x.user_email === email);
 
     localStorage.setItem("selectedSite", selectedSite);
-    localStorage.setItem("userEmail", email!);
 
     if (activeSite !== null && activeSite !== undefined) {
       sessionStorage.setItem("gsc_t", activeSite.gsc_token!);

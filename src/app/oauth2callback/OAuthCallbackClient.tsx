@@ -207,14 +207,12 @@ async function FetchPageAddresses(domain: string, token: string) {
 }
 
 async function UpdateToken(token: string) {
-  const userEmail = localStorage.getItem("userEmail");
-
-  if (!token || !userEmail) {
-    console.error("Missing website or token");
+  if (!token) {
+    console.error("Missing token");
     return;
   }
 
-  const body: TokenProps = { token: token, userEmail: userEmail };
+  const body: TokenProps = { token: token };
 
   try {
     const response = await fetch("/api/orders/updateOrder", {

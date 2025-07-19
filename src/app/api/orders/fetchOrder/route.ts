@@ -1,28 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
 import { OrderData } from "../../dataTypes";
+import { auth } from "@clerk/nextjs/server";
 
 const worker = setupDB();
 
-// to fetch websites under certain users or team
 export async function POST(req: NextRequest) {
   try {
-    const body: string = await req.json();
+    const { userId } = await auth();
 
-    const user_email: string = body;
-
-    if (!user_email) {
+    if (!userId) {
       return NextResponse.json(
-        {
-          message: "Invalid user email! Send the user email",
-        },
-        { status: 400 }
+        { message: "Unauthorized: No user ID found" },
+        { status: 401 }
       );
     } else {
       const { data: orderData } = await worker
         .from("orders")
         .select("*")
-        .eq("user_email", user_email);
+        .eq("user_id", userId);
 
       if (orderData && orderData.length > 0) {
         const typeOrderData: OrderData[] = orderData.map((order: any) => ({
@@ -38,7 +34,7 @@ export async function POST(req: NextRequest) {
           has_rum_access: order.has_rum_access,
           subscription_started_at: order.subscription_started_at,
           billing_cycle_start: order.billing_cycle_start,
-          billing_cycle_end: order.billing_cycle_end
+          billing_cycle_end: order.billing_cycle_end,
         }));
 
         return NextResponse.json(

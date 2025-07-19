@@ -2,6 +2,7 @@
 
 import { OrderData } from "@/app/api/dataTypes";
 import { CruxData, DailyCrux } from "@/data/cruxData";
+import { useUser } from "@clerk/nextjs";
 import React, {
   createContext,
   useContext,
@@ -174,72 +175,62 @@ export default function SiteContextProvider({
     });
   };
 
-  const fetchOrders = useCallback(
-    async (email: string, siteFromUrl?: string) => {
-      // Skip API call if we already fetched orders for this email
-      const storedOrders = sessionStorage.getItem("orders");
-      const storedEmail = sessionStorage.getItem("ordersEmail");
+  const fetchOrders = useCallback(async (siteFromUrl?: string) => {
+    const storedOrders = sessionStorage.getItem("orders");
 
-      if (storedOrders && storedEmail === email) {
-        const parsedOrders = JSON.parse(storedOrders);
-        if (parsedOrders?.length > 0) {
-          setOrders(parsedOrders);
+    if (storedOrders) {
+      const parsedOrders = JSON.parse(storedOrders);
+      if (parsedOrders?.length > 0) {
+        setOrders(parsedOrders);
 
-          if (
-            siteFromUrl &&
-            parsedOrders.some((o: OrderData) => o.website_name === siteFromUrl)
-          ) {
-            setSelectedSite(siteFromUrl);
-          } else {
-            setSelectedSite("");
-          }
-
-          return;
-        }
-      }
-
-      // Fresh fetch if orders are not cached or email has changed
-      try {
-        const response = await fetch("/api/orders/fetchOrder", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(email),
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch orders");
-
-        const { data } = await response.json();
-
-        if (data?.length > 0) {
-          sessionStorage.setItem("orders", JSON.stringify(data));
-          sessionStorage.setItem("ordersEmail", email);
-          setOrders(data);
-
-          if (
-            siteFromUrl &&
-            data.some((o: OrderData) => o.website_name === siteFromUrl)
-          ) {
-            setSelectedSite(siteFromUrl);
-          } else {
-            setSelectedSite("");
-          }
+        if (
+          siteFromUrl &&
+          parsedOrders.some((o: OrderData) => o.website_name === siteFromUrl)
+        ) {
+          setSelectedSite(siteFromUrl);
         } else {
-          // No orders: clear everything
-          setOrders(null);
           setSelectedSite("");
-          sessionStorage.removeItem("orders");
-          sessionStorage.removeItem("ordersEmail");
         }
-      } catch (error) {
-        console.error("Error fetching orders:", error);
+
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch("/api/orders/fetchOrder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // No body needed since userId is read from auth in backend
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch orders");
+
+      const { data } = await response.json();
+
+      if (data?.length > 0) {
+        sessionStorage.setItem("orders", JSON.stringify(data));
+        setOrders(data);
+
+        if (
+          siteFromUrl &&
+          data.some((o: OrderData) => o.website_name === siteFromUrl)
+        ) {
+          setSelectedSite(siteFromUrl);
+        } else {
+          setSelectedSite("");
+        }
+      } else {
         setOrders(null);
         setSelectedSite("");
         sessionStorage.removeItem("orders");
-        sessionStorage.removeItem("ordersEmail");
       }
-    },
-    []
-  );
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setOrders(null);
+      setSelectedSite("");
+      sessionStorage.removeItem("orders");
+    }
+  }, []);
 
   return (
     <SiteContext.Provider
