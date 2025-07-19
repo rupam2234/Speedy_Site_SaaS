@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     const activeItem = body.data.items.find(
-      (item: any) => item.status === "active"
+      (item: any) => item.status === "active" || "upcoming"
     );
 
     if (!activeItem) {
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       subscription_status: body.data?.status ?? "",
     };
 
-    const payer_id = body.data?.payer_id ?? "";
+    const user_id = body.data?.payer?.user_id ?? "";
 
     const { error } = await helper
       .from("users")
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
         has_rum: subscription_data.has_rum,
         max_sites: subscription_data.max_sites,
       })
-      .eq("id", payer_id)
+      .eq("id", user_id)
       .select();
 
     if (error) {
