@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
       {
         message: "User updated with subscription data",
         subscription: subscription_data,
+        user_id,
       },
       { status: 200 }
     );
