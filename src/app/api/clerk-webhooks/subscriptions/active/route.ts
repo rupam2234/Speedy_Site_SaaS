@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     const payer_id = body.data?.payer_id ?? "";
 
-    const { data, error } = await helper
+    const { error } = await helper
       .from("users")
       .update({
         period_start: subscription_data.period_start,
