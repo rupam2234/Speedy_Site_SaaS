@@ -2,7 +2,6 @@
 
 import { OrderData } from "@/app/api/dataTypes";
 import { CruxData, DailyCrux } from "@/data/cruxData";
-import { useUser } from "@clerk/nextjs";
 import React, {
   createContext,
   useContext,

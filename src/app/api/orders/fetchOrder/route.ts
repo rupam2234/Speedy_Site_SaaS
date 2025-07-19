@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
 import { OrderData } from "../../dataTypes";
 import { auth } from "@clerk/nextjs/server";
 
 const worker = setupDB();
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const { userId } = await auth();
 
