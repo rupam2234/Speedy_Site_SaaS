@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     const activeItem = body.data.items.find(
-      (item: any) => item.status === "active" || "upcoming"
+      (item: any) => item.status === "active" || item.status === "upcoming"
     );
 
     if (!activeItem) {
