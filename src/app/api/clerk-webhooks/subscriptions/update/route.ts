@@ -78,8 +78,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         message: "User updated with subscription data",
-        subscription: subscription_data,
-        user_id,
+        activeItem,
       },
       { status: 200 }
     );
