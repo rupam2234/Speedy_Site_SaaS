@@ -1,39 +1,41 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "./database.types";
 
-// Create a single supabase client for interacting with your database and supabase storage
-
 class DB {
-  private static INSTANCE: null | SupabaseClient = null;
-  /**
-   * Creates a singleton instance of DB client.
-   * @return {SupabaseClient} DB client.
-   */
-  public static setupDB() {
-    return (DB.INSTANCE =
-      DB.INSTANCE ??
-      createClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL! as string,
-        process.env.SUPABASE_SERVICE_ROLE_KEY! as string // service role key helps to access supabase when RLS is enabled
-      )) as SupabaseClient<Database>;
-  }
+  private static SERVICE_INSTANCE: SupabaseClient<Database> | null = null;
+  private static ANON_INSTANCE: SupabaseClient<Database> | null = null;
 
-  // this method is where supabase anon key is needed
-  public static setupAnonDB() {
-    return (DB.INSTANCE =
-      DB.INSTANCE ??
-      createClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL! as string,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! as string // service role key helps to access supabase when RLS is enabled
-      )) as SupabaseClient<Database>;
+  /**
+   * Returns a singleton Supabase client using the SERVICE_ROLE_KEY.
+   */
+  public static setupDB(): SupabaseClient<Database> {
+    if (!DB.SERVICE_INSTANCE) {
+      DB.SERVICE_INSTANCE = createClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY! // Full access (RLS bypass)
+      );
+    }
+    return DB.SERVICE_INSTANCE;
   }
 
   /**
-   * Destroys the DB client instance.
+   * Returns a singleton Supabase client using the ANON key.
    */
+  public static setupAnonDB(): SupabaseClient<Database> {
+    if (!DB.ANON_INSTANCE) {
+      DB.ANON_INSTANCE = createClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // Limited access
+      );
+    }
+    return DB.ANON_INSTANCE;
+  }
+
   public static revokeDB() {
-    DB.INSTANCE?.realtime.removeAllChannels();
-    DB.INSTANCE = null;
+    DB.SERVICE_INSTANCE?.realtime.removeAllChannels();
+    DB.ANON_INSTANCE?.realtime.removeAllChannels();
+    DB.SERVICE_INSTANCE = null;
+    DB.ANON_INSTANCE = null;
   }
 }
 
