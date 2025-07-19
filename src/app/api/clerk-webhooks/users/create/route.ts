@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
       email: body.data?.email_addresses?.[0]?.email_address,
       firstname: body.data?.first_name,
       lastname: body.data?.last_name,
+      activePlan: "free_user",
     };
 
     // Check if user already exists by ID or Email

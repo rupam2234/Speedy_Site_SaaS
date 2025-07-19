@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const helper = setupDB();
 
+// when subscription past due we send an email to user that your subscription has passed it's due period
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -14,48 +16,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const activeItem = body.data.items.find(
-      (item: any) => item.status === "active" || item.status === "upcoming"
+    const due_item = body.data.items.find(
+      (item: any) => item.status === "past_due"
     );
 
-    if (!activeItem) {
+    if (!due_item) {
       return NextResponse.json(
-        { message: "No active subscription plan found" },
+        { message: "No past_due subscription found" },
         { status: 404 }
       );
     }
 
     const subscription_data = {
-      activePlan: activeItem.plan.slug,
-      has_lab_access:
-        activeItem.plan.slug === "pro" || activeItem.plan.slug === "basic_plan",
-      has_rum: activeItem.plan.slug === "pro",
+      activePlan: "free_user",
+      has_lab_access: false,
+      has_rum: false,
       latest_payment_id: body.data?.latest_payment_id ?? "",
-      max_sites:
-        activeItem.plan.slug === "pro"
-          ? 4
-          : activeItem.plan.slug === "basic_plan"
-          ? 2
-          : 1,
-      plan_id: activeItem.plan?.id ?? "",
-
+      plan_id: due_item.plan?.id ?? "",
       subscription_created_at: body.data?.created_at
         ? new Date(body.data.created_at).toISOString()
         : null,
 
-      period_start: activeItem.period_start
-        ? new Date(activeItem.period_start).toISOString()
+      period_start: due_item.period_start
+        ? new Date(due_item.period_start).toISOString()
         : null,
 
-      period_end: activeItem.period_end
-        ? new Date(activeItem.period_end).toISOString()
+      period_end: due_item.period_end
+        ? new Date(due_item.period_end).toISOString()
         : null,
 
       subscription_status: body.data?.status ?? "",
       subscription_id: body.data?.id ?? "",
     };
-
-    const user_id = body.data?.payer?.user_id ?? "";
 
     const { error } = await helper
       .from("users")
@@ -69,10 +61,8 @@ export async function POST(req: NextRequest) {
         subscription_created_at: subscription_data.subscription_created_at,
         has_lab_access: subscription_data.has_lab_access,
         has_rum: subscription_data.has_rum,
-        max_sites: subscription_data.max_sites,
-        subscription_id: subscription_data.subscription_id,
       })
-      .eq("id", user_id)
+      .eq("subscription_id", subscription_data.subscription_id)
       .select();
 
     if (error) {
@@ -84,8 +74,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "User updated with subscription data",
-        activeItem,
+        message: "Subscription due data updated",
+        subscription_data,
       },
       { status: 200 }
     );
