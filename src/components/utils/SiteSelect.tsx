@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { CirclePlus } from "lucide-react";
 import { AddWebsiteModal } from "./addWebsiteModal";
+import { toast } from "sonner";
 
 export function SelectSite({
   collapsed = false,
@@ -22,7 +23,7 @@ export function SelectSite({
   collapsed?: boolean;
   disabled?: boolean;
 }) {
-  const { selectedSite, setSelectedSite, orders, setCollapsed } =
+  const { selectedSite, setSelectedSite, orders, setCollapsed, fetchOrders } =
     useSiteContext();
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const pathname = usePathname();
@@ -78,6 +79,11 @@ export function SelectSite({
       setSelectedSite(orders[0].website_name);
     }
   }, [orders, pathname, selectedSite, setSelectedSite]);
+
+  // refetch order when a new site is added
+  const handleRefetch = () => {
+    fetchOrders(); // This refetch the orders
+  };
 
   const selectedOrder = orders?.find(
     (order) => order.website_name === selectedSite
@@ -137,7 +143,16 @@ export function SelectSite({
             <CirclePlus />
             Add New Website
           </SelectItem>
-          <AddWebsiteModal open={showAddModal} onOpenChange={setShowAddModal} />
+          <AddWebsiteModal
+            open={showAddModal}
+            onOpenChange={setShowAddModal}
+            onSuccess={() => {
+              toast.success("Website added!", {
+                style: { backgroundColor: "green", color: "white" },
+              });
+              handleRefetch(); // optional: refresh some data
+            }}
+          />
         </SelectGroup>
       </SelectContent>
     </Select>

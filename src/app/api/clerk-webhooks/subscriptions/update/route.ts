@@ -1,3 +1,4 @@
+import { order_per_plan } from "@/data/perPlan";
 import { setupDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -33,10 +34,10 @@ export async function POST(req: NextRequest) {
       latest_payment_id: body.data?.latest_payment_id ?? "",
       max_sites:
         activeItem.plan.slug === "pro"
-          ? 4
+          ? order_per_plan.pro
           : activeItem.plan.slug === "basic_plan"
-          ? 2
-          : 1,
+          ? order_per_plan.basic_plan
+          : order_per_plan.free_users,
       plan_id: activeItem.plan?.id ?? "",
 
       subscription_created_at: body.data?.created_at

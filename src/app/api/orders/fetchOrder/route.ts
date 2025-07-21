@@ -30,11 +30,6 @@ export async function POST() {
           favicon_file: order.favicon_file,
           order_status: order.order_status,
           user_email: order.user_email,
-          has_lab_access: order.has_lab_access,
-          has_rum_access: order.has_rum_access,
-          subscription_started_at: order.subscription_started_at,
-          billing_cycle_start: order.billing_cycle_start,
-          billing_cycle_end: order.billing_cycle_end,
         }));
 
         return NextResponse.json(

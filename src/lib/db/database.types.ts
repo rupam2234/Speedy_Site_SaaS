@@ -62,6 +62,7 @@ export type Database = {
           status: string | null;
           updated_at: string | null;
           urls: string[];
+          user_id: string | null;
         };
         Insert: {
           created_at?: string | null;
@@ -71,6 +72,7 @@ export type Database = {
           status?: string | null;
           updated_at?: string | null;
           urls: string[];
+          user_id?: string | null;
         };
         Update: {
           created_at?: string | null;
@@ -80,53 +82,47 @@ export type Database = {
           status?: string | null;
           updated_at?: string | null;
           urls?: string[];
+          user_id?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "crux_jobs_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       orders: {
         Row: {
-          billing_cycle_end: string | null;
-          billing_cycle_start: string | null;
           favicon_file: string | null;
           gsc_token: string | null;
-          has_lab_access: boolean | null;
-          has_rum_access: boolean | null;
           order_date: string;
           order_id: string;
           order_status: boolean;
-          subscription_started_at: string | null;
           user_email: string;
           user_id: string | null;
           website_address: string;
           website_name: string;
         };
         Insert: {
-          billing_cycle_end?: string | null;
-          billing_cycle_start?: string | null;
           favicon_file?: string | null;
           gsc_token?: string | null;
-          has_lab_access?: boolean | null;
-          has_rum_access?: boolean | null;
           order_date?: string;
           order_id?: string;
           order_status: boolean;
-          subscription_started_at?: string | null;
           user_email: string;
           user_id?: string | null;
           website_address: string;
           website_name: string;
         };
         Update: {
-          billing_cycle_end?: string | null;
-          billing_cycle_start?: string | null;
           favicon_file?: string | null;
           gsc_token?: string | null;
-          has_lab_access?: boolean | null;
-          has_rum_access?: boolean | null;
           order_date?: string;
           order_id?: string;
           order_status?: boolean;
-          subscription_started_at?: string | null;
           user_email?: string;
           user_id?: string | null;
           website_address?: string;

@@ -32,7 +32,7 @@ export default function RUM() {
 
   if (!showPrompt) {
     return (
-      <div className="flex min-h-full md:mt-[-180px] items-center justify-center text-muted-foreground">
+      <div className="flex min-h-full md:mt-[-150px] items-center justify-center text-muted-foreground">
         <LoadingAnimation />
       </div>
     );
@@ -43,8 +43,12 @@ export default function RUM() {
       <div className="flex flex-col items-center justify-center md:mt-[-150px] min-h-screen p-6">
         <span className="text-4xl mb-4">🔒</span>
         <h2 className="text-[16px] font-normal text-center text-primary">
-          You need the pro plan to access real user monitoring.
+          You need at least the pro plan to view real user monitoring report.
         </h2>
+        <p>
+          Please visit <strong>account</strong> {">"} <strong>billing</strong>{" "}
+          to check your active plan.
+        </p>
       </div>
     );
   }

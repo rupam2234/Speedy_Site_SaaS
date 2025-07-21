@@ -18,7 +18,6 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error("Supabase fetch error:", error);
       return NextResponse.json(
         { status: "error", error: "Database error" },
         { status: 500 }
@@ -31,9 +30,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ status: data.status });
   } catch (err) {
-    console.error("Internal error:", err);
     return NextResponse.json(
-      { status: "error", error: "Internal server error" },
+      { status: "error", error: "Internal server error", err },
       { status: 500 }
     );
   }

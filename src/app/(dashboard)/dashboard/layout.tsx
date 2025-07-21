@@ -23,13 +23,10 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const { user, isSignedIn } = useUser();
   const { fetchOrders } = useSiteContext();
 
-  // get the user data
   useEffect(() => {
     if (!user || !isSignedIn) return;
 
-    const email = user.emailAddresses?.[0]?.emailAddress || "";
     fetchOrders(
-      email,
       new URLSearchParams(window.location.search).get("site") || undefined
     );
   }, [user, isSignedIn, fetchOrders]);

@@ -16,13 +16,19 @@ import {
 } from "@/components/ui/dialog";
 // Ensure this path is correct for your OrderData interface
 import { OrderData } from "@/app/api/dataTypes";
+import { LoaderIcon } from "lucide-react";
 
 interface AddWebsiteModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function AddWebsiteModal({ open, onOpenChange }: AddWebsiteModalProps) {
+export function AddWebsiteModal({
+  open,
+  onOpenChange,
+  onSuccess,
+}: AddWebsiteModalProps) {
   const { user } = useClerk();
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +59,7 @@ export function AddWebsiteModal({ open, onOpenChange }: AddWebsiteModalProps) {
     }
   }
 
+  //#region Upload favicon to db
   async function uploadFavicon(faviconFile: string): Promise<string | null> {
     if (!faviconFile) return null;
 
@@ -82,6 +89,7 @@ export function AddWebsiteModal({ open, onOpenChange }: AddWebsiteModalProps) {
       return null;
     }
   }
+  //#endregion
 
   async function getFavicon(domain: string): Promise<string | null> {
     if (!domain) {
@@ -121,26 +129,16 @@ export function AddWebsiteModal({ open, onOpenChange }: AddWebsiteModalProps) {
     domain: string
   ): Promise<any | null> {
     if (!uploadedFavicon || !domain) {
-      return null;
+      return;
     }
-
-    const now = new Date();
-    const billingCycleEnd = new Date();
-    billingCycleEnd.setDate(now.getDate() + 30);
 
     const orderData: OrderData = {
       order_status: true,
-      user_email:
-        user?.emailAddresses[0]?.emailAddress ?? "email_undefined@gmail.com",
+      user_email: user?.emailAddresses[0]?.emailAddress ?? "",
       website_address: `https://${domain}`,
       website_name: domain,
       gsc_token: null,
       favicon_file: uploadedFavicon,
-      has_lab_access: false,
-      has_rum_access: false,
-      subscription_started_at: now.toISOString(),
-      billing_cycle_start: now.toISOString(),
-      billing_cycle_end: billingCycleEnd.toISOString(),
     };
 
     try {
@@ -154,12 +152,15 @@ export function AddWebsiteModal({ open, onOpenChange }: AddWebsiteModalProps) {
 
       if (res.status === 200) {
         return await res.json();
+      } else if (res.status === 502) {
+        // if max site limit reached
+        return { success: false, status: res.status };
       } else {
         // Log error from backend if available
         const errorBody = await res.json();
         console.error(
           "Failed to add order:",
-          errorBody.message || res.statusText
+          errorBody.details || res.statusText
         );
         return null;
       }
@@ -206,14 +207,15 @@ export function AddWebsiteModal({ open, onOpenChange }: AddWebsiteModalProps) {
         setError("Failed to add website order. Please try again.");
         setIsProcessing(false);
         return;
+      } else if (res.status === 502 || res?.status === 502) {
+        setError("Max site limit reached");
+        setIsProcessing(false);
+        return;
       }
-
-      // Success
       setError(null);
-      setInput(""); // Clear input
-      onOpenChange(false); // Close modal
-      // Optionally, trigger a refresh or show a success toast here
-      alert("Website added successfully!"); // Simple alert for now
+      setInput(""); 
+      onOpenChange(false); 
+      onSuccess?.();
     } catch (err) {
       console.error("Error in handleAddWebsite:", err);
       setError("An unexpected error occurred. Please try again later.");
@@ -235,45 +237,64 @@ export function AddWebsiteModal({ open, onOpenChange }: AddWebsiteModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl p-8 rounded-lg shadow-xl border border-gray-200">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle className="text-lg font-bold text-gray-800">
             Add a New Website
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
+          <DialogDescription className="text-base text-gray-600 leading-relaxed mt-2">
             Enter the primary domain you want to track. This enables performance
             and experience monitoring across your site.{" "}
-            <span className="text-red-500">
-              If you&apos;d like to track subdomains, you can add specific pages
-              from those subdomains later.
+            <span className="text-orange-500 font-medium">
+              If you’d like to track subdomains, you can add specific pages
+              later.
             </span>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-6 py-6">
           <div className="grid gap-2">
-            <Label htmlFor="website">Website domain</Label>
+            <Label
+              htmlFor="website"
+              className="text-base font-medium text-gray-700"
+            >
+              Website Domain
+            </Label>
             <Input
               id="website"
               placeholder="e.g. https://blog.example.com"
               autoFocus
-              className="text-base"
+              className="text-base px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-primary transition"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              disabled={isProcessing} // Disable input while processing
+              disabled={isProcessing}
             />
-            {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+            {error && (
+              <p className="text-sm text-red-400 mt-1 font-medium">{error}</p>
+            )}
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-4 space-x-2">
           <DialogClose asChild>
-            <Button variant="outline" disabled={isProcessing}>
+            <Button
+              variant="outline"
+              disabled={isProcessing}
+              className="min-w-[120px] cursor-pointer"
+            >
               Cancel
             </Button>
           </DialogClose>
-          <Button onClick={handleAddWebsite} disabled={isProcessing}>
-            {isProcessing ? "Adding..." : "Add Website"}
+          <Button
+            onClick={handleAddWebsite}
+            disabled={isProcessing}
+            className="min-w-[140px] cursor-pointer"
+          >
+            {isProcessing ? (
+              <LoaderIcon className="animate-spin w-5 h-5" />
+            ) : (
+              "Add Website"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

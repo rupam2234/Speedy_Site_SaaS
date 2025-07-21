@@ -83,8 +83,8 @@ export default function AppSidebar({
             url: `/dashboard/${site}/rum`,
           },
           {
-            title: "Settings",
-            url: `/dashboard/${site}/settings`,
+            title: "Site Settings",
+            url: `/dashboard/${site}/site-settings`,
           },
         ],
       },

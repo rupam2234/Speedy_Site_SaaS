@@ -15,7 +15,7 @@ type SiteContextType = {
   setSelectedSite: (site: string) => void;
   orders: OrderData[] | null;
   setOrders: (orders: OrderData[] | null) => void;
-  fetchOrders: (email: string, siteFromUrl?: string) => Promise<void>;
+  fetchOrders: (siteFromUrl?: string) => Promise<void>;
   dailyCrux: DailyCrux[];
   setDailyCrux: (dailyData: DailyCrux[]) => void;
   cruxData: CruxData[];

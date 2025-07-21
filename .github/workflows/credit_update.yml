@@ -12,5 +12,4 @@ jobs:
     steps:
       - name: User Credit Daily Update
         run: |
-          curl -X POST https://speedy-sense.vercel.app/api/credit/update-credits \
-               -H "Authorization: Bearer ${{ secrets.CRON_SECRET_TOKEN }}"
+          curl -X POST https://speedy-sense.vercel.app/api/credit/update-credits

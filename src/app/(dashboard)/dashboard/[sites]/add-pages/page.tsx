@@ -80,6 +80,7 @@ export default function AddPagesManually() {
     if (response.ok) {
       toast("Your pages have been added successfully", {
         description: `Page added: ${pageUrls.length}`,
+        style: { backgroundColor: "green", color: "white" },
       });
 
       await fetchPagesWithVitals(); // refetch pages after submission

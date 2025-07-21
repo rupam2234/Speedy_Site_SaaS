@@ -560,8 +560,8 @@ export default function PageGroups() {
           You at least need the basic plan to use daily lab report.
         </h2>
         <p>
-          Please visit account {">"} billing to check your active subscription
-          plan.
+          Please visit <strong>account</strong> {">"} <strong>billing</strong>{" "}
+          to check your active plan.
         </p>
       </div>
     );
