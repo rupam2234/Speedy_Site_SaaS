@@ -3,12 +3,14 @@
   "version": "0.1.5",
   "private": true,
   "scripts": {
-    "clean": "powershell -Command \"Remove-Item -Recurse -Force .next\"", 
+    "clean": "powershell -Command \"Remove-Item -Recurse -Force .next\"",
     "cleandev": "npm run clean && next dev --turbopack",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:vitals": "npx esbuild scripts/web-vitals-tracker.js --bundle --minify --format=esm --outfile=public/web-vitals.js",
+    "build:extended-vitals": "npx esbuild scripts/extended-rum.js --bundle --minify --format=esm --outfile=public/web-vitals-extended.js"
   },
   "dependencies": {
     "@clerk/elements": "^0.23.33",
@@ -41,6 +43,7 @@
     "supabase": "^2.26.9",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
+    "web-vitals": "^5.0.3",
     "zustand": "^5.0.5"
   },
   "devDependencies": {

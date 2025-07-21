@@ -54,7 +54,121 @@ export default function WebsitePage() {
 
   PlanValidation(); // redirect to billing if no active plan
 
+  // useEffect(() => {
+  //   let cumulativeLayoutShift = 0;
+
+  //   const observer = new PerformanceObserver((entryList) => {
+  //     for (const entry of entryList.getEntries() as any[]) {
+  //       if (!entry.hadRecentInput) {
+  //         cumulativeLayoutShift += entry.value;
+  //       }
+
+  //       console.log("CLS update:", entry.value, entry);
+  //       console.log("Cumulative CLS:", cumulativeLayoutShift);
+  //     }
+  //   });
+
+  //   observer.observe({ type: "layout-shift", buffered: true });
+
+  //   return () => {
+  //     observer.disconnect();
+  //   };
+  // }, []);
+
+  // useEffect(() => {
+  //   let perFrameLayoutShiftData: { score: number; timestamp: number }[] = [];
+  //   let cumulativeLayoutShiftScore = 0;
+
+  //   function updateCLS(entries: PerformanceEntryList) {
+  //     for (const entry of entries as any[]) {
+  //       if (entry.hadRecentInput) return;
+
+  //       const shiftInfo = {
+  //         score: entry.value,
+  //         timestamp: entry.startTime,
+  //       };
+
+  //       perFrameLayoutShiftData.push(shiftInfo);
+  //       cumulativeLayoutShiftScore += entry.value;
+
+  //       console.log("Layout shift recorded:", shiftInfo);
+  //     }
+  //   }
+
+  //   const observer = new PerformanceObserver((list) => {
+  //     updateCLS(list.getEntries());
+  //   });
+
+  //   observer.observe({ type: "layout-shift", buffered: true });
+
+  //   const handleVisibilityChange = () => {
+  //     if (document.visibilityState === "hidden") {
+  //       updateCLS(observer.takeRecords());
+
+  //       console.log("Final CLS data:", {
+  //         perFrameLayoutShiftData,
+  //         cumulativeLayoutShiftScore,
+  //       });
+  //     }
+  //   };
+
+  //   document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  //   return () => {
+  //     observer.disconnect();
+  //     document.removeEventListener("visibilitychange", handleVisibilityChange);
+  //   };
+  // }, []);
+
+  // useEffect(() => {
+  //   function getCLSDebugTarget(entries: any[]) {
+  //     const largestEntry = entries.reduce((a, b) => {
+  //       console.log("Comparing shift values:", a?.value, b?.value);
+  //       return a && a.value > b.value ? a : b;
+  //     });
+
+  //     if (largestEntry) {
+  //       console.log("Largest CLS entry:", largestEntry);
+
+  //       if (largestEntry.sources?.length) {
+  //         const largestSource = largestEntry.sources.reduce(
+  //           (
+  //             a: { node: any; previousRect: any },
+  //             b: { node: any; previousRect: any }
+  //           ) => {
+  //             const area = (el: any) =>
+  //               el.previousRect.width * el.previousRect.height;
+  //             console.log("Comparing source areas:", area(a), area(b));
+  //             return a.node && area(a) > area(b) ? a : b;
+  //           }
+  //         );
+
+  //         if (largestSource) {
+  //           console.log("Largest shifting element:", largestSource.node);
+  //           return largestSource.node;
+  //         }
+  //       } else {
+  //         console.log("No sources found in the largest CLS entry");
+  //       }
+  //     } else {
+  //       console.log("No layout shift entries found");
+  //     }
+  //   }
+
+  //   const observer = new PerformanceObserver((list) => {
+  //     const entries = list.getEntries() as any[];
+  //     getCLSDebugTarget(entries);
+  //   });
+
+  //   observer.observe({ type: "layout-shift", buffered: true });
+
+  //   return () => {
+  //     observer.disconnect();
+  //   };
+  // }, []);
+
   // set change of crux data and to previous crux data
+
   useEffect(() => {
     setCruxChange(
       helper.calculateChange(cruxData, selectedDevice, newMetricKey, dailyCrux)

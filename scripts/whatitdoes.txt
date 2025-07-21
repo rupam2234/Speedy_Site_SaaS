@@ -1,0 +1,23 @@
+Measures CLS, INP, LCP, FCP, and TTFB web vitals with ratings
+
+Highlights elements causing layout shifts
+
+Detects and logs long tasks (>50ms)
+
+Detects and logs slow API calls (>500ms)
+
+Detects and logs third-party scripts loading
+
+Detects font flash/invisible text issues
+
+Collects device memory, CPU cores, connection info
+
+Collects user agent, language, timezone
+
+Fetches geolocation data from IP API
+
+Detects known trackers in scripts
+
+Lists third-party domains used by the site
+
+Logs usage of cookies, localStorage, sessionStorage

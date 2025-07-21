@@ -258,57 +258,54 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="col-span-1 md:col-span-6 border-2 p-4 rounded-sm order-1 md:order-2">
-            <h3 className="font-semibold text-primary/30 dark:text-primary/30 text-lg mb-2">
-              Lab test volume
+          <div className="col-span-1 md:col-span-6 order-1 md:order-2 border border-muted rounded-md p-4 bg-muted/30 dark:bg-muted/20">
+            <h3 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wide">
+              Quota Usage
             </h3>
 
-            <div className="mb-6">
-              <div className="flex justify-between items-center text-sm mb-1 font-medium">
-                <span>
-                  Total Usage: {totalUsage} / {totalQuota}
-                </span>
-                <span className="text-[#55b943]">
-                  Remaining: {totalRemaining}
-                </span>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm font-medium text-primary">
+                  <span>
+                    {totalUsage} / {totalQuota} lab runs used
+                  </span>
+                  <span className="text-green-500">{totalRemaining} left</span>
+                </div>
+                <div className="mt-2 h-3 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-green-500 transition-all"
+                    style={{ width: `${totalUsedPercent}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full mt-2 bg-gray-200 dark:bg-gray-700 rounded h-4">
-                <div
-                  className="h-4 rounded bg-[#55b943]"
-                  style={{ width: `${totalUsedPercent}%` }}
-                />
-              </div>
-            </div>
 
-            <div className="grid gap-4">
-              <div className="flex gap-2 items-center text-sm">
-                <Label className="font-medium">Next test starts at:</Label>
-                <div className="text-gray-400 dark:text-primary flex gap-2 items-center">
-                  {remainingTime}
+              <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Next test in:</span>
+                  <span className="text-primary">{remainingTime}</span>
                 </div>
-              </div>
-              <div className="flex gap-2 items-center text-sm">
-                <Label className="font-medium">
-                  Active pages being monitored:
-                </Label>
-                <div className="text-gray-400 dark:text-primary flex gap-2 items-center">
-                  {typeof activeUrls === "number"
-                    ? `${activeUrls}/10`
-                    : activeUrls === undefined
-                    ? `0/10`
-                    : "Loading..."}
+
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Active pages monitored:
+                  </span>
+                  <span className="text-primary">
+                    {typeof activeUrls === "number"
+                      ? `${activeUrls}/10`
+                      : "Loading..."}
+                  </span>
                 </div>
-              </div>
-              <div className="flex gap-2 items-center text-sm">
-                <Label className="font-medium">Test runs per report:</Label>
-                <div className="text-gray-400 dark:text-primary flex gap-2 items-center">
-                  3
+
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Runs per report:
+                  </span>
+                  <span className="text-primary">3</span>
                 </div>
-              </div>
-              <div className="flex gap-2 items-center text-sm">
-                <Label className="font-medium">Test location:</Label>
-                <div className="text-gray-400 dark:text-primary flex gap-2 items-center">
-                  Canada, Ontario
+
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Test location:</span>
+                  <span className="text-primary">Canada, Ontario</span>
                 </div>
               </div>
             </div>
@@ -319,8 +316,6 @@ export default function Settings() {
         siteId={"3fdfsgfeqwf"}
         usage={420002}
         quota={10000000}
-        nextTestIn={""}
-        activePages={4}
       />
     </>
   );
