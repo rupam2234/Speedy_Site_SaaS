@@ -14,10 +14,8 @@ interface TrackingIntegrationProps {
 
 export default function TrackingIntegration({
   siteId,
-  usage,
-  quota,
 }: TrackingIntegrationProps) {
-  const [copied, setCopied] = useState(false);
+  const [, setCopied] = useState(false);
 
   const handleCopy = async (text: string) => {
     try {
@@ -31,8 +29,8 @@ export default function TrackingIntegration({
   };
 
   const trackingScript = `<script src="https://yourcdn.com/tracker.js" data-site-id="${siteId}" async></script>`;
-  const percentUsed = Math.min((usage / quota) * 100, 100).toFixed(0);
-  const remaining = quota - usage;
+  // const percentUsed = Math.min((usage / quota) * 100, 100).toFixed(0);
+  // const remaining = quota - usage;
 
   return (
     <div className="m-5 border rounded-sm p-4 bg-primary-foreground dark:bg-secondary-background">
