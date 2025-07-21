@@ -16,6 +16,8 @@ const siteDomain = location.hostname;
 let previousPage = document.referrer || null;
 let currentPage = location.pathname + location.search;
 
+const batchedData = [];
+
 function updatePagePath(newPath) {
   previousPage = currentPage;
   currentPage = newPath;
@@ -39,6 +41,10 @@ function enrichWithPagePath(data) {
   };
 }
 
+function queueEvent(event) {
+  batchedData.push(event);
+}
+
 function handleMetric(metric) {
   let rating = "unknown";
   switch (metric.name) {
@@ -60,6 +66,7 @@ function handleMetric(metric) {
   }
 
   const enrichedMetric = enrichWithPagePath({
+    type: "web-vital",
     siteDomain,
     name: metric.name,
     value: metric.value,
@@ -70,7 +77,7 @@ function handleMetric(metric) {
     timestamp: Date.now(),
   });
 
-  console.log("[Metric]", enrichedMetric);
+  queueEvent(enrichedMetric);
 }
 
 onCLS(
@@ -99,8 +106,7 @@ new PerformanceObserver((list) => {
       entry.name.includes("://") &&
       !entry.name.includes(location.hostname)
     ) {
-      console.log(
-        "[Third-Party Script]",
+      queueEvent(
         enrichWithPagePath({
           type: "third-party-script",
           src: entry.name,
@@ -111,14 +117,16 @@ new PerformanceObserver((list) => {
         })
       );
     }
+
     if (
       (entry.initiatorType === "fetch" ||
         entry.initiatorType === "xmlhttprequest") &&
-      entry.duration > 500
+      entry.duration > 500 &&
+      !entry.name.includes("/api/collect-web-vitals")
     ) {
-      console.warn(
-        "[Slow API Call]",
+      queueEvent(
         enrichWithPagePath({
+          type: "slow-api-call",
           url: entry.name,
           duration: entry.duration.toFixed(2),
           startTime: entry.startTime.toFixed(2),
@@ -153,24 +161,31 @@ new PerformanceObserver((list) => {
         criticalLongTasks.push(task);
       }
 
-      console.warn("[Long Task]", task);
+      queueEvent(task);
     }
   }
 }).observe({ type: "longtask", buffered: true });
 
 window.addEventListener("beforeunload", () => {
   if (longTaskCount > 0) {
-    const summary = enrichWithPagePath({
-      type: "long-task-summary",
-      siteDomain,
-      total: longTaskCount,
-      avgDuration: Number((totalLongTaskDuration / longTaskCount).toFixed(2)),
-      totalDuration: Number(totalLongTaskDuration.toFixed(2)),
-      critical: criticalLongTasks.length,
-      timestamp: Date.now(),
-    });
+    queueEvent(
+      enrichWithPagePath({
+        type: "long-task-summary",
+        siteDomain,
+        total: longTaskCount,
+        avgDuration: Number((totalLongTaskDuration / longTaskCount).toFixed(2)),
+        totalDuration: Number(totalLongTaskDuration.toFixed(2)),
+        critical: criticalLongTasks.length,
+        timestamp: Date.now(),
+      })
+    );
+  }
 
-    console.info("[Long Task Summary]", summary);
+  if (batchedData.length > 0) {
+    navigator.sendBeacon(
+      "http://localhost:3000/api/collect-web-vitals",
+      JSON.stringify(batchedData)
+    );
   }
 });
 
@@ -195,9 +210,9 @@ window.addEventListener("beforeunload", () => {
     if (performance.now() - start > 3000 || checkCount > 60) {
       clearInterval(interval);
       if (invisibleTime > 100) {
-        console.warn(
-          "[Font Flash Detected]",
+        queueEvent(
           enrichWithPagePath({
+            type: "font-flash",
             invisibleDuration: invisibleTime,
             checks: checkCount,
             siteDomain,
@@ -207,9 +222,10 @@ window.addEventListener("beforeunload", () => {
       }
     }
   }, 50);
+
   if (document.fonts) {
     document.fonts.ready.then(() => {
-      console.log("[Fonts Ready]", performance.now().toFixed(2), "ms");
+      // Optional: capture font load time
     });
   }
 })();
@@ -230,11 +246,12 @@ window.addEventListener("beforeunload", () => {
     language: navigator.language,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   };
-  console.log("[Client Info]", enrichWithPagePath(clientMeta));
+  queueEvent(enrichWithPagePath(clientMeta));
+
   fetch("https://ipapi.co/json/")
     .then((res) => res.json())
     .then((geo) => {
-      console.log("[Geo Info]", enrichWithPagePath(geo));
+      queueEvent(enrichWithPagePath({ ...geo, type: "geo-info" }));
     })
     .catch(() => {});
 })();
@@ -256,9 +273,9 @@ window.addEventListener("beforeunload", () => {
       if (!url.hostname.includes(location.hostname)) {
         thirdPartyDomains.add(url.hostname);
         if (knownTrackers.some((tracker) => url.hostname.includes(tracker))) {
-          console.warn(
-            "[Tracker Detected]",
+          queueEvent(
             enrichWithPagePath({
+              type: "tracker-detected",
               url: url.hostname,
               siteDomain,
               timestamp: Date.now(),
@@ -268,14 +285,16 @@ window.addEventListener("beforeunload", () => {
       }
     }
   });
+
   const storageUsage = {
     cookies: document.cookie.length,
     localStorageKeys: Object.keys(localStorage).length,
     sessionStorageKeys: Object.keys(sessionStorage).length,
   };
-  console.log(
-    "[Privacy Data]",
+
+  queueEvent(
     enrichWithPagePath({
+      type: "privacy-data",
       thirdPartyDomains: Array.from(thirdPartyDomains),
       storageUsage,
       siteDomain,

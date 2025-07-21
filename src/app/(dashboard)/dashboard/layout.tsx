@@ -41,7 +41,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
             <Separator orientation="vertical" className="mr-2 h-4" />
             <ThemeToggle />
           </div>
-          <script src="/web-vitals-extended.js" async></script>
+          <script src="/web-vitals-extended.js" defer></script>
         </header>
         <main className="flex-1 dark:bg-background bg-background">
           <DashboardToolbar />

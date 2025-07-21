@@ -63,11 +63,11 @@ export default function TrackingIntegration({
               onClick={() => handleCopy(trackingScript)}
             />
           </div>
-          {copied && (
+          {/* {copied && (
             <p className="text-green-500 text-xs mt-1" role="alert">
               Script copied to clipboard!
             </p>
-          )}
+          )} */}
 
           <div className="mt-6 text-sm text-muted-foreground space-y-2">
             <p className="font-semibold">What this script captures:</p>
@@ -83,7 +83,7 @@ export default function TrackingIntegration({
         </div>
 
         {/* Right Column: Quota Usage */}
-        <div className="col-span-1 md:col-span-4 order-2 border border-muted rounded-md p-4 bg-muted/30 dark:bg-muted/20">
+        {/* <div className="col-span-1 md:col-span-4 order-2 border border-muted rounded-md p-4 bg-muted/30 dark:bg-muted/20">
           <h4 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wide">
             Quota Usage
           </h4>
@@ -110,7 +110,7 @@ export default function TrackingIntegration({
               <span className="text-primary">{percentUsed}%</span>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
