@@ -21,3 +21,6 @@ Detects known trackers in scripts
 Lists third-party domains used by the site
 
 Logs usage of cookies, localStorage, sessionStorage
+
+
+// cloudflare active worker : https://web-vitals-collector.thespeedysite.workers.dev/

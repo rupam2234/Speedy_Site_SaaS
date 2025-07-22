@@ -5,6 +5,7 @@ import { useSiteContext } from "../../siteContext";
 import { useEffect, useState } from "react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import { PlanValidation } from "@/components/utils/activePlanValidation";
+import RumDashboard from "./helpers/dashboard";
 
 export default function RUM() {
   const { selectedSite } = useSiteContext();
@@ -32,7 +33,7 @@ export default function RUM() {
 
   if (!showPrompt) {
     return (
-      <div className="flex min-h-full md:mt-[-150px] items-center justify-center text-muted-foreground">
+      <div className="flex items-center justify-center md:mt-[-100px] min-h-full">
         <LoadingAnimation />
       </div>
     );
@@ -55,7 +56,13 @@ export default function RUM() {
 
   return (
     <Protect plan="pro" fallback={fallback()}>
-      <div className="m-5">Rum dashboard</div>
+      <div className="m-5">
+        {selectedSite ? (
+          <RumDashboard siteId={selectedSite} />
+        ) : (
+          <p className="text-center text-gray-500">No site selected.</p>
+        )}
+      </div>
     </Protect>
   );
 }

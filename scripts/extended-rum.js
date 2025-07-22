@@ -15,6 +15,7 @@ const siteDomain = location.hostname;
 
 let previousPage = document.referrer || null;
 let currentPage = location.pathname + location.search;
+const sessionId = crypto.randomUUID();
 
 const batchedData = [];
 
@@ -33,16 +34,15 @@ function classifyMetric(value, thresholds) {
   return "poor";
 }
 
-function enrichWithPagePath(data) {
+function enrichEvent(data) {
   return {
     ...data,
-    currentPage,
-    previousPage,
+    sessionId,
   };
 }
 
 function queueEvent(event) {
-  batchedData.push(event);
+  batchedData.push(enrichEvent(event));
 }
 
 function handleMetric(metric) {
@@ -65,7 +65,7 @@ function handleMetric(metric) {
       break;
   }
 
-  const enrichedMetric = enrichWithPagePath({
+  queueEvent({
     type: "web-vital",
     siteDomain,
     name: metric.name,
@@ -76,24 +76,9 @@ function handleMetric(metric) {
     attribution: metric.attribution,
     timestamp: Date.now(),
   });
-
-  queueEvent(enrichedMetric);
 }
 
-onCLS(
-  (metric) => {
-    handleMetric(metric);
-    if (metric.attribution?.elements) {
-      metric.attribution.elements.forEach((el) => {
-        if (el?.node) {
-          el.node.style.outline = "2px dashed red";
-          el.node.title = `Shift impact: ${metric.value.toFixed(3)}`;
-        }
-      });
-    }
-  },
-  { reportAllChanges: true }
-);
+onCLS(handleMetric, { reportAllChanges: true });
 onINP(handleMetric, { reportAllChanges: true });
 onLCP(handleMetric);
 onFCP(handleMetric);
@@ -106,16 +91,14 @@ new PerformanceObserver((list) => {
       entry.name.includes("://") &&
       !entry.name.includes(location.hostname)
     ) {
-      queueEvent(
-        enrichWithPagePath({
-          type: "third-party-script",
-          src: entry.name,
-          duration: entry.duration.toFixed(2),
-          startTime: entry.startTime.toFixed(2),
-          siteDomain,
-          timestamp: Date.now(),
-        })
-      );
+      queueEvent({
+        type: "third-party-script",
+        src: entry.name,
+        duration: entry.duration.toFixed(2),
+        startTime: entry.startTime.toFixed(2),
+        siteDomain,
+        timestamp: Date.now(),
+      });
     }
 
     if (
@@ -124,16 +107,14 @@ new PerformanceObserver((list) => {
       entry.duration > 500 &&
       !entry.name.includes("/api/collect-web-vitals")
     ) {
-      queueEvent(
-        enrichWithPagePath({
-          type: "slow-api-call",
-          url: entry.name,
-          duration: entry.duration.toFixed(2),
-          startTime: entry.startTime.toFixed(2),
-          siteDomain,
-          timestamp: Date.now(),
-        })
-      );
+      queueEvent({
+        type: "slow-api-call",
+        url: entry.name,
+        duration: entry.duration.toFixed(2),
+        startTime: entry.startTime.toFixed(2),
+        siteDomain,
+        timestamp: Date.now(),
+      });
     }
   }
 }).observe({ type: "resource", buffered: true });
@@ -148,19 +129,16 @@ new PerformanceObserver((list) => {
       longTaskCount++;
       totalLongTaskDuration += entry.duration;
 
-      const task = enrichWithPagePath({
+      const task = {
         type: entry.duration > 100 ? "long-task-critical" : "long-task",
         siteDomain,
         name: entry.name,
         duration: Number(entry.duration.toFixed(2)),
         startTime: Number(entry.startTime.toFixed(2)),
         timestamp: Date.now(),
-      });
+      };
 
-      if (entry.duration > 100) {
-        criticalLongTasks.push(task);
-      }
-
+      if (entry.duration > 100) criticalLongTasks.push(task);
       queueEvent(task);
     }
   }
@@ -168,23 +146,28 @@ new PerformanceObserver((list) => {
 
 window.addEventListener("beforeunload", () => {
   if (longTaskCount > 0) {
-    queueEvent(
-      enrichWithPagePath({
-        type: "long-task-summary",
-        siteDomain,
-        total: longTaskCount,
-        avgDuration: Number((totalLongTaskDuration / longTaskCount).toFixed(2)),
-        totalDuration: Number(totalLongTaskDuration.toFixed(2)),
-        critical: criticalLongTasks.length,
-        timestamp: Date.now(),
-      })
-    );
+    queueEvent({
+      type: "long-task-summary",
+      siteDomain,
+      total: longTaskCount,
+      avgDuration: Number((totalLongTaskDuration / longTaskCount).toFixed(2)),
+      totalDuration: Number(totalLongTaskDuration.toFixed(2)),
+      critical: criticalLongTasks.length,
+      timestamp: Date.now(),
+    });
   }
 
   if (batchedData.length > 0) {
+    const fullPayload = {
+      sessionId,
+      currentPage,
+      previousPage,
+      data: batchedData,
+    };
+
     navigator.sendBeacon(
-      "http://localhost:3000/api/collect-web-vitals",
-      JSON.stringify(batchedData)
+      "https://web-vitals-collector.thespeedysite.workers.dev",
+      JSON.stringify(fullPayload)
     );
   }
 });
@@ -210,24 +193,16 @@ window.addEventListener("beforeunload", () => {
     if (performance.now() - start > 3000 || checkCount > 60) {
       clearInterval(interval);
       if (invisibleTime > 100) {
-        queueEvent(
-          enrichWithPagePath({
-            type: "font-flash",
-            invisibleDuration: invisibleTime,
-            checks: checkCount,
-            siteDomain,
-            timestamp: Date.now(),
-          })
-        );
+        queueEvent({
+          type: "font-flash",
+          invisibleDuration: invisibleTime,
+          checks: checkCount,
+          siteDomain,
+          timestamp: Date.now(),
+        });
       }
     }
   }, 50);
-
-  if (document.fonts) {
-    document.fonts.ready.then(() => {
-      // Optional: capture font load time
-    });
-  }
 })();
 
 (function collectClientMeta() {
@@ -246,12 +221,12 @@ window.addEventListener("beforeunload", () => {
     language: navigator.language,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   };
-  queueEvent(enrichWithPagePath(clientMeta));
+  queueEvent(clientMeta);
 
   fetch("https://ipapi.co/json/")
     .then((res) => res.json())
     .then((geo) => {
-      queueEvent(enrichWithPagePath({ ...geo, type: "geo-info" }));
+      queueEvent({ ...geo, type: "geo-info" });
     })
     .catch(() => {});
 })();
@@ -267,20 +242,19 @@ window.addEventListener("beforeunload", () => {
     "segment",
     "hubspot",
   ];
+
   performance.getEntriesByType("resource").forEach((entry) => {
     if (entry.initiatorType === "script" && entry.name.includes("://")) {
       const url = new URL(entry.name);
       if (!url.hostname.includes(location.hostname)) {
         thirdPartyDomains.add(url.hostname);
         if (knownTrackers.some((tracker) => url.hostname.includes(tracker))) {
-          queueEvent(
-            enrichWithPagePath({
-              type: "tracker-detected",
-              url: url.hostname,
-              siteDomain,
-              timestamp: Date.now(),
-            })
-          );
+          queueEvent({
+            type: "tracker-detected",
+            url: url.hostname,
+            siteDomain,
+            timestamp: Date.now(),
+          });
         }
       }
     }
@@ -292,13 +266,11 @@ window.addEventListener("beforeunload", () => {
     sessionStorageKeys: Object.keys(sessionStorage).length,
   };
 
-  queueEvent(
-    enrichWithPagePath({
-      type: "privacy-data",
-      thirdPartyDomains: Array.from(thirdPartyDomains),
-      storageUsage,
-      siteDomain,
-      timestamp: Date.now(),
-    })
-  );
+  queueEvent({
+    type: "privacy-data",
+    thirdPartyDomains: Array.from(thirdPartyDomains),
+    storageUsage,
+    siteDomain,
+    timestamp: Date.now(),
+  });
 })();

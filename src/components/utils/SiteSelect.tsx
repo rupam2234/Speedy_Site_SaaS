@@ -104,14 +104,16 @@ export function SelectSite({
         <div className="flex items-center gap-2 truncate">
           {selectedFavicon ? (
             <Image
-              src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons//${selectedFavicon}`}
+              src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon}`}
               alt="favicon"
               width={16}
               height={16}
               className="rounded"
             />
           ) : (
-            <span className="w-4 h-4 bg-gray-300 rounded" />
+            <div className="w-4 h-4 flex items-center justify-center rounded bg-blue-400 text-primary text-xs font-semibold">
+              {selectedSite?.[0]?.toUpperCase() || "?"}
+            </div>
           )}
           {!collapsed && (
             <span className="truncate text-sm">
@@ -125,13 +127,19 @@ export function SelectSite({
           {orders?.map((order) => (
             <SelectItem key={order.website_name} value={order.website_name}>
               <span className="flex items-center gap-2">
-                <Image
-                  src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons//${order.favicon_file}`}
-                  alt="favicon"
-                  width={16}
-                  height={16}
-                  className="rounded"
-                />
+                {order.favicon_file ? (
+                  <Image
+                    src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${order.favicon_file}`}
+                    alt="favicon"
+                    width={16}
+                    height={16}
+                    className="rounded"
+                  />
+                ) : (
+                  <div className="w-4 h-4 flex items-center justify-center rounded bg-blue-400 text-primary text-xs font-semibold">
+                    {order.website_name?.[0]?.toUpperCase() || "?"}
+                  </div>
+                )}
                 <span>{order.website_name}</span>
               </span>
             </SelectItem>

@@ -677,7 +677,7 @@ export default function PageGroups() {
           </p>
         </div>
       ) : urls?.length === 0 ? (
-        <div className="flex items-center min-h-screen md:mt-[-200px] justify-center text-muted-foreground">
+        <div className="flex items-center justify-center md:mt-[-170px] min-h-full">
           <LoadingAnimation />
         </div>
       ) : urls?.length > 0 && urls.length <= 10 ? (

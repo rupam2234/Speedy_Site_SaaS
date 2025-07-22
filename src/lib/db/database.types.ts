@@ -86,6 +86,13 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: "crux_jobs_domain_fkey";
+            columns: ["domain"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["website_name"];
+          },
+          {
             foreignKeyName: "crux_jobs_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;

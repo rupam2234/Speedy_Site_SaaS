@@ -125,10 +125,10 @@ export function AddWebsiteModal({
   }
 
   async function addOrder(
-    uploadedFavicon: string,
+    uploadedFavicon: string | null,
     domain: string
   ): Promise<any | null> {
-    if (!uploadedFavicon || !domain) {
+    if (!domain) {
       return;
     }
 
@@ -184,37 +184,36 @@ export function AddWebsiteModal({
 
     try {
       // 1. Get Favicon
+      let uploaded_url = null;
       const favicon = await getFavicon(cleanedDomain);
-      if (!favicon) {
-        setError(
-          "Could not fetch favicon for the provided domain. Please check the domain or try again."
-        );
-        setIsProcessing(false);
-        return;
+
+      if (favicon) {
+        try {
+          uploaded_url = await uploadFavicon(favicon);
+          if (!uploaded_url) {
+            console.warn("Favicon upload failed. Proceeding without it.");
+          }
+        } catch (uploadErr) {
+          console.warn("Upload error, skipping favicon:", uploadErr);
+        }
+      } else {
+        console.warn("No favicon found. Proceeding without it.");
       }
 
-      // 2. Upload Favicon
-      const uploaded_url = await uploadFavicon(favicon);
-      if (!uploaded_url) {
-        setError("Failed to upload favicon. Please try again.");
-        setIsProcessing(false);
-        return;
-      }
-
-      // 3. Add Order
+      // 2. Add Order (with or without favicon)
       const res = await addOrder(uploaded_url, cleanedDomain);
       if (!res) {
         setError("Failed to add website order. Please try again.");
-        setIsProcessing(false);
         return;
-      } else if (res.status === 502 || res?.status === 502) {
+      } else if (res.status === 502) {
         setError("Max site limit reached");
-        setIsProcessing(false);
         return;
       }
+
+      // 3. Success
       setError(null);
-      setInput(""); 
-      onOpenChange(false); 
+      setInput("");
+      onOpenChange(false);
       onSuccess?.();
     } catch (err) {
       console.error("Error in handleAddWebsite:", err);

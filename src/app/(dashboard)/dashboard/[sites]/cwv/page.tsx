@@ -22,9 +22,9 @@ import { Helpers } from "./helper/helperFunc";
 import { getColor } from "@/lib/cwv_helper/getColor";
 import { cwv_metrics } from "./helper/cwvMetrics";
 import DistributionChart from "./helper/distributionChart";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { PlanValidation } from "@/components/utils/activePlanValidation";
+import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 
 // class test
 const helper = new Helpers();
@@ -215,8 +215,7 @@ export default function WebsitePage() {
 
   if (!selectedSite) {
     return (
-      <div className="mt-6 flex items-center justify-center text-muted-foreground">
-        {/* loading animation */}
+      <div className="flex items-center justify-center md:mt-[-100px] min-h-full">
         <LoadingAnimation />
       </div>
     );
