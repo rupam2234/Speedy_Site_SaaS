@@ -15,7 +15,27 @@ const siteDomain = location.hostname;
 
 let previousPage = document.referrer || null;
 let currentPage = location.pathname + location.search;
-const sessionId = crypto.randomUUID();
+
+// Set a sessionId only once per browser session.
+// Automatically reuse the same sessionId for all analytics events in that session.
+// Automatically clear it when the browser is closed.
+function getCookie(name) {
+  return document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(name + "="))
+    ?.split("=")[1];
+}
+
+function setCookie(name, value) {
+  // No expiration = session cookie
+  document.cookie = `${name}=${value}; path=/`;
+}
+
+let sessionId = getCookie("sessionId");
+if (!sessionId) {
+  sessionId = crypto.randomUUID();
+  setCookie("sessionId", sessionId);
+}
 
 const batchedData = [];
 
@@ -84,23 +104,39 @@ onLCP(handleMetric);
 onFCP(handleMetric);
 onTTFB(handleMetric);
 
+// === NEW: Collect third-party assets but do NOT queue individual events ===
+const thirdPartyAssetDomains = new Set();
+const thirdPartyAssetTypes = new Set();
+
 new PerformanceObserver((list) => {
   for (const entry of list.getEntries()) {
     if (
-      entry.initiatorType === "script" &&
       entry.name.includes("://") &&
-      !entry.name.includes(location.hostname)
+      !entry.name.includes(location.hostname) &&
+      // Collect scripts + other resource types you want to count
+      [
+        "script",
+        "img",
+        "link",
+        "iframe",
+        "font",
+        "fetch",
+        "xmlhttprequest",
+        "video",
+        "audio",
+      ].includes(entry.initiatorType)
     ) {
-      queueEvent({
-        type: "third-party-script",
-        src: entry.name,
-        duration: entry.duration.toFixed(2),
-        startTime: entry.startTime.toFixed(2),
-        siteDomain,
-        timestamp: Date.now(),
-      });
+      try {
+        const url = new URL(entry.name);
+        thirdPartyAssetDomains.add(url.hostname);
+        thirdPartyAssetTypes.add(entry.initiatorType);
+      } catch {
+        // ignore invalid URLs
+      }
+      // NO individual queueEvent for 3rd party asset here anymore
     }
 
+    // Keep slow API calls as-is
     if (
       (entry.initiatorType === "fetch" ||
         entry.initiatorType === "xmlhttprequest") &&
@@ -143,34 +179,6 @@ new PerformanceObserver((list) => {
     }
   }
 }).observe({ type: "longtask", buffered: true });
-
-window.addEventListener("beforeunload", () => {
-  if (longTaskCount > 0) {
-    queueEvent({
-      type: "long-task-summary",
-      siteDomain,
-      total: longTaskCount,
-      avgDuration: Number((totalLongTaskDuration / longTaskCount).toFixed(2)),
-      totalDuration: Number(totalLongTaskDuration.toFixed(2)),
-      critical: criticalLongTasks.length,
-      timestamp: Date.now(),
-    });
-  }
-
-  if (batchedData.length > 0) {
-    const fullPayload = {
-      sessionId,
-      currentPage,
-      previousPage,
-      data: batchedData,
-    };
-
-    navigator.sendBeacon(
-      "https://web-vitals-collector.thespeedysite.workers.dev",
-      JSON.stringify(fullPayload)
-    );
-  }
-});
 
 (function detectFontFlash() {
   const headings = document.querySelectorAll("h1,h2,h3,h4,h5,h6");
@@ -274,3 +282,44 @@ window.addEventListener("beforeunload", () => {
     timestamp: Date.now(),
   });
 })();
+
+window.addEventListener("beforeunload", () => {
+  if (longTaskCount > 0) {
+    queueEvent({
+      type: "long-task-summary",
+      siteDomain,
+      total: longTaskCount,
+      avgDuration: Number((totalLongTaskDuration / longTaskCount).toFixed(2)),
+      totalDuration: Number(totalLongTaskDuration.toFixed(2)),
+      critical: criticalLongTasks.length,
+      timestamp: Date.now(),
+    });
+  }
+
+  // Send summary of 3rd-party assets only here
+  if (thirdPartyAssetDomains.size > 0) {
+    queueEvent({
+      type: "third-party-asset-summary",
+      count: thirdPartyAssetDomains.size,
+      assetTypes: Array.from(thirdPartyAssetTypes),
+      domains: Array.from(thirdPartyAssetDomains),
+      siteDomain,
+      timestamp: Date.now(),
+    });
+  }
+
+  if (batchedData.length > 0) {
+    const fullPayload = {
+      sessionId,
+      siteDomain,
+      currentPage,
+      previousPage,
+      data: batchedData,
+    };
+
+    navigator.sendBeacon(
+      "https://event-buffer.thespeedysite.workers.dev/collect",
+      JSON.stringify(fullPayload)
+    );
+  }
+});

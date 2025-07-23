@@ -4,11 +4,30 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "web-vitals-collector",
+	"name": "event-buffer",
 	"main": "src/index.js",
-	"compatibility_date": "2025-07-19",
+	"compatibility_date": "2025-07-23",
+	"migrations": [
+		{
+			"new_sqlite_classes": ["MyDurableObject"],
+			"tag": "v1"
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"class_name": "MyDurableObject",
+				"name": "MY_DURABLE_OBJECT"
+			}
+		]
+	},
 	"observability": {
 		"enabled": true
+	},
+
+	"vars": {
+		"SUPABASE_URL": "https://tmpvygehhshrgsqxzaty.supabase.co",
+		"SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcHZ5Z2VoaHNocmdzcXh6YXR5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNTg5MzA0NSwiZXhwIjoyMDUxNDY5MDQ1fQ.JhZfXtfo1Q1KhPDz-I4cbkAJo8ElHYEceb5stZLxfh8"
 	}
 	/**
 	 * Smart Placement

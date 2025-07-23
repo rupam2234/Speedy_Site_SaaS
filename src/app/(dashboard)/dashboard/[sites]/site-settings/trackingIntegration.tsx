@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,7 +26,10 @@ export default function TrackingIntegration({
     }
   };
 
-  const trackingScript = `<script src="https://yourcdn.com/tracker.js" data-site-id="${siteId}" async></script>`;
+  const trackingScript = `<script
+  src="https://web-vital-public-script.thespeedysite.workers.dev/web-vitals-extended.js?domain=${siteId}"
+  defer
+></script>`;
   // const percentUsed = Math.min((usage / quota) * 100, 100).toFixed(0);
   // const remaining = quota - usage;
 
@@ -47,19 +48,21 @@ export default function TrackingIntegration({
             real user performance data automatically.
           </p>
 
-          <Label className="text-sm font-semibold mb-1">Tracking Script</Label>
           <div className="relative mb-2">
-            <Input
-              className="text-xs font-mono pr-10 bg-gray-100 dark:bg-gray-800 border-0 focus-visible:ring-0"
-              value={trackingScript}
-              readOnly
-              aria-label="Tracking script"
-            />
-            <Copy
-              size={16}
-              className="absolute right-2 top-2.5 cursor-pointer hover:text-blue-500"
-              onClick={() => handleCopy(trackingScript)}
-            />
+            <div className="relative">
+              <textarea
+                className="w-full rounded-sm p-4 text-sm font-mono pr-10 bg-gray-100 dark:bg-gray-800 border-0 focus-visible:ring-0 resize-none overflow-auto"
+                value={trackingScript}
+                readOnly
+                rows={Math.max(6, trackingScript.split("\n").length)} // auto-adjusts based on line count
+                aria-label="Tracking script"
+              />
+              <Copy
+                size={16}
+                className="absolute right-2 top-2.5 cursor-pointer hover:text-blue-500"
+                onClick={() => handleCopy(trackingScript)}
+              />
+            </div>
           </div>
           {/* {copied && (
             <p className="text-green-500 text-xs mt-1" role="alert">

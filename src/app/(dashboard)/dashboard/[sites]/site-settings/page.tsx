@@ -313,7 +313,7 @@ export default function Settings() {
         </div>
       </div>
       <TrackingIntegration
-        siteId={"3fdfsgfeqwf"}
+        siteId={selectedSite}
         usage={420002}
         quota={10000000}
       />

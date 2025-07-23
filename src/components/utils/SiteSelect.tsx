@@ -80,11 +80,6 @@ export function SelectSite({
     }
   }, [orders, pathname, selectedSite, setSelectedSite]);
 
-  // refetch order when a new site is added
-  const handleRefetch = () => {
-    fetchOrders(); // This refetch the orders
-  };
-
   const selectedOrder = orders?.find(
     (order) => order.website_name === selectedSite
   );
@@ -158,7 +153,7 @@ export function SelectSite({
               toast.success("Website added!", {
                 style: { backgroundColor: "green", color: "white" },
               });
-              handleRefetch(); // optional: refresh some data
+              fetchOrders(); // optional: refresh some data
             }}
           />
         </SelectGroup>
