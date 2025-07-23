@@ -176,7 +176,7 @@ export default function Settings() {
         <div className="border-b flex gap-2 justify-between items-center">
           <span className="flex gap-2 items-center">
             <Settings2 />
-            <h2 className="my-3 font-bold text-2xl">Domain Settings</h2>
+            <h2 className="my-3 font-bold text-2xl">Lab Settings</h2>
           </span>
           {confirmingDelete ? (
             <div className="flex gap-2">

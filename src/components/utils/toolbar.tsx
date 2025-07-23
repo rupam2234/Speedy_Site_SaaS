@@ -1,6 +1,11 @@
 "use client";
 
-import { CalendarArrowDown, MonitorSmartphone, Split } from "lucide-react";
+import {
+  CalendarArrowDown,
+  ChartScatter,
+  MonitorSmartphone,
+  Split,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -59,6 +64,7 @@ export default function DashboardToolbar() {
   if (!isToolbarVisible) return null;
 
   const isOnCWVPage = pathname === `/dashboard/${params.sites}/cwv`;
+  const isOnRum = pathname === `/dashboard/${params.sites}/rum`;
 
   function selectDevice(device: "Desktop" | "Mobile") {
     setSelectedDevice(device);
@@ -196,6 +202,47 @@ export default function DashboardToolbar() {
                 >
                   <SelectGroup>
                     {["p75", "Distribution"].map((x, index) => (
+                      <SelectItem key={index} value={x}>
+                        {x}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+        {isOnRum && (
+          <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
+            <div className="flex justify-between items-center pl-2 py-[2px] w-full">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <ChartScatter size={18} className="cursor-help " />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="text-md space-y-2 w-[400px]"
+                >
+                  <strong>p50</strong> is the median; <strong>p75</strong> shows
+                  most users&apos; experience; <strong>p90</strong> and{" "}
+                  <strong>p95</strong> highlight slower users;{" "}
+                  <strong>p99</strong> reveals worst-case performance.
+                </TooltipContent>
+              </Tooltip>
+
+              <Select value={experienceType} onValueChange={setExperienceType}>
+                <SelectTrigger className="py-0 cursor-pointer border-0 ring-0 shadow-none focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background rounded-sm border-none focus:ring-0 focus:outline-none">
+                  <span className="text-primary font-medium">
+                    {experienceType}
+                  </span>
+                </SelectTrigger>
+                <SelectContent
+                  className="min-w-[--radix-select-trigger-width] p-0 dark:bg-secondary-background"
+                  side="bottom"
+                  align="center"
+                >
+                  <SelectGroup>
+                    {["p50", "p75", "p90", "p95", "p99"].map((x, index) => (
                       <SelectItem key={index} value={x}>
                         {x}
                       </SelectItem>

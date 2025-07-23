@@ -11,12 +11,6 @@ export default function RUM() {
   const { selectedSite } = useSiteContext();
   const [showPrompt, setShowPrompt] = useState(false);
 
-  // const { userId } = useAuth();
-
-  // console.log(userId);
-
-  // const clerk = useClerk();
-
   PlanValidation(); // redirect to billing if no active plan
 
   useEffect(() => {
@@ -58,7 +52,7 @@ export default function RUM() {
     <Protect plan="pro" fallback={fallback()}>
       <div className="m-5">
         {selectedSite ? (
-          <RumDashboard siteId={selectedSite} />
+          <RumDashboard />
         ) : (
           <p className="text-center text-gray-500">No site selected.</p>
         )}

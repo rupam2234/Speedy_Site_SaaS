@@ -4,6 +4,7 @@ import {
   ChartLine,
   CreditCard,
   GroupIcon,
+  HeartPulse,
   LayoutDashboardIcon,
   Link2,
   Settings,
@@ -65,38 +66,42 @@ export default function AppSidebar({
     },
     navMain: [
       {
-        title: "Reports",
+        title: "Lab Reports",
         url: "#",
         icon: ChartLine,
         isActive: true,
         items: [
           {
-            title: "Core Web Vitals",
-            url: `/dashboard/${site}/cwv`,
-          },
-          {
-            title: "Page Benchmarks",
+            title: "Page Groups",
             url: `/dashboard/${site}/pages`,
           },
           {
-            title: "Real User Monitoring",
-            url: `/dashboard/${site}/rum`,
-          },
-          {
-            title: "Site Settings",
-            url: `/dashboard/${site}/site-settings`,
+            title: "Lab Settings",
+            url: `/dashboard/${site}/lab-settings`,
           },
         ],
       },
       {
-        title: "Boost Performance",
+        title: "Real User Monitoring",
         url: "#",
         icon: Link2,
         isActive: true,
         items: [
           {
-            title: "Optimization Assistance",
-            url: "/dashboard/orders",
+            title: "Dashboard",
+            url: `/dashboard/${site}/rum`,
+          },
+          {
+            title: "Analytics",
+            url: `/dashboard/${site}/rum/analytics`,
+          },
+          {
+            title: "Pages",
+            url: `/dashboard/${site}/rum/pages`,
+          },
+          {
+            title: "User Session",
+            url: `/dashboard/${site}/rum/session`,
           },
         ],
       },
@@ -154,13 +159,19 @@ export default function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <MainNav
-          NavItems={data.navMain}
           DashboardItems={{
             title: "Dashboard",
             url: `/dashboard/${selectedSite}`,
             icon: LayoutDashboardIcon,
             isActive: false,
           }}
+          WebVitals={{
+            title: "Core Web Vitals",
+            url: `/dashboard/${site}/cwv`,
+            icon: HeartPulse,
+            isActive: false,
+          }}
+          NavItems={data.navMain}
         />
       </SidebarContent>
       <SidebarFooter>
