@@ -88,7 +88,7 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "Dashboard",
+            title: "Experience",
             url: `/dashboard/${site}/rum`,
           },
           {

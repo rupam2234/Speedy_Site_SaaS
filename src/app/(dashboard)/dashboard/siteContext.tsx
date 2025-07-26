@@ -28,6 +28,8 @@ type SiteContextType = {
   setCollapsed: (isCollapsed: boolean) => void;
   experienceType: "p75" | "Distribution";
   setExperienceType: (experienceType: "p75" | "Distribution") => void;
+  rumDistribution: "p50" | "p75" | "p90" | "p95" | "p99";
+  setRumDistribution: (rumDist: "p50" | "p75" | "p90" | "p95" | "p99") => void;
   activeLabMetric: "Web Vitals" | "Page Weight" | "Timings";
   setActiveLabMetric: (
     metric: "Web Vitals" | "Page Weight" | "Timings"
@@ -84,6 +86,8 @@ export const SiteContext = createContext<SiteContextType>({
   setActiveTimingMetric: () => {},
   activePlan: "basic_plan",
   setActivePlan: () => {},
+  rumDistribution: "p75",
+  setRumDistribution: () => {},
 });
 
 export default function SiteContextProvider({
@@ -121,6 +125,9 @@ export default function SiteContextProvider({
   const [activePlan, setActivePlan] = useState<
     "free_user" | "basic_plan" | "pro"
   >("basic_plan");
+  const [rumDistribution, setRumDistribution] = useState<
+    "p50" | "p75" | "p90" | "p95" | "p99"
+  >("p75");
 
   // Load from sessionStorage only if it matches the current user email
   useEffect(() => {
@@ -261,6 +268,8 @@ export default function SiteContextProvider({
         setActiveTimingMetric,
         activePlan,
         setActivePlan,
+        rumDistribution,
+        setRumDistribution,
       }}
     >
       {children}

@@ -42,6 +42,8 @@ export default function DashboardToolbar() {
     setDateRange,
     experienceType,
     setExperienceType,
+    rumDistribution,
+    setRumDistribution,
   } = useSiteContext();
   const [selectedRangeId, setSelectedRangeId] =
     useState<string>("last12Months");
@@ -215,25 +217,14 @@ export default function DashboardToolbar() {
         {isOnRum && (
           <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
             <div className="flex justify-between items-center pl-2 py-[2px] w-full">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <ChartScatter size={18} className="cursor-help " />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="text-md space-y-2 w-[400px]"
-                >
-                  <strong>p50</strong> is the median; <strong>p75</strong> shows
-                  most users&apos; experience; <strong>p90</strong> and{" "}
-                  <strong>p95</strong> highlight slower users;{" "}
-                  <strong>p99</strong> reveals worst-case performance.
-                </TooltipContent>
-              </Tooltip>
-
-              <Select value={experienceType} onValueChange={setExperienceType}>
+              <ChartScatter size={18} />
+              <Select
+                value={rumDistribution}
+                onValueChange={setRumDistribution}
+              >
                 <SelectTrigger className="py-0 cursor-pointer border-0 ring-0 shadow-none focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background rounded-sm border-none focus:ring-0 focus:outline-none">
                   <span className="text-primary font-medium">
-                    {experienceType}
+                    {rumDistribution}
                   </span>
                 </SelectTrigger>
                 <SelectContent

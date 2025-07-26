@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "build:vitals": "npx esbuild scripts/web-vitals-tracker.js --bundle --minify --format=esm --outfile=public/web-vitals.js",
-    "build:extended-vitals": "npx esbuild scripts/extended-rum.js --bundle --minify --format=esm --outfile=public/web-vitals-extended.js"
+    "build:extended-vitals": "npx esbuild scripts/extended-rum.js --bundle --minify --format=esm --outfile=public/rum.js"
   },
   "dependencies": {
     "@clerk/elements": "^0.23.33",

@@ -230,7 +230,7 @@ export default function WebsitePage() {
             className="fill-pink-600 dark:text-accent-foreground"
           />
           <h2 className="text-md md:text-2xl font-bold text-primary">
-            Origin Web Vitals (Trend)
+            Origin Web Vitals (CrUX Data)
           </h2>
           <Tooltip>
             <TooltipTrigger asChild>

@@ -16,9 +16,6 @@ const siteDomain = location.hostname;
 let previousPage = document.referrer || null;
 let currentPage = location.pathname + location.search;
 
-// Set a sessionId only once per browser session.
-// Automatically reuse the same sessionId for all analytics events in that session.
-// Automatically clear it when the browser is closed.
 function getCookie(name) {
   return document.cookie
     .split("; ")
@@ -27,7 +24,6 @@ function getCookie(name) {
 }
 
 function setCookie(name, value) {
-  // No expiration = session cookie
   document.cookie = `${name}=${value}; path=/`;
 }
 
@@ -39,14 +35,153 @@ if (!sessionId) {
 
 const batchedData = [];
 
-function updatePagePath(newPath) {
-  previousPage = currentPage;
-  currentPage = newPath;
+// Track latest metrics
+const latestMetrics = {
+  CLS: null,
+  INP: null,
+  LCP: null,
+  FCP: null,
+  TTFB: null,
+};
+
+//#region AI Citation
+const AI_CITATION_WEIGHTS = {
+  domContentLoaded: 0.3,
+  ttfb: 0.25,
+  contentTypeScore: 0.1,
+  semanticMarkupScore: 0.2,
+  docSizeScore: 0.15,
+};
+
+let aiCitationMetrics = {
+  domContentLoaded: null,
+  ttfb: null,
+  contentType: null,
+  semanticMarkupScore: null,
+  docSize: null,
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  aiCitationMetrics.domContentLoaded = performance.now();
+});
+
+onTTFB((metric) => {
+  aiCitationMetrics.ttfb = metric.value;
+});
+
+function computeSemanticMarkupScore() {
+  const tags = ["article", "main", "header", "footer", "nav", "section"];
+  let score = 0;
+  tags.forEach((tag) => {
+    if (document.querySelector(tag)) score += 1;
+  });
+  return score / tags.length;
 }
 
-window.addEventListener("popstate", () => {
-  updatePagePath(location.pathname + location.search);
-});
+function getDocSizeScore() {
+  const htmlLength = document.documentElement.outerHTML.length;
+  if (htmlLength < 50000) return 1;
+  if (htmlLength < 150000) return 0.5;
+  return 0.2;
+}
+
+function computeAICitationScore(metrics) {
+  const weights = AI_CITATION_WEIGHTS;
+
+  const dcl = metrics.domContentLoaded ?? 10000;
+  const ttfb = metrics.ttfb ?? 2000;
+
+  const domScore = 1 - Math.min(dcl, 10000) / 10000;
+  const ttfbScore = 1 - Math.min(ttfb, 2000) / 2000;
+
+  const typeScore =
+    metrics.contentType?.includes("text/html") ||
+    metrics.contentType?.includes("application/json")
+      ? 1
+      : 0;
+
+  const semanticScore = metrics.semanticMarkupScore ?? 0;
+  const docSizeScore = metrics.docSize ?? 1;
+
+  const finalScore =
+    domScore * weights.domContentLoaded +
+    ttfbScore * weights.ttfb +
+    typeScore * weights.contentTypeScore +
+    semanticScore * weights.semanticMarkupScore +
+    docSizeScore * weights.docSizeScore;
+
+  return Number((finalScore * 100).toFixed(1));
+}
+
+setTimeout(() => {
+  aiCitationMetrics.semanticMarkupScore = computeSemanticMarkupScore();
+  aiCitationMetrics.docSize = getDocSizeScore();
+  aiCitationMetrics.contentType =
+    document.contentType ||
+    document.querySelector("meta[http-equiv='Content-Type']")?.content;
+
+  const score = computeAICitationScore(aiCitationMetrics);
+
+  queueEvent({
+    type: "ai-citation-ready",
+    siteDomain,
+    score,
+    domContentLoaded: aiCitationMetrics.domContentLoaded,
+    ttfb: aiCitationMetrics.ttfb,
+    timestamp: Date.now(),
+  });
+}, 3000);
+//#endregion
+
+//#region Performance Score
+function computePagePerformanceScore(metrics) {
+  const thresholds = {
+    CLS: [0.1, 0.25],
+    INP: [200, 500],
+    LCP: [2500, 4000],
+    FCP: [1800, 3000],
+    TTFB: [800, 1800],
+  };
+
+  const weights = {
+    CLS: 0.2,
+    INP: 0.25,
+    LCP: 0.25,
+    FCP: 0.15,
+    TTFB: 0.15,
+  };
+
+  let weightedSum = 0;
+  let totalWeight = 0;
+
+  for (const [key, value] of Object.entries(metrics)) {
+    if (value == null) continue;
+
+    const [good, poor] = thresholds[key];
+    let normalizedScore = 1 - Math.min(value, poor) / poor;
+
+    weightedSum += normalizedScore * weights[key];
+    totalWeight += weights[key];
+  }
+
+  if (totalWeight === 0) return null;
+
+  const finalScore = (weightedSum / totalWeight) * 100;
+  return Number(finalScore.toFixed(1));
+}
+
+setTimeout(() => {
+  const pagePerfScore = computePagePerformanceScore(latestMetrics);
+  if (pagePerfScore !== null) {
+    queueEvent({
+      type: "page-performance-score",
+      siteDomain,
+      score: pagePerfScore,
+      timestamp: Date.now(),
+    });
+  }
+}, 4000);
+//#endregion
 
 function classifyMetric(value, thresholds) {
   if (value <= thresholds[0]) return "good";
@@ -67,20 +202,26 @@ function queueEvent(event) {
 
 function handleMetric(metric) {
   let rating = "unknown";
+
   switch (metric.name) {
     case "CLS":
+      latestMetrics.CLS = metric.value;
       rating = classifyMetric(metric.value, CLSThresholds);
       break;
     case "INP":
+      latestMetrics.INP = metric.value;
       rating = classifyMetric(metric.value, INPThresholds);
       break;
     case "LCP":
+      latestMetrics.LCP = metric.value;
       rating = classifyMetric(metric.value, LCPThresholds);
       break;
     case "FCP":
+      latestMetrics.FCP = metric.value;
       rating = classifyMetric(metric.value, FCPThresholds);
       break;
     case "TTFB":
+      latestMetrics.TTFB = metric.value;
       rating = classifyMetric(metric.value, TTFBThresholds);
       break;
   }
@@ -133,10 +274,8 @@ new PerformanceObserver((list) => {
       } catch {
         // ignore invalid URLs
       }
-      // NO individual queueEvent for 3rd party asset here anymore
     }
 
-    // Keep slow API calls as-is
     if (
       (entry.initiatorType === "fetch" ||
         entry.initiatorType === "xmlhttprequest") &&
@@ -213,9 +352,17 @@ new PerformanceObserver((list) => {
   }, 50);
 })();
 
+function getDeviceType() {
+  const width = window.innerWidth;
+  if (width <= 768) return "mobile";
+  if (width <= 1024) return "tablet";
+  return "desktop";
+}
+
 (function collectClientMeta() {
   const clientMeta = {
     type: "client-info",
+    deviceType: getDeviceType(),
     deviceMemory: navigator.deviceMemory || "unknown",
     hardwareConcurrency: navigator.hardwareConcurrency || "unknown",
     connection: navigator.connection

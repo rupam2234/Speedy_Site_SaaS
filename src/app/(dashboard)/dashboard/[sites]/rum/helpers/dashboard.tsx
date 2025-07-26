@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import WebVitalsBar from "./distributions";
 import {
@@ -8,9 +7,14 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import ExperienceBar, { ExperienceData } from "./ExperienceBar";
+import { Bot, Link2, Smile } from "lucide-react";
+import Link from "next/link";
+import CitationStatsCard from "./ai_citation";
 
-interface WebVitalsMetric {
+export interface WebVitalsMetric {
   domain_name: string;
+  device_type: string;
   page: string | null;
   metric_name: "CLS" | "FCP" | "INP" | "LCP" | "TTFB";
   sample_count: number;
@@ -27,79 +31,60 @@ interface WebVitalsMetric {
   poor_percent: number;
 }
 
-export default function RumDashboard() {
-  const { selectedSite } = useSiteContext();
-  const [distdata, setDistData] = useState<WebVitalsMetric[]>([]);
-  // const [loading, setLoading] = useState(true);
+interface RumDashboardProps {
+  distData: WebVitalsMetric[];
+  experienceBarData: ExperienceData[];
+}
 
-  async function GetDistribution() {
-    try {
-      const res = await fetch("/api/rum/percentile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: "7days",
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setDistData(data.metrics || []);
-      } else {
-        setDistData([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch distribution:", error);
-      setDistData([]);
-    }
-  }
-
-  useEffect(() => {
-    if (selectedSite) {
-      GetDistribution();
-    }
-  }, [selectedSite]);
+export default function RumDashboard({
+  distData,
+  experienceBarData,
+}: RumDashboardProps) {
+  const { rumDistribution, selectedDevice, selectedSite } = useSiteContext();
 
   function formatMetricValue(metric: WebVitalsMetric): string {
-    if (metric.metric_name === "CLS") {
-      return metric.p75.toFixed(3);
-    }
-    return `${Math.round(metric.p75)}`;
+    const value = metric[rumDistribution];
+    if (typeof value !== "number") return "--";
+
+    return metric.metric_name === "CLS"
+      ? value.toFixed(3)
+      : `${Math.round(value)}`;
   }
 
   function getColorClass(metric: WebVitalsMetric): string {
-    const { metric_name, p75 } = metric;
+    const value = metric[rumDistribution];
 
-    switch (metric_name) {
+    if (typeof value !== "number") return "text-gray-600";
+
+    switch (metric.metric_name) {
       case "CLS":
-        return p75 <= 0.1
+        return value <= 0.1
           ? "text-green-600"
-          : p75 <= 0.25
+          : value <= 0.25
           ? "text-yellow-600"
           : "text-red-600";
       case "FCP":
-        return p75 <= 1800
+        return value <= 1800
           ? "text-green-600"
-          : p75 <= 3000
+          : value <= 3000
           ? "text-yellow-600"
           : "text-red-600";
       case "LCP":
-        return p75 <= 2500
+        return value <= 2500
           ? "text-green-600"
-          : p75 <= 4000
+          : value <= 4000
           ? "text-yellow-600"
           : "text-red-600";
       case "INP":
-        return p75 <= 200
+        return value <= 200
           ? "text-green-600"
-          : p75 <= 500
+          : value <= 500
           ? "text-yellow-600"
           : "text-red-600";
       case "TTFB":
-        return p75 <= 800
+        return value <= 800
           ? "text-green-600"
-          : p75 <= 1800
+          : value <= 1800
           ? "text-yellow-600"
           : "text-red-600";
       default:
@@ -107,63 +92,125 @@ export default function RumDashboard() {
     }
   }
 
-  // if (loading) {
-  //   return (
-  //     <div className="text-sm text-muted-foreground mt-6">
-  //       Loading metrics...
-  //     </div>
-  //   );
-  // }
+  const totalSessions = experienceBarData
+    .filter((d) => d.device_type.toLowerCase() === selectedDevice.toLowerCase())
+    .reduce((acc, curr) => acc + curr.session_count, 0);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6">
-      {distdata.map((metric) => {
-        const label = metric.metric_name;
-        const value = formatMetricValue(metric);
-        const unit = metric.metric_name === "CLS" ? "" : "ms";
-        const colorClass = getColorClass(metric);
+    <div className="space-y-15">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6">
+        {distData
+          .filter(
+            (metric) =>
+              metric.device_type.toLowerCase() === selectedDevice.toLowerCase()
+          )
+          .map((metric) => {
+            const label = metric.metric_name;
+            const unit = metric.metric_name === "CLS" ? "" : "ms";
+            const value = formatMetricValue(metric);
+            const colorClass = getColorClass(metric);
 
-        return (
-          <div
-            key={label}
-            className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground"
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-semibold">{label}</h3>
-              <div className="flex gap-2 items-center">
-                <p className={`text-sm font-semibold ${colorClass}`}>
-                  {value} {unit}
-                </p>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="cursor-help dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
-                      p75
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <span>
-                      Around 75% of users experienced
-                      <span className="lowercase"> {label} around</span>:{" "}
-                      {value}
-                    </span>
-                  </TooltipContent>
-                </Tooltip>
+            const rawPercentile =
+              typeof metric[rumDistribution] === "number"
+                ? (metric[rumDistribution] as number)
+                : undefined;
+
+            return (
+              <div
+                key={label}
+                className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-semibold">{label}</h3>
+                  <div className="flex gap-2 items-center">
+                    <p className={`text-sm font-semibold ${colorClass}`}>
+                      {value} {unit}
+                    </p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-help dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
+                          {rumDistribution}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <span>
+                          Around{" "}
+                          {rumDistribution.toUpperCase().replace("P", "")}% of
+                          users experienced
+                          <span className="lowercase"> {label} ≤</span> {value}
+                        </span>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                <WebVitalsBar
+                  metricName={label}
+                  goodPercent={metric.good_percent}
+                  needsImprovementPercent={metric.needs_improvement_percent}
+                  poorPercent={metric.poor_percent}
+                  minValue={metric.min_value}
+                  maxValue={metric.max_value}
+                  percentileValue={rawPercentile}
+                  percentileLabel={rumDistribution}
+                />
               </div>
-            </div>
+            );
+          })}
+      </div>
+      <div className="space-y-5">
+        <span className="flex gap-2 items-center ">
+          <span className="flex items-center gap-2">
+            <Smile
+              size={30}
+              className="fill-green-200 text-primary/70 dark:text-accent/70"
+            />
+            <h2 className="text-md md:text-2xl font-bold text-primary/90">
+              Session Experience
+            </h2>
+          </span>
+          <Link href={`/dashboard/${selectedSite}/rum/session`}>
+            <Link2
+              size={20}
+              className="mt-1 hover:text-blue-400 cursor-pointer"
+            />
+          </Link>
+        </span>
+        <div className="border rounded-sm px-4 py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
+          <div className="mb-5 flex items-center font-semibold">
+            <span>Total Sessions: {totalSessions}</span>
+          </div>
+          <ExperienceBar data={experienceBarData} deviceType={selectedDevice} />
+        </div>
 
-            <WebVitalsBar
-              metricName={label}
-              goodPercent={metric.good_percent}
-              needsImprovementPercent={metric.needs_improvement_percent}
-              poorPercent={metric.poor_percent}
-              minValue={metric.min_value}
-              maxValue={metric.max_value}
-              percentileValue={metric.p75}
-              percentileLabel="p75"
+        <span className="flex gap-2 mt-15 items-center ">
+          <span className="flex items-center gap-2">
+            <Bot
+              size={30}
+              className="fill-purple-200 text-primary/70 dark:text-accent/70"
+            />
+            <h2 className="text-md md:text-2xl font-bold text-primary/90">
+              AI Citation
+            </h2>
+          </span>
+        </span>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="col-span-1">
+            <CitationStatsCard
+              avgCitation={70.78}
+              stdDev={10.54}
+              maxCitation={87.6}
+              minCitation={52.1}
+              sessions={1320}
+              avgTTFB={622.51}
+              domLoad={1225.32}
+              visibility="medium"
             />
           </div>
-        );
-      })}
+          <div className="col-span-2 rounded-sm bg-white border border-accent-foreground/20 dark:bg-secondary-background max-w-full p-4 rounded "></div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -4,9 +4,9 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "web-vital-public-script",
+	"name": "rum",
 	"main": "src/index.js",
-	"compatibility_date": "2025-07-23",
+	"compatibility_date": "2025-07-24",
 	"observability": {
 		"enabled": true
 	}

@@ -20,10 +20,6 @@ const WebVitalsBar: React.FC<WebVitalsBarProps> = ({
   goodPercent,
   needsImprovementPercent,
   poorPercent,
-  minValue,
-  maxValue,
-  percentileValue,
-  percentileLabel = "p75",
 }) => {
   const total = goodPercent + needsImprovementPercent + poorPercent;
 
@@ -42,19 +38,19 @@ const WebVitalsBar: React.FC<WebVitalsBarProps> = ({
 
   const sections = [
     {
-      label: "Good",
+      label: "good",
       value: goodPercent,
       width: normalized.good,
       color: "#66cc8f",
     },
     {
-      label: "Needs Improvement",
+      label: "okay",
       value: needsImprovementPercent,
       width: normalized.okay,
       color: "#FFEEA9",
     },
     {
-      label: "Poor",
+      label: "poor",
       value: poorPercent,
       width: normalized.bad,
       color: "#FF9898",
@@ -62,13 +58,13 @@ const WebVitalsBar: React.FC<WebVitalsBarProps> = ({
   ];
 
   // Calculate marker position (as % from left) only if valid
-  const markerLeftPercent =
-    typeof percentileValue === "number" &&
-    maxValue > minValue &&
-    percentileValue >= minValue &&
-    percentileValue <= maxValue
-      ? ((percentileValue - minValue) / (maxValue - minValue)) * 100
-      : null;
+  // const markerLeftPercent =
+  //   typeof percentileValue === "number" &&
+  //   maxValue > minValue &&
+  //   percentileValue >= minValue &&
+  //   percentileValue <= maxValue
+  //     ? ((percentileValue - minValue) / (maxValue - minValue)) * 100
+  //     : null;
 
   return (
     <div className="w-full mt-3 h-4 relative flex overflow-visible bg-neutral-200 rounded">
@@ -81,7 +77,7 @@ const WebVitalsBar: React.FC<WebVitalsBarProps> = ({
               style={{ width: `${section.width}%` }}
             >
               <div
-                className="h-full w-full transition-transform duration-200 ease-in-out group-hover:scale-y-[1.10] group-hover:shadow-md rounded"
+                className="h-full w-full transition-transform duration-200 ease-in-out group-hover:scale-y-[1.10] group-hover:shadow-md"
                 style={{ backgroundColor: section.color }}
               />
             </div>
@@ -96,12 +92,18 @@ const WebVitalsBar: React.FC<WebVitalsBarProps> = ({
       ))}
 
       {/* Optional percentile marker */}
-      {markerLeftPercent !== null && (
+      {/* {markerLeftPercent !== null && (
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className="absolute top-[-2px] bottom-[-2px] w-[2px] bg-black/70"
-              style={{ left: `${markerLeftPercent}%` }}
+              className="absolute top-0 bottom-0 w-[3px] cursor-pointer bg-primary/70 rounded-full hover:bg-primary/50 transition-colors duration-200"
+              style={{
+                left: `${markerLeftPercent}%`,
+                transform: "translateX(-50%)",
+                transition: "left 0.3s ease",
+              }}
+              tabIndex={0} // makes it keyboard focusable
+              aria-label={`${percentileLabel}: ${percentileValue}`}
             />
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -110,7 +112,7 @@ const WebVitalsBar: React.FC<WebVitalsBarProps> = ({
             </span>
           </TooltipContent>
         </Tooltip>
-      )}
+      )} */}
     </div>
   );
 };

@@ -22,5 +22,15 @@ Lists third-party domains used by the site
 
 Logs usage of cookies, localStorage, sessionStorage
 
+AI Citation Score (ai-citation-score)
+
+Device Affordability Index (device-affordability)
+
+Content Visibility Check for citation readiness
+
+Canonical Tag Presence Check
+
+
+
 
 // cloudflare active worker : https://web-vitals-collector.thespeedysite.workers.dev/
