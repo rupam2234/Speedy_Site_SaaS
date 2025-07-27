@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  ChartLine,
+  Activity,
   CreditCard,
+  FlaskConical,
   GroupIcon,
   HeartPulse,
   LayoutDashboardIcon,
-  Link2,
   Settings,
   User2Icon,
 } from "lucide-react";
@@ -68,7 +68,7 @@ export default function AppSidebar({
       {
         title: "Lab Reports",
         url: "#",
-        icon: ChartLine,
+        icon: FlaskConical,
         isActive: true,
         items: [
           {
@@ -84,12 +84,16 @@ export default function AppSidebar({
       {
         title: "Real User Monitoring",
         url: "#",
-        icon: Link2,
+        icon: Activity,
         isActive: true,
         items: [
           {
-            title: "Experience",
-            url: `/dashboard/${site}/rum`,
+            title: "Overview",
+            url: `/dashboard/${site}/rum/overview`,
+          },
+          {
+            title: "Web Vitals",
+            url: `/dashboard/${site}/rum/cwv`,
           },
           {
             title: "Analytics",
@@ -102,6 +106,10 @@ export default function AppSidebar({
           {
             title: "User Session",
             url: `/dashboard/${site}/rum/session`,
+          },
+          {
+            title: "Configuration",
+            url: `/dashboard/${site}/rum/configuration`,
           },
         ],
       },

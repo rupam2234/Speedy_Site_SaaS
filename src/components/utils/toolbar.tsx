@@ -57,7 +57,8 @@ export default function DashboardToolbar() {
   const allowedPaths = [
     `/dashboard/${params.sites}/cwv`,
     `/dashboard/${params.sites}/pages`,
-    `/dashboard/${params.sites}/rum`,
+    `/dashboard/${params.sites}/rum/overview`,
+    `/dashboard/${params.sites}/rum/cwv`,
     `/dashboard/${params.sites}`,
   ];
 
@@ -66,7 +67,9 @@ export default function DashboardToolbar() {
   if (!isToolbarVisible) return null;
 
   const isOnCWVPage = pathname === `/dashboard/${params.sites}/cwv`;
-  const isOnRum = pathname === `/dashboard/${params.sites}/rum`;
+  const isOnRum =
+    pathname === `/dashboard/${params.sites}/rum/overview` ||
+    pathname === `/dashboard/${params.sites}/rum/cwv`;
 
   function selectDevice(device: "Desktop" | "Mobile") {
     setSelectedDevice(device);

@@ -70,11 +70,13 @@ export async function POST(request: NextRequest) {
     };
 
     // Execute the query using our updated function
-    const { data, error } = await supabase.rpc("get_ai_citation", {
-      p_date_range: date_range,
-      p_domain_filter: domain_name,
-    });
-    
+    const { data, error } = await supabase.rpc(
+      "get_analytics_by_device_and_country",
+      {
+        p_time_range: date_range,
+        p_domain_name: domain_name,
+      }
+    );
 
     if (error) {
       console.error("Database query error:", error);

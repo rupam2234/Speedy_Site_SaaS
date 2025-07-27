@@ -8,9 +8,10 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import ExperienceBar, { ExperienceData } from "./ExperienceBar";
-import { Bot, Link2, Smile } from "lucide-react";
+import { Bot, CircleGauge, Link2, Smile } from "lucide-react";
 import Link from "next/link";
-import CitationStatsCard from "./ai_citation";
+import CitationStatsCard, { DevicePerformanceData } from "./ai_citation";
+import AnalyticsOverview, { AggregatedMetrics } from "./analyticsOverview";
 
 export interface WebVitalsMetric {
   domain_name: string;
@@ -34,11 +35,15 @@ export interface WebVitalsMetric {
 interface RumDashboardProps {
   distData: WebVitalsMetric[];
   experienceBarData: ExperienceData[];
+  citationData: DevicePerformanceData;
+  analyticsData: AggregatedMetrics;
 }
 
 export default function RumDashboard({
   distData,
   experienceBarData,
+  citationData,
+  analyticsData,
 }: RumDashboardProps) {
   const { rumDistribution, selectedDevice, selectedSite } = useSiteContext();
 
@@ -92,72 +97,85 @@ export default function RumDashboard({
     }
   }
 
-  const totalSessions = experienceBarData
-    .filter((d) => d.device_type.toLowerCase() === selectedDevice.toLowerCase())
-    .reduce((acc, curr) => acc + curr.session_count, 0);
-
   return (
     <div className="space-y-15">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6">
-        {distData
-          .filter(
-            (metric) =>
-              metric.device_type.toLowerCase() === selectedDevice.toLowerCase()
-          )
-          .map((metric) => {
-            const label = metric.metric_name;
-            const unit = metric.metric_name === "CLS" ? "" : "ms";
-            const value = formatMetricValue(metric);
-            const colorClass = getColorClass(metric);
-
-            const rawPercentile =
-              typeof metric[rumDistribution] === "number"
-                ? (metric[rumDistribution] as number)
-                : undefined;
-
-            return (
-              <div
-                key={label}
-                className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-sm font-semibold">{label}</h3>
-                  <div className="flex gap-2 items-center">
-                    <p className={`text-sm font-semibold ${colorClass}`}>
-                      {value} {unit}
-                    </p>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="cursor-help dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
-                          {rumDistribution}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        <span>
-                          Around{" "}
-                          {rumDistribution.toUpperCase().replace("P", "")}% of
-                          users experienced
-                          <span className="lowercase"> {label} ≤</span> {value}
-                        </span>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-
-                <WebVitalsBar
-                  metricName={label}
-                  goodPercent={metric.good_percent}
-                  needsImprovementPercent={metric.needs_improvement_percent}
-                  poorPercent={metric.poor_percent}
-                  minValue={metric.min_value}
-                  maxValue={metric.max_value}
-                  percentileValue={rawPercentile}
-                  percentileLabel={rumDistribution}
-                />
-              </div>
-            );
-          })}
+      <div className="mt-6">
+        <AnalyticsOverview data={analyticsData} />
       </div>
+      <div>
+        <span className="flex items-center gap-2">
+          <CircleGauge
+            size={30}
+            className="fill-pink-600/30 text-primary/70 dark:text-accent/70"
+          />
+          <h2 className="text-md md:text-2xl font-bold text-primary/90">
+            Web Vitals
+          </h2>
+        </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6">
+          {distData
+            .filter(
+              (metric) =>
+                metric.device_type.toLowerCase() ===
+                selectedDevice.toLowerCase()
+            )
+            .map((metric) => {
+              const label = metric.metric_name;
+              const unit = metric.metric_name === "CLS" ? "" : "ms";
+              const value = formatMetricValue(metric);
+              const colorClass = getColorClass(metric);
+
+              const rawPercentile =
+                typeof metric[rumDistribution] === "number"
+                  ? (metric[rumDistribution] as number)
+                  : undefined;
+
+              return (
+                <div
+                  key={label}
+                  className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-sm font-semibold">{label}</h3>
+                    <div className="flex gap-2 items-center">
+                      <p className={`text-sm font-semibold ${colorClass}`}>
+                        {value} {unit}
+                      </p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
+                            {rumDistribution}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <span>
+                            Around{" "}
+                            {rumDistribution.toUpperCase().replace("P", "")}% of
+                            users experienced
+                            <span className="lowercase"> {label} ≤</span>{" "}
+                            {value}
+                          </span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+
+                  <WebVitalsBar
+                    metricName={label}
+                    goodPercent={metric.good_percent}
+                    needsImprovementPercent={metric.needs_improvement_percent}
+                    poorPercent={metric.poor_percent}
+                    minValue={metric.min_value}
+                    maxValue={metric.max_value}
+                    percentileValue={rawPercentile}
+                    percentileLabel={rumDistribution}
+                  />
+                </div>
+              );
+            })}
+        </div>
+      </div>
+
       <div className="space-y-5">
         <span className="flex gap-2 items-center ">
           <span className="flex items-center gap-2">
@@ -166,7 +184,7 @@ export default function RumDashboard({
               className="fill-green-200 text-primary/70 dark:text-accent/70"
             />
             <h2 className="text-md md:text-2xl font-bold text-primary/90">
-              Session Experience
+              Experience By Pageviews
             </h2>
           </span>
           <Link href={`/dashboard/${selectedSite}/rum/session`}>
@@ -177,9 +195,6 @@ export default function RumDashboard({
           </Link>
         </span>
         <div className="border rounded-sm px-4 py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
-          <div className="mb-5 flex items-center font-semibold">
-            <span>Total Sessions: {totalSessions}</span>
-          </div>
           <ExperienceBar data={experienceBarData} deviceType={selectedDevice} />
         </div>
 
@@ -198,17 +213,16 @@ export default function RumDashboard({
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1">
             <CitationStatsCard
-              avgCitation={70.78}
-              stdDev={10.54}
-              maxCitation={87.6}
-              minCitation={52.1}
-              sessions={1320}
-              avgTTFB={622.51}
-              domLoad={1225.32}
-              visibility="medium"
+              avg_citation_score={citationData?.avg_citation_score}
+              min_citation_score={citationData?.min_citation_score}
+              max_citation_score={citationData?.max_citation_score}
+              std_dev_citation_score={citationData?.std_dev_citation_score}
+              avg_ttfb={citationData?.avg_ttfb}
+              avg_dom_content_loaded={citationData?.avg_dom_content_loaded}
+              ai_citation_possibility={citationData?.ai_citation_possibility}
             />
           </div>
-          <div className="col-span-2 rounded-sm bg-white border border-accent-foreground/20 dark:bg-secondary-background max-w-full p-4 rounded "></div>
+          <div className="col-span-2 bg-white border border-accent-foreground/20 dark:bg-secondary-background max-w-full p-4 rounded-sm"></div>
         </div>
       </div>
     </div>

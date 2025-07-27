@@ -76,7 +76,7 @@ export default function ExperienceBar({
                   <div className="flex items-center justify-between">
                     <span>
                       {item.session_count} {item.experience_quality}{" "}
-                      {item.session_count > 1 ? "Sessions" : "Session"}
+                      {item.session_count > 1 ? "Page Views" : "Page View"}
                     </span>
                     <div className={`w-3 h-3 rounded-full ${color}`} />
                   </div>
