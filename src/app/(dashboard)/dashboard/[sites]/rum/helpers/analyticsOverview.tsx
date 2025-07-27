@@ -60,7 +60,7 @@ export default function AnalyticsOverview({ data }: Props) {
         <p className="text-sm mb-2">Most Visitors By Countries:</p>
         <div className="flex flex-wrap gap-1">
           {data?.country.slice(0, 6).map((code) => (
-            <Image
+            <img
               key={code}
               src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
               alt={code}
