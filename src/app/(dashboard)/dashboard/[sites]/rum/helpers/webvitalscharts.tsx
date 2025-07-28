@@ -14,7 +14,6 @@ import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import { cwv_metrics } from "../../cwv/helper/cwvMetrics";
 
 echarts.use([
   TitleComponent,
@@ -58,17 +57,20 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const { theme } = useTheme();
-  const { selectedDevice } = useSiteContext();
+  const { selectedDevice, rumDistribution } = useSiteContext();
 
   const metricRange = getRanges(metric_key);
 
-  const p75ChartData =
+  const chartData =
     data
       ?.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .map((entry) => [entry.date, entry[`${metric_key}_p75`] ?? 0]) || [];
+      .map((entry) => [
+        entry.date,
+        entry[`${metric_key}_${rumDistribution}`] ?? 0,
+      ]) || [];
 
   useEffect(() => {
-    if (!chartRef.current || !p75ChartData.length) return;
+    if (!chartRef.current || !chartData.length) return;
 
     if (!chartInstanceRef.current) {
       chartInstanceRef.current = echarts.init(chartRef.current);
@@ -77,7 +79,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
     const chart = chartInstanceRef.current;
     const gridLineColor = theme === "dark" ? "#393E46" : "#B3C8CF";
 
-    const styledData = p75ChartData.map(([x, y]) => {
+    const styledData = chartData.map(([x, y]) => {
       const isHigh = (y as number) >= metricRange.c;
       const isMed =
         (y as number) < metricRange.c && (y as number) > metricRange.b;
@@ -107,8 +109,6 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
       };
     });
 
-    const metricMeta = cwv_metrics.find((x) => x.key === metric_key);
-
     const option = {
       tooltip: {
         trigger: "axis",
@@ -120,27 +120,30 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
         },
         formatter: (params: any) => {
           const param = params[0];
+          const value = param.value[1];
+          const isMs =
+            metric_key === "lcp" ||
+            metric_key === "fcp" ||
+            metric_key === "inp" ||
+            metric_key === "ttfb";
+
+          const displayValue = isMs
+            ? value >= 1000
+              ? `${(value / 1000).toFixed(2)}s`
+              : `${Math.round(value)}ms`
+            : value.toFixed(3); // for CLS
+
+          const colorClass =
+            value >= metricRange?.c
+              ? "text-[#FF3B30] dark:text-[#ff5c54]"
+              : value > metricRange?.b
+              ? "text-[#ffa11c] dark:text-[#ffb54d]"
+              : "text-[#00E676] dark:text-[#2ae387]";
+
           return `
             <div class="p-3 bg-[#333446] dark:bg-accent-foreground w-auto rounded-sm text-primary-foreground">
               <p class="mb-2">${param.name}</p>
-              <p>75% of ${selectedDevice.toLowerCase()} page loads experienced</p>
-              <div class="flex gap-1 items-center">
-                <span>${metricMeta?.acronym}</span> ≤
-                <span class="${
-                  param.value[1] >= metricRange?.c
-                    ? "text-[#FF3B30] dark:text-[#ff5c54]"
-                    : param.value[1] > metricRange?.b
-                    ? "text-[#ffa11c] dark:text-[#ffb54d]"
-                    : "text-[#00E676] dark:text-[#2ae387]"
-                } font-semibold">${param.value[1]}</span> ${metricMeta?.unit}
-              </div>
-              <p class="mt-2">Means ${metricMeta?.acronym} was ${
-            param.value[1] <= metricRange.b
-              ? "good"
-              : param.value[1] > metricRange.b && param.value[1] < metricRange.c
-              ? "okay"
-              : "poor"
-          }.</p>
+              <p>${rumDistribution.toUpperCase()} of ${selectedDevice.toLowerCase()} page loads experienced ≤ <span class="${colorClass} font-semibold">${displayValue}</span></p>
             </div>
           `;
         },
@@ -152,7 +155,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
         axisLabel: {
           rotate: 0,
           fontSize: 10,
-          interval: Math.floor(p75ChartData.length / 5),
+          interval: Math.floor(chartData.length / 5),
         },
       },
       yAxis: {
@@ -200,7 +203,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [metric_key, selectedDevice, data, theme]);
+  }, [metric_key, selectedDevice, data, theme, rumDistribution]);
 
   useEffect(() => {
     return () => {
@@ -211,7 +214,19 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
     };
   }, []);
 
-  return <div ref={chartRef} style={{ width: "100%", height: "380px" }} />;
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-end px-4 mb-2">
+        <span className="text-xs font-medium px-2 py-1 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">
+          Active Distribution:
+          <strong className="ml-1 uppercase">
+            {rumDistribution ? rumDistribution : ""}
+          </strong>
+        </span>
+      </div>
+      <div ref={chartRef} style={{ width: "100%", height: "380px" }} />
+    </div>
+  );
 };
 
 export default RumCwvChart;
