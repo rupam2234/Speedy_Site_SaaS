@@ -63,11 +63,39 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
 
   const chartData =
     data
-      ?.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      ?.filter(
+        (entry) => entry.device_category === selectedDevice.toLowerCase()
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.report_date).getTime() - new Date(b.report_date).getTime()
+      )
       .map((entry) => [
-        entry.date,
+        entry.report_date,
         entry[`${metric_key}_${rumDistribution}`] ?? 0,
       ]) || [];
+
+  const latestDate = chartData.length
+    ? chartData[chartData.length - 1][0]
+    : null;
+
+  const latestValues = chartData
+    .filter(([date]) => date === latestDate)
+    .map(([, y]) => y as number);
+
+  const min = Math.min(...latestValues);
+  const max = Math.max(...latestValues);
+  const avg =
+    latestValues.reduce((sum, val) => sum + val, 0) / latestValues.length || 0;
+
+  const isMs = ["lcp", "fcp", "inp", "ttfb"].includes(metric_key);
+
+  const formatValue = (val: number) =>
+    isMs
+      ? val >= 1000
+        ? `${(val / 1000).toFixed(2)}s`
+        : `${Math.round(val)}ms`
+      : val.toFixed(3);
 
   useEffect(() => {
     if (!chartRef.current || !chartData.length) return;
@@ -157,6 +185,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
           fontSize: 10,
           interval: Math.floor(chartData.length / 5),
         },
+        boundaryGap: false,
       },
       yAxis: {
         type: "value",
@@ -180,6 +209,28 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
           lineStyle: {
             color: theme === "dark" ? "#aaa" : "#444",
             width: 1,
+          },
+          areaStyle: {
+            color: {
+              type: "linear",
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                {
+                  offset: 0,
+                  color:
+                    theme === "dark"
+                      ? "rgba(255, 255, 255, 0.05)"
+                      : "rgba(0, 0, 0, 0.05)",
+                },
+                {
+                  offset: 1,
+                  color: "transparent",
+                },
+              ],
+            },
           },
           encode: { x: 0, y: 1, tooltip: [1] },
           animationDurationUpdate: 300,
@@ -216,8 +267,19 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-end px-4 mb-2">
-        <span className="text-xs font-medium px-2 py-1 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">
+      <div className="flex items-center justify-between px-4 mb-2 text-xs">
+        <div className="flex space-x-3 text-muted-foreground dark:text-muted">
+          <span>
+            Min: <strong>{formatValue(min)}</strong>
+          </span>
+          <span>
+            Avg: <strong>{formatValue(avg)}</strong>
+          </span>
+          <span>
+            Max: <strong>{formatValue(max)}</strong>
+          </span>
+        </div>
+        <span className="font-medium px-2 py-1 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">
           Active Distribution:
           <strong className="ml-1 uppercase">
             {rumDistribution ? rumDistribution : ""}

@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import BeatLoader from "react-spinners/BeatLoader";
 
 interface INPElementData {
   device_type: string;
@@ -25,6 +26,9 @@ interface INPElementData {
 interface Props {
   data: INPElementData[];
 }
+
+const loading: boolean = true;
+const color: string = "green";
 
 const SORT_OPTIONS = [
   { label: "Avg INP", value: "avg_inp_value" },
@@ -98,9 +102,14 @@ const INPBreakdownChart: React.FC<Props> = ({ data }) => {
 
   if (!filteredData || filteredData.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No INP breakdown data available for {selectedDevice}.
-      </p>
+      <div className="sweet-loading">
+        <BeatLoader
+          color={color}
+          loading={loading}
+          data-testid="loader"
+          size={10}
+        />
+      </div>
     );
   }
 

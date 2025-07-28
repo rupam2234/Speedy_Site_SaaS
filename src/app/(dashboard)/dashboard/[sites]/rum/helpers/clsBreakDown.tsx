@@ -7,6 +7,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import BeatLoader from "react-spinners/BeatLoader";
 
 interface CLSElementData {
   device_type: string;
@@ -23,6 +24,9 @@ interface CLSElementData {
 interface Props {
   data: CLSElementData[];
 }
+
+const loading: boolean = true;
+const color: string = "green";
 
 const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
   const { selectedDevice } = useSiteContext();
@@ -77,9 +81,14 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
 
   if (!filteredData || filteredData.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No CLS breakdown data available for {selectedDevice}.
-      </p>
+      <div className="sweet-loading">
+        <BeatLoader
+          color={color}
+          loading={loading}
+          data-testid="loader"
+          size={10}
+        />
+      </div>
     );
   }
 

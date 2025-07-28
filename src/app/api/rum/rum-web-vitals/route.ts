@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Execute the query using our updated function
-    const { data, error } = await supabase.rpc("get_rum_web_vitals_stats", {
+    const { data, error } = await supabase.rpc("get_rum_web_vitals_metrics", {
       p_domain_name: domain_name,
       p_date_range: date_range,
     });

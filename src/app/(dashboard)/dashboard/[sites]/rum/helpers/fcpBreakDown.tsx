@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import BeatLoader from "react-spinners/BeatLoader";
 
 interface FCPData {
   device_type: string;
@@ -27,6 +28,9 @@ interface FCPData {
 interface Props {
   data: FCPData[];
 }
+
+const loading: boolean = true;
+const color: string = "green";
 
 const SORT_OPTIONS = [
   { label: "Average FCP", value: "avg_fcp_value" },
@@ -91,9 +95,14 @@ const FCPBreakdownChart: React.FC<Props> = ({ data }) => {
 
   if (!filteredData || filteredData.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No FCP data available for {selectedDevice}.
-      </p>
+      <div className="sweet-loading">
+        <BeatLoader
+          color={color}
+          loading={loading}
+          data-testid="loader"
+          size={10}
+        />
+      </div>
     );
   }
 

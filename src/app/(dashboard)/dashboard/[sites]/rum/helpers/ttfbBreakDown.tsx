@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { BeatLoader } from "react-spinners";
 
 interface TTFBData {
   device_type: string;
@@ -28,6 +29,9 @@ interface TTFBData {
 interface Props {
   data: TTFBData[];
 }
+
+const loading: boolean = true;
+const color: string = "green";
 
 const SORT_OPTIONS = [
   { label: "TTFB", value: "avg_ttfb_value" },
@@ -72,7 +76,7 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
       a.avg_ttfb_value > b.avg_ttfb_value ? a : b
     );
 
-    if (avgTTFB <= 200) {
+    if (avgTTFB <= 800) {
       return (
         <div className="p-3 rounded bg-green-100 text-green-800 text-xs border border-green-300">
           ✅ TTFB looks good overall on <b>{selectedDevice}</b>. Average TTFB:{" "}
@@ -81,7 +85,7 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
       );
     }
 
-    if (avgTTFB <= 600) {
+    if (avgTTFB <= 1800) {
       return (
         <div className="p-3 rounded bg-yellow-100 text-yellow-800 text-xs border border-yellow-300">
           ⚠️ TTFB could be improved on <b>{selectedDevice}</b>. Average TTFB:{" "}
@@ -94,7 +98,7 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
     return (
       <div className="p-3 rounded bg-red-100 text-red-800 text-xs border border-red-300">
         🚨 Poor TTFB on <b>{selectedDevice}</b>! Average TTFB:{" "}
-        <b>{Math.round(avgTTFB)}ms</b>. Worst offender:{" "}
+        <b>{Math.round(avgTTFB)}ms</b>. Worst occurrence:{" "}
         <b>{worst.connection_type}</b> ({Math.round(worst.avg_ttfb_value)}ms)
       </div>
     );
@@ -102,9 +106,14 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
 
   if (!filteredData.length) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No TTFB data available for {selectedDevice}.
-      </p>
+      <div className="sweet-loading">
+        <BeatLoader
+          color={color}
+          loading={loading}
+          data-testid="loader"
+          size={10}
+        />
+      </div>
     );
   }
 

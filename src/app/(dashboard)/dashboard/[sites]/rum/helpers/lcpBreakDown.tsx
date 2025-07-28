@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import BeatLoader from "react-spinners/BeatLoader";
 
 interface LCPElementData {
   element_target: string;
@@ -25,6 +26,9 @@ interface LCPElementData {
 interface Props {
   data: LCPElementData[];
 }
+
+const loading: boolean = true;
+const color: string = "green";
 
 const SORT_OPTIONS = [
   { label: "LCP", value: "avg_lcp_value" },
@@ -99,9 +103,14 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
 
   if (!filteredData || filteredData.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No LCP breakdown data available for {selectedDevice}.
-      </p>
+      <div className="sweet-loading">
+        <BeatLoader
+          color={color}
+          loading={loading}
+          data-testid="loader"
+          size={10}
+        />
+      </div>
     );
   }
 

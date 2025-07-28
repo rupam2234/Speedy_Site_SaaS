@@ -18,7 +18,7 @@ type Trigger = {
 
 export default function RUMCWV() {
   const [activeData, setActiveData] = useState<any>();
-  const { selectedDevice, selectedSite } = useSiteContext();
+  const { selectedSite } = useSiteContext();
   const [activeTab, setActiveTab] = useState("lcp");
   const [lcp_analysis, set_lcp_analysis] = useState<any>();
   const [cls_analysis, set_cls_analysis] = useState<any>();
@@ -80,7 +80,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "7days",
+          date_range: "24hours",
         }),
       });
 
@@ -103,7 +103,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "7days",
+          date_range: "24hours",
         }),
       });
 
@@ -126,7 +126,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "7days",
+          date_range: "24hours",
         }),
       });
 
@@ -149,7 +149,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "7days",
+          date_range: "24hours",
         }),
       });
 
@@ -172,7 +172,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "7days",
+          date_range: "24hours",
         }),
       });
 
@@ -187,10 +187,6 @@ export default function RUMCWV() {
       set_fcp_analysis([]);
     }
   }
-
-  const filteredData = activeData?.filter(
-    (x: any) => x.device_type === selectedDevice.toLowerCase()
-  );
 
   const triggerList: Trigger[] = [
     { value: "lcp", name: "Largest Contentful Paint" },
@@ -238,7 +234,7 @@ export default function RUMCWV() {
         <div className="mt-2">
           <TabsContent value="lcp" className="space-y-5">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
-              <RumCwvChart metric_key="lcp" data={filteredData} />
+              <RumCwvChart metric_key="lcp" data={activeData} />
             </div>
             <div>
               <LCPBreakdownChart data={lcp_analysis || []} />
@@ -246,7 +242,7 @@ export default function RUMCWV() {
           </TabsContent>
           <TabsContent value="cls" className="space-y-5">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
-              <RumCwvChart metric_key="cls" data={filteredData} />
+              <RumCwvChart metric_key="cls" data={activeData} />
             </div>
             <div>
               <CLSBreakdownChart data={cls_analysis || []} />
@@ -254,7 +250,7 @@ export default function RUMCWV() {
           </TabsContent>
           <TabsContent value="inp" className="space-y-5">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
-              <RumCwvChart metric_key="inp" data={filteredData} />
+              <RumCwvChart metric_key="inp" data={activeData} />
             </div>
             <div>
               <InpBreakDownChart data={inp_analysis || []} />
@@ -262,7 +258,7 @@ export default function RUMCWV() {
           </TabsContent>
           <TabsContent value="ttfb">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
-              <RumCwvChart metric_key="ttfb" data={filteredData} />
+              <RumCwvChart metric_key="ttfb" data={activeData} />
             </div>
             <div className="mt-5">
               <TTFBBreakdownChart data={ttfb_analysis || []} />
@@ -270,7 +266,7 @@ export default function RUMCWV() {
           </TabsContent>
           <TabsContent value="fcp">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
-              <RumCwvChart metric_key="fcp" data={filteredData} />
+              <RumCwvChart metric_key="fcp" data={activeData} />
             </div>
             <div className="mt-5">
               <FCPBreakdownChart data={fcp_analysis || []} />

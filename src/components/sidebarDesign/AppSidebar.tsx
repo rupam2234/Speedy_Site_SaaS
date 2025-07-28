@@ -96,12 +96,12 @@ export default function AppSidebar({
             url: `/dashboard/${site}/rum/cwv`,
           },
           {
-            title: "Analytics",
-            url: `/dashboard/${site}/rum/analytics`,
-          },
-          {
             title: "Pages",
             url: `/dashboard/${site}/rum/pages`,
+          },
+          {
+            title: "Requests",
+            url: `/dashboard/${site}/rum/requests`,
           },
           {
             title: "User Session",

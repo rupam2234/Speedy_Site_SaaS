@@ -282,75 +282,22 @@ new PerformanceObserver((list) => {
       entry.duration > 500 &&
       !entry.name.includes("/api/collect-web-vitals")
     ) {
-      queueEvent({
-        type: "slow-api-call",
-        url: entry.name,
-        duration: entry.duration.toFixed(2),
-        startTime: entry.startTime.toFixed(2),
-        siteDomain,
-        timestamp: Date.now(),
-      });
-    }
-  }
-}).observe({ type: "resource", buffered: true });
-
-let longTaskCount = 0;
-let totalLongTaskDuration = 0;
-const criticalLongTasks = [];
-
-new PerformanceObserver((list) => {
-  for (const entry of list.getEntries()) {
-    if (entry.name === "self" && entry.duration > 50) {
-      longTaskCount++;
-      totalLongTaskDuration += entry.duration;
-
-      const task = {
-        type: entry.duration > 100 ? "long-task-critical" : "long-task",
-        siteDomain,
-        name: entry.name,
-        duration: Number(entry.duration.toFixed(2)),
-        startTime: Number(entry.startTime.toFixed(2)),
-        timestamp: Date.now(),
-      };
-
-      if (entry.duration > 100) criticalLongTasks.push(task);
-      queueEvent(task);
-    }
-  }
-}).observe({ type: "longtask", buffered: true });
-
-(function detectFontFlash() {
-  const headings = document.querySelectorAll("h1,h2,h3,h4,h5,h6");
-  let invisibleTime = 0;
-  let checkCount = 0;
-  const start = performance.now();
-  const interval = setInterval(() => {
-    let invisible = 0;
-    headings.forEach((el) => {
-      const color = window.getComputedStyle(el).color;
-      if (
-        color === "rgba(0, 0, 0, 0)" ||
-        getComputedStyle(el).visibility === "hidden"
-      ) {
-        invisible++;
-      }
-    });
-    checkCount++;
-    if (invisible > 0) invisibleTime += 50;
-    if (performance.now() - start > 3000 || checkCount > 60) {
-      clearInterval(interval);
-      if (invisibleTime > 100) {
+      try {
+        const domain = new URL(entry.name).hostname;
         queueEvent({
-          type: "font-flash",
-          invisibleDuration: invisibleTime,
-          checks: checkCount,
+          type: "slow-api-call",
+          url: domain, // Only the domain
+          duration: entry.duration.toFixed(2),
+          startTime: entry.startTime.toFixed(2),
           siteDomain,
           timestamp: Date.now(),
         });
+      } catch {
+        // Skip invalid URLs
       }
     }
-  }, 50);
-})();
+  }
+}).observe({ type: "resource", buffered: true });
 
 function getDeviceType() {
   const width = window.innerWidth;
@@ -381,7 +328,17 @@ function getDeviceType() {
   fetch("https://ipapi.co/json/")
     .then((res) => res.json())
     .then((geo) => {
-      queueEvent({ ...geo, type: "geo-info" });
+      const { country_code, country_name, region, country, org } = geo;
+      queueEvent({
+        type: "geo-info",
+        country_code,
+        country_name,
+        region,
+        country,
+        org,
+        siteDomain,
+        timestamp: Date.now(),
+      });
     })
     .catch(() => {});
 })();
@@ -423,26 +380,18 @@ function getDeviceType() {
 
   queueEvent({
     type: "privacy-data",
-    thirdPartyDomains: Array.from(thirdPartyDomains),
-    storageUsage,
+    thirdPartyDomains: Array.from(thirdPartyDomains).slice(0, 20), // limit to 20 domains
+    storageUsage: {
+      cookies: document.cookie.length,
+      localStorage: Object.keys(localStorage).length,
+      sessionStorage: Object.keys(sessionStorage).length,
+    },
     siteDomain,
     timestamp: Date.now(),
   });
 })();
 
 window.addEventListener("beforeunload", () => {
-  if (longTaskCount > 0) {
-    queueEvent({
-      type: "long-task-summary",
-      siteDomain,
-      total: longTaskCount,
-      avgDuration: Number((totalLongTaskDuration / longTaskCount).toFixed(2)),
-      totalDuration: Number(totalLongTaskDuration.toFixed(2)),
-      critical: criticalLongTasks.length,
-      timestamp: Date.now(),
-    });
-  }
-
   // Send summary of 3rd-party assets only here
   if (thirdPartyAssetDomains.size > 0) {
     queueEvent({
