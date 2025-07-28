@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import RumCwvChart from "../helpers/webvitalscharts";
 import LCPBreakdownChart from "../helpers/lcpBreakDown";
+import CLSBreakdownChart from "../helpers/clsBreakDown";
+import InpBreakDownChart from "../helpers/inpBreakdown";
+import TTFBBreakdownChart from "../helpers/ttfbBreakDown";
+import FCPBreakdownChart from "../helpers/fcpBreakDown";
 
 type Trigger = {
   value: string;
@@ -17,6 +21,10 @@ export default function RUMCWV() {
   const { selectedDevice, selectedSite } = useSiteContext();
   const [activeTab, setActiveTab] = useState("lcp");
   const [lcp_analysis, set_lcp_analysis] = useState<any>();
+  const [cls_analysis, set_cls_analysis] = useState<any>();
+  const [inp_analysis, set_inp_analysis] = useState<any>();
+  const [ttfb_analysis, set_ttfb_analysis] = useState<any>();
+  const [fcp_analysis, set_fcp_analysis] = useState<any>();
 
   useEffect(() => {
     if (selectedSite) {
@@ -28,7 +36,19 @@ export default function RUMCWV() {
     if (selectedSite && activeTab === "lcp") {
       get_lcp_analysis();
     }
-  }, [selectedSite]);
+    if (selectedSite && activeTab === "cls") {
+      get_cls_analysis();
+    }
+    if (selectedSite && activeTab === "inp") {
+      get_inp_analysis();
+    }
+    if (selectedSite && activeTab === "ttfb") {
+      get_ttfb_analysis();
+    }
+    if (selectedSite && activeTab === "fcp") {
+      get_fcp_analysis();
+    }
+  }, [selectedSite, activeTab]);
 
   async function get_rum_vitals() {
     try {
@@ -76,11 +96,101 @@ export default function RUMCWV() {
     }
   }
 
+  async function get_cls_analysis() {
+    try {
+      const res = await fetch("/api/rum/cls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain_name: selectedSite,
+          date_range: "7days",
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        set_cls_analysis(data.metrics || []);
+      } else {
+        set_cls_analysis([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch distribution:", error);
+      set_cls_analysis([]);
+    }
+  }
+
+  async function get_inp_analysis() {
+    try {
+      const res = await fetch("/api/rum/inp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain_name: selectedSite,
+          date_range: "7days",
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        set_inp_analysis(data.metrics || []);
+      } else {
+        set_inp_analysis([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch distribution:", error);
+      set_inp_analysis([]);
+    }
+  }
+
+  async function get_ttfb_analysis() {
+    try {
+      const res = await fetch("/api/rum/ttfb", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain_name: selectedSite,
+          date_range: "7days",
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        set_ttfb_analysis(data.metrics || []);
+      } else {
+        set_ttfb_analysis([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch distribution:", error);
+      set_ttfb_analysis([]);
+    }
+  }
+
+  async function get_fcp_analysis() {
+    try {
+      const res = await fetch("/api/rum/fcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain_name: selectedSite,
+          date_range: "7days",
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        set_fcp_analysis(data.metrics || []);
+      } else {
+        set_fcp_analysis([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch distribution:", error);
+      set_fcp_analysis([]);
+    }
+  }
+
   const filteredData = activeData?.filter(
     (x: any) => x.device_type === selectedDevice.toLowerCase()
   );
-
-  console.log(lcp_analysis);
 
   const triggerList: Trigger[] = [
     { value: "lcp", name: "Largest Contentful Paint" },
@@ -126,34 +236,44 @@ export default function RUMCWV() {
 
         {/* Content remains static and responsive */}
         <div className="mt-2">
-          <TabsContent value="lcp" className="space-y-3">
+          <TabsContent value="lcp" className="space-y-5">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
               <RumCwvChart metric_key="lcp" data={filteredData} />
             </div>
             <div>
               <LCPBreakdownChart data={lcp_analysis || []} />
-
-              <LCPBreakdownChart data={lcp_analysis} />
             </div>
           </TabsContent>
-          <TabsContent value="cls">
+          <TabsContent value="cls" className="space-y-5">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
               <RumCwvChart metric_key="cls" data={filteredData} />
             </div>
+            <div>
+              <CLSBreakdownChart data={cls_analysis || []} />
+            </div>
           </TabsContent>
-          <TabsContent value="inp">
+          <TabsContent value="inp" className="space-y-5">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
               <RumCwvChart metric_key="inp" data={filteredData} />
+            </div>
+            <div>
+              <InpBreakDownChart data={inp_analysis || []} />
             </div>
           </TabsContent>
           <TabsContent value="ttfb">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
               <RumCwvChart metric_key="ttfb" data={filteredData} />
             </div>
+            <div className="mt-5">
+              <TTFBBreakdownChart data={ttfb_analysis || []} />
+            </div>
           </TabsContent>
           <TabsContent value="fcp">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
               <RumCwvChart metric_key="fcp" data={filteredData} />
+            </div>
+            <div className="mt-5">
+              <FCPBreakdownChart data={fcp_analysis || []} />
             </div>
           </TabsContent>
         </div>

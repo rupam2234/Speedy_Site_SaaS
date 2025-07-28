@@ -9,33 +9,32 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-interface LCPElementData {
-  element_target: string;
-  avg_lcp_value: number;
-  avg_resource_load_delay: number;
-  avg_resource_load_duration: number;
-  avg_element_render_delay: number;
+interface INPElementData {
+  device_type: string;
+  interaction_type: "pointer" | "keyboard";
+  affected_element: string;
   occurrence_count: number;
+  avg_inp_value: number;
+  min_inp_value: number;
+  max_inp_value: number;
   good_count: number;
   needs_improvement_count: number;
   poor_count: number;
-  device_type: string;
 }
 
 interface Props {
-  data: LCPElementData[];
+  data: INPElementData[];
 }
 
 const SORT_OPTIONS = [
-  { label: "LCP", value: "avg_lcp_value" },
-  { label: "Load Delay", value: "avg_resource_load_delay" },
-  { label: "Duration", value: "avg_resource_load_duration" },
-  { label: "Render Delay", value: "avg_element_render_delay" },
+  { label: "Avg INP", value: "avg_inp_value" },
+  { label: "Max INP", value: "max_inp_value" },
+  { label: "Min INP", value: "min_inp_value" },
 ];
 
-const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
+const INPBreakdownChart: React.FC<Props> = ({ data }) => {
   const { selectedDevice } = useSiteContext();
-  const [sortKey, setSortKey] = useState("avg_lcp_value");
+  const [sortKey, setSortKey] = useState("avg_inp_value");
 
   const filteredData = useMemo(() => {
     return data
@@ -44,8 +43,8 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
           item.device_type?.toLowerCase() === selectedDevice?.toLowerCase()
       )
       .sort((a, b) => {
-        const valA = Number(a[sortKey as keyof LCPElementData]);
-        const valB = Number(b[sortKey as keyof LCPElementData]);
+        const valA = Number(a[sortKey as keyof INPElementData]);
+        const valB = Number(b[sortKey as keyof INPElementData]);
         return valB - valA;
       });
   }, [data, selectedDevice, sortKey]);
@@ -59,40 +58,40 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
   const summary = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return null;
 
-    const totalLCP = filteredData.reduce(
-      (acc, item) => acc + item.avg_lcp_value,
+    const total = filteredData.reduce(
+      (acc, item) => acc + item.avg_inp_value,
       0
     );
-    const avgLCP = totalLCP / filteredData.length;
+    const avg = total / filteredData.length;
 
     const worst = filteredData.reduce((a, b) =>
-      a.avg_lcp_value > b.avg_lcp_value ? a : b
+      a.avg_inp_value > b.avg_inp_value ? a : b
     );
 
-    if (avgLCP <= 2500) {
+    if (avg <= 200) {
       return (
         <div className="p-3 rounded bg-green-100 text-green-800 text-xs border border-green-300">
-          ✅ LCP looks good overall on <b>{selectedDevice}</b>. Average LCP:{" "}
-          <b>{Math.round(avgLCP)}ms</b>
+          ✅ INP looks good overall on <b>{selectedDevice}</b>. Average INP:{" "}
+          <b>{Math.round(avg)}ms</b>
         </div>
       );
     }
 
-    if (avgLCP <= 4000) {
+    if (avg <= 500) {
       return (
         <div className="p-3 rounded bg-yellow-100 text-yellow-800 text-xs border border-yellow-300">
-          ⚠️ LCP could be improved on <b>{selectedDevice}</b>. Average LCP:{" "}
-          <b>{Math.round(avgLCP)}ms</b>. Most affected element:{" "}
-          <b>{worst.element_target}</b> ({Math.round(worst.avg_lcp_value)}ms)
+          ⚠️ INP could be improved on <b>{selectedDevice}</b>. Average INP:{" "}
+          <b>{Math.round(avg)}ms</b>. Most affected element:{" "}
+          <b>{worst.affected_element}</b> ({Math.round(worst.avg_inp_value)}ms)
         </div>
       );
     }
 
     return (
       <div className="p-3 rounded bg-red-100 text-red-800 text-xs border border-red-300">
-        🚨 Poor LCP on <b>{selectedDevice}</b>! Average LCP:{" "}
-        <b>{Math.round(avgLCP)}ms</b>. Worst offender:{" "}
-        <b>{worst.element_target}</b> ({Math.round(worst.avg_lcp_value)}ms)
+        🚨 Poor INP on <b>{selectedDevice}</b>! Average INP:{" "}
+        <b>{Math.round(avg)}ms</b>. Worst offender:{" "}
+        <b>{worst.affected_element}</b> ({Math.round(worst.avg_inp_value)}ms)
       </div>
     );
   }, [filteredData, selectedDevice]);
@@ -100,12 +99,12 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
   if (!filteredData || filteredData.length === 0) {
     return (
       <p className="text-muted-foreground text-sm">
-        No LCP breakdown data available for {selectedDevice}.
+        No INP breakdown data available for {selectedDevice}.
       </p>
     );
   }
 
-  const maxLCP = Math.max(...filteredData.map((d) => d.avg_lcp_value + 100));
+  const maxINP = Math.max(...filteredData.map((d) => d.max_inp_value + 50));
 
   return (
     <TooltipProvider>
@@ -115,7 +114,7 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
           {summary}
 
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium">LCP Breakdown</h3>
+            <h3 className="text-sm font-medium">INP Breakdown</h3>
             <select
               className="text-xs bg-gray-500/20 px-2 py-1 rounded border border-muted-foreground/10"
               value={sortKey}
@@ -130,75 +129,54 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
           </div>
 
           {filteredData.map((item, i) => {
-            const {
-              element_target,
-              avg_resource_load_delay,
-              avg_resource_load_duration,
-              avg_element_render_delay,
-              avg_lcp_value,
-            } = item;
-
-            const delayPct = (avg_resource_load_delay / maxLCP) * 100;
-            const durationPct = (avg_resource_load_duration / maxLCP) * 100;
-            const renderPct = (avg_element_render_delay / maxLCP) * 100;
-            const lcpPct = (avg_lcp_value / maxLCP) * 100;
+            const avgPct = (item.avg_inp_value / maxINP) * 100;
+            const minPct = (item.min_inp_value / maxINP) * 100;
+            const maxPct = (item.max_inp_value / maxINP) * 100;
 
             return (
               <div key={i} className="space-y-1">
                 <p className="text-xs text-muted-foreground truncate">
-                  {element_target}
+                  {item.affected_element}{" "}
+                  <span className="italic">({item.interaction_type})</span>
                 </p>
 
                 <div className="relative h-3 w-full bg-muted rounded-sm overflow-hidden flex">
-                  {/* Load Delay */}
+                  {/* Min INP */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
                         className="h-full bg-blue-300"
-                        style={{ width: `${delayPct}%` }}
+                        style={{ width: `${minPct}%` }}
                       />
                     </TooltipTrigger>
                     <TooltipContent>
-                      Load Delay: {Math.round(avg_resource_load_delay)}ms
+                      Min INP: {Math.round(item.min_inp_value)}ms
                     </TooltipContent>
                   </Tooltip>
 
-                  {/* Duration */}
+                  {/* Avg INP */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
                         className="h-full bg-blue-500"
-                        style={{ width: `${durationPct}%` }}
+                        style={{ width: `${avgPct - minPct}%` }}
                       />
                     </TooltipTrigger>
                     <TooltipContent>
-                      Load Duration: {Math.round(avg_resource_load_duration)}ms
+                      Avg INP: {Math.round(item.avg_inp_value)}ms
                     </TooltipContent>
                   </Tooltip>
 
-                  {/* Render Delay */}
+                  {/* Max INP */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
                         className="h-full bg-blue-700"
-                        style={{ width: `${renderPct}%` }}
+                        style={{ width: `${maxPct - avgPct}%` }}
                       />
                     </TooltipTrigger>
                     <TooltipContent>
-                      Render Delay: {Math.round(avg_element_render_delay)}ms
-                    </TooltipContent>
-                  </Tooltip>
-
-                  {/* LCP Marker */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="absolute top-0 bottom-0 w-[1px] bg-black dark:bg-white opacity-80"
-                        style={{ left: `${lcpPct}%` }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      LCP: {Math.round(avg_lcp_value)}ms
+                      Max INP: {Math.round(item.max_inp_value)}ms
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -207,11 +185,12 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
           })}
         </div>
 
-        {/* Right: Summary by occurrence */}
+        {/* Right: Top Occurring Elements */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium">
             Top Occurring Elements on {selectedDevice}
           </h3>
+
           {topOccurrences.map((item, i) => {
             const total =
               item.good_count + item.needs_improvement_count + item.poor_count;
@@ -226,11 +205,12 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
                 className="p-3 bg-muted/10 border rounded-sm space-y-1"
               >
                 <p className="text-xs font-medium truncate">
-                  {item.element_target}
+                  {item.affected_element}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {item.occurrence_count} occurrences
+                  {item.occurrence_count} occurrences ({item.interaction_type})
                 </p>
+
                 <div className="h-2 w-full flex rounded overflow-hidden mt-1">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -273,4 +253,4 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
   );
 };
 
-export default LCPBreakdownChart;
+export default INPBreakdownChart;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import {
   Tooltip,
@@ -9,113 +9,116 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-interface LCPElementData {
-  element_target: string;
-  avg_lcp_value: number;
-  avg_resource_load_delay: number;
-  avg_resource_load_duration: number;
-  avg_element_render_delay: number;
+interface TTFBData {
+  device_type: string;
+  connection_type: string;
   occurrence_count: number;
+  avg_ttfb_value: number;
+  min_ttfb_value: number;
+  max_ttfb_value: number;
+  avg_dns_duration: number;
+  avg_connection_duration: number;
+  avg_request_duration: number;
+  avg_waiting_duration: number;
   good_count: number;
   needs_improvement_count: number;
   poor_count: number;
-  device_type: string;
 }
 
 interface Props {
-  data: LCPElementData[];
+  data: TTFBData[];
 }
 
 const SORT_OPTIONS = [
-  { label: "LCP", value: "avg_lcp_value" },
-  { label: "Load Delay", value: "avg_resource_load_delay" },
-  { label: "Duration", value: "avg_resource_load_duration" },
-  { label: "Render Delay", value: "avg_element_render_delay" },
+  { label: "TTFB", value: "avg_ttfb_value" },
+  { label: "Request Time", value: "avg_request_duration" },
+  { label: "DNS", value: "avg_dns_duration" },
+  { label: "Connection", value: "avg_connection_duration" },
 ];
 
-const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
+const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
   const { selectedDevice } = useSiteContext();
-  const [sortKey, setSortKey] = useState("avg_lcp_value");
+  const [sortKey, setSortKey] = useState("avg_ttfb_value");
 
   const filteredData = useMemo(() => {
     return data
-      ?.filter(
+      .filter(
         (item) =>
           item.device_type?.toLowerCase() === selectedDevice?.toLowerCase()
       )
       .sort((a, b) => {
-        const valA = Number(a[sortKey as keyof LCPElementData]);
-        const valB = Number(b[sortKey as keyof LCPElementData]);
+        const valA = Number(a[sortKey as keyof TTFBData]) || 0;
+        const valB = Number(b[sortKey as keyof TTFBData]) || 0;
         return valB - valA;
       });
   }, [data, selectedDevice, sortKey]);
 
-  const topOccurrences = useMemo(() => {
+  const topConnections = useMemo(() => {
     return [...filteredData]
       .sort((a, b) => b.occurrence_count - a.occurrence_count)
       .slice(0, 5);
   }, [filteredData]);
 
   const summary = useMemo(() => {
-    if (!filteredData || filteredData.length === 0) return null;
+    if (!filteredData.length) return null;
 
-    const totalLCP = filteredData.reduce(
-      (acc, item) => acc + item.avg_lcp_value,
+    const totalTTFB = filteredData.reduce(
+      (sum, d) => sum + d.avg_ttfb_value,
       0
     );
-    const avgLCP = totalLCP / filteredData.length;
+    const avgTTFB = totalTTFB / filteredData.length;
 
     const worst = filteredData.reduce((a, b) =>
-      a.avg_lcp_value > b.avg_lcp_value ? a : b
+      a.avg_ttfb_value > b.avg_ttfb_value ? a : b
     );
 
-    if (avgLCP <= 2500) {
+    if (avgTTFB <= 200) {
       return (
         <div className="p-3 rounded bg-green-100 text-green-800 text-xs border border-green-300">
-          ✅ LCP looks good overall on <b>{selectedDevice}</b>. Average LCP:{" "}
-          <b>{Math.round(avgLCP)}ms</b>
+          ✅ TTFB looks good overall on <b>{selectedDevice}</b>. Average TTFB:{" "}
+          <b>{Math.round(avgTTFB)}ms</b>
         </div>
       );
     }
 
-    if (avgLCP <= 4000) {
+    if (avgTTFB <= 600) {
       return (
         <div className="p-3 rounded bg-yellow-100 text-yellow-800 text-xs border border-yellow-300">
-          ⚠️ LCP could be improved on <b>{selectedDevice}</b>. Average LCP:{" "}
-          <b>{Math.round(avgLCP)}ms</b>. Most affected element:{" "}
-          <b>{worst.element_target}</b> ({Math.round(worst.avg_lcp_value)}ms)
+          ⚠️ TTFB could be improved on <b>{selectedDevice}</b>. Average TTFB:{" "}
+          <b>{Math.round(avgTTFB)}ms</b>. Most affected connection type:{" "}
+          <b>{worst.connection_type}</b> ({Math.round(worst.avg_ttfb_value)}ms)
         </div>
       );
     }
 
     return (
       <div className="p-3 rounded bg-red-100 text-red-800 text-xs border border-red-300">
-        🚨 Poor LCP on <b>{selectedDevice}</b>! Average LCP:{" "}
-        <b>{Math.round(avgLCP)}ms</b>. Worst offender:{" "}
-        <b>{worst.element_target}</b> ({Math.round(worst.avg_lcp_value)}ms)
+        🚨 Poor TTFB on <b>{selectedDevice}</b>! Average TTFB:{" "}
+        <b>{Math.round(avgTTFB)}ms</b>. Worst offender:{" "}
+        <b>{worst.connection_type}</b> ({Math.round(worst.avg_ttfb_value)}ms)
       </div>
     );
   }, [filteredData, selectedDevice]);
 
-  if (!filteredData || filteredData.length === 0) {
+  if (!filteredData.length) {
     return (
       <p className="text-muted-foreground text-sm">
-        No LCP breakdown data available for {selectedDevice}.
+        No TTFB data available for {selectedDevice}.
       </p>
     );
   }
 
-  const maxLCP = Math.max(...filteredData.map((d) => d.avg_lcp_value + 100));
+  const maxTTFB = Math.max(...filteredData.map((d) => d.avg_ttfb_value + 100));
 
   return (
     <TooltipProvider>
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Left: Bar chart with sort */}
+        {/* Left: Summary + breakdown */}
         <div className="space-y-4">
           {summary}
 
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium">LCP Breakdown</h3>
+            <h3 className="text-sm font-medium">TTFB Breakdown</h3>
             <select
               className="text-xs bg-gray-500/20 px-2 py-1 rounded border border-muted-foreground/10"
               value={sortKey}
@@ -131,74 +134,89 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
 
           {filteredData.map((item, i) => {
             const {
-              element_target,
-              avg_resource_load_delay,
-              avg_resource_load_duration,
-              avg_element_render_delay,
-              avg_lcp_value,
+              connection_type,
+              avg_dns_duration,
+              avg_connection_duration,
+              avg_request_duration,
+              avg_waiting_duration,
+              avg_ttfb_value,
             } = item;
 
-            const delayPct = (avg_resource_load_delay / maxLCP) * 100;
-            const durationPct = (avg_resource_load_duration / maxLCP) * 100;
-            const renderPct = (avg_element_render_delay / maxLCP) * 100;
-            const lcpPct = (avg_lcp_value / maxLCP) * 100;
+            const dnsPct = (avg_dns_duration / maxTTFB) * 100;
+            const connPct = (avg_connection_duration / maxTTFB) * 100;
+            const reqPct = (avg_request_duration / maxTTFB) * 100;
+            const waitPct = (avg_waiting_duration / maxTTFB) * 100;
+            const ttfbPct = (avg_ttfb_value / maxTTFB) * 100;
 
             return (
               <div key={i} className="space-y-1">
-                <p className="text-xs text-muted-foreground truncate">
-                  {element_target}
+                <p className="text-xs text-muted-foreground truncate capitalize">
+                  {connection_type}
                 </p>
 
                 <div className="relative h-3 w-full bg-muted rounded-sm overflow-hidden flex">
-                  {/* Load Delay */}
+                  {/* DNS */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
-                        className="h-full bg-blue-300"
-                        style={{ width: `${delayPct}%` }}
+                        className="h-full bg-purple-200"
+                        style={{ width: `${dnsPct}%` }}
                       />
                     </TooltipTrigger>
                     <TooltipContent>
-                      Load Delay: {Math.round(avg_resource_load_delay)}ms
+                      DNS: {Math.round(avg_dns_duration)}ms
                     </TooltipContent>
                   </Tooltip>
 
-                  {/* Duration */}
+                  {/* Connection */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
-                        className="h-full bg-blue-500"
-                        style={{ width: `${durationPct}%` }}
+                        className="h-full bg-purple-400"
+                        style={{ width: `${connPct}%` }}
                       />
                     </TooltipTrigger>
                     <TooltipContent>
-                      Load Duration: {Math.round(avg_resource_load_duration)}ms
+                      Connection: {Math.round(avg_connection_duration)}ms
                     </TooltipContent>
                   </Tooltip>
 
-                  {/* Render Delay */}
+                  {/* Request */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
-                        className="h-full bg-blue-700"
-                        style={{ width: `${renderPct}%` }}
+                        className="h-full bg-purple-600"
+                        style={{ width: `${reqPct}%` }}
                       />
                     </TooltipTrigger>
                     <TooltipContent>
-                      Render Delay: {Math.round(avg_element_render_delay)}ms
+                      Request: {Math.round(avg_request_duration)}ms
                     </TooltipContent>
                   </Tooltip>
 
-                  {/* LCP Marker */}
+                  {/* Waiting */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="h-full bg-purple-800"
+                        style={{ width: `${waitPct}%` }}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Waiting: {Math.round(avg_waiting_duration)}ms
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* TTFB Marker */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
                         className="absolute top-0 bottom-0 w-[1px] bg-black dark:bg-white opacity-80"
-                        style={{ left: `${lcpPct}%` }}
+                        style={{ left: `${ttfbPct}%` }}
                       />
                     </TooltipTrigger>
                     <TooltipContent>
-                      LCP: {Math.round(avg_lcp_value)}ms
+                      TTFB: {Math.round(avg_ttfb_value)}ms
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -207,12 +225,12 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
           })}
         </div>
 
-        {/* Right: Summary by occurrence */}
+        {/* Right: Top occurrence summary */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium">
-            Top Occurring Elements on {selectedDevice}
+            Top Connection Types on {selectedDevice}
           </h3>
-          {topOccurrences.map((item, i) => {
+          {topConnections.map((item, i) => {
             const total =
               item.good_count + item.needs_improvement_count + item.poor_count;
 
@@ -225,8 +243,8 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
                 key={i}
                 className="p-3 bg-muted/10 border rounded-sm space-y-1"
               >
-                <p className="text-xs font-medium truncate">
-                  {item.element_target}
+                <p className="text-xs font-medium capitalize truncate">
+                  {item.connection_type}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {item.occurrence_count} occurrences
@@ -273,4 +291,4 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
   );
 };
 
-export default LCPBreakdownChart;
+export default TTFBBreakdownChart;
