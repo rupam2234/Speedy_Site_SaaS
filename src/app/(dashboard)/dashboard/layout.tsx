@@ -8,7 +8,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, Suspense, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import DashboardToolbar from "@/components/utils/toolbar";
 
@@ -17,6 +17,7 @@ import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter } from "next/navigation";
 import { usePathname, useSearchParams } from "next/navigation";
 import { PlanValidation } from "@/components/utils/activePlanValidation";
+import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -77,7 +78,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
       <SiteContextProvider>
-        <LayoutContent>{children}</LayoutContent>
+        <Suspense fallback={<LoadingAnimation />}>
+          <LayoutContent>{children}</LayoutContent>
+        </Suspense>
       </SiteContextProvider>
     </SidebarProvider>
   );
