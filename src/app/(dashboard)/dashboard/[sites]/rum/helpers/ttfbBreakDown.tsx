@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { BeatLoader } from "react-spinners";
+import { ChartPie } from "lucide-react";
 
 interface TTFBData {
   device_type: string;
@@ -30,8 +31,8 @@ interface Props {
   data: TTFBData[];
 }
 
-const loading: boolean = true;
-const color: string = "green";
+const loading = true;
+const color = "green";
 
 const SORT_OPTIONS = [
   { label: "TTFB", value: "avg_ttfb_value" },
@@ -39,6 +40,32 @@ const SORT_OPTIONS = [
   { label: "DNS", value: "avg_dns_duration" },
   { label: "Connection", value: "avg_connection_duration" },
 ];
+
+const getTTFBSuggestions = (ttfb: number): string[] => {
+  const suggestions: string[] = [];
+
+  if (ttfb <= 800) {
+    suggestions.push("✅ TTFB is fast. No major action needed.");
+    return suggestions;
+  }
+
+  if (ttfb <= 1800) {
+    suggestions.push("⚠️ Moderate TTFB. Consider improving:");
+  } else {
+    suggestions.push("🚨 High TTFB! Optimization needed:");
+  }
+
+  suggestions.push(
+    "Use a CDN to serve assets closer to users.",
+    "Cache HTML pages at the edge when possible.",
+    "Reduce server-side processing time (optimize backend logic).",
+    "Avoid blocking database or API calls on initial request.",
+    "Implement proper connection reuse (keep-alive, HTTP/2).",
+    "Minimize redirects and use compression (gzip/brotli)."
+  );
+
+  return suggestions;
+};
 
 const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
   const { selectedDevice } = useSiteContext();
@@ -63,47 +90,6 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
       .slice(0, 5);
   }, [filteredData]);
 
-  const summary = useMemo(() => {
-    if (!filteredData.length) return null;
-
-    const totalTTFB = filteredData.reduce(
-      (sum, d) => sum + d.avg_ttfb_value,
-      0
-    );
-    const avgTTFB = totalTTFB / filteredData.length;
-
-    const worst = filteredData.reduce((a, b) =>
-      a.avg_ttfb_value > b.avg_ttfb_value ? a : b
-    );
-
-    if (avgTTFB <= 800) {
-      return (
-        <div className="p-3 rounded bg-green-100 text-green-800 text-xs border border-green-300">
-          ✅ TTFB looks good overall on <b>{selectedDevice}</b>. Average TTFB:{" "}
-          <b>{Math.round(avgTTFB)}ms</b>
-        </div>
-      );
-    }
-
-    if (avgTTFB <= 1800) {
-      return (
-        <div className="p-3 rounded bg-yellow-100 text-yellow-800 text-xs border border-yellow-300">
-          ⚠️ TTFB could be improved on <b>{selectedDevice}</b>. Average TTFB:{" "}
-          <b>{Math.round(avgTTFB)}ms</b>. Most affected connection type:{" "}
-          <b>{worst.connection_type}</b> ({Math.round(worst.avg_ttfb_value)}ms)
-        </div>
-      );
-    }
-
-    return (
-      <div className="p-3 rounded bg-red-100 text-red-800 text-xs border border-red-300">
-        🚨 Poor TTFB on <b>{selectedDevice}</b>! Average TTFB:{" "}
-        <b>{Math.round(avgTTFB)}ms</b>. Worst occurrence:{" "}
-        <b>{worst.connection_type}</b> ({Math.round(worst.avg_ttfb_value)}ms)
-      </div>
-    );
-  }, [filteredData, selectedDevice]);
-
   if (!filteredData.length) {
     return (
       <div className="sweet-loading">
@@ -124,10 +110,11 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
       <div className="grid md:grid-cols-2 gap-6">
         {/* Left: Summary + breakdown */}
         <div className="space-y-4">
-          {summary}
-
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium">TTFB Breakdown</h3>
+            <div className="flex items-center gap-2">
+              <ChartPie size={15} className="fill-green-500/30" />
+              <h3 className="text-sm font-medium">TTFB Breakdown</h3>
+            </div>
             <select
               className="text-xs bg-gray-500/20 px-2 py-1 rounded border border-muted-foreground/10"
               value={sortKey}
@@ -155,16 +142,16 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
             const connPct = (avg_connection_duration / maxTTFB) * 100;
             const reqPct = (avg_request_duration / maxTTFB) * 100;
             const waitPct = (avg_waiting_duration / maxTTFB) * 100;
-            const ttfbPct = (avg_ttfb_value / maxTTFB) * 100;
-
             return (
-              <div key={i} className="space-y-1">
-                <p className="text-xs text-muted-foreground truncate capitalize">
-                  {connection_type}
+              <div
+                key={i}
+                className="space-y-2 border p-3 rounded-sm bg-muted/5"
+              >
+                <p className="text-xs font-medium truncate capitalize">
+                  {connection_type} ({Math.round(avg_ttfb_value)}ms TTFB)
                 </p>
 
                 <div className="relative h-3 w-full bg-muted rounded-sm overflow-hidden flex">
-                  {/* DNS */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
@@ -177,7 +164,6 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
                     </TooltipContent>
                   </Tooltip>
 
-                  {/* Connection */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
@@ -190,7 +176,6 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
                     </TooltipContent>
                   </Tooltip>
 
-                  {/* Request */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
@@ -203,7 +188,6 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
                     </TooltipContent>
                   </Tooltip>
 
-                  {/* Waiting */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
@@ -215,26 +199,19 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
                       Waiting: {Math.round(avg_waiting_duration)}ms
                     </TooltipContent>
                   </Tooltip>
-
-                  {/* TTFB Marker */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="absolute top-0 bottom-0 w-[1px] bg-black dark:bg-white opacity-80"
-                        style={{ left: `${ttfbPct}%` }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      TTFB: {Math.round(avg_ttfb_value)}ms
-                    </TooltipContent>
-                  </Tooltip>
                 </div>
+
+                <ul className="pl-4 list-disc text-xs text-muted-foreground space-y-1 mt-2">
+                  {getTTFBSuggestions(avg_ttfb_value).map((s, idx) => (
+                    <li key={idx}>{s}</li>
+                  ))}
+                </ul>
               </div>
             );
           })}
         </div>
 
-        {/* Right: Top occurrence summary */}
+        {/* Right: Top connection summary */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium">
             Top Connection Types on {selectedDevice}

@@ -80,7 +80,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "24hours",
+          date_range: "7days",
         }),
       });
 
@@ -103,7 +103,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "24hours",
+          date_range: "7days",
         }),
       });
 
@@ -126,7 +126,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "24hours",
+          date_range: "7days",
         }),
       });
 
@@ -149,7 +149,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "24hours",
+          date_range: "7days",
         }),
       });
 
@@ -172,7 +172,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "24hours",
+          date_range: "7days",
         }),
       });
 
@@ -213,9 +213,9 @@ export default function RUMCWV() {
         onValueChange={setActiveTab}
       >
         {/* Scrollable tab list container */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-scroll md:overflow-x-auto">
           <TabsList
-            className="dark:bg-secondary-background bg-gray-500/10 p-1 rounded-none border-gray-500/20 
+            className="pl-4 dark:bg-secondary-background bg-gray-500/10 p-1 rounded-none border-gray-500/20 
             whitespace-nowrap flex gap-2 sm:gap-4 w-full"
           >
             {triggerList.map((x) => (
@@ -256,7 +256,7 @@ export default function RUMCWV() {
               <InpBreakDownChart data={inp_analysis || []} />
             </div>
           </TabsContent>
-          <TabsContent value="ttfb">
+          <TabsContent value="ttfb" className="space-y-5">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
               <RumCwvChart metric_key="ttfb" data={activeData} />
             </div>
@@ -264,7 +264,7 @@ export default function RUMCWV() {
               <TTFBBreakdownChart data={ttfb_analysis || []} />
             </div>
           </TabsContent>
-          <TabsContent value="fcp">
+          <TabsContent value="fcp" className="space-y-5">
             <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
               <RumCwvChart metric_key="fcp" data={activeData} />
             </div>

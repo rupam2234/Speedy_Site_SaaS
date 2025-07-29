@@ -122,12 +122,6 @@ export default function ExperienceBar({
           );
         })}
       </div>
-
-      {/* <div className="flex justify-between text-sm text-muted-foreground px-1">
-        <span className="text-green-700">Good Experience</span>
-        <span className="text-yellow-700">Okay Experience</span>
-        <span className="text-red-700">Poor Experience</span>
-      </div> */}
     </div>
   );
 }

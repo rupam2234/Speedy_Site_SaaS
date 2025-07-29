@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import BeatLoader from "react-spinners/BeatLoader";
+import { ChartPie } from "lucide-react";
 
 interface INPElementData {
   device_type: string;
@@ -27,8 +28,8 @@ interface Props {
   data: INPElementData[];
 }
 
-const loading: boolean = true;
-const color: string = "green";
+const loading = true;
+const color = "green";
 
 const SORT_OPTIONS = [
   { label: "Avg INP", value: "avg_inp_value" },
@@ -36,9 +37,61 @@ const SORT_OPTIONS = [
   { label: "Min INP", value: "min_inp_value" },
 ];
 
+const getINPSuggestions = (
+  element: string,
+  inpValue: number
+): React.ReactNode[] => {
+  const suggestions: React.ReactNode[] = [];
+
+  if (inpValue <= 200) {
+    suggestions.push("📗 Fast interaction – no action needed.");
+    return suggestions;
+  }
+
+  if (inpValue <= 500) {
+    suggestions.push("🟡 Moderate INP. Possible UX improvements:");
+  } else {
+    suggestions.push("🔴 Poor INP! Optimize interactions urgently:");
+  }
+
+  const lower = element.toLowerCase();
+
+  if (
+    lower.includes("button") ||
+    lower.includes("click") ||
+    lower.includes("submit")
+  ) {
+    suggestions.push(
+      "Avoid heavy JavaScript execution on click handlers.",
+      "Defer non-critical tasks until after interaction response.",
+      "Preload data or cache results when possible."
+    );
+  }
+
+  if (
+    lower.includes("input") ||
+    lower.includes("form") ||
+    lower.includes("search")
+  ) {
+    suggestions.push(
+      "Minimize re-renders on each keystroke.",
+      "Avoid large DOM updates triggered by input."
+    );
+  }
+
+  suggestions.push(
+    "Reduce long tasks triggered by user input.",
+    "Use requestIdleCallback or web workers for heavy processing.",
+    "Avoid synchronous layout or blocking style recalculations."
+  );
+
+  return suggestions;
+};
+
 const INPBreakdownChart: React.FC<Props> = ({ data }) => {
   const { selectedDevice } = useSiteContext();
   const [sortKey, setSortKey] = useState("avg_inp_value");
+  const [selectedItem, setSelectedItem] = useState<INPElementData | null>(null);
 
   const filteredData = useMemo(() => {
     return data
@@ -59,47 +112,6 @@ const INPBreakdownChart: React.FC<Props> = ({ data }) => {
       .slice(0, 5);
   }, [filteredData]);
 
-  const summary = useMemo(() => {
-    if (!filteredData || filteredData.length === 0) return null;
-
-    const total = filteredData.reduce(
-      (acc, item) => acc + item.avg_inp_value,
-      0
-    );
-    const avg = total / filteredData.length;
-
-    const worst = filteredData.reduce((a, b) =>
-      a.avg_inp_value > b.avg_inp_value ? a : b
-    );
-
-    if (avg <= 200) {
-      return (
-        <div className="p-3 rounded bg-green-100 text-green-800 text-xs border border-green-300">
-          ✅ INP looks good overall on <b>{selectedDevice}</b>. Average INP:{" "}
-          <b>{Math.round(avg)}ms</b>
-        </div>
-      );
-    }
-
-    if (avg <= 500) {
-      return (
-        <div className="p-3 rounded bg-yellow-100 text-yellow-800 text-xs border border-yellow-300">
-          ⚠️ INP could be improved on <b>{selectedDevice}</b>. Average INP:{" "}
-          <b>{Math.round(avg)}ms</b>. Most affected element:{" "}
-          <b>{worst.affected_element}</b> ({Math.round(worst.avg_inp_value)}ms)
-        </div>
-      );
-    }
-
-    return (
-      <div className="p-3 rounded bg-red-100 text-red-800 text-xs border border-red-300">
-        🚨 Poor INP on <b>{selectedDevice}</b>! Average INP:{" "}
-        <b>{Math.round(avg)}ms</b>. Worst offender:{" "}
-        <b>{worst.affected_element}</b> ({Math.round(worst.avg_inp_value)}ms)
-      </div>
-    );
-  }, [filteredData, selectedDevice]);
-
   if (!filteredData || filteredData.length === 0) {
     return (
       <div className="sweet-loading">
@@ -118,12 +130,13 @@ const INPBreakdownChart: React.FC<Props> = ({ data }) => {
   return (
     <TooltipProvider>
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Left: Bar chart with sort */}
+        {/* Left: INP Elements */}
         <div className="space-y-4">
-          {summary}
-
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium">INP Breakdown</h3>
+            <div className="flex items-center gap-2">
+              <ChartPie size={15} className="fill-green-500/30" />
+              <h3 className="text-sm font-medium">INP Breakdown</h3>
+            </div>
             <select
               className="text-xs bg-gray-500/20 px-2 py-1 rounded border border-muted-foreground/10"
               value={sortKey}
@@ -143,14 +156,23 @@ const INPBreakdownChart: React.FC<Props> = ({ data }) => {
             const maxPct = (item.max_inp_value / maxINP) * 100;
 
             return (
-              <div key={i} className="space-y-1">
-                <p className="text-xs text-muted-foreground truncate">
+              <div
+                key={i}
+                className={`space-y-1 p-2 border rounded-sm cursor-pointer ${
+                  selectedItem?.affected_element === item.affected_element
+                    ? "bg-gray-100 dark:bg-gray-800 border-gray-400"
+                    : "bg-muted/5 dark:border-gray-200/10 border-gray-200/80"
+                }`}
+                onClick={() => setSelectedItem(item)}
+              >
+                <p className="text-xs font-medium truncate">
                   {item.affected_element}{" "}
-                  <span className="italic">({item.interaction_type})</span>
+                  <span className="italic text-muted-foreground">
+                    ({item.interaction_type})
+                  </span>
                 </p>
 
                 <div className="relative h-3 w-full bg-muted rounded-sm overflow-hidden flex">
-                  {/* Min INP */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
@@ -163,7 +185,6 @@ const INPBreakdownChart: React.FC<Props> = ({ data }) => {
                     </TooltipContent>
                   </Tooltip>
 
-                  {/* Avg INP */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
@@ -176,7 +197,6 @@ const INPBreakdownChart: React.FC<Props> = ({ data }) => {
                     </TooltipContent>
                   </Tooltip>
 
-                  {/* Max INP */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
@@ -194,8 +214,31 @@ const INPBreakdownChart: React.FC<Props> = ({ data }) => {
           })}
         </div>
 
-        {/* Right: Top Occurring Elements */}
+        {/* Right: Suggestions and Top Occurring */}
         <div className="space-y-4">
+          <h3 className="text-sm font-medium">
+            Suggestions (based on Max INP)
+          </h3>
+          {selectedItem ? (
+            <div className="p-4 border rounded-sm bg-muted/10 text-sm space-y-2">
+              <p className="font-medium truncate">
+                {selectedItem.affected_element}
+              </p>
+              <ul className="list-disc pl-4 text-xs space-y-1">
+                {getINPSuggestions(
+                  selectedItem.affected_element,
+                  selectedItem.max_inp_value
+                ).map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Select an element to view INP-based performance suggestions.
+            </p>
+          )}
+
           <h3 className="text-sm font-medium">
             Top Occurring Elements on {selectedDevice}
           </h3>

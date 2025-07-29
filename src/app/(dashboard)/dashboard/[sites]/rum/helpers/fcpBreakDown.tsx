@@ -29,8 +29,8 @@ interface Props {
   data: FCPData[];
 }
 
-const loading: boolean = true;
-const color: string = "green";
+const loading = true;
+const color = "green";
 
 const SORT_OPTIONS = [
   { label: "Average FCP", value: "avg_fcp_value" },
@@ -38,6 +38,32 @@ const SORT_OPTIONS = [
   { label: "P90", value: "p90_fcp_value" },
   { label: "P95", value: "p95_fcp_value" },
 ];
+
+const getFCPSuggestions = (fcp: number): string[] => {
+  const suggestions: string[] = [];
+
+  if (fcp <= 1800) {
+    suggestions.push("✅ FCP is fast. No major improvements needed.");
+    return suggestions;
+  }
+
+  if (fcp <= 3000) {
+    suggestions.push("⚠️ Moderate FCP. Consider:");
+  } else {
+    suggestions.push("🚨 Poor FCP! Optimization needed:");
+  }
+
+  suggestions.push(
+    "Minimize render-blocking resources (CSS, fonts).",
+    "Defer or async load non-critical JavaScript.",
+    "Inline critical CSS to reduce render delay.",
+    "Prioritize visible content using lazy loading.",
+    "Serve images in modern formats (e.g. WebP).",
+    "Reduce initial HTML size and complexity."
+  );
+
+  return suggestions;
+};
 
 const FCPBreakdownChart: React.FC<Props> = ({ data }) => {
   const { selectedDevice } = useSiteContext();
@@ -52,48 +78,7 @@ const FCPBreakdownChart: React.FC<Props> = ({ data }) => {
       .sort((a, b) => Number(b[sortKey]) - Number(a[sortKey]));
   }, [data, selectedDevice, sortKey]);
 
-  const summary = useMemo(() => {
-    if (!filteredData || filteredData.length === 0) return null;
-
-    const totalFCP = filteredData.reduce(
-      (acc, item) => acc + item.avg_fcp_value,
-      0
-    );
-    const avgFCP = totalFCP / filteredData.length;
-
-    const worst = filteredData.reduce((a, b) =>
-      a.avg_fcp_value > b.avg_fcp_value ? a : b
-    );
-
-    if (avgFCP <= 1800) {
-      return (
-        <div className="p-3 rounded bg-green-100 text-green-800 text-xs border border-green-300">
-          ✅ FCP looks good on <b>{selectedDevice}</b>. Average FCP:{" "}
-          <b>{Math.round(avgFCP)}ms</b>
-        </div>
-      );
-    }
-
-    if (avgFCP <= 3000) {
-      return (
-        <div className="p-3 rounded bg-yellow-100 text-yellow-800 text-xs border border-yellow-300">
-          ⚠️ FCP could be improved on <b>{selectedDevice}</b>. Average FCP:{" "}
-          <b>{Math.round(avgFCP)}ms</b>. Worst connection:{" "}
-          <b>{worst.connection_type}</b> ({Math.round(worst.avg_fcp_value)}ms)
-        </div>
-      );
-    }
-
-    return (
-      <div className="p-3 rounded bg-red-100 text-red-800 text-xs border border-red-300">
-        🚨 Poor FCP on <b>{selectedDevice}</b>! Average FCP:{" "}
-        <b>{Math.round(avgFCP)}ms</b>. Worst offender:{" "}
-        <b>{worst.connection_type}</b> ({Math.round(worst.avg_fcp_value)}ms)
-      </div>
-    );
-  }, [filteredData, selectedDevice]);
-
-  if (!filteredData || filteredData.length === 0) {
+  if (!filteredData.length) {
     return (
       <div className="sweet-loading">
         <BeatLoader
@@ -111,9 +96,8 @@ const FCPBreakdownChart: React.FC<Props> = ({ data }) => {
   return (
     <TooltipProvider>
       <div className="grid md:grid-cols-2 gap-6">
+        {/* LEFT: Breakdown by FCP */}
         <div className="space-y-4">
-          {summary}
-
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-medium">FCP Breakdown</h3>
             <select
@@ -136,10 +120,15 @@ const FCPBreakdownChart: React.FC<Props> = ({ data }) => {
             const p95Pct = (item.p95_fcp_value / maxFCP) * 100;
 
             return (
-              <div key={i} className="space-y-1">
-                <p className="text-xs text-muted-foreground">
-                  Connection: {item.connection_type}
+              <div
+                key={i}
+                className="space-y-2 border p-3 rounded-sm bg-muted/5"
+              >
+                <p className="text-xs font-medium capitalize">
+                  {item.connection_type} ({Math.round(item.avg_fcp_value)}ms Avg
+                  FCP)
                 </p>
+
                 <div className="relative h-3 w-full bg-muted rounded-sm overflow-hidden flex">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -149,7 +138,7 @@ const FCPBreakdownChart: React.FC<Props> = ({ data }) => {
                       />
                     </TooltipTrigger>
                     <TooltipContent>
-                      Avg FCP: {Math.round(item.avg_fcp_value)}ms
+                      Avg: {Math.round(item.avg_fcp_value)}ms
                     </TooltipContent>
                   </Tooltip>
 
@@ -189,12 +178,18 @@ const FCPBreakdownChart: React.FC<Props> = ({ data }) => {
                     </TooltipContent>
                   </Tooltip>
                 </div>
+
+                <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                  {getFCPSuggestions(item.avg_fcp_value).map((tip, idx) => (
+                    <span key={idx}>{tip}</span>
+                  ))}
+                </div>
               </div>
             );
           })}
         </div>
 
-        {/* Summary by occurrence */}
+        {/* RIGHT: Connection Summary */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium">
             Occurrence Breakdown ({selectedDevice})
@@ -212,7 +207,7 @@ const FCPBreakdownChart: React.FC<Props> = ({ data }) => {
                 key={i}
                 className="p-3 bg-muted/10 border rounded-sm space-y-1"
               >
-                <p className="text-xs font-medium truncate">
+                <p className="text-xs font-medium capitalize truncate">
                   {item.connection_type}
                 </p>
                 <p className="text-xs text-muted-foreground">

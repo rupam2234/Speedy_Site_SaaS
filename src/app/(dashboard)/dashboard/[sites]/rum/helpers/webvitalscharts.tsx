@@ -190,15 +190,15 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
       yAxis: {
         type: "value",
         nameTextStyle: { fontSize: 10, padding: 5 },
-        min: 0,
-        max: metricRange.d,
+        // min: 0,
+        // max: metricRange.d,
         splitLine: {
           show: true,
           lineStyle: { color: gridLineColor, type: "dashed", width: 1 },
         },
         splitNumber: 5,
       },
-      grid: { top: 40, bottom: 30, left: 50, right: 20, height: 315 },
+      grid: { top: 40, bottom: 30, left: 50, right: 40, height: 300 },
       series: [
         {
           type: "line",
@@ -207,7 +207,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
           symbolSize: 8,
           data: styledData,
           lineStyle: {
-            color: theme === "dark" ? "#aaa" : "#444",
+            color: theme === "dark" ? "#4ea6f4" : "#007BFF", // soft blue lines
             width: 1,
           },
           areaStyle: {
@@ -222,12 +222,12 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
                   offset: 0,
                   color:
                     theme === "dark"
-                      ? "rgba(255, 255, 255, 0.05)"
-                      : "rgba(0, 0, 0, 0.05)",
+                      ? "rgba(78, 166, 244, 0.3)"
+                      : "rgba(0, 123, 255, 0.4)",
                 },
                 {
                   offset: 1,
-                  color: "transparent",
+                  color: "rgba(0, 123, 255, 0)",
                 },
               ],
             },
