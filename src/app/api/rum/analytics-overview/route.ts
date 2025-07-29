@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get domain_name and optional date_range from request body
     const body = await request.json();
-    const { domain_name, date_range = "30days" } = body;
+    const { domain_name, date_range } = body;
 
     // Validate domain_name parameter
     if (!domain_name) {
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       {
         status: 200,
         headers: {
-          "Cache-Control": "max-age=300", // Cache for 5 minutes
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
         },
       }
     );

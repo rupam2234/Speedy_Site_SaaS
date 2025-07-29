@@ -1,4 +1,4 @@
-import { PageManagementHelper } from "@/app/(dashboard)/dashboard/[sites]/pages/helper/helperFunc";
+import { PageManagementHelper } from "@/app/(dashboard)/dashboard/pages/helper/helperFunc";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -33,9 +33,12 @@ export async function POST(req: NextRequest) {
 
     const verifiedSites =
       sitesData?.siteEntry
-        ?.filter((entry: any) => entry.permissionLevel === "siteOwner" ||
-                                 entry.permissionLevel === "siteFullUser" ||
-                                 entry.permissionLevel === "siteRestrictedUser")
+        ?.filter(
+          (entry: any) =>
+            entry.permissionLevel === "siteOwner" ||
+            entry.permissionLevel === "siteFullUser" ||
+            entry.permissionLevel === "siteRestrictedUser"
+        )
         .map((entry: any) => entry.siteUrl) || [];
 
     return NextResponse.json(

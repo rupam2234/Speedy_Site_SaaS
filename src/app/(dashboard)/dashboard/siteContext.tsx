@@ -24,6 +24,10 @@ type SiteContextType = {
   setSelectedDevice: (device: "Desktop" | "Mobile") => void;
   dateRange: [string, string];
   setDateRange: (startDate: string, endDate: string) => void | [string, string];
+  rumDateRange: "24hours" | "7days" | "30days" | "90days";
+  setRumDateRange: (
+    dateRange: "24hours" | "7days" | "30days" | "90days"
+  ) => void;
   collapsed: boolean;
   setCollapsed: (isCollapsed: boolean) => void;
   experienceType: "p75" | "Distribution";
@@ -88,6 +92,8 @@ export const SiteContext = createContext<SiteContextType>({
   setActivePlan: () => {},
   rumDistribution: "p75",
   setRumDistribution: () => {},
+  rumDateRange: "7days",
+  setRumDateRange: () => {},
 });
 
 export default function SiteContextProvider({
@@ -128,6 +134,9 @@ export default function SiteContextProvider({
   const [rumDistribution, setRumDistribution] = useState<
     "p50" | "p75" | "p90" | "p95" | "p99"
   >("p75");
+  const [rumDateRange, setRumDateRange] = useState<
+    "24hours" | "7days" | "30days" | "90days"
+  >("7days");
 
   // Load from sessionStorage only if it matches the current user email
   useEffect(() => {
@@ -270,6 +279,8 @@ export default function SiteContextProvider({
         setActivePlan,
         rumDistribution,
         setRumDistribution,
+        rumDateRange,
+        setRumDateRange,
       }}
     >
       {children}

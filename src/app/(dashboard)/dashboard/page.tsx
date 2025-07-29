@@ -3,39 +3,28 @@
 import { useEffect, useState } from "react";
 import { useSiteContext } from "./siteContext";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
-import { usePathname, useRouter } from "next/navigation";
 import { PlanValidation } from "@/components/utils/activePlanValidation";
+import WebsitePage from "./helpers/main";
 
 export default function Dashboard() {
   const { selectedSite } = useSiteContext();
-  const pathname = usePathname();
-  const router = useRouter();
   const [showPrompt, setShowPrompt] = useState(false);
 
   PlanValidation(); // redirect to billing if no active plan
 
-  const isDashboardRoot = pathname === "/dashboard";
-
   // Wait for 8 seconds before showing "Select a website" message
   useEffect(() => {
-    if (!selectedSite && isDashboardRoot) {
+    if (!selectedSite) {
       const timeout = setTimeout(() => {
         setShowPrompt(true);
       }, 4000);
 
       return () => clearTimeout(timeout);
     }
-  }, [selectedSite, isDashboardRoot]);
-
-  // Redirect when selectedSite is available and still on /dashboard
-  useEffect(() => {
-    if (selectedSite && isDashboardRoot) {
-      router.replace(`/dashboard/${selectedSite}`);
-    }
-  }, [selectedSite, isDashboardRoot, router]);
+  }, [selectedSite]);
 
   // Render logic
-  if (!selectedSite && isDashboardRoot && !showPrompt) {
+  if (!selectedSite && !showPrompt) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
         <LoadingAnimation />
@@ -43,7 +32,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!selectedSite && isDashboardRoot && showPrompt) {
+  if (!selectedSite && showPrompt) {
     return (
       <div className="flex flex-col space-y-4 md:mt-[-50px] items-center justify-center min-h-full dark:text-secondary-background p-8">
         <p
@@ -65,5 +54,5 @@ export default function Dashboard() {
     );
   }
 
-  return null;
+  return <WebsitePage />;
 }

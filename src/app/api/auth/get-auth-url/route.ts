@@ -1,4 +1,4 @@
-import { PageManagementHelper } from "@/app/(dashboard)/dashboard/[sites]/pages/helper/helperFunc";
+import { PageManagementHelper } from "@/app/(dashboard)/dashboard/pages/helper/helperFunc";
 import { NextResponse } from "next/server";
 
 export async function GET() {

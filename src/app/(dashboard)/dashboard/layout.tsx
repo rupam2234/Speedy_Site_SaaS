@@ -14,6 +14,9 @@ import DashboardToolbar from "@/components/utils/toolbar";
 
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
+import { useRouter } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { PlanValidation } from "@/components/utils/activePlanValidation";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -21,7 +24,11 @@ interface DashboardLayoutProps {
 
 function LayoutContent({ children }: { children: ReactNode }) {
   const { user, isSignedIn } = useUser();
-  const { fetchOrders } = useSiteContext();
+  const { fetchOrders, selectedSite } = useSiteContext();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  PlanValidation(); // redirect to billing if no active plan
 
   useEffect(() => {
     if (!user || !isSignedIn) return;
@@ -30,6 +37,16 @@ function LayoutContent({ children }: { children: ReactNode }) {
       new URLSearchParams(window.location.search).get("site") || undefined
     );
   }, [user, isSignedIn, fetchOrders]);
+
+  // adds query param
+  useEffect(() => {
+    if (selectedSite) {
+      const currentPath = pathname;
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("site", selectedSite);
+      router.replace(`${currentPath}?${params.toString()}`);
+    }
+  }, [selectedSite, pathname, router, searchParams]);
 
   return (
     <>

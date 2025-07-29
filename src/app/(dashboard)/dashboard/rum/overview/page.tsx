@@ -6,9 +6,8 @@ import { ChartNoAxesGantt } from "lucide-react";
 import { AggregatedMetrics } from "../helpers/analyticsOverview";
 import { DevicePerformanceData } from "../helpers/ai_citation";
 import { ExperienceData } from "../helpers/ExperienceBar";
-import { useSiteContext } from "../../../siteContext";
+import { useSiteContext } from "../../siteContext";
 import RumDashboard, { WebVitalsMetric } from "../helpers/dashboard";
-
 
 type RawData = {
   device_type: "desktop" | "mobile";
@@ -22,112 +21,49 @@ type RawData = {
 };
 
 export default function RUM() {
-  const { selectedSite, selectedDevice } = useSiteContext();
+  const { selectedSite, selectedDevice, rumDateRange } = useSiteContext();
   const [distdata, setDistData] = useState<WebVitalsMetric[]>([]);
   const [happinessData, setHappinessData] = useState<ExperienceData[]>([]);
   const [citationData, setCitationData] = useState<DevicePerformanceData[]>([]);
   const [analyticsData, setAnalyticsData] = useState<RawData[]>([]);
 
   useEffect(() => {
-    if (selectedSite) {
-      GetDistribution();
-      GetUserHappiness();
-      getAiCitation();
-      getAnalyticsOverview();
-    }
-  }, [selectedSite]);
+    if (!selectedSite) return;
 
-  async function GetDistribution() {
-    try {
-      const res = await fetch("/api/rum/percentile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: "30days",
-        }),
-      });
+    const controller = new AbortController();
+    const signal = controller.signal;
 
-      if (res.ok) {
-        const data = await res.json();
-        setDistData(data.metrics || []);
-      } else {
-        setDistData([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch distribution:", error);
-      setDistData([]);
-    }
-  }
+    const endpoints = [
+      { url: "/api/rum/percentile", setter: setDistData },
+      { url: "/api/rum/happiness", setter: setHappinessData },
+      { url: "/api/rum/ai-citation", setter: setCitationData },
+      { url: "/api/rum/analytics-overview", setter: setAnalyticsData },
+    ];
 
-  async function GetUserHappiness() {
-    try {
-      const res = await fetch("/api/rum/happiness", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: "30days",
-        }),
-      });
+    Promise.all(
+      endpoints.map(({ url, setter }) =>
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal,
+          body: JSON.stringify({
+            domain_name: selectedSite,
+            date_range: rumDateRange,
+          }),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => setter(data?.metrics || []))
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error(`Error fetching ${url}:`, err);
+              setter([]);
+            }
+          })
+      )
+    );
 
-      if (res.ok) {
-        const data = await res.json();
-        setHappinessData(data.metrics || []);
-      } else {
-        setHappinessData([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch distribution:", error);
-      setHappinessData([]);
-    }
-  }
-
-  async function getAiCitation() {
-    try {
-      const res = await fetch("/api/rum/ai-citation", {
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: "30days",
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setCitationData(data.metrics || []);
-      } else {
-        setCitationData([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch citation data: ", error);
-      setCitationData([]);
-    }
-  }
-
-  async function getAnalyticsOverview() {
-    try {
-      const res = await fetch("/api/rum/analytics-overview", {
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: "30days",
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setAnalyticsData(data.metrics || []);
-      } else {
-        setAnalyticsData([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch citation data: ", error);
-      setAnalyticsData([]);
-    }
-  }
+    return () => controller.abort();
+  }, [selectedSite, rumDateRange]);
 
   const metrics = aggregateByDeviceType(analyticsData);
 

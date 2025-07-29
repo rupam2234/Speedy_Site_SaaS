@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { useEffect, useState } from "react";
-import { useParams, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface DateRangeProps {
@@ -24,17 +24,7 @@ interface DateRangeProps {
   range: string;
 }
 
-const DateRangeData: DateRangeProps[] = [
-  { id: "last7", range: "Last 7 Days" },
-  { id: "thisMonth", range: "This Month" },
-  { id: "lastMonth", range: "Last Month" },
-  { id: "last6Months", range: "Last 6 Months" },
-  { id: "last12Months", range: "Last 12 Months" },
-  { id: "thisYear", range: "This Year" },
-];
-
 export default function DashboardToolbar() {
-  const params = useParams();
   const pathname = usePathname();
   const {
     selectedDevice,
@@ -44,32 +34,69 @@ export default function DashboardToolbar() {
     setExperienceType,
     rumDistribution,
     setRumDistribution,
+    setRumDateRange,
   } = useSiteContext();
-  const [selectedRangeId, setSelectedRangeId] =
-    useState<string>("last12Months");
+
+  const isRumPath = pathname.includes("rum");
+
+  const DateRangeData: DateRangeProps[] = isRumPath
+    ? [
+        { id: "last7", range: "Last 7 Days" },
+        { id: "last24Hours", range: "Last 24 Hours" },
+        { id: "last30", range: "Last 30 Days" },
+        { id: "last90", range: "Last 90 Days" },
+      ]
+    : [
+        { id: "last7", range: "Last 7 Days" },
+        { id: "thisMonth", range: "This Month" },
+        { id: "lastMonth", range: "Last Month" },
+        { id: "last6Months", range: "Last 6 Months" },
+        { id: "last12Months", range: "Last 12 Months" },
+        { id: "thisYear", range: "This Year" },
+      ];
+
+  const [selectedRangeId, setSelectedRangeId] = useState<string>(
+    DateRangeData[3]?.id || "last7"
+  );
 
   useEffect(() => {
     const dateRanges = GetDateRange(selectedRangeId);
     setDateRange(dateRanges[0], dateRanges[1]);
-  }, [selectedRangeId]);
 
-  // ✅ Define allowed paths for toolbar visibility
+    if (isRumPath) {
+      switch (selectedRangeId) {
+        case "last24Hours":
+          setRumDateRange("24hours");
+          break;
+        case "last7":
+          setRumDateRange("7days");
+          break;
+        case "last30":
+          setRumDateRange("30days");
+          break;
+        case "last90":
+          setRumDateRange("90days");
+          break;
+        default:
+          setRumDateRange("7days");
+      }
+    }
+  }, [selectedRangeId, isRumPath]);
+
   const allowedPaths = [
-    `/dashboard/${params.sites}/cwv`,
-    `/dashboard/${params.sites}/pages`,
-    `/dashboard/${params.sites}/rum/overview`,
-    `/dashboard/${params.sites}/rum/cwv`,
-    `/dashboard/${params.sites}`,
+    `/dashboard/cwv`,
+    `/dashboard/pages`,
+    `/dashboard/rum/overview`,
+    `/dashboard/rum/cwv`,
+    `/dashboard/`,
   ];
 
   const isToolbarVisible = allowedPaths.includes(pathname);
-
   if (!isToolbarVisible) return null;
 
-  const isOnCWVPage = pathname === `/dashboard/${params.sites}/cwv`;
+  const isOnCWVPage = pathname === `/dashboard/cwv`;
   const isOnRum =
-    pathname === `/dashboard/${params.sites}/rum/overview` ||
-    pathname === `/dashboard/${params.sites}/rum/cwv`;
+    pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv`;
 
   function selectDevice(device: "Desktop" | "Mobile") {
     setSelectedDevice(device);
@@ -79,12 +106,9 @@ export default function DashboardToolbar() {
     (item) => item.id === selectedRangeId
   );
 
-  function GetDateRange(
-    rangeKey: string
-  ): [startDate: string, endDate: string] {
+  function GetDateRange(rangeKey: string): [string, string] {
     const today = new Date();
     const todayISO = today.toISOString().split("T")[0];
-
     let startDate = todayISO;
     let endDate = todayISO;
 
@@ -100,7 +124,6 @@ export default function DashboardToolbar() {
           .toISOString()
           .split("T")[0];
         break;
-
       case "lastMonth":
         startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1)
           .toISOString()
@@ -109,7 +132,6 @@ export default function DashboardToolbar() {
           .toISOString()
           .split("T")[0];
         break;
-
       case "last6Months": {
         const six = new Date(today);
         six.setMonth(today.getMonth() - 5);
@@ -117,7 +139,6 @@ export default function DashboardToolbar() {
         startDate = six.toISOString().split("T")[0];
         break;
       }
-
       case "last12Months": {
         const twelve = new Date(today);
         twelve.setMonth(today.getMonth() - 11);
@@ -125,7 +146,6 @@ export default function DashboardToolbar() {
         startDate = twelve.toISOString().split("T")[0];
         break;
       }
-
       case "thisYear":
         startDate = new Date(today.getFullYear(), 0, 1)
           .toISOString()
@@ -217,6 +237,8 @@ export default function DashboardToolbar() {
             </div>
           </div>
         )}
+
+        {/* RUM Distribution */}
         {isOnRum && (
           <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
             <div className="flex justify-between items-center pl-2 py-[2px] w-full">
@@ -255,7 +277,7 @@ export default function DashboardToolbar() {
           <CalendarArrowDown size={18} className="mr-2" />
           <Select value={selectedRangeId} onValueChange={setSelectedRangeId}>
             <SelectTrigger className="px-4 py-0 text-sm ring-0 text-primary focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background font-medium rounded-sm bg-transparent border-none focus:ring-0 focus:outline-none">
-              <SelectValue placeholder="Last 7 Days">
+              <SelectValue placeholder="Select Range">
                 {selectedRange?.range}
               </SelectValue>
             </SelectTrigger>

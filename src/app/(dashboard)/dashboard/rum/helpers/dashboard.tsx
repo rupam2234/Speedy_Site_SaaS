@@ -1,6 +1,6 @@
 "use client";
 
-import { useSiteContext } from "../../../siteContext";
+import { useSiteContext } from "../../siteContext";
 import WebVitalsBar from "./distributions";
 import {
   Tooltip,

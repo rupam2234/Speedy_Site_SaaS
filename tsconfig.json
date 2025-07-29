@@ -29,7 +29,7 @@
     "next-env.d.ts",
     "src/hooks/ParticleBackground.tsx",
     "C:/projectbuild/speedy-next-cache/types/**/*.ts",
-    "src/app/(dashboard)/dashboard/[sites]/rum/page.tsx.bak"
+    "src/app/(dashboard)/dashboard/rum/page.tsx.bak"
   ],
   "exclude": ["node_modules"]
 }

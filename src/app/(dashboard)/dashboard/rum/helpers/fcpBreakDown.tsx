@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import BeatLoader from "react-spinners/BeatLoader";
+import { ChartPie } from "lucide-react";
 
 interface FCPData {
   device_type: string;
@@ -99,7 +100,10 @@ const FCPBreakdownChart: React.FC<Props> = ({ data }) => {
         {/* LEFT: Breakdown by FCP */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium">FCP Breakdown</h3>
+            <div className="flex items-center gap-2">
+              <ChartPie size={15} className="fill-green-500/30" />
+              <h3 className="text-sm font-medium">FCP Breakdown</h3>
+            </div>
             <select
               className="text-xs bg-gray-500/20 px-2 py-1 rounded border border-muted-foreground/10"
               value={sortKey}

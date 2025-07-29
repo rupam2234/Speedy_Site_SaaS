@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSiteContext } from "../../../siteContext";
+import { useSiteContext } from "../../siteContext";
 import { useEffect, useState } from "react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import RumCwvChart from "../helpers/webvitalscharts";
@@ -18,7 +18,7 @@ type Trigger = {
 
 export default function RUMCWV() {
   const [activeData, setActiveData] = useState<any>();
-  const { selectedSite } = useSiteContext();
+  const { selectedSite, rumDateRange } = useSiteContext();
   const [activeTab, setActiveTab] = useState("lcp");
   const [lcp_analysis, set_lcp_analysis] = useState<any>();
   const [cls_analysis, set_cls_analysis] = useState<any>();
@@ -30,7 +30,7 @@ export default function RUMCWV() {
     if (selectedSite) {
       get_rum_vitals();
     }
-  }, [selectedSite]);
+  }, [selectedSite, rumDateRange]);
 
   useEffect(() => {
     if (selectedSite && activeTab === "lcp") {
@@ -48,7 +48,7 @@ export default function RUMCWV() {
     if (selectedSite && activeTab === "fcp") {
       get_fcp_analysis();
     }
-  }, [selectedSite, activeTab]);
+  }, [selectedSite, activeTab, rumDateRange]);
 
   async function get_rum_vitals() {
     try {
@@ -57,7 +57,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "30days",
+          date_range: rumDateRange,
         }),
       });
 
@@ -80,7 +80,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "7days",
+          date_range: rumDateRange,
         }),
       });
 
@@ -103,7 +103,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "7days",
+          date_range: rumDateRange,
         }),
       });
 
@@ -126,7 +126,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "7days",
+          date_range: rumDateRange,
         }),
       });
 
@@ -149,7 +149,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "7days",
+          date_range: rumDateRange,
         }),
       });
 
@@ -172,7 +172,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "7days",
+          date_range: rumDateRange,
         }),
       });
 

@@ -9,7 +9,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { CirclePlus } from "lucide-react";
@@ -27,7 +27,6 @@ export function SelectSite({
     useSiteContext();
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const pathname = usePathname();
-  const router = useRouter();
 
   // managing the sidebar state (collapsed or open?)
   useEffect(() => {
@@ -43,24 +42,6 @@ export function SelectSite({
 
     setSelectedSite(value);
   };
-
-  // to set selected site into the url or vise-versa
-  useEffect(() => {
-    if (!selectedSite) return;
-
-    const segments = pathname.split("/").filter(Boolean);
-
-    const currentSite = segments[1]; // dynamic site is in the second segment
-
-    if (segments[0] === "dashboard" && currentSite !== selectedSite) {
-      const newPath = `/${[
-        "dashboard",
-        selectedSite,
-        ...segments.slice(2),
-      ].join("/")}`;
-      router.replace(newPath);
-    }
-  }, [selectedSite, pathname, router]);
 
   // when sites are available on order, auto select the first one
   useEffect(() => {

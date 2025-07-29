@@ -89,7 +89,7 @@ export default function ExperienceBar({
 
                     <span className="font-medium">Avg CLS:</span>
                     <span className={getWebVitalColor("cls", item.avg_cls)}>
-                      {item.avg_cls.toFixed(3)}
+                      {item.avg_cls?.toFixed(3)}
                     </span>
 
                     <span className="font-medium">Avg TTFB:</span>

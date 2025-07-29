@@ -12,7 +12,7 @@ import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OrderData } from "@/app/api/dataTypes";
-import { useSiteContext } from "../../siteContext";
+import { useSiteContext } from "../siteContext";
 import { toast } from "sonner";
 import TrackingIntegration from "./trackingIntegration";
 
@@ -24,7 +24,7 @@ const useUserPagesWithRunCounts = () => {
   ];
 };
 
-export default function Settings() {
+export default function SettingsPage() {
   const [copied, setCopied] = useState("");
   const [siteData, setSiteData] = useState<OrderData>();
   const { selectedSite, fetchOrders } = useSiteContext();
@@ -49,7 +49,6 @@ export default function Settings() {
     const interval = setInterval(() => {
       setRemainingTime(getTimeUntilNextTest());
     }, 1000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -67,29 +66,20 @@ export default function Settings() {
     }
   );
 
-  // calculate remaining time for next test
   function getTimeUntilNextTest() {
-    const now = new Date(); // user's local time
-
-    // next test UTC time (we run tests on 13:30 UTC)
+    const now = new Date();
     const targetUtc = new Date();
-    targetUtc.setUTCHours(13, 30, 0, 0); // 13:30:00 UTC
-
-    // If the target time is already passed today, schedule it for tomorrow
+    targetUtc.setUTCHours(13, 30, 0, 0);
     if (targetUtc.getTime() <= now.getTime()) {
       targetUtc.setUTCDate(targetUtc.getUTCDate() + 1);
     }
-
     const diffMs = targetUtc.getTime() - now.getTime();
-
     const hours = Math.floor(diffMs / (1000 * 60 * 60));
     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-
     return `${hours}h ${minutes}m ${seconds}s`;
   }
 
-  // to manage website id copy state
   async function handleCopy(text: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -100,7 +90,6 @@ export default function Settings() {
     }
   }
 
-  // to fetch domain data
   async function fetchDomainData(selectedSite: string) {
     if (!selectedSite) return;
 
@@ -121,11 +110,9 @@ export default function Settings() {
       setSiteData(data.data[0]);
     } catch (error) {
       console.error("Network or server error:", error);
-      return null;
     }
   }
 
-  // fetch how many urls being tracked
   async function fetchPagesWithVitals() {
     if (!selectedSite) return;
 
@@ -136,7 +123,6 @@ export default function Settings() {
     });
 
     const data = await res.json();
-
     if (data) {
       setActiveUrls(data.data?.[0]?.urls.length);
     }
@@ -144,10 +130,9 @@ export default function Settings() {
 
   const handleRefetch = () => {
     sessionStorage.removeItem("orders");
-    fetchOrders(); // This refetch the orders
+    fetchOrders();
   };
 
-  // website delete operation
   async function handleDelete() {
     if (!selectedSite) return;
 
@@ -167,7 +152,7 @@ export default function Settings() {
     toast.success("Website deleted", {
       style: { backgroundColor: "#66cc8f", color: "white" },
     });
-    handleRefetch(); // refresh the orders
+    handleRefetch();
   }
 
   return (
@@ -180,17 +165,12 @@ export default function Settings() {
           </span>
           {confirmingDelete ? (
             <div className="flex gap-2">
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                className="opacity-100"
-              >
+              <Button variant="destructive" onClick={handleDelete}>
                 Confirm
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setConfirmingDelete(false)}
-                className="opacity-70 hover:opacity-100"
               >
                 Cancel
               </Button>
@@ -200,13 +180,12 @@ export default function Settings() {
               <TooltipTrigger asChild>
                 <Button
                   variant="destructive"
-                  className="opacity-70 hover:opacity-100 cursor-pointer"
+                  className="opacity-70 hover:opacity-100"
                   onClick={() => setConfirmingDelete(true)}
                 >
                   Delete Site
                 </Button>
               </TooltipTrigger>
-
               <TooltipContent side="left">
                 This action cannot be undone. All site data will be permanently
                 removed.
@@ -215,20 +194,17 @@ export default function Settings() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 my-5">
-          <div className="col-span-1 md:col-span-6 order-2 md:order-1">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 my-5">
+          <div className="col-span-1 md:col-span-6">
             <p className="text-primary/70 dark:text-primary/70 mb-4">
               Site related information
             </p>
-
             <div className="grid gap-4">
-              <div>
-                <Input
-                  value={siteData?.website_name ?? ""}
-                  readOnly
-                  className="mt-1 bg-gray-100 ring-0 text-primary border-0 rounded-sm dark:bg-gray-800 cursor-not-allowed"
-                />
-              </div>
+              <Input
+                value={siteData?.website_name ?? ""}
+                readOnly
+                className="mt-1 bg-gray-100 text-primary border-0 rounded-sm dark:bg-gray-800"
+              />
               <div className="flex gap-2 items-center text-sm">
                 <Label className="font-medium">Site ID:</Label>
                 <div className="text-gray-400 dark:text-primary flex gap-2 items-center">
@@ -245,22 +221,22 @@ export default function Settings() {
               </div>
               <div className="flex gap-2 items-center text-sm">
                 <Label className="font-medium">Created date:</Label>
-                <div className="text-gray-400 dark:text-primary flex gap-2 items-center">
+                <div className="text-gray-400 dark:text-primary">
                   {formattedDate}
                 </div>
               </div>
               <div className="flex gap-2 items-center text-sm">
                 <Label className="font-medium">Monitoring status:</Label>
-                <div className="text-gray-400 dark:text-primary flex gap-2 items-center">
+                <div className="text-gray-400 dark:text-primary">
                   {siteData?.order_status === true ? "Running" : "Stopped"}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="col-span-1 md:col-span-6 order-1 md:order-2 border border-muted rounded-md p-4 bg-muted/30 dark:bg-muted/20">
+          <div className="col-span-1 md:col-span-6 border border-muted rounded-md p-4 bg-muted/30 dark:bg-muted/20">
             <h3 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wide">
-              Quota Usage
+              Usage
             </h3>
 
             <div className="space-y-4">
@@ -281,30 +257,23 @@ export default function Settings() {
 
               <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Next test in:</span>
+                  <span>Next test in:</span>
                   <span className="text-primary">{remainingTime}</span>
                 </div>
-
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    Active pages monitored:
-                  </span>
+                  <span>Active pages monitored:</span>
                   <span className="text-primary">
                     {typeof activeUrls === "number"
                       ? `${activeUrls}/10`
                       : "Loading..."}
                   </span>
                 </div>
-
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    Runs per report:
-                  </span>
+                  <span>Runs per report:</span>
                   <span className="text-primary">3</span>
                 </div>
-
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Test location:</span>
+                  <span>Test location:</span>
                   <span className="text-primary">Canada, Ontario</span>
                 </div>
               </div>
@@ -312,11 +281,9 @@ export default function Settings() {
           </div>
         </div>
       </div>
-      <TrackingIntegration
-        siteId={selectedSite}
-        usage={420002}
-        quota={10000000}
-      />
+      <div className="mt-8">
+        <TrackingIntegration siteId={selectedSite} />
+      </div>
     </>
   );
 }

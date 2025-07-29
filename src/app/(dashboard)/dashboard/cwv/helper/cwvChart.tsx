@@ -257,6 +257,14 @@ const ChartComponent = ({ metric_key }: ChartProps) => {
     };
   }, [setCruxData]);
 
+  if (!p75ChartData || p75ChartData.length === 0) {
+    return (
+      <div className="flex items-center justify-center text-primary/40 h-full">
+        No data available
+      </div>
+    );
+  }
+
   return <div ref={chartRef} style={{ width: "100%", height: "380px" }} />;
 };
 

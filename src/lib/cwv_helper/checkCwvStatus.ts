@@ -1,4 +1,4 @@
-import { Helpers } from "@/app/(dashboard)/dashboard/[sites]/cwv/helper/helperFunc";
+import { Helpers } from "@/app/(dashboard)/dashboard/cwv/helper/helperFunc";
 import { getColor } from "./getColor";
 import { Metric } from "@/data/cruxData";
 
