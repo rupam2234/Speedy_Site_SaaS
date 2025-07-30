@@ -282,7 +282,7 @@ export default function SettingsPage() {
         </div>
       </div>
       <div className="mt-8">
-        <TrackingIntegration siteId={selectedSite} />
+        <TrackingIntegration />
       </div>
     </>
   );
