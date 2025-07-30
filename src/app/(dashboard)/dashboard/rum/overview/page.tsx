@@ -5,9 +5,9 @@ import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import { ChartNoAxesGantt } from "lucide-react";
 import { AggregatedMetrics } from "../helpers/analyticsOverview";
 import { DevicePerformanceData } from "../helpers/ai_citation";
-import { ExperienceData } from "../helpers/ExperienceBar";
 import { useSiteContext } from "../../siteContext";
 import RumDashboard, { WebVitalsMetric } from "../helpers/dashboard";
+import { ExperienceData } from "../helpers/ExperienceBar";
 
 type RawData = {
   device_type: "desktop" | "mobile";

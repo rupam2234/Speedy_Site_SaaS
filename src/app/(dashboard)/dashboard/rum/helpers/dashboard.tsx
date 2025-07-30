@@ -7,11 +7,11 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import ExperienceBar, { ExperienceData } from "./ExperienceBar";
 import { Bot, CircleGauge, Link2, Smile } from "lucide-react";
 import Link from "next/link";
 import CitationStatsCard, { DevicePerformanceData } from "./ai_citation";
 import AnalyticsOverview, { AggregatedMetrics } from "./analyticsOverview";
+import ExperienceBar, { ExperienceData } from "./ExperienceBar";
 
 export interface WebVitalsMetric {
   domain_name: string;
@@ -194,7 +194,7 @@ export default function RumDashboard({
             />
           </Link>
         </span>
-        <div className="border rounded-sm px-4 py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
+        <div className="border rounded-sm  py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
           <ExperienceBar data={experienceBarData} deviceType={selectedDevice} />
         </div>
 

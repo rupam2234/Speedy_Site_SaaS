@@ -86,7 +86,7 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "Page Groups",
+            title: "Pages",
             url: `/dashboard/pages`,
           },
         ],
@@ -104,6 +104,10 @@ export default function AppSidebar({
           {
             title: "Web Vitals",
             url: `/dashboard/rum/cwv?site=${selectedSite}`,
+          },
+          {
+            title: "LCP Images",
+            url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
           },
           {
             title: "Pages",

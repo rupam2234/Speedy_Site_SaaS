@@ -1,12 +1,20 @@
 "use client";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import React from "react";
-import { getWebVitalColor } from "./color";
+import { useEffect, useRef } from "react";
+import * as echarts from "echarts/core";
+import { TooltipComponent, TitleComponent } from "echarts/components";
+import { TreemapChart } from "echarts/charts";
+import { CanvasRenderer } from "echarts/renderers";
+import { UniversalTransition } from "echarts/features";
+import { useTheme } from "@/components/theme/ThemeProvider";
+
+echarts.use([
+  TooltipComponent,
+  TitleComponent,
+  TreemapChart,
+  CanvasRenderer,
+  UniversalTransition,
+]);
 
 type ExperienceQuality = "Good" | "Okay" | "Poor";
 
@@ -33,95 +41,142 @@ interface ExperienceBarChartProps {
 }
 
 const COLORS: Record<ExperienceQuality, string> = {
-  Good: "bg-[#66cc8f]",
-  Okay: "bg-[#ffeea9]",
-  Poor: "bg-[#FF9898]",
+  Good: "#66cc8f",
+  Okay: "#ffeea9",
+  Poor: "#FF9898",
+};
+
+const formatMs = (value: number | null | undefined): string => {
+  if (value == null || isNaN(value)) return "-";
+  return value >= 1000
+    ? `${(value / 1000).toFixed(2)} s`
+    : `${Math.round(value)} ms`;
 };
 
 export default function ExperienceBar({
   data,
   deviceType,
 }: ExperienceBarChartProps) {
-  const filtered = data.filter(
-    (d) => d.device_type.toLowerCase() === deviceType.toLowerCase()
-  );
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstanceRef = useRef<echarts.ECharts | null>(null);
+  const { theme } = useTheme();
 
-  const totalPercentage = filtered.reduce(
-    (acc, curr) => acc + curr.percentage_in_device_type,
-    0
-  );
+  useEffect(() => {
+    const chartDom = chartRef.current;
+    if (!chartDom) return;
+
+    if (!chartInstanceRef.current) {
+      chartInstanceRef.current = echarts.init(chartDom);
+    }
+
+    const chart = chartInstanceRef.current;
+
+    const filtered = data.filter(
+      (d) => d.device_type.toLowerCase() === deviceType.toLowerCase()
+    );
+
+    const children = filtered.map((item) => {
+      const tooltipLines = [
+        `<div style="margin-bottom:6px;">${item.session_count} <strong>${item.experience_quality}</strong> pageviews</div>`,
+      ];
+
+      if (item.avg_fcp != null)
+        tooltipLines.push(`<div>Avg FCP: ${formatMs(item.avg_fcp)}</div>`);
+      if (item.avg_cls != null)
+        tooltipLines.push(`<div>Avg CLS: ${item.avg_cls.toFixed(3)}</div>`);
+      if (item.avg_ttfb != null)
+        tooltipLines.push(`<div>Avg TTFB: ${formatMs(item.avg_ttfb)}</div>`);
+      if (item.avg_lcp != null)
+        tooltipLines.push(`<div>Avg LCP: ${formatMs(item.avg_lcp)}</div>`);
+      if (item.avg_inp != null)
+        tooltipLines.push(`<div>Avg INP: ${formatMs(item.avg_inp)}</div>`);
+
+      return {
+        name: `${
+          item.experience_quality
+        } (${item.percentage_in_device_type.toFixed(0)}%)`,
+        value: item.session_count,
+        itemStyle: {
+          color: COLORS[item.experience_quality],
+        },
+        tooltip: {
+          formatter: `
+            <div style="padding:6px 8px; font-size:13px;">
+              ${tooltipLines.join("")}
+            </div>
+          `,
+        },
+      };
+    });
+
+    const option: echarts.EChartsCoreOption = {
+      tooltip: {
+        trigger: "item",
+        confine: false,
+        appendToBody: true,
+        backgroundColor: "rgba(30,30,30,0.85)",
+        borderColor: "rgba(255,255,255,0.1)",
+        borderWidth: 1,
+        textStyle: {
+          color: "#fff",
+        },
+        formatter: (params: any) => params?.data?.tooltip?.formatter || "",
+      },
+      series: [
+        {
+          type: "treemap",
+          roam: false,
+          nodeClick: false,
+          left: 15,
+          right: 15,
+          top: 0,
+          bottom: 0,
+          label: {
+            show: true,
+            formatter: "{b}",
+            color: "#000",
+          },
+          upperLabel: { show: false, height: 0 },
+          breadcrumb: { show: false },
+          data: [
+            {
+              children,
+            },
+          ],
+        },
+      ],
+    };
+
+    chart.setOption(option);
+
+    const resizeObserver = new ResizeObserver(() => {
+      chart.resize();
+    });
+
+    resizeObserver.observe(chartDom);
+
+    return () => {
+      chart.dispose();
+      resizeObserver.disconnect();
+      chartInstanceRef.current = null;
+    };
+  }, [data, deviceType, theme]);
 
   return (
-    <div className="w-full space-y-3">
-      <div className="relative flex w-full h-12 rounded overflow-hidden bg-muted">
-        {filtered.map((item, index) => {
-          const width =
-            (item.percentage_in_device_type / totalPercentage) * 100;
-          const color = COLORS[item.experience_quality];
-
-          return (
-            <div
-              key={index}
-              className={`relative h-full ${color} transition-all duration-300`}
-              style={{ width: `${width}%` }}
-            >
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="w-full h-full cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  className="text-sm p-4 rounded-md shadow-md border bg-primary dark:bg-primary backdrop-blur-sm w-64 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span>
-                      {item.session_count} {item.experience_quality}{" "}
-                      {item.session_count > 1 ? "Page Views" : "Page View"}
-                    </span>
-                    <div className={`w-3 h-3 rounded-full ${color}`} />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-primary-foreground dark:text-primary-foreground">
-                    <span className="font-medium">Avg FCP:</span>
-                    <span className={getWebVitalColor("fcp", item.avg_fcp)}>
-                      {item.avg_fcp} ms
-                    </span>
-
-                    <span className="font-medium">Avg CLS:</span>
-                    <span className={getWebVitalColor("cls", item.avg_cls)}>
-                      {item.avg_cls?.toFixed(3)}
-                    </span>
-
-                    <span className="font-medium">Avg TTFB:</span>
-                    <span className={getWebVitalColor("ttfb", item.avg_ttfb)}>
-                      {item.avg_ttfb} ms
-                    </span>
-
-                    <span className="font-medium">Avg LCP:</span>
-                    <span className={getWebVitalColor("lcp", item.avg_lcp)}>
-                      {item.avg_lcp} ms
-                    </span>
-
-                    <span className="font-medium">Avg INP:</span>
-                    <span className={getWebVitalColor("inp", item.avg_inp)}>
-                      {item.avg_inp} ms
-                    </span>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Labels & Percentages */}
-              <div
-                className="absolute top-3 flex items-center justify-center w-full text-center text-[16px] font-semibold dark:text-primary-foreground text-primary/80"
-                style={{ pointerEvents: "none" }}
-              >
-                {item.percentage_in_device_type.toFixed(0)}%{" "}
-                {item.experience_quality}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    <div
+      className="w-full relative bg-transparent"
+      style={{ overflow: "visible" }}
+    >
+      <div
+        ref={chartRef}
+        style={{
+          width: "100%",
+          height: "50px",
+          backgroundColor: "transparent",
+          borderRadius: "10px",
+        }}
+        className="rounded-md"
+      />
     </div>
   );
 }

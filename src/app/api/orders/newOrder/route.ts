@@ -11,9 +11,9 @@ export async function POST(req: Request) {
     const maxSites = user.has({ plan: "free_users" })
       ? 1
       : user.has({ plan: "basic_plan" })
-      ? 2
+      ? 1
       : user.has({ plan: "pro" })
-      ? 4
+      ? 2
       : 0;
 
     if (!user.userId) {

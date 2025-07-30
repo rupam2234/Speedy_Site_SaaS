@@ -148,7 +148,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
         },
         formatter: (params: any) => {
           const param = params[0];
-          const value = param.value[1];
+          const value = param?.value[1];
           const isMs =
             metric_key === "lcp" ||
             metric_key === "fcp" ||

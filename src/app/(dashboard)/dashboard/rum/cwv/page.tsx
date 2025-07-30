@@ -188,6 +188,8 @@ export default function RUMCWV() {
     }
   }
 
+  // console.log(lcp_image_data);
+
   const triggerList: Trigger[] = [
     { value: "lcp", name: "Largest Contentful Paint" },
     { value: "cls", name: "Cumulative Layout Shifts" },

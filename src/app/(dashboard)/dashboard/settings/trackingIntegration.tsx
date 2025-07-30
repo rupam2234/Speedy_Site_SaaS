@@ -5,23 +5,15 @@ import { Copy, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSiteContext } from "../siteContext";
 
-interface TrackingIntegrationProps {
-  siteId: string;
-}
-
 type Tab = "wordpress" | "other";
 
-export default function TrackingIntegration({
-  siteId,
-}: TrackingIntegrationProps) {
+export default function TrackingIntegration() {
   const { selectedSite } = useSiteContext();
   const [, setCopied] = useState(false);
   const [usage, setRowCount] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("wordpress");
 
-  const trackingScript = `<script src="https://rum.thespeedysite.workers.dev/rum.js?v=0.0.1&site=${encodeURIComponent(
-    siteId
-  )}" defer></script>`;
+  const trackingScript = `<script src="https://rum.thespeedysite.workers.dev/rum.js?v=0.0.1" defer></script>`;
 
   const handleCopy = async (text: string) => {
     try {

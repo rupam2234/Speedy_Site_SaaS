@@ -9,18 +9,31 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
 import { ReactNode, Suspense, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, Protect } from "@clerk/nextjs";
 import DashboardToolbar from "@/components/utils/toolbar";
-
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
-import { useRouter } from "next/navigation";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { PlanValidation } from "@/components/utils/activePlanValidation";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 
 interface DashboardLayoutProps {
   children: ReactNode;
+}
+
+function Fallback() {
+  return (
+    <div className="flex flex-col items-center justify-center md:mt-[-150px] min-h-screen p-6">
+      <span className="text-4xl mb-4">🔒</span>
+      <h2 className="text-[16px] font-normal text-center text-primary">
+        You need at least the pro plan to view real user monitoring report.
+      </h2>
+      <p>
+        Please visit <strong>account</strong> {">"} <strong>billing</strong> to
+        check your active plan.
+      </p>
+    </div>
+  );
 }
 
 function LayoutContent({ children }: { children: ReactNode }) {
@@ -29,17 +42,16 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  PlanValidation(); // redirect to billing if no active plan
+
+  PlanValidation(); // optional client-side redirect if needed
 
   useEffect(() => {
     if (!user || !isSignedIn) return;
-
     fetchOrders(
       new URLSearchParams(window.location.search).get("site") || undefined
     );
   }, [user, isSignedIn, fetchOrders]);
 
-  // adds query param
   useEffect(() => {
     if (selectedSite) {
       const currentPath = pathname;
@@ -59,10 +71,6 @@ function LayoutContent({ children }: { children: ReactNode }) {
             <Separator orientation="vertical" className="mr-2 h-4" />
             <ThemeToggle />
           </div>
-          {/* <script
-            src="https://web-vital-public-script.thespeedysite.workers.dev/web-vitals-extended.js"
-            defer
-          ></script> */}
         </header>
         <main className="flex-1 dark:bg-background bg-background">
           <DashboardToolbar />
@@ -79,7 +87,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <SidebarProvider>
       <SiteContextProvider>
         <Suspense fallback={<LoadingAnimation />}>
-          <LayoutContent>{children}</LayoutContent>
+          <Protect plan="pro" fallback={<Fallback />}>
+            <LayoutContent>{children}</LayoutContent>
+          </Protect>
         </Suspense>
       </SiteContextProvider>
     </SidebarProvider>

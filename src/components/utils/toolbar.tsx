@@ -89,6 +89,7 @@ export default function DashboardToolbar() {
     `/dashboard/rum/overview`,
     `/dashboard/rum/cwv`,
     `/dashboard/`,
+    `/dashboard/rum/lcp-images`,
   ];
 
   const isToolbarVisible = allowedPaths.includes(pathname);
@@ -97,7 +98,6 @@ export default function DashboardToolbar() {
   const isOnCWVPage = pathname === `/dashboard/cwv`;
   const isOnRum =
     pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv`;
-
   function selectDevice(device: "Desktop" | "Mobile") {
     setSelectedDevice(device);
   }
