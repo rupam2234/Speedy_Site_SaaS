@@ -45,11 +45,11 @@ export default function TrackingIntegration() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setRowCount(data.row_count); // Save row count to state
+        setRowCount(data.row_count);
       })
       .catch((err) => {
         console.error("Error fetching row count:", err);
-        setRowCount(null); // Optional: reset on error
+        setRowCount(null);
       });
   }, [selectedSite]);
 

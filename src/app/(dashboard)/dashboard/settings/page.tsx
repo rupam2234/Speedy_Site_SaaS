@@ -15,6 +15,7 @@ import { OrderData } from "@/app/api/dataTypes";
 import { useSiteContext } from "../siteContext";
 import { toast } from "sonner";
 import TrackingIntegration from "./trackingIntegration";
+import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 
 const useUserPagesWithRunCounts = () => {
   return [
@@ -153,6 +154,14 @@ export default function SettingsPage() {
       style: { backgroundColor: "#66cc8f", color: "white" },
     });
     handleRefetch();
+  }
+
+  if (!selectedSite) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+        <LoadingAnimation />
+      </div>
+    );
   }
 
   return (

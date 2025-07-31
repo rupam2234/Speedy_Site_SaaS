@@ -91,7 +91,7 @@ const CitationStatsCard: React.FC<DevicePerformanceData> = ({
             style={{ width: `${Math.min(avg_ttfb / 20, 100)}%` }}
           ></div>
         </div>
-        <div className="text-xs mt-1">{avg_ttfb.toFixed(2)} ms</div>
+        <div className="text-xs mt-1">{avg_ttfb?.toFixed(2)} ms</div>
 
         <div className="mt-2 mb-1">📦 DOM Load:</div>
         <div className="w-full bg-gray-200 h-2 rounded">
@@ -101,7 +101,7 @@ const CitationStatsCard: React.FC<DevicePerformanceData> = ({
           ></div>
         </div>
         <div className="text-xs mt-1">
-          {avg_dom_content_loaded.toFixed(2)} ms
+          {avg_dom_content_loaded?.toFixed(2)} ms
         </div>
       </div>
 
@@ -114,7 +114,7 @@ const CitationStatsCard: React.FC<DevicePerformanceData> = ({
               ai_citation_possibility
             )} font-semibold`}
           >
-            {ai_citation_possibility.toUpperCase()}
+            {ai_citation_possibility?.toUpperCase()}
           </span>
           <div className="absolute z-10 hidden w-64 p-2 text-xs text-white bg-gray-700 rounded shadow-md group-hover:block -top-16 left-1/2 transform -translate-x-1/2 whitespace-normal">
             {citationPossibilityTooltip[ai_citation_possibility]}

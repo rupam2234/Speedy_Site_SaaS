@@ -10,6 +10,7 @@ import CLSBreakdownChart from "../helpers/clsBreakDown";
 import InpBreakDownChart from "../helpers/inpBreakdown";
 import TTFBBreakdownChart from "../helpers/ttfbBreakDown";
 import FCPBreakdownChart from "../helpers/fcpBreakDown";
+import DashboardToolbar from "@/components/utils/toolbar";
 
 type Trigger = {
   value: string;
@@ -200,82 +201,85 @@ export default function RUMCWV() {
 
   if (!selectedSite || !activeData) {
     return (
-      <div className="flex items-center justify-center md:mt-[-100px] min-h-full">
+      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
         <LoadingAnimation />
       </div>
     );
   }
 
   return (
-    <div className="m-5">
-      <Tabs
-        defaultValue="lcp"
-        className="w-full"
-        value={activeTab}
-        onValueChange={setActiveTab}
-      >
-        {/* Scrollable tab list container */}
-        <div className="overflow-x-scroll md:overflow-x-auto">
-          <TabsList
-            className="pl-4 dark:bg-secondary-background bg-gray-500/10 p-1 rounded-none border-gray-500/20 
+    <>
+      <DashboardToolbar />
+      <div className="m-5">
+        <Tabs
+          defaultValue="lcp"
+          className="w-full"
+          value={activeTab}
+          onValueChange={setActiveTab}
+        >
+          {/* Scrollable tab list container */}
+          <div className="overflow-x-scroll md:overflow-x-auto">
+            <TabsList
+              className="pl-4 dark:bg-secondary-background bg-gray-500/10 p-1 rounded-none border-gray-500/20 
             whitespace-nowrap flex gap-2 sm:gap-4 w-full"
-          >
-            {triggerList.map((x) => (
-              <TabsTrigger
-                key={x.value}
-                value={x.value}
-                className="focus:outline-none rounded-none focus:ring-0 border-none active:bg-white active:shadow-none px-4 py-2 text-sm  whitespace-nowrap"
-              >
-                {x.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+            >
+              {triggerList.map((x) => (
+                <TabsTrigger
+                  key={x.value}
+                  value={x.value}
+                  className="focus:outline-none rounded-none focus:ring-0 border-none active:bg-white active:shadow-none px-4 py-2 text-sm  whitespace-nowrap"
+                >
+                  {x.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
-        {/* Content remains static and responsive */}
-        <div className="mt-2">
-          <TabsContent value="lcp" className="space-y-5">
-            <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
-              <RumCwvChart metric_key="lcp" data={activeData} />
-            </div>
-            <div>
-              <LCPBreakdownChart data={lcp_analysis || []} />
-            </div>
-          </TabsContent>
-          <TabsContent value="cls" className="space-y-5">
-            <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
-              <RumCwvChart metric_key="cls" data={activeData} />
-            </div>
-            <div>
-              <CLSBreakdownChart data={cls_analysis || []} />
-            </div>
-          </TabsContent>
-          <TabsContent value="inp" className="space-y-5">
-            <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
-              <RumCwvChart metric_key="inp" data={activeData} />
-            </div>
-            <div>
-              <InpBreakDownChart data={inp_analysis || []} />
-            </div>
-          </TabsContent>
-          <TabsContent value="ttfb" className="space-y-5">
-            <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
-              <RumCwvChart metric_key="ttfb" data={activeData} />
-            </div>
-            <div className="mt-5">
-              <TTFBBreakdownChart data={ttfb_analysis || []} />
-            </div>
-          </TabsContent>
-          <TabsContent value="fcp" className="space-y-5">
-            <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
-              <RumCwvChart metric_key="fcp" data={activeData} />
-            </div>
-            <div className="mt-5">
-              <FCPBreakdownChart data={fcp_analysis || []} />
-            </div>
-          </TabsContent>
-        </div>
-      </Tabs>
-    </div>
+          {/* Content remains static and responsive */}
+          <div className="mt-2">
+            <TabsContent value="lcp" className="space-y-5">
+              <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
+                <RumCwvChart metric_key="lcp" data={activeData} />
+              </div>
+              <div>
+                <LCPBreakdownChart data={lcp_analysis || []} />
+              </div>
+            </TabsContent>
+            <TabsContent value="cls" className="space-y-5">
+              <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
+                <RumCwvChart metric_key="cls" data={activeData} />
+              </div>
+              <div>
+                <CLSBreakdownChart data={cls_analysis || []} />
+              </div>
+            </TabsContent>
+            <TabsContent value="inp" className="space-y-5">
+              <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
+                <RumCwvChart metric_key="inp" data={activeData} />
+              </div>
+              <div>
+                <InpBreakDownChart data={inp_analysis || []} />
+              </div>
+            </TabsContent>
+            <TabsContent value="ttfb" className="space-y-5">
+              <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
+                <RumCwvChart metric_key="ttfb" data={activeData} />
+              </div>
+              <div className="mt-5">
+                <TTFBBreakdownChart data={ttfb_analysis || []} />
+              </div>
+            </TabsContent>
+            <TabsContent value="fcp" className="space-y-5">
+              <div className="border bg-primary-foreground dark:bg-secondary-background py-4 rounded-sm">
+                <RumCwvChart metric_key="fcp" data={activeData} />
+              </div>
+              <div className="mt-5">
+                <FCPBreakdownChart data={fcp_analysis || []} />
+              </div>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
+    </>
   );
 }

@@ -10,7 +10,6 @@ import {
 import { Separator } from "@radix-ui/react-separator";
 import { ReactNode, Suspense, useEffect } from "react";
 import { useUser, Protect } from "@clerk/nextjs";
-import DashboardToolbar from "@/components/utils/toolbar";
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -45,13 +44,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
   PlanValidation(); // optional client-side redirect if needed
 
-  useEffect(() => {
-    if (!user || !isSignedIn) return;
-    fetchOrders(
-      new URLSearchParams(window.location.search).get("site") || undefined
-    );
-  }, [user, isSignedIn, fetchOrders]);
-
+  // set site param
   useEffect(() => {
     if (selectedSite) {
       const currentPath = pathname;
@@ -60,6 +53,21 @@ function LayoutContent({ children }: { children: ReactNode }) {
       router.replace(`${currentPath}?${params.toString()}`);
     }
   }, [selectedSite, pathname, router, searchParams]);
+
+  // redirect back to dashboard if no site
+  useEffect(() => {
+    if (!user || !isSignedIn) return;
+
+    const site = selectedSite || searchParams.get("site");
+
+    const timeout = setTimeout(() => {
+      if (!selectedSite) {
+        router.push("/dashboard");
+      }
+    }, 500);
+    fetchOrders(site!);
+    return () => clearTimeout(timeout);
+  }, [user, isSignedIn, selectedSite, searchParams, router, fetchOrders]);
 
   return (
     <>
@@ -73,7 +81,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="flex-1 dark:bg-background bg-background">
-          <DashboardToolbar />
+          {/* <DashboardToolbar /> */}
           {children}
           <Toaster />
         </main>

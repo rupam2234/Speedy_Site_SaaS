@@ -16,8 +16,8 @@ import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import LabView from "./helper/lab";
 import { pageMetricCache } from "@/components/globalData/cachedPageData";
 import { useRouter } from "next/navigation";
-import { useCheckPlan } from "@/components/utils/useCheckPlan";
 import { PlanValidation } from "@/components/utils/activePlanValidation";
+import DashboardToolbar from "@/components/utils/toolbar";
 
 export default function PageGroups() {
   const [isConnecting, setConnecting] = useState(false);
@@ -40,7 +40,6 @@ export default function PageGroups() {
 
   PlanValidation(); // redirect to billing if no active plan
 
-  useCheckPlan();
   const router = useRouter();
 
   //#region Zustand Section
@@ -51,7 +50,7 @@ export default function PageGroups() {
   const hasHydrated = pageMetricCache((state) => state._hasHydrated);
 
   useEffect(() => {
-    if (!hasHydrated) return; // Wait for persisted state to load
+    if (!hasHydrated) return;
 
     if (
       metricSite === selectedSite &&
@@ -81,8 +80,11 @@ export default function PageGroups() {
       }
     };
 
-    loadMetricData();
+    if (selectedSite.length > 0) {
+      loadMetricData();
+    }
   }, [selectedSite, hasHydrated]);
+
   //#endregion
 
   // Show "No Pages Found" fallback after 4s if no URLs
@@ -252,7 +254,9 @@ export default function PageGroups() {
       }
     }
 
-    fetchPagesWithVitals();
+    if (selectedSite.length > 0) {
+      fetchPagesWithVitals();
+    }
   }, [selectedSite, pagesProcessing]);
 
   useEffect(() => {
@@ -542,11 +546,18 @@ export default function PageGroups() {
   }
 
   function handleManualPageAdd() {
-    const path = `/dashboard/${selectedSite}/add-pages`;
+    const path = `/dashboard/add-pages?site=${selectedSite}`;
     router.prefetch(path);
     router.push(path);
   }
 
+  if (!selectedSite) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+        <LoadingAnimation />
+      </div>
+    );
+  }
   if (!planChecked) {
     // load nothing
     return <></>;
@@ -568,123 +579,125 @@ export default function PageGroups() {
   }
 
   return (
-    <div className="p-5 min-h-screen">
-      <div className="flex justify-between items-center gap-6">
-        {/* Header */}
-        <Tooltip>
-          <TooltipTrigger>
-            <div className="flex items-center gap-2 cursor-help">
-              <Layers
-                size={30}
-                className="fill-blue-400 dark:text-accent-foreground"
-              />
-              <h2 className="text-md md:text-2xl font-bold text-primary">
-                Page Groups
-              </h2>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            Page Groups help you identify key performance bottlenecks by
-            combining lab tests with real-world Web Vitals data.
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Pages count badge with status */}
-        <span className="relative flex gap-4 group items-center">
-          {processedPages === undefined ? (
-            <Tooltip>
-              <TooltipTrigger>
-                <LoaderIcon size={24} className="animate-spin" />
-              </TooltipTrigger>
-              <TooltipContent side="left">Checking...</TooltipContent>
-            </Tooltip>
-          ) : (
-            <Tooltip>
-              <div
-                className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full border ${
-                  processedPages === null
-                    ? "bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-300"
-                    : "bg-gray-100 border-gray-300 text-gray-800 dark:bg-secondary-background dark:border-gray-700 dark:text-gray-200"
-                } cursor-help`}
-              >
-                {urls?.length ?? 0 <= 10 ? (
-                  <span>{urls?.length}/10 Pages</span>
-                ) : (
-                  <span>0/10 Pages</span>
-                )}
-                <TooltipTrigger>
-                  <SquarePlus
-                    onClick={handleManualPageAdd}
-                    className="ml-2 w-5 h-5 cursor-pointer border border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-                  />
-                </TooltipTrigger>
-                <TooltipContent side="top">Add pages manually</TooltipContent>
+    <>
+      <DashboardToolbar />
+      <div className="p-5 min-h-screen">
+        <div className="flex justify-between items-center gap-6">
+          <Tooltip>
+            <TooltipTrigger>
+              <div className="flex items-center gap-2 cursor-help">
+                <Layers
+                  size={30}
+                  className="fill-blue-400 dark:text-accent-foreground"
+                />
+                <h2 className="text-md md:text-2xl font-bold text-primary">
+                  Page Groups
+                </h2>
               </div>
-            </Tooltip>
-          )}
-        </span>
-      </div>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              Page Groups help you identify key performance bottlenecks by
+              combining lab tests with real-world Web Vitals data.
+            </TooltipContent>
+          </Tooltip>
 
-      {/* Main display logic */}
-      {pagesProcessing ? (
-        <div className="mt-6 flex items-center justify-center text-muted-foreground">
-          <LoaderIcon className="animate-spin inline-block mr-2" />
-          Processing pages for Core Web Vitals. This process requires at least
-          60 seconds to complete.
+          {/* Pages count badge with status */}
+          <span className="relative flex gap-4 group items-center">
+            {processedPages === undefined ? (
+              <Tooltip>
+                <TooltipTrigger>
+                  <LoaderIcon size={24} className="animate-spin" />
+                </TooltipTrigger>
+                <TooltipContent side="left">Checking...</TooltipContent>
+              </Tooltip>
+            ) : (
+              <Tooltip>
+                <div
+                  className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full border ${
+                    processedPages === null
+                      ? "bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-300"
+                      : "bg-gray-100 border-gray-300 text-gray-800 dark:bg-secondary-background dark:border-gray-700 dark:text-gray-200"
+                  } cursor-help`}
+                >
+                  {urls?.length ?? 0 <= 10 ? (
+                    <span>{urls?.length}/10 Pages</span>
+                  ) : (
+                    <span>0/10 Pages</span>
+                  )}
+                  <TooltipTrigger>
+                    <SquarePlus
+                      onClick={handleManualPageAdd}
+                      className="ml-2 w-5 h-5 cursor-pointer border border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Add pages manually</TooltipContent>
+                </div>
+              </Tooltip>
+            )}
+          </span>
         </div>
-      ) : urls === undefined ||
-        urls === null ||
-        (urls?.length === 0 && showNoPagesFallback) ? (
-        <div className="max-w-2xl mx-auto mt-24 p-8 border border-border dark:border-gray-700 rounded-md bg-white dark:bg-secondary-background shadow-sm text-center space-y-6">
-          <h2 className="text-muted-foreground font-semibold text-base">
-            You have not assigned any page to monitor yet.
-          </h2>
 
-          <p className="text-muted-foreground text-base">
-            To start tracking, connect Google Search Console and select your
-            website. Speedy Sense will automatically fetch the pages that
-            contribute most to your site&apos;s Web Vitals.
-          </p>
-
-          {/* Button group with alignment */}
-          <div className="flex flex-wrap justify-center gap-3 items-center">
-            <button
-              onClick={fetchAuthUrl}
-              disabled={isConnecting}
-              className="inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-medium py-2 px-5 rounded-md transition-colors duration-150 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-            >
-              {isConnecting ? (
-                <>
-                  <Loader className="animate-spin" size={18} />
-                  Connecting...
-                </>
-              ) : (
-                "Connect Google Search Console"
-              )}
-            </button>
-
-            <button
-              onClick={handleManualPageAdd}
-              className="inline-flex items-center justify-center gap-2 border border-input dark:border-gray-600 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-medium text-primary px-4 py-2 rounded-md transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            >
-              Assign Pages Manually
-            </button>
+        {/* Main display logic */}
+        {pagesProcessing ? (
+          <div className="mt-6 flex items-center justify-center text-muted-foreground">
+            <LoaderIcon className="animate-spin inline-block mr-2" />
+            Processing pages for Core Web Vitals. This process requires at least
+            60 seconds to complete.
           </div>
+        ) : urls === undefined ||
+          urls === null ||
+          (urls?.length === 0 && showNoPagesFallback) ? (
+          <div className="max-w-2xl mx-auto mt-24 p-8 border border-border dark:border-gray-700 rounded-md bg-white dark:bg-secondary-background shadow-sm text-center space-y-6">
+            <h2 className="text-muted-foreground font-semibold text-base">
+              You have not assigned any page to monitor yet.
+            </h2>
 
-          <p className="text-[14px] text-muted-foreground">
-            We will run scheduled tests on your pages daily. Keeping your
-            assigned pages consistent ensures test history continuity.
-          </p>
-        </div>
-      ) : urls?.length === 0 ? (
-        <div className="flex items-center justify-center md:mt-[-170px] min-h-full">
-          <LoadingAnimation />
-        </div>
-      ) : urls?.length > 0 && urls.length <= 10 ? (
-        PageAddressOrganiser(urls, processedPages!)
-      ) : (
-        <></>
-      )}
-    </div>
+            <p className="text-muted-foreground text-base">
+              To start tracking, connect Google Search Console and select your
+              website. Speedy Sense will automatically fetch the pages that
+              contribute most to your site&apos;s Web Vitals.
+            </p>
+
+            {/* Button group with alignment */}
+            <div className="flex flex-wrap justify-center gap-3 items-center">
+              <button
+                onClick={fetchAuthUrl}
+                disabled={isConnecting}
+                className="inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-medium py-2 px-5 rounded-md transition-colors duration-150 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+              >
+                {isConnecting ? (
+                  <>
+                    <Loader className="animate-spin" size={18} />
+                    Connecting...
+                  </>
+                ) : (
+                  "Connect Google Search Console"
+                )}
+              </button>
+
+              <button
+                onClick={handleManualPageAdd}
+                className="inline-flex items-center justify-center gap-2 border border-input dark:border-gray-600 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-medium text-primary px-4 py-2 rounded-md transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+              >
+                Assign Pages Manually
+              </button>
+            </div>
+
+            <p className="text-[14px] text-muted-foreground">
+              We will run scheduled tests on your pages daily. Keeping your
+              assigned pages consistent ensures test history continuity.
+            </p>
+          </div>
+        ) : urls?.length === 0 ? (
+          <div className="flex items-center justify-center md:mt-[-170px] min-h-full">
+            <LoadingAnimation />
+          </div>
+        ) : urls?.length > 0 && urls.length <= 10 ? (
+          PageAddressOrganiser(urls, processedPages!)
+        ) : (
+          <></>
+        )}
+      </div>
+    </>
   );
 }

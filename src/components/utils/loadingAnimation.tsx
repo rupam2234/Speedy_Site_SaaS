@@ -8,7 +8,7 @@ export const LoadingAnimation = () => {
   const color: string = "green";
 
   return (
-    <div className="sweet-loading flex items-center justify-center w-full h-screen">
+    <div className="sweet-loading flex items-center justify-center w-full min-h-full">
       <ScaleLoader
         color={color}
         loading={loading}
