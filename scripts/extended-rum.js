@@ -24,7 +24,7 @@ function getCookie(name) {
 }
 
 function setCookie(name, value) {
-  document.cookie = `${name}=${value}; path=/`;
+  document.cookie = `${name}=${value}; path=/; max-age=2592000`; // 30 days
 }
 
 let sessionId = getCookie("sessionId");
@@ -34,8 +34,6 @@ if (!sessionId) {
 }
 
 const batchedData = [];
-
-// Track latest metrics
 const latestMetrics = {
   CLS: null,
   INP: null,
@@ -44,7 +42,6 @@ const latestMetrics = {
   TTFB: null,
 };
 
-//#region AI Citation
 const AI_CITATION_WEIGHTS = {
   domContentLoaded: 0.3,
   ttfb: 0.25,
@@ -53,7 +50,7 @@ const AI_CITATION_WEIGHTS = {
   docSizeScore: 0.15,
 };
 
-let aiCitationMetrics = {
+const aiCitationMetrics = {
   domContentLoaded: null,
   ttfb: null,
   contentType: null,
@@ -67,53 +64,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
 onTTFB((metric) => {
   aiCitationMetrics.ttfb = metric.value;
+  latestMetrics.TTFB = metric.value;
+
+  runAICitation();
+  runPerformanceScore();
 });
 
 function computeSemanticMarkupScore() {
   const tags = ["article", "main", "header", "footer", "nav", "section"];
-  let score = 0;
-  tags.forEach((tag) => {
-    if (document.querySelector(tag)) score += 1;
-  });
-  return score / tags.length;
+  return tags.filter((tag) => document.querySelector(tag)).length / tags.length;
 }
 
 function getDocSizeScore() {
-  const htmlLength = document.documentElement.outerHTML.length;
-  if (htmlLength < 50000) return 1;
-  if (htmlLength < 150000) return 0.5;
-  return 0.2;
+  const size = document.documentElement.outerHTML.length;
+  return size < 50000 ? 1 : size < 150000 ? 0.5 : 0.2;
 }
 
-function computeAICitationScore(metrics) {
-  const weights = AI_CITATION_WEIGHTS;
-
-  const dcl = metrics.domContentLoaded ?? 10000;
-  const ttfb = metrics.ttfb ?? 2000;
-
-  const domScore = 1 - Math.min(dcl, 10000) / 10000;
-  const ttfbScore = 1 - Math.min(ttfb, 2000) / 2000;
-
-  const typeScore =
-    metrics.contentType?.includes("text/html") ||
-    metrics.contentType?.includes("application/json")
+function computeAICitationScore(m) {
+  const dom = 1 - Math.min(m.domContentLoaded ?? 10000, 10000) / 10000;
+  const ttfb = 1 - Math.min(m.ttfb ?? 2000, 2000) / 2000;
+  const type =
+    m.contentType?.includes("text/html") ||
+    m.contentType?.includes("application/json")
       ? 1
       : 0;
+  const semantic = m.semanticMarkupScore ?? 0;
+  const doc = m.docSize ?? 1;
 
-  const semanticScore = metrics.semanticMarkupScore ?? 0;
-  const docSizeScore = metrics.docSize ?? 1;
-
-  const finalScore =
-    domScore * weights.domContentLoaded +
-    ttfbScore * weights.ttfb +
-    typeScore * weights.contentTypeScore +
-    semanticScore * weights.semanticMarkupScore +
-    docSizeScore * weights.docSizeScore;
-
-  return Number((finalScore * 100).toFixed(1));
+  return Number(
+    (
+      dom * AI_CITATION_WEIGHTS.domContentLoaded +
+      ttfb * AI_CITATION_WEIGHTS.ttfb +
+      type * AI_CITATION_WEIGHTS.contentTypeScore +
+      semantic * AI_CITATION_WEIGHTS.semanticMarkupScore +
+      doc * AI_CITATION_WEIGHTS.docSizeScore
+    ).toFixed(2) * 100
+  );
 }
 
-setTimeout(() => {
+function runAICitation() {
+  if (aiCitationMetrics.ttfb == null) return;
+
   aiCitationMetrics.semanticMarkupScore = computeSemanticMarkupScore();
   aiCitationMetrics.docSize = getDocSizeScore();
   aiCitationMetrics.contentType =
@@ -130,10 +121,8 @@ setTimeout(() => {
     ttfb: aiCitationMetrics.ttfb,
     timestamp: Date.now(),
   });
-}, 3000);
-//#endregion
+}
 
-//#region Performance Score
 function computePagePerformanceScore(metrics) {
   const thresholds = {
     CLS: [0.1, 0.25],
@@ -151,37 +140,33 @@ function computePagePerformanceScore(metrics) {
     TTFB: 0.15,
   };
 
-  let weightedSum = 0;
-  let totalWeight = 0;
+  let weighted = 0;
+  let total = 0;
 
-  for (const [key, value] of Object.entries(metrics)) {
+  for (const key in metrics) {
+    const value = metrics[key];
     if (value == null) continue;
 
-    const [good, poor] = thresholds[key];
-    let normalizedScore = 1 - Math.min(value, poor) / poor;
-
-    weightedSum += normalizedScore * weights[key];
-    totalWeight += weights[key];
+    const [_, poor] = thresholds[key];
+    const score = 1 - Math.min(value, poor) / poor;
+    weighted += score * weights[key];
+    total += weights[key];
   }
 
-  if (totalWeight === 0) return null;
-
-  const finalScore = (weightedSum / totalWeight) * 100;
-  return Number(finalScore.toFixed(1));
+  return total > 0 ? Number(((weighted / total) * 100).toFixed(1)) : null;
 }
 
-setTimeout(() => {
-  const pagePerfScore = computePagePerformanceScore(latestMetrics);
-  if (pagePerfScore !== null) {
+function runPerformanceScore() {
+  const score = computePagePerformanceScore(latestMetrics);
+  if (score !== null) {
     queueEvent({
       type: "page-performance-score",
       siteDomain,
-      score: pagePerfScore,
+      score,
       timestamp: Date.now(),
     });
   }
-}, 4000);
-//#endregion
+}
 
 function classifyMetric(value, thresholds) {
   if (value <= thresholds[0]) return "good";
@@ -189,52 +174,106 @@ function classifyMetric(value, thresholds) {
   return "poor";
 }
 
-function enrichEvent(data) {
-  return {
-    ...data,
-    sessionId,
-  };
-}
-
 function queueEvent(event) {
-  batchedData.push(enrichEvent(event));
+  batchedData.push({ ...event, sessionId });
 }
 
 function handleMetric(metric) {
-  let rating = "unknown";
+  const { name, value, delta, id, attribution } = metric;
 
-  switch (metric.name) {
+  let rating;
+  switch (name) {
     case "CLS":
-      latestMetrics.CLS = metric.value;
-      rating = classifyMetric(metric.value, CLSThresholds);
+      latestMetrics.CLS = value;
+      rating = classifyMetric(value, CLSThresholds);
       break;
     case "INP":
-      latestMetrics.INP = metric.value;
-      rating = classifyMetric(metric.value, INPThresholds);
+      latestMetrics.INP = value;
+      rating = classifyMetric(value, INPThresholds);
       break;
     case "LCP":
-      latestMetrics.LCP = metric.value;
-      rating = classifyMetric(metric.value, LCPThresholds);
+      latestMetrics.LCP = value;
+      rating = classifyMetric(value, LCPThresholds);
       break;
     case "FCP":
-      latestMetrics.FCP = metric.value;
-      rating = classifyMetric(metric.value, FCPThresholds);
+      latestMetrics.FCP = value;
+      rating = classifyMetric(value, FCPThresholds);
       break;
     case "TTFB":
-      latestMetrics.TTFB = metric.value;
-      rating = classifyMetric(metric.value, TTFBThresholds);
-      break;
+      return; // TTFB is handled separately
+  }
+
+  const debugInfo = {};
+
+  let safeAttribution = {};
+  if (name === "INP" && attribution) {
+    const {
+      loadState,
+      inputDelay,
+      interactionType,
+      interactionTarget,
+      presentationDelay,
+      processingDuration,
+      totalPaintDuration,
+      totalScriptDuration,
+      longestScript,
+    } = attribution;
+
+    safeAttribution = {
+      loadState,
+      inputDelay,
+      interactionType,
+      interactionTarget,
+      presentationDelay,
+      processingDuration,
+      totalPaintDuration,
+      totalScriptDuration,
+      longestScript,
+    };
+  } else {
+    safeAttribution = {
+      ...attribution,
+      navigationEntry: undefined, // explicitly exclude
+    };
+  }
+
+  if (name === "CLS" && attribution?.largestShiftTarget) {
+    const el = attribution.largestShiftTarget;
+    debugInfo.shiftElement = {
+      tagName: el.tagName,
+      classList: el.className,
+      outerHTML: el.outerHTML.slice(0, 300),
+    };
+  }
+
+  if (name === "INP" && attribution?.eventTarget) {
+    const el = attribution.eventTarget;
+    debugInfo.inputElement = {
+      tagName: el.tagName,
+      classList: el.className,
+      outerHTML: el.outerHTML.slice(0, 300),
+    };
+  }
+
+  if (name === "LCP" && attribution?.element) {
+    const el = attribution.element;
+    debugInfo.lcpElement = {
+      tagName: el.tagName,
+      classList: el.className,
+      outerHTML: el.outerHTML.slice(0, 300),
+    };
   }
 
   queueEvent({
     type: "web-vital",
     siteDomain,
-    name: metric.name,
-    value: metric.value,
+    name,
+    value,
     rating,
-    id: metric.id,
-    delta: metric.delta,
-    attribution: metric.attribution,
+    id,
+    delta,
+    attribution: safeAttribution,
+    ...debugInfo,
     timestamp: Date.now(),
   });
 }
@@ -243,9 +282,9 @@ onCLS(handleMetric, { reportAllChanges: true });
 onINP(handleMetric, { reportAllChanges: true });
 onLCP(handleMetric);
 onFCP(handleMetric);
-onTTFB(handleMetric);
+// TTFB handled separately
 
-// === NEW: Collect third-party assets but do NOT queue individual events ===
+// === Asset Summary ===
 const thirdPartyAssetDomains = new Set();
 const thirdPartyAssetTypes = new Set();
 
@@ -254,60 +293,26 @@ new PerformanceObserver((list) => {
     if (
       entry.name.includes("://") &&
       !entry.name.includes(location.hostname) &&
-      // Collect scripts + other resource types you want to count
-      [
-        "script",
-        "img",
-        "link",
-        "iframe",
-        "font",
-        "fetch",
-        "xmlhttprequest",
-        "video",
-        "audio",
-      ].includes(entry.initiatorType)
+      ["script", "img", "link", "iframe", "font", "video", "audio"].includes(
+        entry.initiatorType
+      )
     ) {
       try {
         const url = new URL(entry.name);
         thirdPartyAssetDomains.add(url.hostname);
         thirdPartyAssetTypes.add(entry.initiatorType);
-      } catch {
-        // ignore invalid URLs
-      }
-    }
-
-    if (
-      (entry.initiatorType === "fetch" ||
-        entry.initiatorType === "xmlhttprequest") &&
-      entry.duration > 500 &&
-      !entry.name.includes("/api/collect-web-vitals")
-    ) {
-      try {
-        const domain = new URL(entry.name).hostname;
-        queueEvent({
-          type: "slow-api-call",
-          url: domain, // Only the domain
-          duration: entry.duration.toFixed(2),
-          startTime: entry.startTime.toFixed(2),
-          siteDomain,
-          timestamp: Date.now(),
-        });
-      } catch {
-        // Skip invalid URLs
-      }
+      } catch {}
     }
   }
 }).observe({ type: "resource", buffered: true });
 
 function getDeviceType() {
-  const width = window.innerWidth;
-  if (width <= 768) return "mobile";
-  if (width <= 1024) return "tablet";
-  return "desktop";
+  const w = window.innerWidth;
+  return w <= 768 ? "mobile" : w <= 1024 ? "tablet" : "desktop";
 }
 
 (function collectClientMeta() {
-  const clientMeta = {
+  queueEvent({
     type: "client-info",
     deviceType: getDeviceType(),
     deviceMemory: navigator.deviceMemory || "unknown",
@@ -322,8 +327,7 @@ function getDeviceType() {
     userAgent: navigator.userAgent,
     language: navigator.language,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  };
-  queueEvent(clientMeta);
+  });
 
   fetch("https://ipapi.co/json/")
     .then((res) => res.json())
@@ -343,8 +347,8 @@ function getDeviceType() {
     .catch(() => {});
 })();
 
+// === Security Check ===
 (function securityCheck() {
-  const thirdPartyDomains = new Set();
   const knownTrackers = [
     "googletagmanager",
     "facebook",
@@ -358,29 +362,22 @@ function getDeviceType() {
   performance.getEntriesByType("resource").forEach((entry) => {
     if (entry.initiatorType === "script" && entry.name.includes("://")) {
       const url = new URL(entry.name);
-      if (!url.hostname.includes(location.hostname)) {
-        thirdPartyDomains.add(url.hostname);
-        if (knownTrackers.some((tracker) => url.hostname.includes(tracker))) {
-          queueEvent({
-            type: "tracker-detected",
-            url: url.hostname,
-            siteDomain,
-            timestamp: Date.now(),
-          });
-        }
+      if (
+        !url.hostname.includes(location.hostname) &&
+        knownTrackers.some((tracker) => url.hostname.includes(tracker))
+      ) {
+        queueEvent({
+          type: "tracker-detected",
+          url: url.hostname,
+          siteDomain,
+          timestamp: Date.now(),
+        });
       }
     }
   });
 
-  const storageUsage = {
-    cookies: document.cookie.length,
-    localStorageKeys: Object.keys(localStorage).length,
-    sessionStorageKeys: Object.keys(sessionStorage).length,
-  };
-
   queueEvent({
     type: "privacy-data",
-    thirdPartyDomains: Array.from(thirdPartyDomains).slice(0, 20), // limit to 20 domains
     storageUsage: {
       cookies: document.cookie.length,
       localStorage: Object.keys(localStorage).length,
@@ -392,7 +389,6 @@ function getDeviceType() {
 })();
 
 window.addEventListener("beforeunload", () => {
-  // Send summary of 3rd-party assets only here
   if (thirdPartyAssetDomains.size > 0) {
     queueEvent({
       type: "third-party-asset-summary",
@@ -405,17 +401,15 @@ window.addEventListener("beforeunload", () => {
   }
 
   if (batchedData.length > 0) {
-    const fullPayload = {
-      sessionId,
-      siteDomain,
-      currentPage,
-      previousPage,
-      data: batchedData,
-    };
-
     navigator.sendBeacon(
       "https://event-buffer.thespeedysite.workers.dev/collect",
-      JSON.stringify(fullPayload)
+      JSON.stringify({
+        sessionId,
+        siteDomain,
+        currentPage,
+        previousPage,
+        data: batchedData,
+      })
     );
   }
 });

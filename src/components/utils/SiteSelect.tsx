@@ -74,7 +74,7 @@ export function SelectSite({
             ? "w-full border-2 border-gray-300 dark:border-muted gap-2"
             : "w-auto gap-0 pr-2 [&>svg]:hidden"
         } flex items-center pl-2 cursor-pointer ${
-          disabled ? "opacity-50 pointer-events-none" : ""
+          disabled ? "opacity-50 pointer-events-none" : "mr-[-10px]"
         }`}
       >
         <div className="flex items-center gap-2 truncate">

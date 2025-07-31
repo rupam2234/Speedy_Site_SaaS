@@ -39,21 +39,21 @@ export function AddWebsiteModal({
       if (!/^https?:\/\//i.test(value)) {
         value = "https://" + value;
       }
+
       const url = new URL(value);
       const hostname = url.hostname;
 
       if (
         hostname === "localhost" ||
-        /^[\d.]+$/.test(hostname) ||
+        /^[\d.]+$/.test(hostname) || // IP address
         !hostname.includes(".") ||
         hostname.endsWith(".") ||
         hostname.startsWith(".")
       ) {
         return null;
       }
-      const parts = hostname.split(".").filter(Boolean);
-      if (parts.length < 2) return null;
-      return parts.slice(-2).join(".");
+
+      return hostname; // Keeps 'www' and subdomains
     } catch {
       return null;
     }

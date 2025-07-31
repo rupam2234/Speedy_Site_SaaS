@@ -88,7 +88,7 @@ export default function DashboardToolbar() {
     `/dashboard/pages`,
     `/dashboard/rum/overview`,
     `/dashboard/rum/cwv`,
-    `/dashboard/`,
+    `/dashboard`,
     `/dashboard/rum/lcp-images`,
   ];
 

@@ -2,18 +2,20 @@ import { setupDB } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { OrderData } from "../../dataTypes";
 import { auth } from "@clerk/nextjs/server";
+import { order_per_plan } from "@/data/perPlan";
 
 const worker = setupDB();
 
 export async function POST(req: Request) {
   try {
     const user = await auth();
+
     const maxSites = user.has({ plan: "free_users" })
-      ? 1
+      ? order_per_plan.free_users
       : user.has({ plan: "basic_plan" })
-      ? 1
+      ? order_per_plan.basic_plan
       : user.has({ plan: "pro" })
-      ? 2
+      ? order_per_plan.pro
       : 0;
 
     if (!user.userId) {
