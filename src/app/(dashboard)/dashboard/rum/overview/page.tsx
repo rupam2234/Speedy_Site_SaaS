@@ -28,80 +28,80 @@ export default function RUM() {
   const [citationData, setCitationData] = useState<DevicePerformanceData[]>([]);
   const [analyticsData, setAnalyticsData] = useState<RawData[]>([]);
 
-  useEffect(() => {
-    if (!selectedSite) return;
-
-    const controller = new AbortController();
-    const signal = controller.signal;
-
-    fetch("/api/rum/dashboard", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal,
-      body: JSON.stringify({
-        domain_name: selectedSite,
-        date_range: rumDateRange,
-      }),
-    })
-      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-      .then((data) => {
-        const metrics = data?.metrics || {};
-
-        setDistData(metrics.webVitals || []);
-        setHappinessData(metrics.userHappiness || []);
-        setCitationData(metrics.devicePerformance || []);
-        setAnalyticsData(metrics.analyticsOverview || []);
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          console.error("Error fetching combined RUM data:", err);
-          setDistData([]);
-          setHappinessData([]);
-          setCitationData([]);
-          setAnalyticsData([]);
-        }
-      });
-
-    return () => controller.abort();
-  }, [selectedSite, rumDateRange]);
-
   // useEffect(() => {
   //   if (!selectedSite) return;
 
   //   const controller = new AbortController();
   //   const signal = controller.signal;
 
-  //   const endpoints = [
-  //     { url: "/api/rum/percentile", setter: setDistData },
-  //     { url: "/api/rum/happiness", setter: setHappinessData },
-  //     { url: "/api/rum/ai-citation", setter: setCitationData },
-  //     { url: "/api/rum/analytics-overview", setter: setAnalyticsData },
-  //   ];
+  //   fetch("/api/rum/dashboard", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     signal,
+  //     body: JSON.stringify({
+  //       domain_name: selectedSite,
+  //       date_range: rumDateRange,
+  //     }),
+  //   })
+  //     .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+  //     .then((data) => {
+  //       const metrics = data?.metrics || {};
 
-  //   Promise.all(
-  //     endpoints.map(({ url, setter }) =>
-  //       fetch(url, {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         signal,
-  //         body: JSON.stringify({
-  //           domain_name: selectedSite,
-  //           date_range: rumDateRange,
-  //         }),
-  //       })
-  //         .then((res) => (res.ok ? res.json() : null))
-  //         .then((data) => setter(data?.metrics || []))
-  //         .catch((err) => {
-  //           if (err.name !== "AbortError") {
-  //             console.error(`Error fetching ${url}:`, err);
-  //             setter([]);
-  //           }
-  //         })
-  //     )
-  //   );
+  //       setDistData(metrics.webVitals || []);
+  //       setHappinessData(metrics.userHappiness || []);
+  //       setCitationData(metrics.devicePerformance || []);
+  //       setAnalyticsData(metrics.analyticsOverview || []);
+  //     })
+  //     .catch((err) => {
+  //       if (err.name !== "AbortError") {
+  //         console.error("Error fetching combined RUM data:", err);
+  //         setDistData([]);
+  //         setHappinessData([]);
+  //         setCitationData([]);
+  //         setAnalyticsData([]);
+  //       }
+  //     });
 
   //   return () => controller.abort();
   // }, [selectedSite, rumDateRange]);
+
+  useEffect(() => {
+    if (!selectedSite) return;
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const endpoints = [
+      { url: "/api/rum/percentile", setter: setDistData },
+      { url: "/api/rum/happiness", setter: setHappinessData },
+      { url: "/api/rum/ai-citation", setter: setCitationData },
+      { url: "/api/rum/analytics-overview", setter: setAnalyticsData },
+    ];
+
+    Promise.all(
+      endpoints.map(({ url, setter }) =>
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal,
+          body: JSON.stringify({
+            domain_name: selectedSite,
+            date_range: rumDateRange,
+          }),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => setter(data?.metrics || []))
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error(`Error fetching ${url}:`, err);
+              setter([]);
+            }
+          })
+      )
+    );
+
+    return () => controller.abort();
+  }, [selectedSite, rumDateRange]);
 
   const metrics = aggregateByDeviceType(analyticsData);
 
