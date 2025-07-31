@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import { ChartNoAxesGantt } from "lucide-react";
 import { AggregatedMetrics } from "../helpers/analyticsOverview";
@@ -65,40 +65,43 @@ export default function RUM() {
   //   return () => controller.abort();
   // }, [selectedSite, rumDateRange]);
 
+  const fetchedRef = useRef(false);
+
   useEffect(() => {
-    if (!selectedSite) return;
+    if (!selectedSite || fetchedRef.current) return;
+
+    fetchedRef.current = true;
 
     const controller = new AbortController();
     const signal = controller.signal;
 
-    const endpoints = [
-      { url: "/api/rum/percentile", setter: setDistData },
-      { url: "/api/rum/happiness", setter: setHappinessData },
-      { url: "/api/rum/ai-citation", setter: setCitationData },
-      { url: "/api/rum/analytics-overview", setter: setAnalyticsData },
-    ];
+    fetch("/api/rum/dashboard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal,
+      body: JSON.stringify({
+        domain_name: selectedSite,
+        date_range: rumDateRange,
+      }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => {
+        const metrics = data?.metrics || {};
 
-    Promise.all(
-      endpoints.map(({ url, setter }) =>
-        fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal,
-          body: JSON.stringify({
-            domain_name: selectedSite,
-            date_range: rumDateRange,
-          }),
-        })
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => setter(data?.metrics || []))
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error(`Error fetching ${url}:`, err);
-              setter([]);
-            }
-          })
-      )
-    );
+        setDistData(metrics.webVitals || []);
+        setHappinessData(metrics.userHappiness || []);
+        setCitationData(metrics.ai_citation || []);
+        setAnalyticsData(metrics.analytics || []);
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          console.error("Error fetching combined RUM data:", err);
+          setDistData([]);
+          setHappinessData([]);
+          setCitationData([]);
+          setAnalyticsData([]);
+        }
+      });
 
     return () => controller.abort();
   }, [selectedSite, rumDateRange]);
