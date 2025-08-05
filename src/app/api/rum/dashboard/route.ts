@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { domain_name, date_range = "30days" } = body;
+    const { domain_name, date_range = "7days" } = body;
 
     if (!domain_name) {
       return NextResponse.json(
@@ -24,25 +24,33 @@ export async function POST(request: Request) {
       );
     }
 
+    // limited to 7 days for dashboard
+    const controlled_date_range =
+      date_range === "24hours"
+        ? "24hours"
+        : date_range === "7days"
+        ? "7days"
+        : "7days";
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const results = await Promise.allSettled([
       supabase.rpc("user_happiness", {
-        p_date_range: date_range,
+        p_date_range: controlled_date_range,
         p_domain: domain_name,
       }),
       supabase.rpc("get_web_vitals_metrics", {
         p_domain: domain_name,
-        p_date_range: date_range,
+        p_date_range: controlled_date_range,
       }),
       supabase.rpc("get_analytics_by_device_and_country", {
-        p_time_range: date_range,
+        p_time_range: controlled_date_range,
         p_domain_name: domain_name,
       }),
       supabase.rpc("get_ai_citation", {
-        p_date_range: date_range,
+        p_date_range: controlled_date_range,
         p_domain_filter: domain_name,
       }),
     ]);
@@ -91,7 +99,7 @@ export async function POST(request: Request) {
       {
         status: 200,
         headers: {
-          "Cache-Control": "max-age=300",
+          "Cache-Control": "s-maxage=300, stale-while-revalidate=60",
         },
       }
     );

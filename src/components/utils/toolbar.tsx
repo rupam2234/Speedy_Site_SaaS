@@ -56,7 +56,7 @@ export default function DashboardToolbar() {
       ];
 
   const [selectedRangeId, setSelectedRangeId] = useState<string>(
-    DateRangeData[3]?.id || "last7"
+    DateRangeData[2]?.id || "last7"
   );
 
   useEffect(() => {

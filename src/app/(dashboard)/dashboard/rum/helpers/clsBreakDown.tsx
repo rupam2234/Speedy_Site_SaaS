@@ -32,8 +32,8 @@ const color = "green";
 
 const SORT_OPTIONS = [
   { label: "Avg CLS", value: "avg_cls_value" },
-  { label: "Occurrences", value: "occurrence_count" },
   { label: "Max CLS", value: "max_cls_value" },
+  { label: "Occurrences", value: "occurrence_count" },
 ];
 
 const getCLSSuggestions = (
@@ -41,21 +41,50 @@ const getCLSSuggestions = (
   clsValue: number
 ): ReactNode[] => {
   const suggestions: ReactNode[] = [];
+  const lower = component.toLowerCase();
 
   if (clsValue < 0.05) {
-    suggestions.push("📗 Minor layout shift. Can likely be ignored.");
+    suggestions.push("📗 Minor layout shift. Usually safe to ignore.");
     return suggestions;
   }
 
   if (clsValue < 0.25) {
-    suggestions.push("🟡 Moderate CLS. Consider optimizing:");
+    suggestions.push("🟡 Moderate CLS detected. Review the following:");
   } else {
-    suggestions.push("🔴 High CLS! Immediate optimization recommended:");
+    suggestions.push("🔴 High CLS detected! Fix it soon as possible");
   }
 
-  const lower = component.toLowerCase();
-
+  // Ads
   if (
+    lower.includes("ad") ||
+    lower.includes("advertisement") ||
+    lower.includes("banner") ||
+    lower.includes("iframe")
+  ) {
+    suggestions.push(
+      "CLS from ads: Reserve fixed space for ad containers.",
+      "Avoid loading ads asynchronously without reserved space.",
+      "Use ad provider tools/settings to minimize layout shifts.",
+      "Use Chrome DevTools to identify layout shifts caused by ads."
+    );
+  }
+  // Dynamic UI elements
+  else if (
+    lower.includes("modal") ||
+    lower.includes("popup") ||
+    lower.includes("accordion") ||
+    lower.includes("dropdown") ||
+    lower.includes("menu")
+  ) {
+    suggestions.push(
+      "CLS from dynamic elements: Reserve space for expandable content.",
+      "Avoid inserting or removing elements above existing content on interaction.",
+      "Animate transitions to minimize layout shifts.",
+      "Use Performance panel to trace JS that causes reflows."
+    );
+  }
+  // Images / media
+  else if (
     lower.includes("image") ||
     lower.includes("img") ||
     lower.includes(".jpg") ||
@@ -63,32 +92,53 @@ const getCLSSuggestions = (
     lower.includes(".webp")
   ) {
     suggestions.push(
-      "Set width and height on images to prevent layout shifts.",
-      "Use aspect-ratio CSS property where appropriate."
+      "Set width and height attributes on images.",
+      "Use CSS aspect-ratio to reserve space before images load.",
+      "Use placeholders or blurred previews to reduce shifts."
     );
   }
-
-  if (lower.includes("font") || lower.includes("text")) {
+  // Fonts / Text
+  else if (lower.includes("font") || lower.includes("text")) {
     suggestions.push(
-      "Use `font-display: swap` to avoid invisible text on load.",
-      "Avoid late-loading font styles affecting above-the-fold layout."
+      "Use `font-display: swap` to avoid invisible text during font loading.",
+      "Avoid late-loading font styles causing reflow."
     );
   }
-
-  if (
-    lower.includes("button") ||
+  // Layout elements (headers, nav, footers, etc.)
+  else if (
     lower.includes("header") ||
-    lower.includes("nav")
+    lower.includes("nav") ||
+    lower.includes("footer") ||
+    lower.includes("sidebar")
   ) {
     suggestions.push(
-      "Avoid inserting DOM nodes above already rendered content.",
-      "Reserve space for dynamic components like navbars or headers."
+      "Reserve fixed height for layout containers.",
+      "Avoid dynamically inserting content above existing content.",
+      "Use min-height/min-width to stabilize layout."
+    );
+  }
+  // Other fallback suggestions
+  else {
+    suggestions.push(
+      "Use CSS min-height, min-width, or placeholders to reserve space.",
+      "Avoid injecting content above already rendered content after page load.",
+      "Use Chrome DevTools Layout Shift Regions to detect problem areas."
     );
   }
 
   suggestions.push(
-    "Reserve space using min-height, placeholders, or aspect-ratios.",
-    "Avoid injecting content above existing content on interaction."
+    <span key="tools" className="text-primary/90">
+      Learn more at{" "}
+      <a
+        href="https://web.dev/cls/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline text-primary"
+      >
+        web.dev/cls
+      </a>
+      .
+    </span>
   );
 
   return suggestions;
@@ -159,7 +209,7 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
               }`}
               onClick={() => setSelectedItem(item)}
             >
-              <p className="text-xs font-medium truncate">
+              <p className="text-sm font-medium truncate text-primary/90">
                 {item.affected_component}
               </p>
               <div className="relative h-3 w-full bg-muted rounded-sm overflow-hidden">
@@ -184,25 +234,59 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
         </div>
 
         {/* Right: Suggestions */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium">Suggestions</h3>
+        <div className="space-y-4 md:sticky md:top-20 md:self-start">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-primary/80">Suggestions</h3>
+          </div>
+
           {selectedItem ? (
-            <div className="p-4 border rounded-sm bg-muted/10 text-sm space-y-2">
-              <p className="font-medium truncate">
-                {selectedItem.affected_component}
-              </p>
-              <ul className="list-disc pl-4 text-xs space-y-1">
-                {getCLSSuggestions(
-                  selectedItem.affected_component,
-                  selectedItem.avg_cls_value
-                ).map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
+            <div className="p-5 border rounded-md bg-muted/10 space-y-5">
+              <div className="space-y-2">
+                <p className="font-semibold text-primary">
+                  {(() => {
+                    let name = selectedItem.affected_component;
+
+                    if (name.includes("#")) {
+                      name = name.replace("#", "");
+                    }
+
+                    if (name.includes("/")) {
+                      name = name.split("/")[0];
+                    }
+
+                    if (name.length > 100) {
+                      name = name.replaceAll(".", " > ");
+                    }
+
+                    return name;
+                  })()}
+                </p>
+
+                <ul className="list-none space-y-2 text-[12px] text-primary/90">
+                  {getCLSSuggestions(
+                    selectedItem.affected_component,
+                    selectedItem.avg_cls_value
+                  ).map((s, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="mt-1.5 inline-block w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                      <span className="leading-snug">{s}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <a
+                  href="https://web.dev/cls/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline text-xs block pt-2"
+                >
+                  Learn more about CLS optimization
+                </a>
+              </div>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Select a component to view suggestions based on CLS severity.
+              Select a component to view actionable layout shift suggestions.
             </p>
           )}
         </div>

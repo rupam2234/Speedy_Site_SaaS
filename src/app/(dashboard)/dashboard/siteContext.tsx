@@ -136,7 +136,7 @@ export default function SiteContextProvider({
   >("p75");
   const [rumDateRange, setRumDateRange] = useState<
     "24hours" | "7days" | "30days" | "90days"
-  >("7days");
+  >("30days");
 
   // Load from sessionStorage only if it matches the current user email
   useEffect(() => {

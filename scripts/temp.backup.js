@@ -60,6 +60,30 @@ const aiCitationMetrics = {
 
 // === Initialize Web Vitals (final values only) ===
 
+function generateTarget(el) {
+  if (!el || typeof el !== "object" || !("tagName" in el)) return "unknown";
+
+  const tag = el.tagName.toLowerCase();
+  const id = el.id ? `#${el.id}` : "";
+  const classes =
+    el.className && typeof el.className === "string"
+      ? `.${el.className.trim().split(/\s+/).join(".")}`
+      : "";
+
+  const dataAttrs = Array.from(el.attributes || [])
+    .filter((attr) => attr.name.startsWith("data-"))
+    .map((attr) => `${attr.name}=${attr.value}`)
+    .join(" ");
+
+  const textContent = el.textContent
+    ? el.textContent.trim().slice(0, 30).replace(/\s+/g, " ")
+    : "";
+
+  return `${tag}${id}${classes}${dataAttrs ? ` [${dataAttrs}]` : ""}${
+    textContent ? ` - "${textContent}"` : ""
+  }`;
+}
+
 function initializeWebVitals() {
   onCLS(handleMetric, { reportAllChanges: true });
   onINP(handleMetric, { reportAllChanges: true });
@@ -69,6 +93,7 @@ function initializeWebVitals() {
     handleMetric(metric);
     aiCitationMetrics.ttfb = metric.value;
     runAICitation();
+    runPerformanceScore();
   });
 }
 
@@ -134,6 +159,51 @@ function runAICitation() {
   });
 }
 
+function computePagePerformanceScore(metrics) {
+  const thresholds = {
+    CLS: [0.1, 0.25],
+    INP: [200, 500],
+    LCP: [2500, 4000],
+    FCP: [1800, 3000],
+    TTFB: [800, 1800],
+  };
+
+  const weights = {
+    CLS: 0.2,
+    INP: 0.25,
+    LCP: 0.25,
+    FCP: 0.15,
+    TTFB: 0.15,
+  };
+
+  let weighted = 0;
+  let total = 0;
+
+  for (const key in metrics) {
+    const value = metrics[key];
+    if (value == null) continue;
+
+    const [_, poor] = thresholds[key];
+    const score = 1 - Math.min(value, poor) / poor;
+    weighted += score * weights[key];
+    total += weights[key];
+  }
+
+  return total > 0 ? Number(((weighted / total) * 100).toFixed(1)) : null;
+}
+
+function runPerformanceScore() {
+  const score = computePagePerformanceScore(latestMetrics);
+  if (score !== null) {
+    queueEvent({
+      type: "page-performance-score",
+      siteDomain,
+      score,
+      timestamp: Date.now(),
+    });
+  }
+}
+
 function classifyMetric(value, thresholds) {
   if (value <= thresholds[0]) return "good";
   if (value <= thresholds[1]) return "needs improvement";
@@ -173,74 +243,14 @@ function handleMetric(metric) {
       return;
   }
 
-  let safeAttribution = {};
-  const resourceEntries = performance.getEntriesByType("resource");
-
-  if (name === "CLS") {
-    safeAttribution = {
-      largestShiftTarget: attribution?.largestShiftTarget,
-      largestShiftTime: attribution?.largestShiftTime,
-    };
-  } else if (name === "INP") {
-    safeAttribution = {
-      target: attribution?.target,
-      eventType: attribution?.eventType,
-      inputDelay: attribution?.inputDelay,
-      processingTime: attribution?.processingTime,
-      presentationDelay: attribution?.presentationDelay,
-    };
-  } else if (name === "LCP") {
-    const isImage = attribution?.target instanceof HTMLImageElement;
-
-    const entryByExactUrl =
-      attribution?.url &&
-      resourceEntries.find((e) => e.name === attribution.url);
-
-    // due to cdn sometimes the url may change
-    const entryByLooseMatch =
-      !entryByExactUrl &&
-      resourceEntries.find((e) =>
-        e.name.includes(attribution?.url?.split("/").pop())
-      );
-
-    const matchedEntry = entryByExactUrl || entryByLooseMatch;
-
-    // find image exact element
-    const findImage =
-      isImage && attribution?.target instanceof HTMLImageElement
-        ? attribution.target
-        : (attribution?.url &&
-            document?.querySelector(`img[src="${attribution?.url}"]`)) ||
-          null;
-
-    safeAttribution = {
-      target: attribution?.target,
-      resourceLoadDelay: attribution?.resourceLoadDelay,
-      resourceLoadDuration: attribution?.resourceLoadDuration,
-      elementRenderDelay: attribution?.elementRenderDelay,
-      timeToFirstByte: attribution?.timeToFirstByte,
-      loadState: attribution?.loadState,
-      url: attribution?.url,
-      ...(isImage && {
-        decodedBodySize: matchedEntry?.decodedBodySize ?? null,
-        transferSize: matchedEntry?.transferSize ?? null,
-        width: findImage?.width ?? null,
-        height: findImage?.height ?? null,
-        isLazy:
-          findImage?.classList.contains("lazyloaded") ||
-          findImage?.classList.contains("lazyload"),
-      }),
-    };
-  } else if (name === "TTFB") {
-    const navEntry = performance.getEntriesByType("navigation")[0];
-
-    safeAttribution = {
-      dnsLookup: navEntry?.domainLookupEnd - navEntry?.domainLookupStart,
-      tcpConnection: navEntry?.connectEnd - navEntry?.connectStart,
-      responseStart: navEntry?.responseStart,
-      requestStart: navEntry?.requestStart,
-    };
-  }
+  const safeAttribution =
+    name === "CLS"
+      ? { target: generateTarget(attribution) }
+      : name === "INP"
+      ? { target: generateTarget(attribution) }
+      : name === "LCP"
+      ? { target: generateTarget(attribution) }
+      : {};
 
   queueEvent({
     type: "web-vital",
@@ -329,8 +339,6 @@ queueEvent({
   timestamp: Date.now(),
 });
 
-let assetSummarySent = false;
-
 function flushMetrics() {
   if (!assetSummarySent && thirdPartyAssetDomains.size > 0) {
     queueEvent({
@@ -361,4 +369,13 @@ function flushMetrics() {
   }
 }
 
+// Listen to all relevant lifecycle events:
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flushMetrics();
+});
+
 window.addEventListener("beforeunload", flushMetrics);
+
+window.addEventListener("pagehide", (e) => {
+  if (!e.persisted) flushMetrics();
+});

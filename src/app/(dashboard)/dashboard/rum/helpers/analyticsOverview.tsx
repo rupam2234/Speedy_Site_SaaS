@@ -1,4 +1,7 @@
+"use client";
+
 import React from "react";
+// import { useSiteContext } from "../../siteContext";
 
 export type AggregatedMetrics = {
   device_type: "desktop" | "mobile";
@@ -16,6 +19,8 @@ type Props = {
 };
 
 export default function AnalyticsOverview({ data }: Props) {
+  // const { selectedDevice } = useSiteContext();
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-2 border rounded-sm border-accent-foreground/20 dark:bg-secondary-background bg-primary-foreground p-4">
       <div className="col-span-1">

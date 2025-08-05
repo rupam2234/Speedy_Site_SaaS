@@ -67,6 +67,44 @@ export default function RUM() {
 
   const fetchedRef = useRef(false);
 
+  const controlledDateRange =
+    rumDateRange === "7days"
+      ? "7days"
+      : rumDateRange === "30days"
+      ? "30days"
+      : rumDateRange === "90days"
+      ? "90days"
+      : "30days";
+
+  useEffect(() => {
+    if (fetchedRef.current || !selectedSite) return;
+
+    async function FetchPreviousData() {
+      try {
+        const res = await fetch("/api/rum/previous", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            domain_name: selectedSite,
+            date_range: controlledDateRange,
+          }),
+        });
+
+        let result: any;
+
+        if (res.ok) {
+          result = await res.json();
+        }
+
+        console.log(result);
+      } catch (error) {
+        console.error("Error fetching previous data: ", error);
+      }
+    }
+
+    FetchPreviousData();
+  }, [selectedSite, rumDateRange]);
+
   useEffect(() => {
     if (!selectedSite || fetchedRef.current) return;
 
@@ -81,7 +119,7 @@ export default function RUM() {
       signal,
       body: JSON.stringify({
         domain_name: selectedSite,
-        date_range: rumDateRange,
+        date_range: "24hours",
       }),
     })
       .then((res) => (res.ok ? res.json() : Promise.reject(res)))
@@ -105,6 +143,10 @@ export default function RUM() {
 
     return () => controller.abort();
   }, [selectedSite, rumDateRange]);
+
+  useEffect(() => {
+    fetchedRef.current = false;
+  }, [rumDateRange, selectedSite]);
 
   const metrics = aggregateByDeviceType(analyticsData);
 
@@ -196,10 +238,14 @@ export default function RUM() {
               distData={distdata}
               experienceBarData={happinessData}
               citationData={
-                selectedDevice === "Desktop" ? citationData[0] : citationData[1]
+                citationData.find(
+                  (x) => x.device_type === selectedDevice.toLowerCase()
+                )!
               }
               analyticsData={
-                selectedDevice === "Desktop" ? metrics[0] : metrics[1]
+                metrics.find(
+                  (x) => x.device_type === selectedDevice.toLowerCase()
+                )!
               }
             />
           </>

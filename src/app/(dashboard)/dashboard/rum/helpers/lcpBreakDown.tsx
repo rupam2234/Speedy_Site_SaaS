@@ -22,6 +22,8 @@ interface LCPElementData {
   needs_improvement_count: number;
   poor_count: number;
   device_type: string;
+  page_url: string;
+  image_url: string;
 }
 
 interface Props {
@@ -38,101 +40,54 @@ const SORT_OPTIONS = [
   { label: "Render Delay", value: "avg_element_render_delay" },
 ];
 
-export const getSuggestions = (elementTarget: string): ReactNode[] => {
-  const lower = elementTarget.toLowerCase();
+export const getSuggestions = (
+  elementTarget: string,
+  totalLCP: number,
+  resourceLoadDelay: number,
+  resourceLoadDuration: number,
+  elementRenderDelay: number
+): ReactNode[] => {
+  const lower = elementTarget?.toLowerCase();
   const suggestions: ReactNode[] = [];
 
-  // Images
-  if (
+  const loadSum = resourceLoadDelay + resourceLoadDuration + elementRenderDelay;
+
+  const isImage =
     lower.includes("img") ||
-    lower.includes("image") ||
     lower.includes(".jpg") ||
     lower.includes(".png") ||
-    lower.includes(".webp")
-  ) {
+    lower.includes(".webp") ||
+    lower.includes(".avif");
+
+  // 🖼️ LCP Image-specific solutions
+  if (isImage) {
     suggestions.push(
-      'Use the `loading="lazy"` attribute to defer offscreen images.',
-      "Compress images using tools like TinyPNG or Squoosh.",
-      "Serve images in WebP or AVIF formats for better performance.",
-      "Set explicit width and height to avoid layout shifts.",
-      "Avoid placing large images above the fold unless necessary."
+      'Do not lazy-load above-the-fold LCP images. Use `loading="eager"` or omit the attribute.',
+      'Add `fetchpriority="high"` to the LCP image to signal early loading.',
+      'Use `<link rel="preload" as="image">` to preload the LCP image.',
+      "Compress the image with AVIF or WebP to reduce transfer and decode time.",
+      "Set explicit `width` and `height` to reduce layout shifts."
     );
   }
 
-  // Video
-  if (lower.includes("video") || lower.includes(".mp4")) {
+  // 🧠 Heuristic if image was small but LCP still high
+  if (isImage && totalLCP > 3000 && loadSum < 1500) {
     suggestions.push(
-      "Defer video loading until after user interaction.",
-      "Use a static thumbnail (poster image) instead of autoplaying video.",
-      "Avoid autoplay unless it provides essential value."
+      "The image loads fast, but LCP is still high — this could indicate JS blocking or style recalculations. Audit thread activity.",
+      "Consider inlining this image as a base64 string if it’s very small and critical."
     );
   }
 
-  // Buttons and CTAs
-  if (
-    lower.includes("button") ||
-    lower.includes("click") ||
-    lower.includes("cta")
-  ) {
+  // 🧼 Fallback suggestions
+  if (suggestions.length < 5) {
     suggestions.push(
-      "Defer non-essential JavaScript to improve interactivity speed.",
-      "Preload scripts that power critical button actions.",
-      "Avoid large JS event handlers or visual effects on initial load."
-    );
-  }
-
-  // Fonts / Headings
-  if (
-    lower.includes("font") ||
-    lower.includes("title") ||
-    lower.includes("h1") ||
-    lower.includes("h2") ||
-    lower.includes("headline")
-  ) {
-    suggestions.push(
-      "Use `font-display: swap` in your CSS to prevent invisible text during font load.",
-      "Inline critical font styles to render faster.",
-      "Use system or variable fonts to reduce request size and render delays."
-    );
-  }
-
-  // Navigation / Header
-  if (
-    lower.includes("header") ||
-    lower.includes("nav") ||
-    lower.includes("menu")
-  ) {
-    suggestions.push(
-      "Keep header/nav components lightweight to avoid blocking LCP.",
-      "Defer or async load navigation logic/scripts.",
-      "Avoid putting large banners or carousels above the fold."
-    );
-  }
-
-  // Paragraphs
-  if (
-    lower.includes("p") ||
-    lower.includes("paragraph") ||
-    lower.includes("hero") ||
-    lower.includes("intro")
-  ) {
-    suggestions.push(
-      "Use `font-display: swap` to avoid render-blocking fonts.",
-      "Minimize the amount of text above the fold to reduce LCP size.",
-      "Inline font and style CSS for paragraph text if it's above the fold.",
-      "Avoid placing paragraphs inside lazy-loaded or delayed containers.",
-      "Use system fonts or preload custom fonts used in paragraph styling."
-    );
-  }
-
-  // Fallback suggestions if no matches
-  if (suggestions.length === 0) {
-    suggestions.push(
-      "Audit the element's load/render timing using Chrome DevTools (Performance tab).",
-      "Avoid blocking this element with large CSS or JS dependencies.",
-      "Use async/defer for scripts that aren’t needed immediately.",
-      "Minimize the size and complexity of above-the-fold content.",
-      <span key="fallback-link">
+      "Copy the element class and use browser DevTool to confirm the LCP element.",
+      "Use lightweight fonts for above-the-fold content to speed up LCP.",
+      "Try to limit how many fonts you load—fewer fonts mean faster pages",
+      "Use <link rel='preload'> for critical fonts, but limit the number to avoid blocking resources.",
+      "Defer or async-load non-critical JavaScript.",
+      "Minimize render-blocking styles.",
+      <span key="more-info">
         Learn more at{" "}
         <a
           href="https://web.dev/lcp/"
@@ -150,6 +105,62 @@ export const getSuggestions = (elementTarget: string): ReactNode[] => {
   return suggestions;
 };
 
+// find LCP component type
+const getComponentType = (target: string): string => {
+  const lower = target.toLowerCase();
+
+  if (
+    lower.includes("img") ||
+    lower.includes(".jpg") ||
+    lower.includes(".png") ||
+    lower.includes(".webp") ||
+    lower.includes(".avif")
+  ) {
+    return "Image";
+  }
+
+  if (lower.includes("video") || lower.includes(".mp4")) {
+    return "Video";
+  }
+
+  if (
+    lower.includes("button") ||
+    lower.includes("click") ||
+    lower.includes("cta")
+  ) {
+    return "Button or CTA";
+  }
+
+  if (
+    lower.includes("font") ||
+    lower.includes("title") ||
+    lower.includes("h1") ||
+    lower.includes("h2") ||
+    lower.includes("headline")
+  ) {
+    return "Heading or Font";
+  }
+
+  if (
+    lower.includes("header") ||
+    lower.includes("nav") ||
+    lower.includes("menu")
+  ) {
+    return "Navigation/Header";
+  }
+
+  if (
+    lower.includes("p") ||
+    lower.includes("paragraph") ||
+    lower.includes("hero") ||
+    lower.includes("intro")
+  ) {
+    return "Text Block";
+  }
+
+  return "Unknown Element";
+};
+
 const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
   const { selectedDevice } = useSiteContext();
   const [sortKey, setSortKey] = useState("avg_lcp_value");
@@ -157,20 +168,45 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
     null
   );
 
+  const validSortKeys = new Set([
+    "avg_lcp_value",
+    "avg_resource_load_delay",
+    "avg_resource_load_duration",
+    "avg_element_render_delay",
+  ]);
+
   const filteredData = useMemo(() => {
-    return data
+    const dedupedMap = new Map<string, LCPElementData>();
+
+    data
       ?.filter(
         (item) =>
           item.device_type?.toLowerCase() === selectedDevice?.toLowerCase()
       )
-      .sort((a, b) => {
-        const valA = Number(a[sortKey as keyof LCPElementData]);
-        const valB = Number(b[sortKey as keyof LCPElementData]);
-        return valB - valA;
+      .forEach((item) => {
+        const key = item.element_target?.trim().toLowerCase();
+        if (!dedupedMap.has(key)) {
+          dedupedMap.set(key, item);
+        } else {
+          const existing = dedupedMap.get(key)!;
+          if (item.occurrence_count > existing.occurrence_count) {
+            dedupedMap.set(key, item);
+          }
+        }
       });
-  }, [data, selectedDevice, sortKey]);
 
-  //
+    const sorted = Array.from(dedupedMap.values());
+
+    if (validSortKeys.has(sortKey)) {
+      sorted.sort((a, b) => {
+        const valA = a[sortKey as keyof LCPElementData] as number;
+        const valB = b[sortKey as keyof LCPElementData] as number;
+        return (valB || 0) - (valA || 0);
+      });
+    }
+
+    return sorted;
+  }, [data, selectedDevice, sortKey]);
 
   if (!filteredData || filteredData.length === 0) {
     return (
@@ -184,8 +220,6 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
       </div>
     );
   }
-
-  const maxLCP = Math.max(...filteredData.map((d) => d.avg_lcp_value + 100));
 
   return (
     <TooltipProvider>
@@ -211,18 +245,7 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
           </div>
 
           {filteredData.map((item, i) => {
-            const {
-              element_target,
-              avg_resource_load_delay,
-              avg_resource_load_duration,
-              avg_element_render_delay,
-              avg_lcp_value,
-              occurrence_count,
-            } = item;
-
-            const delayPct = (avg_resource_load_delay / maxLCP) * 100;
-            const durationPct = (avg_resource_load_duration / maxLCP) * 100;
-            const renderPct = (avg_element_render_delay / maxLCP) * 100;
+            const { element_target, avg_lcp_value, occurrence_count } = item;
 
             return (
               <div
@@ -236,48 +259,20 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
               >
                 <div className="flex justify-between items-center text-xs font-medium">
                   <span className="truncate max-w-[60%]">{element_target}</span>
-                  <span className="text-muted-foreground">
-                    {Math.round(avg_lcp_value)}ms | {occurrence_count}x
+                  <span className="flex items-center gap-1 text-primary/40">
+                    <span
+                      className={` ${
+                        avg_lcp_value <= 2500
+                          ? "text-green-500"
+                          : avg_lcp_value <= 4000
+                          ? "text-orange-400"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {Math.round(avg_lcp_value)}ms
+                    </span>
+                    | {occurrence_count}x
                   </span>
-                </div>
-
-                <div className="relative h-3 w-full bg-muted rounded-sm overflow-hidden flex mt-1">
-                  {/* Load Delay */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="h-full bg-blue-300"
-                        style={{ width: `${delayPct}%` }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Load Delay: {Math.round(avg_resource_load_delay)}ms
-                    </TooltipContent>
-                  </Tooltip>
-                  {/* Duration */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="h-full bg-blue-500"
-                        style={{ width: `${durationPct}%` }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Load Duration: {Math.round(avg_resource_load_duration)}ms
-                    </TooltipContent>
-                  </Tooltip>
-                  {/* Render Delay */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="h-full bg-blue-700"
-                        style={{ width: `${renderPct}%` }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Render Delay: {Math.round(avg_element_render_delay)}ms
-                    </TooltipContent>
-                  </Tooltip>
                 </div>
               </div>
             );
@@ -285,21 +280,154 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
         </div>
 
         {/* Right: Suggestions Panel */}
-        <div className="space-y-4">
+        <div className="space-y-4 md:sticky md:top-20 md:self-start">
           <h3 className="text-sm font-medium">Suggestions</h3>
           {selectedElement ? (
-            <div className="p-4 border rounded-sm bg-muted/10 text-sm space-y-2">
-              <p className="font-medium truncate">
-                {selectedElement.element_target}
-              </p>
-              <ul className="list-disc pl-4 text-xs space-y-1">
-                {getSuggestions(selectedElement.element_target).map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
+            <div className="p-5 border rounded-md bg-muted/10 space-y-5">
+              {/* Element Identifier */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-primary">
+                  {selectedElement.element_target}
+                </p>
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-primary/10 text-sm text-primary/80 rounded-full w-fit">
+                  <span className="inline-block w-2 h-2 rounded-full bg-primary" />
+                  {getComponentType(selectedElement.element_target)}
+                </div>
+              </div>
+
+              {/* Visual DevTools-style bar */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-primary/90">
+                  Timing Breakdown
+                </h4>
+                <div className="flex w-full h-3 rounded overflow-hidden bg-muted">
+                  {/* Load Delay */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="bg-blue-300"
+                        style={{
+                          width: `${
+                            (selectedElement.avg_resource_load_delay /
+                              (selectedElement.avg_resource_load_delay +
+                                selectedElement.avg_resource_load_duration +
+                                selectedElement.avg_element_render_delay)) *
+                            100
+                          }%`,
+                        }}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      Load Delay:{" "}
+                      {Math.round(selectedElement.avg_resource_load_delay)}ms
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Load Duration */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="bg-blue-500"
+                        style={{
+                          width: `${
+                            (selectedElement.avg_resource_load_duration /
+                              (selectedElement.avg_resource_load_delay +
+                                selectedElement.avg_resource_load_duration +
+                                selectedElement.avg_element_render_delay)) *
+                            100
+                          }%`,
+                        }}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      Load Duration:{" "}
+                      {Math.round(selectedElement.avg_resource_load_duration)}ms
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Render Delay */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="bg-blue-700"
+                        style={{
+                          width: `${
+                            (selectedElement.avg_element_render_delay /
+                              (selectedElement.avg_resource_load_delay +
+                                selectedElement.avg_resource_load_duration +
+                                selectedElement.avg_element_render_delay)) *
+                            100
+                          }%`,
+                        }}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      Render Delay:{" "}
+                      {Math.round(selectedElement.avg_element_render_delay)}ms
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+
+                <div className="flex justify-between text-xs text-primary/60 mt-1">
+                  <span>
+                    Load Delay:{" "}
+                    {Math.round(selectedElement.avg_resource_load_delay)}ms
+                  </span>
+                  <span>
+                    Duration:{" "}
+                    {Math.round(selectedElement.avg_resource_load_duration)}ms
+                  </span>
+                  <span>
+                    Render:{" "}
+                    {Math.round(selectedElement.avg_element_render_delay)}ms
+                  </span>
+                </div>
+              </div>
+
+              {/* Suggestions List */}
+              <div className="border-t pt-4 mt-2">
+                <h4 className="text-sm font-medium text-primary/90 mb-2">
+                  Tips to improve:
+                </h4>
+                <ul className="list-none space-y-2 text-[12px] text-primary/90">
+                  {getSuggestions(
+                    selectedElement.element_target,
+                    selectedElement.avg_lcp_value,
+                    selectedElement.avg_resource_load_delay,
+                    selectedElement.avg_resource_load_duration,
+                    selectedElement.avg_element_render_delay
+                  ).map((s, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="mt-1.5 inline-block w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                      <span className="leading-snug">{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* image if available */}
+              <div className="md:block hidden md:space-y-3">
+                {selectedElement?.image_url ? (
+                  <img
+                    src={selectedElement.image_url}
+                    width={200}
+                    alt={
+                      selectedElement.image_url.split("/")[
+                        selectedElement.image_url.split("/").length - 1
+                      ]
+                    }
+                  />
+                ) : null}
+                <div className="text-[12px] text-primary/70">
+                  Page:{" "}
+                  {selectedElement?.page_url.includes("?")
+                    ? selectedElement.page_url.split("?")[0]
+                    : selectedElement.page_url}
+                </div>
+              </div>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-primary/40">
               Select an element on the left to view actionable optimization
               tips.
             </p>

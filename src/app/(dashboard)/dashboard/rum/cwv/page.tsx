@@ -81,7 +81,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: rumDateRange,
+          date_range: "24hours",
         }),
       });
 
@@ -104,7 +104,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: rumDateRange,
+          date_range: "24hours",
         }),
       });
 
@@ -127,7 +127,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: rumDateRange,
+          date_range: "24hours",
         }),
       });
 
@@ -150,7 +150,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: rumDateRange,
+          date_range: "24hours",
         }),
       });
 
@@ -173,7 +173,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: rumDateRange,
+          date_range: "24hours",
         }),
       });
 
