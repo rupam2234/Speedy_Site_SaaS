@@ -7,11 +7,11 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { Bot, CircleGauge, Link2, Smile } from "lucide-react";
-import Link from "next/link";
+import { Bot, CircleGauge, Smile } from "lucide-react";
 import CitationStatsCard, { DevicePerformanceData } from "./ai_citation";
 import AnalyticsOverview, { AggregatedMetrics } from "./analyticsOverview";
 import ExperienceBar, { ExperienceData } from "./ExperienceBar";
+import SingleMetricChart, { Mixed_metric } from "./multiMetricChart";
 
 export interface WebVitalsMetric {
   domain_name: string;
@@ -37,6 +37,7 @@ interface RumDashboardProps {
   experienceBarData: ExperienceData[];
   citationData: DevicePerformanceData;
   analyticsData: AggregatedMetrics;
+  mixed_metric: Mixed_metric[];
 }
 
 export default function RumDashboard({
@@ -44,8 +45,9 @@ export default function RumDashboard({
   experienceBarData,
   citationData,
   analyticsData,
+  mixed_metric,
 }: RumDashboardProps) {
-  const { rumDistribution, selectedDevice, selectedSite } = useSiteContext();
+  const { rumDistribution, selectedDevice } = useSiteContext();
 
   function formatMetricValue(metric: WebVitalsMetric): string {
     const value = metric[rumDistribution];
@@ -184,15 +186,15 @@ export default function RumDashboard({
               className="fill-green-200 text-primary/70 dark:text-accent/70"
             />
             <h2 className="text-md md:text-2xl font-bold text-primary/90">
-              Experience By Pageviews
+              Pageviews Experience Distribution
             </h2>
           </span>
-          <Link href={`/dashboard/${selectedSite}/rum/session`}>
+          {/* <Link href={`/dashboard/${selectedSite}/rum/session`}>
             <Link2
               size={20}
               className="mt-1 hover:text-blue-400 cursor-pointer"
             />
-          </Link>
+          </Link> */}
         </span>
         <div className="border rounded-sm  py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
           <ExperienceBar data={experienceBarData} deviceType={selectedDevice} />
@@ -222,7 +224,9 @@ export default function RumDashboard({
               ai_citation_possibility={citationData?.ai_citation_possibility}
             />
           </div>
-          <div className="col-span-2 bg-white border border-accent-foreground/20 dark:bg-secondary-background max-w-full p-4 rounded-sm"></div>
+          <div className="col-span-2 bg-white border border-accent-foreground/20 dark:bg-secondary-background max-w-full p-4 rounded-sm">
+            <SingleMetricChart data={mixed_metric} />
+          </div>
         </div>
       </div>
     </div>

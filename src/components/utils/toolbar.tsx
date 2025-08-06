@@ -90,6 +90,7 @@ export default function DashboardToolbar() {
     `/dashboard/rum/cwv`,
     `/dashboard`,
     `/dashboard/rum/lcp-images`,
+    `/dashboard/rum/pages`,
   ];
 
   const isToolbarVisible = allowedPaths.includes(pathname);

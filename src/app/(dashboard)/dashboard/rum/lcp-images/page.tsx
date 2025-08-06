@@ -6,6 +6,7 @@ import { Images } from "lucide-react";
 import BeatLoader from "react-spinners/BeatLoader";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import DashboardToolbar from "@/components/utils/toolbar";
+import SuggestionsToggle from "../helpers/suggestion_toggle";
 
 export interface LcpImageMetric {
   period: string;
@@ -13,11 +14,20 @@ export interface LcpImageMetric {
   device_type: string;
   image_url: string;
   occurrence_count: number;
-  avg_lcp_ms: string;
-  min_lcp_ms: string;
-  max_lcp_ms: string;
-  p75_lcp_ms: string;
-  pct_exceeding_cwv: string;
+  avg_lcp_ms: number | null;
+  min_lcp_ms: number | null;
+  max_lcp_ms: number | null;
+  p75_lcp_ms: number | null;
+  pct_exceeding_cwv: number | null;
+  avg_decoded_body_size: number | null;
+  avg_element_render_delay: number | null;
+  avg_height: number | null;
+  avg_resource_load_delay: number | null;
+  avg_resource_load_duration: number | null;
+  avg_time_to_first_byte: number | null;
+  avg_transfer_size: number | null;
+  avg_width: number | null;
+  pct_lazy: number | null;
 }
 
 const color = "green";
@@ -28,7 +38,7 @@ export default function LcpImageDebugger() {
     null
   );
   const [sortBy, setSortBy] = useState<"avg_lcp" | "occurrence">("avg_lcp");
-
+  // const [aiSuggestions, setAiSuggestions] = useState<string | null>(null);
   const { selectedSite, rumDateRange, selectedDevice } = useSiteContext();
 
   useEffect(() => {
@@ -45,7 +55,10 @@ export default function LcpImageDebugger() {
 
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "avg_lcp") {
-        return parseFloat(b.avg_lcp_ms) - parseFloat(a.avg_lcp_ms);
+        return (
+          parseFloat(b.avg_lcp_ms as unknown as string) -
+          parseFloat(a.avg_lcp_ms as unknown as string)
+        );
       } else {
         return b.occurrence_count - a.occurrence_count;
       }
@@ -123,7 +136,7 @@ export default function LcpImageDebugger() {
           </div>
 
           {lcpImageData.map((metric, index) => {
-            const lcpValue = parseFloat(metric.avg_lcp_ms);
+            const lcpValue = parseFloat(metric.avg_lcp_ms as unknown as string);
             const barWidth = Math.min(lcpValue / 30, 100);
 
             return (
@@ -146,7 +159,7 @@ export default function LcpImageDebugger() {
                     href={metric.image_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs hover:underline truncate block"
+                    className="text-xs hover:underline md:max-w-[600px]"
                   >
                     {metric.image_url.split("/").pop()}
                   </a>
@@ -197,9 +210,38 @@ export default function LcpImageDebugger() {
                 <div>
                   <strong>Occurrences:</strong> {selectedImage.occurrence_count}
                 </div>
+                {selectedImage.avg_height && selectedImage.avg_width && (
+                  <div>
+                    <strong>Avg rendered size:</strong>{" "}
+                    {selectedImage.avg_width} x {selectedImage.avg_height}
+                  </div>
+                )}
+                <div>
+                  <strong>Is lazyloaded?</strong>{" "}
+                  {selectedImage.pct_lazy === 0 ? <>True</> : <>False</>}
+                </div>
+                {selectedImage.avg_transfer_size && (
+                  <div>
+                    <strong>Transfer size:</strong>{" "}
+                    {((selectedImage.avg_transfer_size ?? 0) / 1024).toFixed(2)}{" "}
+                    KB
+                  </div>
+                )}
+                {selectedImage.avg_decoded_body_size && (
+                  <div>
+                    <strong>Decoded body size:</strong>{" "}
+                    {(
+                      (selectedImage.avg_decoded_body_size ?? 0) / 1024
+                    ).toFixed(2)}{" "}
+                    KB
+                  </div>
+                )}
+
                 <div
                   className={`font-semibold ${
-                    parseFloat(selectedImage.pct_exceeding_cwv) > 0
+                    parseFloat(
+                      selectedImage.pct_exceeding_cwv as unknown as string
+                    ) > 0
                       ? "text-red-600"
                       : "text-green-600"
                   }`}
@@ -208,34 +250,14 @@ export default function LcpImageDebugger() {
                 </div>
               </div>
 
-              {parseFloat(selectedImage.pct_exceeding_cwv) > 0 && (
-                <div className="bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 p-4 rounded mt-4 text-sm">
-                  <h3 className="font-semibold mb-2">Optimization Tips</h3>
-                  <ul className="list-disc ml-5 space-y-1">
-                    <li>
-                      Convert images to <strong>WebP</strong> or{" "}
-                      <strong>AVIF</strong>
-                    </li>
-                    <li>
-                      Use <strong>lazy loading</strong> for offscreen images
-                    </li>
-                    <li>
-                      Resize images properly. Don’t use large images in small
-                      containers.
-                    </li>
-                    <li>
-                      Use a CDN like <strong>Cloudflare</strong> or{" "}
-                      <strong>ImageKit</strong>
-                    </li>
-                    <li>
-                      Try plugins:{" "}
-                      <strong>
-                        ShortPixel, Optimole, or Smush (for WordPress)
-                      </strong>
-                    </li>
-                  </ul>
-                </div>
-              )}
+              <SuggestionsToggle
+                selectedImage={selectedImage ?? null}
+                showHardcoded={
+                  parseFloat(
+                    selectedImage?.pct_exceeding_cwv?.toString() || "0"
+                  ) > 0
+                }
+              />
             </>
           ) : (
             <div className="sweet-loading flex w-full h-[300px] items-center justify-center">

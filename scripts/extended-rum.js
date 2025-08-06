@@ -190,7 +190,9 @@ function handleMetric(metric) {
       presentationDelay: attribution?.presentationDelay,
     };
   } else if (name === "LCP") {
-    const isImage = attribution?.target instanceof HTMLImageElement;
+    const isImage =
+      attribution?.target?.tagName?.toLowerCase() === "img" ||
+      attribution?.url?.match(/\.(jpe?g|png|webp|gif|avif|svg)$/i);
 
     const entryByExactUrl =
       attribution?.url &&
@@ -219,7 +221,6 @@ function handleMetric(metric) {
       resourceLoadDuration: attribution?.resourceLoadDuration,
       elementRenderDelay: attribution?.elementRenderDelay,
       timeToFirstByte: attribution?.timeToFirstByte,
-      loadState: attribution?.loadState,
       url: attribution?.url,
       ...(isImage && {
         decodedBodySize: matchedEntry?.decodedBodySize ?? null,
