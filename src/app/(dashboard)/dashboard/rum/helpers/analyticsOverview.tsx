@@ -44,11 +44,7 @@ export default function AnalyticsOverview({ data }: Props) {
       <div className="col-span-1">
         <p className="text-sm">Bounce Rate:</p>
         <div className="font-semibold text-2xl">
-          {new Intl.NumberFormat("en", {
-            notation: "compact",
-            compactDisplay: "short",
-          }).format(data?.bounce_rate_percentage)}
-          %
+          {data?.bounce_rate_percentage}%
         </div>
       </div>
       <div className="col-span-1">
@@ -63,15 +59,18 @@ export default function AnalyticsOverview({ data }: Props) {
       <div className="col-span-1">
         <p className="text-sm mb-2">Most Visitors By Countries:</p>
         <div className="flex flex-wrap gap-1">
-          {data?.country.slice(0, 6).map((code) => (
-            <img
-              key={code}
-              src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
-              alt={code}
-              title={code}
-              className="w-6 h-4 object-cover"
-            />
-          ))}
+          {data?.country
+            .filter((x) => x !== "Unknown")
+            .slice(0, 6)
+            .map((code) => (
+              <img
+                key={code}
+                src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
+                alt={code}
+                title={code}
+                className="w-6 h-4 object-cover"
+              />
+            ))}
         </div>
       </div>
     </div>

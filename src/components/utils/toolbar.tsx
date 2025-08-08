@@ -99,6 +99,9 @@ export default function DashboardToolbar() {
 
   const rumOverview = pathname === `/dashboard/rum/overview`;
   const isOnCWVPage = pathname === `/dashboard/cwv`;
+  const isLab =
+    pathname.includes("/dashboard/pages") ||
+    pathname.includes("/dashboard/cwv");
   const isOnRum =
     pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv`;
 
@@ -165,7 +168,7 @@ export default function DashboardToolbar() {
       {/* Left Section */}
       <div className="flex gap-3 md:items-center items-start flex-col md:flex-row">
         {/* Device toggle for rum dashboard */}
-        {rumOverview && (
+        {rumOverview && !isLab && (
           <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
@@ -214,7 +217,7 @@ export default function DashboardToolbar() {
         )}
 
         {/* device toggle for rum * excluding dashbaord */}
-        {!rumOverview && (
+        {!rumOverview && !isLab && (
           <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
@@ -247,6 +250,35 @@ export default function DashboardToolbar() {
                 onClick={() => selectDevice("Tablet")}
               >
                 Tablet
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* device toggle for lab */}
+        {isLab && !rumOverview && (
+          <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
+            <div className="flex gap-2 w-full items-center px-2">
+              <MonitorSmartphone size={18} className="mr-2" />
+              <button
+                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                  selectedDevice === "Desktop"
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                }`}
+                onClick={() => selectDevice("Desktop")}
+              >
+                Desktop
+              </button>
+              <button
+                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                  selectedDevice === "Mobile"
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                }`}
+                onClick={() => selectDevice("Mobile")}
+              >
+                Mobile
               </button>
             </div>
           </div>

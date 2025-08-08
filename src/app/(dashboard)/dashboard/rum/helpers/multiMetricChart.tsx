@@ -138,6 +138,7 @@ export default function SingleMetricChart({ data }: Props) {
       },
       yAxis: {
         type: "value",
+        max: 100,
         min: 0,
         splitLine: {
           lineStyle: {

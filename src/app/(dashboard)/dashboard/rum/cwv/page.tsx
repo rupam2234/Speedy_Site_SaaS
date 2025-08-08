@@ -127,7 +127,7 @@ export default function RUMCWV() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: "24hours",
+          date_range: "7days",
         }),
       });
 
