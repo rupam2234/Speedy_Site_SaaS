@@ -39,7 +39,7 @@ export default function RUM() {
 
     async function fetchAllData() {
       try {
-        const [liveRes, prevRes, mixedRes] = await Promise.all([
+        const [liveRes, mixedRes] = await Promise.all([
           fetch("/api/rum/dashboard", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -48,14 +48,14 @@ export default function RUM() {
               date_range: controlledDateRange,
             }),
           }),
-          fetch("/api/rum/previous", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              domain_name: selectedSite,
-              date_range: controlledDateRange,
-            }),
-          }),
+          // fetch("/api/rum/previous", {
+          //   method: "POST",
+          //   headers: { "Content-Type": "application/json" },
+          //   body: JSON.stringify({
+          //     domain_name: selectedSite,
+          //     date_range: controlledDateRange,
+          //   }),
+          // }),
           fetch("/api/rum/dashboard/mixed-metric", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -66,7 +66,7 @@ export default function RUM() {
           }),
         ]);
 
-        if (!liveRes.ok || !prevRes.ok || !mixedRes.ok)
+        if (!liveRes.ok || !mixedRes.ok)
           throw new Error("Failed to fetch RUM data");
 
         const live = await liveRes.json();

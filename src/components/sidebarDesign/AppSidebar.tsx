@@ -87,7 +87,7 @@ export default function AppSidebar({
         items: [
           {
             title: "Pages",
-            url: `/dashboard/pages`,
+            url: `/dashboard/pages?site=${selectedSite}`,
           },
         ],
       },
