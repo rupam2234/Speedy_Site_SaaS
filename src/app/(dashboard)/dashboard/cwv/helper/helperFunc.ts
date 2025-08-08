@@ -17,7 +17,7 @@ export class Helpers {
   // extract data by device
   public findDataByDevice = (
     data: DailyCrux[],
-    device: "Desktop" | "Mobile"
+    device: "Desktop" | "Mobile" | "Tablet" | "All"
   ) => {
     return data.find((crux) => crux.device_type === device);
   };
@@ -25,7 +25,7 @@ export class Helpers {
   // prepare the latest cwv metric
   public getMetricValue = (
     metricKey: string | undefined,
-    device: "Desktop" | "Mobile",
+    device: "Desktop" | "Mobile" | "Tablet" | "All",
     data: DailyCrux[]
   ) => {
     if (!metricKey) return null;
@@ -55,7 +55,7 @@ export class Helpers {
   // calculate change
   public calculateChange(
     cruxData: CruxData[],
-    device_type: "Desktop" | "Mobile",
+    device_type: "Desktop" | "Mobile" | "Tablet" | "All",
     metricKey: string,
     dailyData: DailyCrux[]
   ): number {

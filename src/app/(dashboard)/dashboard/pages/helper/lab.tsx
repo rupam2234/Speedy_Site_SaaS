@@ -17,7 +17,7 @@ import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
 interface LabViewProps {
   url: string;
-  device: "Desktop" | "Mobile";
+  device: "Desktop" | "Mobile" | "Tablet" | "All";
 }
 
 export default function LabView({ url, device }: LabViewProps) {

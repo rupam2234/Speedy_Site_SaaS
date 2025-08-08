@@ -13,45 +13,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const validRanges = ["24hours", "7days", "30days", "90days"];
-    if (!validRanges.includes(date_range)) {
-      return NextResponse.json(
-        {
-          error: "Invalid date_range",
-          message: `Must be one of: ${validRanges.join(", ")}`,
-        },
-        { status: 400 }
-      );
-    }
-
-    // limited to 7 days for dashboard
-    const controlled_date_range =
-      date_range === "24hours"
-        ? "24hours"
-        : date_range === "7days"
-        ? "7days"
-        : "7days";
-
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const results = await Promise.allSettled([
       supabase.rpc("user_happiness", {
-        p_date_range: controlled_date_range,
+        p_date_range: date_range,
         p_domain: domain_name,
       }),
       supabase.rpc("get_web_vitals_metrics", {
         p_domain: domain_name,
-        p_date_range: controlled_date_range,
+        p_date_range: date_range,
       }),
       supabase.rpc("get_analytics_by_device_and_country", {
-        p_time_range: controlled_date_range,
+        p_time_range: date_range,
         p_domain_name: domain_name,
       }),
       supabase.rpc("get_ai_citation", {
-        p_date_range: controlled_date_range,
-        p_domain_filter: domain_name,
+        p_domain_name: domain_name,
       }),
     ]);
 

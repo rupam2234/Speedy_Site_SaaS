@@ -20,8 +20,8 @@ type SiteContextType = {
   setDailyCrux: (dailyData: DailyCrux[]) => void;
   cruxData: CruxData[];
   setCruxData: (crux: CruxData[]) => void;
-  selectedDevice: "Desktop" | "Mobile";
-  setSelectedDevice: (device: "Desktop" | "Mobile") => void;
+  selectedDevice: "Desktop" | "Mobile" | "Tablet" | "All";
+  setSelectedDevice: (device: "Desktop" | "Tablet" | "Mobile" | "All") => void;
   dateRange: [string, string];
   setDateRange: (startDate: string, endDate: string) => void | [string, string];
   rumDateRange: "24hours" | "7days" | "30days" | "90days";
@@ -105,9 +105,9 @@ export default function SiteContextProvider({
   const [selectedSite, setSelectedSite] = useState("");
   const [dailyCrux, setDailyCrux] = useState<DailyCrux[]>([]);
   const [cruxData, setCruxData] = useState<CruxData[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<"Desktop" | "Mobile">(
-    "Desktop"
-  );
+  const [selectedDevice, setSelectedDevice] = useState<
+    "Desktop" | "Mobile" | "Tablet" | "All"
+  >("Desktop");
   const [dateRange, setDateRange] = useState<[string, string]>(["", ""]);
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [experienceType, setExperienceType] = useState<"p75" | "Distribution">(

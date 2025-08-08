@@ -4,7 +4,7 @@ import React from "react";
 // import { useSiteContext } from "../../siteContext";
 
 export type AggregatedMetrics = {
-  device_type: "desktop" | "mobile" | "tablet";
+  device_type: "desktop" | "mobile" | "tablet" | "all";
   country: string[];
   total_page_views: number;
   total_sessions: number;

@@ -1,8 +1,9 @@
+import TooltipIcon from "@/components/utils/customTooltip";
 import React from "react";
 
 export type DevicePerformanceData = {
   domain?: string;
-  device_type?: "desktop" | "mobile";
+  device_type?: "desktop" | "mobile" | "tablet" | "all";
   total_sessions?: number;
   avg_citation_score: number;
   min_citation_score: number;
@@ -44,35 +45,17 @@ const CitationStatsCard: React.FC<DevicePerformanceData> = ({
 
   return (
     <div className="p-4 rounded-sm border bg-white border-accent-foreground/20 dark:bg-secondary-background space-y-3 relative">
-      {/* Tooltip icon top right */}
-      <div className="absolute top-4 right-4 group cursor-pointer">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 text-gray-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-label="Info tooltip"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
-          />
-        </svg>
-        <div className="absolute z-10 hidden w-64 p-2 text-xs text-white bg-gray-700 rounded shadow-md group-hover:block right-full top-1/2 transform -translate-y-1/2 mr-2">
-          The AI Citation score shows how ready your page speed is to be cited
-          by AI. Higher scores mean your site loads fast enough & has proper
-          HTML markups (excluding high content quality) to be favored or
-          referenced by AI algorithms.
+      <div className="flex items-center justify-between">
+        {" "}
+        {/* Score big number */}
+        <div className="text-4xl font-bold text-blue-600">
+          {Math.round(avg_citation_score)}
+          <span className="text-base font-normal text-gray-500"> / 100</span>
         </div>
-      </div>
-
-      {/* Score big number */}
-      <div className="text-4xl font-bold text-blue-600">
-        {Math.round(avg_citation_score)}
-        <span className="text-base font-normal text-gray-500"> / 100</span>
+        <TooltipIcon
+          side="right"
+          content="The AI Citation score shows how ready your page speed is to be cited by AI. Higher scores mean your site loads fast enough & has proper HTML markups to be favored by AI algorithms."
+        />
       </div>
 
       {/* Stats grid */}

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
 import { ReactNode, Suspense, useEffect } from "react";
-import { useUser, Protect } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -18,21 +18,6 @@ import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 
 interface DashboardLayoutProps {
   children: ReactNode;
-}
-
-function Fallback() {
-  return (
-    <div className="flex flex-col items-center justify-center md:mt-[-150px] min-h-screen p-6">
-      <span className="text-4xl mb-4">🔒</span>
-      <h2 className="text-[16px] font-normal text-center text-primary">
-        You need at least the pro plan to view real user monitoring report.
-      </h2>
-      <p>
-        Please visit <strong>account</strong> {">"} <strong>billing</strong> to
-        check your active plan.
-      </p>
-    </div>
-  );
 }
 
 function LayoutContent({ children }: { children: ReactNode }) {
@@ -95,9 +80,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <SidebarProvider>
       <SiteContextProvider>
         <Suspense fallback={<LoadingAnimation />}>
-          <Protect plan="pro" fallback={<Fallback />}>
-            <LayoutContent>{children}</LayoutContent>
-          </Protect>
+          <LayoutContent>{children}</LayoutContent>
         </Suspense>
       </SiteContextProvider>
     </SidebarProvider>

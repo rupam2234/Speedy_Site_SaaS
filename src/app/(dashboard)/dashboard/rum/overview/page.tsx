@@ -12,7 +12,7 @@ import DashboardToolbar from "@/components/utils/toolbar";
 import { Mixed_metric } from "../helpers/multiMetricChart";
 
 type RawData = {
-  device_type: "desktop" | "mobile" | "tablet";
+  device_type: "desktop" | "mobile" | "tablet" | "all";
   country: string;
   total_page_views: number;
   total_sessions: number;
@@ -31,20 +31,8 @@ export default function RUM() {
   const [analyticsData, setAnalyticsData] = useState<RawData[]>([]);
   const [mixedMetric, setMixedMetric] = useState<Mixed_metric[]>([]);
 
-  const controlledDateRange = ["7days", "30days", "90days"].includes(
-    rumDateRange
-  )
-    ? rumDateRange
-    : "30days";
-
-  const intDate =
-    rumDateRange === "7days"
-      ? 7
-      : rumDateRange === "30days"
-      ? 30
-      : rumDateRange === "90days"
-      ? 90
-      : 30; // default 30 days for mixed_metric
+  const controlledDateRange = "7days";
+  const intDate = rumDateRange === "7days" ? 7 : 7; // default 7 days for mixed_metric
 
   useEffect(() => {
     if (!selectedSite) return;
@@ -57,7 +45,7 @@ export default function RUM() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               domain_name: selectedSite,
-              date_range: "24hours",
+              date_range: controlledDateRange,
             }),
           }),
           fetch("/api/rum/previous", {
@@ -78,28 +66,19 @@ export default function RUM() {
           }),
         ]);
 
-        if (!liveRes.ok || !prevRes.ok)
+        if (!liveRes.ok || !prevRes.ok || !mixedRes.ok)
           throw new Error("Failed to fetch RUM data");
 
         const live = await liveRes.json();
-        const previous = await prevRes.json();
-        const mixed_metric = await mixedRes.json();
+        const mixed = await mixedRes.json();
 
-        const liveMetrics = live?.metrics || {};
-        const previousMetrics = previous?.metrics || {};
-
-        const mergedAnalytics = mergeRawAnalyticsData(
-          previousMetrics.analyticsOverview || [],
-          liveMetrics.analytics || []
-        );
-
-        setDistData(liveMetrics.webVitals || []);
-        setHappinessData(liveMetrics.userHappiness || []);
-        setCitationData(liveMetrics.ai_citation || []);
-        setAnalyticsData(mergedAnalytics);
-        setMixedMetric(mixed_metric.metrics || []);
+        setDistData(live?.metrics?.webVitals || []);
+        setHappinessData(live?.metrics?.userHappiness || []);
+        setCitationData(live?.metrics?.ai_citation || []);
+        setAnalyticsData(live?.metrics?.analytics || []);
+        setMixedMetric(mixed?.metrics || []);
       } catch (error) {
-        console.error("Error merging RUM data:", error);
+        console.error("Error loading RUM data:", error);
         setDistData([]);
         setHappinessData([]);
         setCitationData([]);
@@ -110,45 +89,6 @@ export default function RUM() {
 
     fetchAllData();
   }, [selectedSite, rumDateRange]);
-
-  function mergeRawAnalyticsData(
-    prevData: RawData[],
-    liveData: RawData[]
-  ): RawData[] {
-    const merged: Record<string, RawData> = {};
-    const allData = [...prevData, ...liveData];
-
-    for (const entry of allData) {
-      const key = `${entry.device_type}-${entry.country}`;
-      if (!merged[key]) {
-        merged[key] = { ...entry };
-      } else {
-        const existing = merged[key];
-        existing.total_page_views += entry.total_page_views;
-        existing.total_sessions += entry.total_sessions;
-        existing.unique_visitors += entry.unique_visitors;
-        existing.bounce_rate_percentage = weightedAverage(
-          existing.bounce_rate_percentage,
-          existing.total_sessions,
-          entry.bounce_rate_percentage,
-          entry.total_sessions
-        );
-      }
-    }
-
-    return Object.values(merged);
-  }
-
-  function weightedAverage(
-    val1: number,
-    weight1: number,
-    val2: number,
-    weight2: number
-  ): number {
-    const totalWeight = weight1 + weight2;
-    if (totalWeight === 0) return 0;
-    return (val1 * weight1 + val2 * weight2) / totalWeight;
-  }
 
   function aggregateByDeviceType(data: RawData[]): AggregatedMetrics[] {
     const grouped: Record<string, AggregatedMetrics> = {};
@@ -172,7 +112,6 @@ export default function RUM() {
       grouped[device].total_sessions += entry.total_sessions;
       grouped[device].unique_visitors += entry.unique_visitors;
       grouped[device].country.push(entry.country);
-
       grouped[device].bounce_rate_percentage +=
         entry.bounce_rate_percentage * entry.total_sessions;
     }
@@ -200,6 +139,7 @@ export default function RUM() {
     (x) => x.device_type === selectedDevice.toLowerCase()
   );
 
+  // Show loading until all required data is ready
   if (
     !selectedSite ||
     distdata.length === 0 ||
@@ -226,15 +166,8 @@ export default function RUM() {
               className="fill-pink-600/30 text-primary/70 dark:text-accent/70"
             />
             <h2 className="text-md md:text-2xl font-bold text-primary/90">
-              Overview
+              Weekly Overview
             </h2>
-          </span>
-          <span className="flex gap-3 item-center cursor-help text-accent-foreground/80 dark:text-accent-foreground font-semibold">
-            <div className="relative flex items-center justify-center mt-1 w-4 h-4">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-            </div>
-            <p>Live Data</p>
           </span>
         </div>
 
@@ -243,7 +176,7 @@ export default function RUM() {
           experienceBarData={happinessData}
           citationData={selectedCitation}
           analyticsData={selectedAnalytics}
-          mixed_metric={mixedMetric}
+          mixed_metric={mixedMetric} // pass directly
         />
       </div>
     </>

@@ -18,6 +18,7 @@ import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import TooltipIcon from "./customTooltip";
 
 interface DateRangeProps {
   id: string;
@@ -96,10 +97,12 @@ export default function DashboardToolbar() {
   const isToolbarVisible = allowedPaths.includes(pathname);
   if (!isToolbarVisible) return null;
 
+  const rumOverview = pathname === `/dashboard/rum/overview`;
   const isOnCWVPage = pathname === `/dashboard/cwv`;
   const isOnRum =
     pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv`;
-  function selectDevice(device: "Desktop" | "Mobile") {
+
+  function selectDevice(device: "Desktop" | "Mobile" | "Tablet" | "All") {
     setSelectedDevice(device);
   }
 
@@ -161,32 +164,93 @@ export default function DashboardToolbar() {
     <div className="flex flex-col md:flex-row p-5 w-full items-start gap-3 md:justify-between bg-transparent">
       {/* Left Section */}
       <div className="flex gap-3 md:items-center items-start flex-col md:flex-row">
-        {/* Device toggle */}
-        <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
-          <div className="flex gap-2 w-full items-center px-2">
-            <MonitorSmartphone size={18} className="mr-2" />
-            <button
-              className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                selectedDevice === "Desktop"
-                  ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                  : ``
-              }`}
-              onClick={() => selectDevice("Desktop")}
-            >
-              Desktop
-            </button>
-            <button
-              className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                selectedDevice === "Mobile"
-                  ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                  : ``
-              }`}
-              onClick={() => selectDevice("Mobile")}
-            >
-              Mobile
-            </button>
+        {/* Device toggle for rum dashboard */}
+        {rumOverview && (
+          <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
+            <div className="flex gap-2 w-full items-center px-2">
+              <MonitorSmartphone size={18} className="mr-2" />
+              <button
+                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                  selectedDevice === "Desktop"
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                }`}
+                onClick={() => selectDevice("Desktop")}
+              >
+                Desktop
+              </button>
+              <button
+                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                  selectedDevice === "Mobile"
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                }`}
+                onClick={() => selectDevice("Mobile")}
+              >
+                Mobile
+              </button>
+              <button
+                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                  selectedDevice === "Tablet"
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                }`}
+                onClick={() => selectDevice("Tablet")}
+              >
+                Tablet
+              </button>
+              <button
+                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                  selectedDevice === "All"
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                }`}
+                onClick={() => selectDevice("All")}
+              >
+                All
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* device toggle for rum * excluding dashbaord */}
+        {!rumOverview && (
+          <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
+            <div className="flex gap-2 w-full items-center px-2">
+              <MonitorSmartphone size={18} className="mr-2" />
+              <button
+                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                  selectedDevice === "Desktop"
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                }`}
+                onClick={() => selectDevice("Desktop")}
+              >
+                Desktop
+              </button>
+              <button
+                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                  selectedDevice === "Mobile"
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                }`}
+                onClick={() => selectDevice("Mobile")}
+              >
+                Mobile
+              </button>
+              <button
+                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                  selectedDevice === "Tablet"
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                }`}
+                onClick={() => selectDevice("Tablet")}
+              >
+                Tablet
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Distribution toggle (only for CWV page) */}
         {isOnCWVPage && (
@@ -242,58 +306,78 @@ export default function DashboardToolbar() {
         {/* RUM Distribution */}
         {isOnRum && (
           <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
-            <div className="flex justify-between items-center pl-2 py-[2px] w-full">
-              <ChartScatter size={18} />
-              <Select
-                value={rumDistribution}
-                onValueChange={setRumDistribution}
-              >
-                <SelectTrigger className="py-0 cursor-pointer border-0 ring-0 shadow-none focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background rounded-sm border-none focus:ring-0 focus:outline-none">
-                  <span className="text-primary font-medium">
-                    {rumDistribution}
-                  </span>
-                </SelectTrigger>
-                <SelectContent
-                  className="min-w-[--radix-select-trigger-width] p-0 dark:bg-secondary-background"
-                  side="bottom"
-                  align="center"
-                >
-                  <SelectGroup>
-                    {["p50", "p75", "p90", "p95", "p99"].map((x, index) => (
-                      <SelectItem key={index} value={x}>
-                        {x}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
+            <TooltipIcon
+              content={
+                "Percentiles represent how your users experience performance. For example, P50 is the median (typical) experience, P75 means 75% of users have this performance or better, and P90 shows the experience of 90% of users. These help identify how fast or slow your site feels for most visitors, not just the average."
+              }
+              maxWidth="16rem"
+              side="bottom"
+              trigger={
+                <div className="flex justify-between items-center pl-2 py-[2px] w-full">
+                  <ChartScatter size={18} />
+                  <Select
+                    value={rumDistribution}
+                    onValueChange={setRumDistribution}
+                  >
+                    <SelectTrigger className="py-0 cursor-pointer border-0 ring-0 shadow-none focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background rounded-sm border-none focus:ring-0 focus:outline-none">
+                      <span className="text-primary font-medium">
+                        {rumDistribution}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent
+                      className="min-w-[--radix-select-trigger-width] p-0 dark:bg-secondary-background"
+                      side="bottom"
+                      align="center"
+                    >
+                      <SelectGroup>
+                        {["p50", "p75", "p90", "p95", "p99"].map((x, index) => (
+                          <SelectItem key={index} value={x}>
+                            {x}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+              }
+            />
           </div>
         )}
       </div>
 
       {/* Right: Date Range Dropdown */}
-      <div className="p-[2px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
-        <div className="flex gap-2 w-[220px] justify-between items-center pl-2">
-          <CalendarArrowDown size={18} className="mr-2" />
-          <Select value={selectedRangeId} onValueChange={setSelectedRangeId}>
-            <SelectTrigger className="px-4 py-0 text-sm ring-0 text-primary focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background font-medium rounded-sm bg-transparent border-none focus:ring-0 focus:outline-none">
-              <SelectValue placeholder="Select Range">
-                {selectedRange?.range}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="w-[200px] md:mr-[10px]">
-              <SelectGroup>
-                {DateRangeData.map((item, index) => (
-                  <SelectItem value={item.id} key={index}>
-                    {item.range}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+      {!rumOverview && (
+        <div className="p-[2px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
+          <div className="flex gap-2 w-[220px] justify-between items-center pl-2">
+            <CalendarArrowDown size={18} className="mr-2" />
+            <Select value={selectedRangeId} onValueChange={setSelectedRangeId}>
+              <SelectTrigger className="px-4 py-0 text-sm ring-0 text-primary focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background font-medium rounded-sm bg-transparent border-none focus:ring-0 focus:outline-none">
+                <SelectValue placeholder="Select Range">
+                  {selectedRange?.range}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="w-[200px] md:mr-[10px]">
+                <SelectGroup>
+                  {DateRangeData.map((item, index) => (
+                    <SelectItem value={item.id} key={index}>
+                      {item.range}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
+      )}
+      {rumOverview && (
+        <span className="flex md:mt-3 gap-3 item-center cursor-help text-accent-foreground/80 dark:text-accent-foreground font-semibold">
+          <div className="relative flex items-center justify-center mt-1 w-4 h-4">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+          </div>
+          <p>Live Data</p>
+        </span>
+      )}
     </div>
   );
 }

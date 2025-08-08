@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { Bot, CircleGauge, Smile } from "lucide-react";
+import { CircleGauge, Smile, TrendingUpDown } from "lucide-react";
 import CitationStatsCard, { DevicePerformanceData } from "./ai_citation";
 import AnalyticsOverview, { AggregatedMetrics } from "./analyticsOverview";
 import ExperienceBar, { ExperienceData } from "./ExperienceBar";
@@ -33,11 +33,11 @@ export interface WebVitalsMetric {
 }
 
 interface RumDashboardProps {
-  distData: WebVitalsMetric[];
-  experienceBarData: ExperienceData[];
-  citationData: DevicePerformanceData;
-  analyticsData: AggregatedMetrics;
-  mixed_metric: Mixed_metric[];
+  distData: WebVitalsMetric[] | undefined;
+  experienceBarData: ExperienceData[] | undefined;
+  citationData: DevicePerformanceData | undefined;
+  analyticsData: AggregatedMetrics | undefined;
+  mixed_metric: Mixed_metric[] | undefined;
 }
 
 export default function RumDashboard({
@@ -102,79 +102,80 @@ export default function RumDashboard({
   return (
     <div className="space-y-15">
       <div className="mt-6">
-        <AnalyticsOverview data={analyticsData} />
+        {analyticsData && <AnalyticsOverview data={analyticsData} />}
       </div>
       <div>
         <span className="flex items-center gap-2">
           <CircleGauge
-            size={30}
+            size={20}
             className="fill-pink-600/30 text-primary/70 dark:text-accent/70"
           />
-          <h2 className="text-md md:text-2xl font-bold text-primary/90">
+          <h2 className="text-md md:text-xl font-bold text-primary/90">
             Web Vitals
           </h2>
         </span>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6">
-          {distData
-            .filter(
-              (metric) =>
-                metric.device_type.toLowerCase() ===
-                selectedDevice.toLowerCase()
-            )
-            .map((metric) => {
-              const label = metric.metric_name;
-              const unit = metric.metric_name === "CLS" ? "" : "ms";
-              const value = formatMetricValue(metric);
-              const colorClass = getColorClass(metric);
+          {distData &&
+            distData
+              .filter(
+                (metric) =>
+                  metric.device_type.toLowerCase() ===
+                  selectedDevice.toLowerCase()
+              )
+              .map((metric) => {
+                const label = metric.metric_name;
+                const unit = metric.metric_name === "CLS" ? "" : "ms";
+                const value = formatMetricValue(metric);
+                const colorClass = getColorClass(metric);
 
-              const rawPercentile =
-                typeof metric[rumDistribution] === "number"
-                  ? (metric[rumDistribution] as number)
-                  : undefined;
+                const rawPercentile =
+                  typeof metric[rumDistribution] === "number"
+                    ? (metric[rumDistribution] as number)
+                    : undefined;
 
-              return (
-                <div
-                  key={label}
-                  className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-sm font-semibold">{label}</h3>
-                    <div className="flex gap-2 items-center">
-                      <p className={`text-sm font-semibold ${colorClass}`}>
-                        {value} {unit}
-                      </p>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-help dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
-                            {rumDistribution}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                          <span>
-                            Around{" "}
-                            {rumDistribution.toUpperCase().replace("P", "")}% of
-                            users experienced
-                            <span className="lowercase"> {label} ≤</span>{" "}
-                            {value}
-                          </span>
-                        </TooltipContent>
-                      </Tooltip>
+                return (
+                  <div
+                    key={label}
+                    className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-sm font-semibold">{label}</h3>
+                      <div className="flex gap-2 items-center">
+                        <p className={`text-sm font-semibold ${colorClass}`}>
+                          {value} {unit}
+                        </p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
+                              {rumDistribution}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <span>
+                              Around{" "}
+                              {rumDistribution.toUpperCase().replace("P", "")}%
+                              of users experienced
+                              <span className="lowercase"> {label} ≤</span>{" "}
+                              {value}
+                            </span>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
-                  </div>
 
-                  <WebVitalsBar
-                    metricName={label}
-                    goodPercent={metric.good_percent}
-                    needsImprovementPercent={metric.needs_improvement_percent}
-                    poorPercent={metric.poor_percent}
-                    minValue={metric.min_value}
-                    maxValue={metric.max_value}
-                    percentileValue={rawPercentile}
-                    percentileLabel={rumDistribution}
-                  />
-                </div>
-              );
-            })}
+                    <WebVitalsBar
+                      metricName={label}
+                      goodPercent={metric.good_percent}
+                      needsImprovementPercent={metric.needs_improvement_percent}
+                      poorPercent={metric.poor_percent}
+                      minValue={metric.min_value}
+                      maxValue={metric.max_value}
+                      percentileValue={rawPercentile}
+                      percentileLabel={rumDistribution}
+                    />
+                  </div>
+                );
+              })}
         </div>
       </div>
 
@@ -182,32 +183,29 @@ export default function RumDashboard({
         <span className="flex gap-2 items-center ">
           <span className="flex items-center gap-2">
             <Smile
-              size={30}
+              size={20}
               className="fill-green-200 text-primary/70 dark:text-accent/70"
             />
-            <h2 className="text-md md:text-2xl font-bold text-primary/90">
+            <h2 className="text-md md:text-xl font-bold text-primary/90">
               Pageviews Experience Distribution
             </h2>
           </span>
-          {/* <Link href={`/dashboard/${selectedSite}/rum/session`}>
-            <Link2
-              size={20}
-              className="mt-1 hover:text-blue-400 cursor-pointer"
-            />
-          </Link> */}
         </span>
         <div className="border rounded-sm  py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
-          <ExperienceBar data={experienceBarData} deviceType={selectedDevice} />
+          <ExperienceBar
+            data={experienceBarData ?? []}
+            deviceType={selectedDevice}
+          />
         </div>
 
         <span className="flex gap-2 mt-15 items-center ">
           <span className="flex items-center gap-2">
-            <Bot
-              size={30}
+            <TrendingUpDown
+              size={20}
               className="fill-purple-200 text-primary/70 dark:text-accent/70"
             />
-            <h2 className="text-md md:text-2xl font-bold text-primary/90">
-              AI Citation
+            <h2 className="text-md md:text-xl font-bold text-primary/90">
+              AI Citation & KPIs
             </h2>
           </span>
         </span>
@@ -215,17 +213,19 @@ export default function RumDashboard({
         <div className="grid grid-cols-1 md:grid-cols-3 md:gap-4">
           <div className="col-span-1">
             <CitationStatsCard
-              avg_citation_score={citationData?.avg_citation_score}
-              min_citation_score={citationData?.min_citation_score}
-              max_citation_score={citationData?.max_citation_score}
-              std_dev_citation_score={citationData?.std_dev_citation_score}
-              avg_ttfb={citationData?.avg_ttfb}
-              avg_dom_content_loaded={citationData?.avg_dom_content_loaded}
-              ai_citation_possibility={citationData?.ai_citation_possibility}
+              avg_citation_score={citationData?.avg_citation_score ?? 0}
+              min_citation_score={citationData?.min_citation_score ?? 0}
+              max_citation_score={citationData?.max_citation_score ?? 0}
+              std_dev_citation_score={citationData?.std_dev_citation_score ?? 0}
+              avg_ttfb={citationData?.avg_ttfb ?? 0}
+              avg_dom_content_loaded={citationData?.avg_dom_content_loaded ?? 0}
+              ai_citation_possibility={
+                citationData?.ai_citation_possibility ?? "Low"
+              }
             />
           </div>
           <div className="col-span-2 bg-white border border-accent-foreground/20 dark:bg-secondary-background max-w-full p-4 rounded-sm">
-            <SingleMetricChart data={mixed_metric} />
+            <SingleMetricChart data={mixed_metric ?? []} />
           </div>
         </div>
       </div>

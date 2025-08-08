@@ -12,12 +12,7 @@ import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { InfoIcon } from "lucide-react";
+import TooltipIcon from "@/components/utils/customTooltip";
 
 export type Mixed_metric = {
   date_collected: string;
@@ -210,21 +205,12 @@ export default function SingleMetricChart({ data }: Props) {
   return (
     <div className="relative">
       <div className="absolute top-2 right-2 z-10 flex items-center space-x-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              aria-label="Metric description"
-              className="p-1 rounded-full hover:bg-muted"
-            >
-              <InfoIcon className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="left" className="max-w-xs text-sm">
-            {METRICS.find((m) => m.key === selectedMetric)?.description}
-          </TooltipContent>
-        </Tooltip>
-
+        <TooltipIcon
+          side="left"
+          content={
+            METRICS.find((m) => m.key === selectedMetric)?.description || ""
+          }
+        />
         <select
           value={selectedMetric}
           onChange={handleMetricChange}
