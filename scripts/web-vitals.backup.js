@@ -58,26 +58,24 @@ const aiCitationMetrics = {
   docSize: null,
 };
 
-// Initialize web vitals listeners immediately
+// === Initialize Web Vitals (final values only) ===
+
 function initializeWebVitals() {
   onCLS(handleMetric, { reportAllChanges: true });
   onINP(handleMetric, { reportAllChanges: true });
-  onLCP(handleMetric);
+  onLCP(handleMetric, { reportAllChanges: true });
   onFCP(handleMetric);
   onTTFB((metric) => {
     handleMetric(metric);
     aiCitationMetrics.ttfb = metric.value;
     runAICitation();
-    runPerformanceScore();
   });
 }
 
-// Capture DOMContentLoaded time
 document.addEventListener("DOMContentLoaded", () => {
   aiCitationMetrics.domContentLoaded = performance.now();
 });
 
-// Run web vitals initialization as early as possible
 initializeWebVitals();
 
 function computeSemanticMarkupScore() {
@@ -113,13 +111,9 @@ function computeAICitationScore(m) {
 }
 
 function runAICitation() {
-  if (aiCitationMetrics.ttfb == null) {
-    console.warn("TTFB not available for AI citation");
-    return;
-  }
+  if (aiCitationMetrics.ttfb == null) return;
   if (aiCitationMetrics.domContentLoaded == null) {
-    console.warn("DOM Content Loaded not available for AI citation");
-    aiCitationMetrics.domContentLoaded = performance.now(); // Fallback
+    aiCitationMetrics.domContentLoaded = performance.now();
   }
 
   aiCitationMetrics.semanticMarkupScore = computeSemanticMarkupScore();
@@ -138,51 +132,6 @@ function runAICitation() {
     ttfb: aiCitationMetrics.ttfb,
     timestamp: Date.now(),
   });
-}
-
-function computePagePerformanceScore(metrics) {
-  const thresholds = {
-    CLS: [0.1, 0.25],
-    INP: [200, 500],
-    LCP: [2500, 4000],
-    FCP: [1800, 3000],
-    TTFB: [800, 1800],
-  };
-
-  const weights = {
-    CLS: 0.2,
-    INP: 0.25,
-    LCP: 0.25,
-    FCP: 0.15,
-    TTFB: 0.15,
-  };
-
-  let weighted = 0;
-  let total = 0;
-
-  for (const key in metrics) {
-    const value = metrics[key];
-    if (value == null) continue;
-
-    const [_, poor] = thresholds[key];
-    const score = 1 - Math.min(value, poor) / poor;
-    weighted += score * weights[key];
-    total += weights[key];
-  }
-
-  return total > 0 ? Number(((weighted / total) * 100).toFixed(1)) : null;
-}
-
-function runPerformanceScore() {
-  const score = computePagePerformanceScore(latestMetrics);
-  if (score !== null) {
-    queueEvent({
-      type: "page-performance-score",
-      siteDomain,
-      score,
-      timestamp: Date.now(),
-    });
-  }
 }
 
 function classifyMetric(value, thresholds) {
@@ -224,36 +173,73 @@ function handleMetric(metric) {
       return;
   }
 
-  const debugInfo = {};
-  let safeAttribution = {
-    ...attribution,
-    navigationEntry: undefined, // explicitly exclude
-  };
+  let safeAttribution = {};
+  const resourceEntries = performance.getEntriesByType("resource");
 
-  if (name === "CLS" && attribution?.largestShiftTarget) {
-    const el = attribution.largestShiftTarget;
-    debugInfo.shiftElement = {
-      tagName: el?.tagName || "unknown",
-      classList: el?.className || "",
-      outerHTML: el?.outerHTML?.slice(0, 300) || "",
+  if (name === "CLS") {
+    safeAttribution = {
+      largestShiftTarget: attribution?.largestShiftTarget,
+      largestShiftTime: attribution?.largestShiftTime,
     };
-  }
-
-  if (name === "INP" && attribution?.eventTarget) {
-    const el = attribution.eventTarget;
-    debugInfo.inputElement = {
-      tagName: el?.tagName || "unknown",
-      classList: el?.className || "",
-      outerHTML: el?.outerHTML?.slice(0, 300) || "",
+  } else if (name === "INP") {
+    safeAttribution = {
+      target: attribution?.target,
+      eventType: attribution?.eventType,
+      inputDelay: attribution?.inputDelay,
+      processingTime: attribution?.processingTime,
+      presentationDelay: attribution?.presentationDelay,
     };
-  }
+  } else if (name === "LCP") {
+    const isImage =
+      attribution?.target?.tagName?.toLowerCase() === "img" ||
+      attribution?.url?.match(/\.(jpe?g|png|webp|gif|avif|svg)$/i);
 
-  if (name === "LCP" && attribution?.element) {
-    const el = attribution.element;
-    debugInfo.lcpElement = {
-      tagName: el?.tagName || "unknown",
-      classList: el?.className || "",
-      outerHTML: el?.outerHTML?.slice(0, 300) || "",
+    const entryByExactUrl =
+      attribution?.url &&
+      resourceEntries.find((e) => e.name === attribution.url);
+
+    // due to cdn sometimes the url may change
+    const entryByLooseMatch =
+      !entryByExactUrl &&
+      resourceEntries.find((e) =>
+        e.name.includes(attribution?.url?.split("/").pop())
+      );
+
+    const matchedEntry = entryByExactUrl || entryByLooseMatch;
+
+    // find image exact element
+    const findImage =
+      isImage && attribution?.target instanceof HTMLImageElement
+        ? attribution.target
+        : (attribution?.url &&
+            document?.querySelector(`img[src="${attribution?.url}"]`)) ||
+          null;
+
+    safeAttribution = {
+      target: attribution?.target,
+      resourceLoadDelay: attribution?.resourceLoadDelay,
+      resourceLoadDuration: attribution?.resourceLoadDuration,
+      elementRenderDelay: attribution?.elementRenderDelay,
+      timeToFirstByte: attribution?.timeToFirstByte,
+      url: attribution?.url,
+      ...(isImage && {
+        decodedBodySize: matchedEntry?.decodedBodySize ?? null,
+        transferSize: matchedEntry?.transferSize ?? null,
+        width: findImage?.width ?? null,
+        height: findImage?.height ?? null,
+        isLazy:
+          findImage?.classList.contains("lazyloaded") ||
+          findImage?.classList.contains("lazyload"),
+      }),
+    };
+  } else if (name === "TTFB") {
+    const navEntry = performance.getEntriesByType("navigation")[0];
+
+    safeAttribution = {
+      dnsLookup: navEntry?.domainLookupEnd - navEntry?.domainLookupStart,
+      tcpConnection: navEntry?.connectEnd - navEntry?.connectStart,
+      responseStart: navEntry?.responseStart,
+      requestStart: navEntry?.requestStart,
     };
   }
 
@@ -266,7 +252,6 @@ function handleMetric(metric) {
     id,
     delta,
     attribution: safeAttribution,
-    ...debugInfo,
     timestamp: Date.now(),
   });
 }
@@ -345,8 +330,10 @@ queueEvent({
   timestamp: Date.now(),
 });
 
-window.addEventListener("beforeunload", () => {
-  if (thirdPartyAssetDomains.size > 0) {
+let assetSummarySent = false;
+
+function flushMetrics() {
+  if (!assetSummarySent && thirdPartyAssetDomains.size > 0) {
     queueEvent({
       type: "third-party-asset-summary",
       count: thirdPartyAssetDomains.size,
@@ -355,6 +342,8 @@ window.addEventListener("beforeunload", () => {
       siteDomain,
       timestamp: Date.now(),
     });
+
+    assetSummarySent = true;
   }
 
   if (batchedData.length > 0) {
@@ -368,5 +357,9 @@ window.addEventListener("beforeunload", () => {
         data: batchedData,
       })
     );
+
+    batchedData.length = 0; // clear after sending
   }
-});
+}
+
+window.addEventListener("beforeunload", flushMetrics);

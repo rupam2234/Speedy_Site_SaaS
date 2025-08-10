@@ -396,8 +396,7 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
               <div className="text-xs text-muted-foreground">
                 Min: {item.min_cls_value.toFixed(3)} | Max:{" "}
                 {item.max_cls_value.toFixed(3)} | Avg:{" "}
-                {item.avg_cls_value.toFixed(3)} | Occurrences:{" "}
-                {item.occurrence_count}
+                {item.avg_cls_value.toFixed(3)}
               </div>
             </div>
           ))}
@@ -412,7 +411,7 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
           </div>
 
           {selectedItem ? (
-            <div className="p-5 border rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+            <div className="p-5 border rounded-lg bg-primary-foreground dark:bg-secondary-background">
               <div className="space-y-6">
                 <p className="font-medium text-sm text-primary">
                   <span className="text-orange-500/70">

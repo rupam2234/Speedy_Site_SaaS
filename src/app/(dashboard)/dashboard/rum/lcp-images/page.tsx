@@ -47,11 +47,15 @@ export default function LcpImageDebugger() {
     }
   }, [selectedSite, rumDateRange]);
 
+  function isImageUrl(url: string): boolean {
+    return /\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(url);
+  }
+
   // Recompute sorted + filtered data only when inputs change
   const lcpImageData = useMemo(() => {
-    const filtered = rawLcpImageData.filter(
-      (item) => item.device_type === selectedDevice || !selectedDevice
-    );
+    const filtered = rawLcpImageData
+      .filter((item) => item.device_type === selectedDevice || !selectedDevice)
+      .filter((item) => isImageUrl(item.image_url)); // <== Filter invalid image URLs
 
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "avg_lcp") {
@@ -79,7 +83,7 @@ export default function LcpImageDebugger() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedSite,
-          date_range: rumDateRange,
+          date_range: "24hours",
         }),
       });
 
@@ -159,7 +163,7 @@ export default function LcpImageDebugger() {
                     href={metric.image_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs hover:underline md:max-w-[600px]"
+                    className="text-xs hover:underline max-w-[600px] block truncate"
                   >
                     {metric.image_url.split("/").pop()}
                   </a>

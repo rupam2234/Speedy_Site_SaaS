@@ -8,7 +8,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { BeatLoader } from "react-spinners";
 import { ChartPie } from "lucide-react";
 import * as echarts from "echarts/core";
 import {
@@ -21,7 +20,6 @@ import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
 import { useTheme } from "@/components/theme/ThemeProvider";
 
-// Register ECharts components
 echarts.use([
   TitleComponent,
   TooltipComponent,
@@ -119,17 +117,25 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
+  const normalizeDeviceType = (device: string | undefined) =>
+    device?.toLowerCase().trim();
+
   const filteredData = useMemo(() => {
-    return data
+    console.log("selectedDevice:", selectedDevice);
+    console.log("data:", data);
+    const filtered = data
       .filter(
         (item) =>
-          item.device_type?.toLowerCase() === selectedDevice?.toLowerCase()
+          normalizeDeviceType(item.device_type) ===
+          normalizeDeviceType(selectedDevice)
       )
       .sort((a, b) => {
         const valA = Number(a[sortKey as keyof TTFBData]) || 0;
         const valB = Number(b[sortKey as keyof TTFBData]) || 0;
         return valB - valA;
       });
+    console.log("filteredData:", filtered);
+    return filtered;
   }, [data, selectedDevice, sortKey]);
 
   const selectedData = filteredData.find(
@@ -148,8 +154,17 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
   }, [selectedData, urlSortKey, urlSortOrder]);
 
   useEffect(() => {
-    if (filteredData.length > 0 && !selectedConnection) {
-      setSelectedConnection(filteredData[0].connection_type);
+    if (filteredData.length > 0) {
+      const validConnection = filteredData.find(
+        (item) => item.connection_type === selectedConnection
+      );
+      if (!validConnection) {
+        console.log(
+          "Setting selectedConnection to:",
+          filteredData[0].connection_type
+        );
+        setSelectedConnection(filteredData[0].connection_type);
+      }
     }
   }, [filteredData, selectedConnection]);
 
@@ -190,22 +205,22 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
             {
               value: Math.round(p75_dns_duration),
               name: "DNS",
-              itemStyle: { color: "#4B8BBE" }, // Blue for DNS
+              itemStyle: { color: "#4B8BBE" },
             },
             {
               value: Math.round(p75_connection_duration),
               name: "Connection",
-              itemStyle: { color: "#FFD166" }, // Yellow for Connection
+              itemStyle: { color: "#FFD166" },
             },
             {
               value: Math.round(p75_request_duration),
               name: "Request",
-              itemStyle: { color: "#06D6A0" }, // Green for Request
+              itemStyle: { color: "#06D6A0" },
             },
             {
               value: Math.round(p75_waiting_duration),
               name: "Waiting",
-              itemStyle: { color: "#EF476F" }, // Red for Waiting
+              itemStyle: { color: "#EF476F" },
             },
           ],
           emphasis: {
@@ -255,15 +270,18 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
     }
   };
 
-  if (!filteredData.length || !selectedData) {
+  if (!filteredData.length) {
     return (
-      <div className="sweet-loading">
-        <BeatLoader
-          color="#66cc8f"
-          loading={true}
-          data-testid="loader"
-          size={10}
-        />
+      <div className="text-center text-sm text-muted-foreground">
+        No data available for {selectedDevice}.
+      </div>
+    );
+  }
+
+  if (!selectedData) {
+    return (
+      <div className="text-center text-sm text-muted-foreground">
+        No connection data available for {selectedDevice}.
       </div>
     );
   }

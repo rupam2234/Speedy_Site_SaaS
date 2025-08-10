@@ -1,6 +1,5 @@
 import {
   onCLS,
-  onINP,
   onLCP,
   onFCP,
   onTTFB,
@@ -9,8 +8,23 @@ import {
   LCPThresholds,
 } from "web-vitals/attribution";
 
-const FCPThresholds = [1800, 3000];
-const TTFBThresholds = [800, 1800];
+const CONFIG = {
+  API_URL: "https://event-buffer.thespeedysite.workers.dev/collect",
+  COOKIE_MAX_AGE: 2592000, // 30 days
+  MAX_EVENTS_PER_SESSION: 100,
+  FCP_THRESHOLDS: [1800, 3000],
+  TTFB_THRESHOLDS: [800, 1800],
+  AI_CITATION_WEIGHTS: {
+    domContentLoaded: 0.3,
+    ttfb: 0.25,
+    contentTypeScore: 0.1,
+    semanticMarkupScore: 0.2,
+    docSizeScore: 0.15,
+  },
+};
+
+const FCPThresholds = CONFIG.FCP_THRESHOLDS;
+const TTFBThresholds = CONFIG.TTFB_THRESHOLDS;
 const siteDomain = location.hostname;
 
 let previousPage = document.referrer || null;
@@ -24,7 +38,7 @@ function getCookie(name) {
 }
 
 function setCookie(name, value) {
-  document.cookie = `${name}=${value}; path=/; max-age=2592000`; // 30 days
+  document.cookie = `${name}=${value}; path=/; max-age=${CONFIG.COOKIE_MAX_AGE}; Secure; SameSite=Strict`;
 }
 
 let sessionId = getCookie("sessionId");
@@ -42,14 +56,6 @@ const latestMetrics = {
   TTFB: null,
 };
 
-const AI_CITATION_WEIGHTS = {
-  domContentLoaded: 0.3,
-  ttfb: 0.25,
-  contentTypeScore: 0.1,
-  semanticMarkupScore: 0.2,
-  docSizeScore: 0.15,
-};
-
 const aiCitationMetrics = {
   domContentLoaded: null,
   ttfb: null,
@@ -58,18 +64,115 @@ const aiCitationMetrics = {
   docSize: null,
 };
 
-// === Initialize Web Vitals (final values only) ===
-
+// === Initialize Web Vitals ===
 function initializeWebVitals() {
-  onCLS(handleMetric, { reportAllChanges: true });
-  onINP(handleMetric, { reportAllChanges: true });
-  onLCP(handleMetric, { reportAllChanges: true });
-  onFCP(handleMetric);
-  onTTFB((metric) => {
-    handleMetric(metric);
-    aiCitationMetrics.ttfb = metric.value;
-    runAICitation();
-  });
+  onCLS(handleCLS, { reportAllChanges: true });
+  onLCP(handleLCP, { reportAllChanges: true });
+  onFCP(handleFCP);
+  onTTFB(handleTTFB);
+
+  if (
+    "PerformanceObserver" in window &&
+    PerformanceObserver.supportedEntryTypes.includes("event")
+  ) {
+    let maxINP = null;
+
+    function summarizeElement(el) {
+      if (!el || !el.tagName) return "(unknown)";
+
+      function isSignificantElement(element) {
+        if (!element || !element.tagName) return false;
+        const tagName = element.tagName.toLowerCase();
+        const hasId = !!element.id;
+        const hasClass =
+          element.className &&
+          typeof element.className === "string" &&
+          element.className.trim() !== "";
+        const isSemantic = [
+          "article",
+          "main",
+          "header",
+          "footer",
+          "nav",
+          "section",
+          "aside",
+        ].includes(tagName);
+        return hasId || hasClass || isSemantic;
+      }
+
+      let currentEl = el;
+      while (
+        currentEl &&
+        currentEl.tagName &&
+        !isSignificantElement(currentEl) &&
+        currentEl.parentElement
+      ) {
+        currentEl = currentEl.parentElement;
+      }
+
+      if (!currentEl || !currentEl.tagName) return "(unknown)";
+
+      let summary = `<${currentEl.tagName.toLowerCase()}`;
+      if (currentEl.id) summary += ` id="${currentEl.id}"`;
+      if (currentEl.className && typeof currentEl.className === "string")
+        summary += ` class="${currentEl.className}"`;
+      summary += ">";
+      return summary;
+    }
+
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (
+          [
+            "click",
+            "mousedown",
+            "mouseup",
+            "pointerdown",
+            "pointerup",
+            "keydown",
+            "keyup",
+            "touchstart",
+            "touchend",
+          ].includes(entry.name)
+        ) {
+          if (!maxINP || entry.duration > maxINP.duration) {
+            maxINP = entry;
+            latestMetrics.INP = {
+              name: "INP",
+              value: entry.duration,
+              delta: entry.duration,
+              id: sessionId,
+              currentPage: location.pathname + location.search,
+              attribution: {
+                target: summarizeElement(entry.target),
+                eventType: entry.name,
+                inputDelay: entry.processingStart - entry.startTime,
+                processingTime:
+                  entry.duration - (entry.processingStart - entry.startTime),
+                presentationDelay: 0,
+              },
+            };
+          }
+        }
+      }
+    });
+
+    observer.observe({
+      type: "event",
+      buffered: true,
+      durationThreshold: 0,
+    });
+  } else {
+    console.warn(
+      "PerformanceObserver or 'event' entry type not supported; INP tracking disabled."
+    );
+    queueEvent({
+      type: "error",
+      message: "PerformanceObserver or 'event' entry type not supported",
+      siteDomain,
+      timestamp: Date.now(),
+    });
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -78,9 +181,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 initializeWebVitals();
 
+let cachedSemanticScore = null;
 function computeSemanticMarkupScore() {
+  if (cachedSemanticScore !== null) return cachedSemanticScore;
   const tags = ["article", "main", "header", "footer", "nav", "section"];
-  return tags.filter((tag) => document.querySelector(tag)).length / tags.length;
+  cachedSemanticScore =
+    tags.filter((tag) => document.querySelector(tag)).length / tags.length;
+  return cachedSemanticScore;
 }
 
 function getDocSizeScore() {
@@ -101,11 +208,11 @@ function computeAICitationScore(m) {
 
   return Number(
     (
-      dom * AI_CITATION_WEIGHTS.domContentLoaded +
-      ttfb * AI_CITATION_WEIGHTS.ttfb +
-      type * AI_CITATION_WEIGHTS.contentTypeScore +
-      semantic * AI_CITATION_WEIGHTS.semanticMarkupScore +
-      doc * AI_CITATION_WEIGHTS.docSizeScore
+      dom * CONFIG.AI_CITATION_WEIGHTS.domContentLoaded +
+      ttfb * CONFIG.AI_CITATION_WEIGHTS.ttfb +
+      type * CONFIG.AI_CITATION_WEIGHTS.contentTypeScore +
+      semantic * CONFIG.AI_CITATION_WEIGHTS.semanticMarkupScore +
+      doc * CONFIG.AI_CITATION_WEIGHTS.docSizeScore
     ).toFixed(2) * 100
   );
 }
@@ -120,7 +227,8 @@ function runAICitation() {
   aiCitationMetrics.docSize = getDocSizeScore();
   aiCitationMetrics.contentType =
     document.contentType ||
-    document.querySelector("meta[http-equiv='Content-Type']")?.content;
+    document.querySelector("meta[http-equiv='Content-Type']")?.content ||
+    "unknown";
 
   const score = computeAICitationScore(aiCitationMetrics);
 
@@ -141,87 +249,77 @@ function classifyMetric(value, thresholds) {
 }
 
 function queueEvent(event) {
+  console.debug("Queuing event:", event);
+  if (batchedData.length >= CONFIG.MAX_EVENTS_PER_SESSION) {
+    console.warn("Event queue limit reached; flushing early.");
+    flushMetrics();
+  }
   batchedData.push({ ...event, sessionId });
 }
 
-function handleMetric(metric) {
-  const { name, value, delta, id, attribution } = metric;
+function handleCLS(metric) {
+  latestMetrics.CLS = metric.value;
+  const rating = classifyMetric(metric.value, CLSThresholds);
+  queueEvent({
+    type: "web-vital",
+    siteDomain,
+    name: "CLS",
+    value: metric.value,
+    rating,
+    id: metric.id,
+    delta: metric.delta,
+    attribution: {
+      largestShiftTarget: metric.attribution?.largestShiftTarget,
+      largestShiftTime: metric.attribution?.largestShiftTime,
+    },
+    timestamp: Date.now(),
+  });
+}
 
-  let rating;
-  switch (name) {
-    case "CLS":
-      latestMetrics.CLS = value;
-      rating = classifyMetric(value, CLSThresholds);
-      break;
-    case "INP":
-      latestMetrics.INP = value;
-      rating = classifyMetric(value, INPThresholds);
-      break;
-    case "LCP":
-      latestMetrics.LCP = value;
-      rating = classifyMetric(value, LCPThresholds);
-      break;
-    case "FCP":
-      latestMetrics.FCP = value;
-      rating = classifyMetric(value, FCPThresholds);
-      break;
-    case "TTFB":
-      latestMetrics.TTFB = value;
-      rating = classifyMetric(value, TTFBThresholds);
-      break;
-    default:
-      return;
-  }
+// final INP is being handled on flushMetrics before unloading data
 
-  let safeAttribution = {};
+function handleLCP(metric) {
+  latestMetrics.LCP = metric.value;
+  const rating = classifyMetric(metric.value, LCPThresholds);
   const resourceEntries = performance.getEntriesByType("resource");
+  const isImage =
+    metric.attribution?.target?.tagName?.toLowerCase() === "img" ||
+    metric.attribution?.url?.match(/\.(jpe?g|png|webp|gif|avif|svg)$/i);
 
-  if (name === "CLS") {
-    safeAttribution = {
-      largestShiftTarget: attribution?.largestShiftTarget,
-      largestShiftTime: attribution?.largestShiftTime,
-    };
-  } else if (name === "INP") {
-    safeAttribution = {
-      target: attribution?.target,
-      eventType: attribution?.eventType,
-      inputDelay: attribution?.inputDelay,
-      processingTime: attribution?.processingTime,
-      presentationDelay: attribution?.presentationDelay,
-    };
-  } else if (name === "LCP") {
-    const isImage =
-      attribution?.target?.tagName?.toLowerCase() === "img" ||
-      attribution?.url?.match(/\.(jpe?g|png|webp|gif|avif|svg)$/i);
+  const entryByExactUrl =
+    metric.attribution?.url &&
+    resourceEntries.find((e) => e.name === metric.attribution.url);
 
-    const entryByExactUrl =
-      attribution?.url &&
-      resourceEntries.find((e) => e.name === attribution.url);
+  const entryByLooseMatch =
+    !entryByExactUrl &&
+    resourceEntries.find((e) =>
+      e.name.includes(metric.attribution?.url?.split("/").pop())
+    );
 
-    // due to cdn sometimes the url may change
-    const entryByLooseMatch =
-      !entryByExactUrl &&
-      resourceEntries.find((e) =>
-        e.name.includes(attribution?.url?.split("/").pop())
-      );
+  const matchedEntry = entryByExactUrl || entryByLooseMatch;
 
-    const matchedEntry = entryByExactUrl || entryByLooseMatch;
+  const findImage =
+    isImage && metric.attribution?.target instanceof HTMLImageElement
+      ? metric.attribution.target
+      : (metric.attribution?.url &&
+          document?.querySelector(`img[src="${metric.attribution?.url}"]`)) ||
+        null;
 
-    // find image exact element
-    const findImage =
-      isImage && attribution?.target instanceof HTMLImageElement
-        ? attribution.target
-        : (attribution?.url &&
-            document?.querySelector(`img[src="${attribution?.url}"]`)) ||
-          null;
-
-    safeAttribution = {
-      target: attribution?.target,
-      resourceLoadDelay: attribution?.resourceLoadDelay,
-      resourceLoadDuration: attribution?.resourceLoadDuration,
-      elementRenderDelay: attribution?.elementRenderDelay,
-      timeToFirstByte: attribution?.timeToFirstByte,
-      url: attribution?.url,
+  queueEvent({
+    type: "web-vital",
+    siteDomain,
+    name: "LCP",
+    value: metric.value,
+    rating,
+    id: metric.id,
+    delta: metric.delta,
+    attribution: {
+      target: metric.attribution?.target,
+      resourceLoadDelay: metric.attribution?.resourceLoadDelay,
+      resourceLoadDuration: metric.attribution?.resourceLoadDuration,
+      elementRenderDelay: metric.attribution?.elementRenderDelay,
+      timeToFirstByte: metric.attribution?.timeToFirstByte,
+      url: metric.attribution?.url,
       ...(isImage && {
         decodedBodySize: matchedEntry?.decodedBodySize ?? null,
         transferSize: matchedEntry?.transferSize ?? null,
@@ -231,29 +329,49 @@ function handleMetric(metric) {
           findImage?.classList.contains("lazyloaded") ||
           findImage?.classList.contains("lazyload"),
       }),
-    };
-  } else if (name === "TTFB") {
-    const navEntry = performance.getEntriesByType("navigation")[0];
+    },
+    timestamp: Date.now(),
+  });
+}
 
-    safeAttribution = {
+function handleFCP(metric) {
+  latestMetrics.FCP = metric.value;
+  const rating = classifyMetric(metric.value, FCPThresholds);
+  queueEvent({
+    type: "web-vital",
+    siteDomain,
+    name: "FCP",
+    value: metric.value,
+    rating,
+    id: metric.id,
+    delta: metric.delta,
+    attribution: {},
+    timestamp: Date.now(),
+  });
+}
+
+function handleTTFB(metric) {
+  latestMetrics.TTFB = metric.value;
+  const rating = classifyMetric(metric.value, TTFBThresholds);
+  const navEntry = performance.getEntriesByType("navigation")[0];
+  queueEvent({
+    type: "web-vital",
+    siteDomain,
+    name: "TTFB",
+    value: metric.value,
+    rating,
+    id: metric.id,
+    delta: metric.delta,
+    attribution: {
       dnsLookup: navEntry?.domainLookupEnd - navEntry?.domainLookupStart,
       tcpConnection: navEntry?.connectEnd - navEntry?.connectStart,
       responseStart: navEntry?.responseStart,
       requestStart: navEntry?.requestStart,
-    };
-  }
-
-  queueEvent({
-    type: "web-vital",
-    siteDomain,
-    name,
-    value,
-    rating,
-    id,
-    delta,
-    attribution: safeAttribution,
+    },
     timestamp: Date.now(),
   });
+  aiCitationMetrics.ttfb = metric.value;
+  runAICitation();
 }
 
 // === Asset Summary ===
@@ -271,9 +389,13 @@ new PerformanceObserver((list) => {
     ) {
       try {
         const url = new URL(entry.name);
-        thirdPartyAssetDomains.add(url.hostname);
-        thirdPartyAssetTypes.add(entry.initiatorType);
-      } catch {}
+        if (url.hostname) {
+          thirdPartyAssetDomains.add(url.hostname);
+          thirdPartyAssetTypes.add(entry.initiatorType);
+        }
+      } catch (error) {
+        console.warn(`Invalid URL in resource entry: ${entry.name}`, error);
+      }
     }
   }
 }).observe({ type: "resource", buffered: true });
@@ -302,7 +424,10 @@ function getDeviceType() {
   });
 
   fetch("https://ipapi.co/json/")
-    .then((res) => res.json())
+    .then((res) => {
+      if (!res.ok) throw new Error("Geo API request failed");
+      return res.json();
+    })
     .then((geo) => {
       const { country_code, country_name, region, country, org } = geo;
       queueEvent({
@@ -316,7 +441,15 @@ function getDeviceType() {
         timestamp: Date.now(),
       });
     })
-    .catch(() => {});
+    .catch((error) => {
+      console.error("Geo API fetch failed:", error);
+      queueEvent({
+        type: "error",
+        message: `Geo API fetch failed: ${error.message}`,
+        siteDomain,
+        timestamp: Date.now(),
+      });
+    });
 })();
 
 queueEvent({
@@ -331,34 +464,73 @@ queueEvent({
 });
 
 let assetSummarySent = false;
+let isFlushing = false;
 
 function flushMetrics() {
-  if (!assetSummarySent && thirdPartyAssetDomains.size > 0) {
-    queueEvent({
-      type: "third-party-asset-summary",
-      count: thirdPartyAssetDomains.size,
-      assetTypes: Array.from(thirdPartyAssetTypes),
-      domains: Array.from(thirdPartyAssetDomains),
-      siteDomain,
-      timestamp: Date.now(),
-    });
+  if (isFlushing) return;
+  isFlushing = true;
 
-    assetSummarySent = true;
-  }
+  try {
+    if (!assetSummarySent && thirdPartyAssetDomains.size > 0) {
+      queueEvent({
+        type: "third-party-asset-summary",
+        count: thirdPartyAssetDomains.size,
+        assetTypes: Array.from(thirdPartyAssetTypes),
+        domains: Array.from(thirdPartyAssetDomains),
+        siteDomain,
+        timestamp: Date.now(),
+      });
+      assetSummarySent = true;
+    }
 
-  if (batchedData.length > 0) {
-    navigator.sendBeacon(
-      "https://event-buffer.thespeedysite.workers.dev/collect",
-      JSON.stringify({
+    // Queue the maximum INP event if it exists
+    if (latestMetrics.INP) {
+      const rating = classifyMetric(latestMetrics.INP.value, INPThresholds);
+      queueEvent({
+        type: "web-vital",
+        siteDomain,
+        name: "INP",
+        value: latestMetrics.INP.value,
+        rating,
+        id: latestMetrics.INP.id,
+        delta: latestMetrics.INP.delta,
+        attribution: {
+          target: latestMetrics.INP.attribution.target,
+          eventType: latestMetrics.INP.attribution.eventType,
+          inputDelay: latestMetrics.INP.attribution.inputDelay,
+          processingTime: latestMetrics.INP.attribution.processingTime,
+          presentationDelay: latestMetrics.INP.attribution.presentationDelay,
+        },
+        timestamp: Date.now(),
+      });
+    }
+
+    if (batchedData.length > 0) {
+      const payload = JSON.stringify({
         sessionId,
         siteDomain,
         currentPage,
         previousPage,
         data: batchedData,
-      })
-    );
+      });
 
-    batchedData.length = 0; // clear after sending
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(CONFIG.API_URL, payload);
+      } else {
+        fetch(CONFIG.API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true,
+        }).catch((error) => {
+          console.error("Failed to send metrics via fetch:", error);
+        });
+      }
+
+      batchedData.length = 0;
+    }
+  } finally {
+    isFlushing = false;
   }
 }
 

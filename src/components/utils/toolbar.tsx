@@ -38,6 +38,14 @@ export default function DashboardToolbar() {
     setRumDateRange,
   } = useSiteContext();
 
+  const rumOverview = pathname === `/dashboard/rum/overview`;
+  const isOnCWVPage = pathname === `/dashboard/cwv`;
+  const isLab =
+    pathname.includes("/dashboard/pages") ||
+    pathname.includes("/dashboard/cwv");
+  const isOnRum =
+    pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv`;
+  const pageGroupsRum = pathname === "/dashboard/rum/pages";
   const isRumPath = pathname.includes("rum");
 
   const DateRangeData: DateRangeProps[] = isRumPath
@@ -56,11 +64,35 @@ export default function DashboardToolbar() {
         { id: "thisYear", range: "This Year" },
       ];
 
+  const MaxSevenDays: DateRangeProps[] = pageGroupsRum
+    ? [
+        { id: "last7", range: "Last 7 Days" },
+        { id: "last24Hours", range: "Last 24 Hours" },
+      ]
+    : [];
+
   const [selectedRangeId, setSelectedRangeId] = useState<string>(
-    DateRangeData[2]?.id || "last7"
+    pageGroupsRum ? "last7" : DateRangeData[2]?.id || "last7"
   );
 
   useEffect(() => {
+    if (pageGroupsRum) {
+      const today = new Date();
+      let startDate = today.toISOString().split("T")[0];
+
+      if (selectedRangeId === "last7") {
+        const past = new Date(today);
+        past.setDate(today.getDate() - 6);
+        startDate = past.toISOString().split("T")[0];
+      }
+
+      setDateRange(startDate, today.toISOString().split("T")[0]);
+      setRumDateRange(
+        selectedRangeId as unknown as "7days" | "24hours" | "30days" | "90days"
+      );
+      return;
+    }
+
     const dateRanges = GetDateRange(selectedRangeId);
     setDateRange(dateRanges[0], dateRanges[1]);
 
@@ -82,7 +114,7 @@ export default function DashboardToolbar() {
           setRumDateRange("7days");
       }
     }
-  }, [selectedRangeId, isRumPath]);
+  }, [selectedRangeId, isRumPath, pageGroupsRum]);
 
   const allowedPaths = [
     `/dashboard/cwv`,
@@ -97,19 +129,11 @@ export default function DashboardToolbar() {
   const isToolbarVisible = allowedPaths.includes(pathname);
   if (!isToolbarVisible) return null;
 
-  const rumOverview = pathname === `/dashboard/rum/overview`;
-  const isOnCWVPage = pathname === `/dashboard/cwv`;
-  const isLab =
-    pathname.includes("/dashboard/pages") ||
-    pathname.includes("/dashboard/cwv");
-  const isOnRum =
-    pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv`;
-
   function selectDevice(device: "Desktop" | "Mobile" | "Tablet" | "All") {
     setSelectedDevice(device);
   }
 
-  const selectedRange = DateRangeData.find(
+  const selectedRange = (pageGroupsRum ? MaxSevenDays : DateRangeData).find(
     (item) => item.id === selectedRangeId
   );
 
@@ -165,126 +189,70 @@ export default function DashboardToolbar() {
 
   return (
     <div className="flex flex-col md:flex-row p-5 w-full items-start gap-3 md:justify-between bg-transparent">
-      {/* Left Section */}
       <div className="flex gap-3 md:items-center items-start flex-col md:flex-row">
-        {/* Device toggle for rum dashboard */}
         {rumOverview && !isLab && (
           <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
-              <button
-                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                  selectedDevice === "Desktop"
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                }`}
-                onClick={() => selectDevice("Desktop")}
-              >
-                Desktop
-              </button>
-              <button
-                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                  selectedDevice === "Mobile"
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                }`}
-                onClick={() => selectDevice("Mobile")}
-              >
-                Mobile
-              </button>
-              <button
-                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                  selectedDevice === "Tablet"
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                }`}
-                onClick={() => selectDevice("Tablet")}
-              >
-                Tablet
-              </button>
-              <button
-                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                  selectedDevice === "All"
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                }`}
-                onClick={() => selectDevice("All")}
-              >
-                All
-              </button>
+              {["Desktop", "Mobile", "Tablet", "All"].map((device) => (
+                <button
+                  key={device}
+                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                    selectedDevice === device
+                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                      : ``
+                  }`}
+                  onClick={() => selectDevice(device as any)}
+                >
+                  {device}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* device toggle for rum * excluding dashbaord */}
         {!rumOverview && !isLab && (
           <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
-              <button
-                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                  selectedDevice === "Desktop"
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                }`}
-                onClick={() => selectDevice("Desktop")}
-              >
-                Desktop
-              </button>
-              <button
-                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                  selectedDevice === "Mobile"
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                }`}
-                onClick={() => selectDevice("Mobile")}
-              >
-                Mobile
-              </button>
-              <button
-                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                  selectedDevice === "Tablet"
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                }`}
-                onClick={() => selectDevice("Tablet")}
-              >
-                Tablet
-              </button>
+              {["Desktop", "Mobile", "Tablet"].map((device) => (
+                <button
+                  key={device}
+                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                    selectedDevice === device
+                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                      : ``
+                  }`}
+                  onClick={() => selectDevice(device as any)}
+                >
+                  {device}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* device toggle for lab */}
         {isLab && !rumOverview && (
           <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
-              <button
-                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                  selectedDevice === "Desktop"
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                }`}
-                onClick={() => selectDevice("Desktop")}
-              >
-                Desktop
-              </button>
-              <button
-                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                  selectedDevice === "Mobile"
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                }`}
-                onClick={() => selectDevice("Mobile")}
-              >
-                Mobile
-              </button>
+              {["Desktop", "Mobile"].map((device) => (
+                <button
+                  key={device}
+                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                    selectedDevice === device
+                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                      : ``
+                  }`}
+                  onClick={() => selectDevice(device as any)}
+                >
+                  {device}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Distribution toggle (only for CWV page) */}
         {isOnCWVPage && (
           <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-[160px] border-[1px] px-1 rounded-sm">
             <div className="flex justify-between items-center pl-2 py-[2px] w-full">
@@ -335,7 +303,6 @@ export default function DashboardToolbar() {
           </div>
         )}
 
-        {/* RUM Distribution */}
         {isOnRum && (
           <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
             <TooltipIcon
@@ -377,7 +344,6 @@ export default function DashboardToolbar() {
         )}
       </div>
 
-      {/* Right: Date Range Dropdown */}
       {!rumOverview && (
         <div className="p-[2px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
           <div className="flex gap-2 w-[220px] justify-between items-center pl-2">
@@ -390,17 +356,20 @@ export default function DashboardToolbar() {
               </SelectTrigger>
               <SelectContent className="w-[200px] md:mr-[10px]">
                 <SelectGroup>
-                  {DateRangeData.map((item, index) => (
-                    <SelectItem value={item.id} key={index}>
-                      {item.range}
-                    </SelectItem>
-                  ))}
+                  {(pageGroupsRum ? MaxSevenDays : DateRangeData).map(
+                    (item, index) => (
+                      <SelectItem value={item.id} key={index}>
+                        {item.range}
+                      </SelectItem>
+                    )
+                  )}
                 </SelectGroup>
               </SelectContent>
             </Select>
           </div>
         </div>
       )}
+
       {rumOverview && (
         <span className="flex md:mt-3 gap-3 item-center cursor-help text-accent-foreground/80 dark:text-accent-foreground font-semibold">
           <div className="relative flex items-center justify-center mt-1 w-4 h-4">

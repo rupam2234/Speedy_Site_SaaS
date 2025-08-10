@@ -3,11 +3,11 @@
 import {
   Activity,
   CreditCard,
-  FlaskConical,
   HeartPulse,
   LayoutDashboardIcon,
   Settings2,
   User2Icon,
+  Waypoints,
 } from "lucide-react";
 import {
   Sidebar,
@@ -79,18 +79,18 @@ export default function AppSidebar({
       ],
     },
     navMain: [
-      {
-        title: "Lab Reports",
-        url: "#",
-        icon: FlaskConical,
-        isActive: true,
-        items: [
-          {
-            title: "Pages",
-            url: `/dashboard/pages?site=${selectedSite}`,
-          },
-        ],
-      },
+      // {
+      //   title: "Lab Reports",
+      //   url: "#",
+      //   icon: FlaskConical,
+      //   isActive: true,
+      //   items: [
+      //     {
+      //       title: "Page",
+      //       url: `/dashboard/pages?site=${selectedSite}`,
+      //     },
+      //   ],
+      // },
       {
         title: "Real User Monitoring",
         url: "#",
@@ -110,8 +110,24 @@ export default function AppSidebar({
             url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
           },
           {
-            title: "Pages",
+            title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
+          },
+        ],
+      },
+      {
+        title: "User Journey",
+        url: "#",
+        icon: Waypoints,
+        isActive: true,
+        items: [
+          {
+            title: "Funnels",
+            url: `/dashboard/funnels?site=${selectedSite}`,
+          },
+          {
+            title: "Configure Journey",
+            url: `/dashboard/configure?site=${selectedSite}`,
           },
         ],
       },
