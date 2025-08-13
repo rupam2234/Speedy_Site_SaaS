@@ -47,6 +47,7 @@ export default function DashboardToolbar() {
     pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv`;
   const pageGroupsRum = pathname === "/dashboard/rum/pages";
   const isRumPath = pathname.includes("rum");
+  const isJourney = pathname === "/dashboard/funnels";
 
   const DateRangeData: DateRangeProps[] = isRumPath
     ? [
@@ -124,6 +125,7 @@ export default function DashboardToolbar() {
     `/dashboard`,
     `/dashboard/rum/lcp-images`,
     `/dashboard/rum/pages`,
+    `/dashboard/funnels`,
   ];
 
   const isToolbarVisible = allowedPaths.includes(pathname);
@@ -211,7 +213,7 @@ export default function DashboardToolbar() {
           </div>
         )}
 
-        {!rumOverview && !isLab && (
+        {!rumOverview && !isLab && !isJourney && (
           <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
@@ -237,6 +239,27 @@ export default function DashboardToolbar() {
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
               {["Desktop", "Mobile"].map((device) => (
+                <button
+                  key={device}
+                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                    selectedDevice === device
+                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                      : ``
+                  }`}
+                  onClick={() => selectDevice(device as any)}
+                >
+                  {device}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isJourney && (
+          <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
+            <div className="flex gap-2 w-full items-center px-2">
+              <MonitorSmartphone size={18} className="mr-2" />
+              {["Desktop", "Mobile", "Tablet"].map((device) => (
                 <button
                   key={device}
                   className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
@@ -344,7 +367,7 @@ export default function DashboardToolbar() {
         )}
       </div>
 
-      {!rumOverview && (
+      {!rumOverview && !isJourney && (
         <div className="p-[2px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
           <div className="flex gap-2 w-[220px] justify-between items-center pl-2">
             <CalendarArrowDown size={18} className="mr-2" />

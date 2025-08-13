@@ -160,7 +160,6 @@ export default function DistributionChart({ metric_key }: ChartProps) {
         borderWidth: 0,
         formatter: (params: any) => {
           const param = params;
-          console.log(param);
           const metric_key_data = cwv_metrics?.find(
             (x) => x.key === (metric_key as string)
           );

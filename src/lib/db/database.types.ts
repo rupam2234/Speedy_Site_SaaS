@@ -4,2260 +4,2628 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[]
+  | Json[];
 
 export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
-  }
+    PostgrestVersion: "12.2.3 (519615d)";
+  };
   public: {
     Tables: {
       credit: {
         Row: {
-          id: string
-          lab_credits: number | null
-          module: string
-          period_end: string
-          period_start: string
-          rum_pageviews: number | null
-          site_id: string
-          updated_at: string | null
-          user_email: string | null
-          user_id: string
-        }
+          id: string;
+          lab_credits: number | null;
+          module: string;
+          period_end: string;
+          period_start: string;
+          rum_pageviews: number | null;
+          site_id: string;
+          updated_at: string | null;
+          user_email: string | null;
+          user_id: string;
+        };
         Insert: {
-          id?: string
-          lab_credits?: number | null
-          module: string
-          period_end: string
-          period_start: string
-          rum_pageviews?: number | null
-          site_id: string
-          updated_at?: string | null
-          user_email?: string | null
-          user_id: string
-        }
+          id?: string;
+          lab_credits?: number | null;
+          module: string;
+          period_end: string;
+          period_start: string;
+          rum_pageviews?: number | null;
+          site_id: string;
+          updated_at?: string | null;
+          user_email?: string | null;
+          user_id: string;
+        };
         Update: {
-          id?: string
-          lab_credits?: number | null
-          module?: string
-          period_end?: string
-          period_start?: string
-          rum_pageviews?: number | null
-          site_id?: string
-          updated_at?: string | null
-          user_email?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
+          id?: string;
+          lab_credits?: number | null;
+          module?: string;
+          period_end?: string;
+          period_start?: string;
+          rum_pageviews?: number | null;
+          site_id?: string;
+          updated_at?: string | null;
+          user_email?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       crux_jobs: {
         Row: {
-          created_at: string | null
-          domain: string | null
-          id: string
-          results: Json | null
-          status: string | null
-          updated_at: string | null
-          urls: string[]
-          user_id: string | null
-        }
+          created_at: string | null;
+          domain: string | null;
+          id: string;
+          results: Json | null;
+          status: string | null;
+          updated_at: string | null;
+          urls: string[];
+          user_id: string | null;
+        };
         Insert: {
-          created_at?: string | null
-          domain?: string | null
-          id?: string
-          results?: Json | null
-          status?: string | null
-          updated_at?: string | null
-          urls: string[]
-          user_id?: string | null
-        }
+          created_at?: string | null;
+          domain?: string | null;
+          id?: string;
+          results?: Json | null;
+          status?: string | null;
+          updated_at?: string | null;
+          urls: string[];
+          user_id?: string | null;
+        };
         Update: {
-          created_at?: string | null
-          domain?: string | null
-          id?: string
-          results?: Json | null
-          status?: string | null
-          updated_at?: string | null
-          urls?: string[]
-          user_id?: string | null
-        }
+          created_at?: string | null;
+          domain?: string | null;
+          id?: string;
+          results?: Json | null;
+          status?: string | null;
+          updated_at?: string | null;
+          urls?: string[];
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "crux_jobs_domain_fkey"
-            columns: ["domain"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["website_name"]
+            foreignKeyName: "crux_jobs_domain_fkey";
+            columns: ["domain"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["website_name"];
           },
           {
-            foreignKeyName: "crux_jobs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      daily_web_vitals: {
+            foreignKeyName: "crux_jobs_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      daily_web_metrics_summary: {
         Row: {
-          cls_avg: number | null
-          cls_max: number | null
-          cls_min: number | null
-          cls_p50: number | null
-          cls_p75: number | null
-          cls_p90: number | null
-          cls_p95: number | null
-          cls_p99: number | null
-          cls_samples: number | null
-          created_at: string | null
-          date: string
-          device_type: string
-          domain_name: string
-          fcp_avg: number | null
-          fcp_max: number | null
-          fcp_min: number | null
-          fcp_p50: number | null
-          fcp_p75: number | null
-          fcp_p90: number | null
-          fcp_p95: number | null
-          fcp_p99: number | null
-          fcp_samples: number | null
-          id: number
-          inp_avg: number | null
-          inp_max: number | null
-          inp_min: number | null
-          inp_p50: number | null
-          inp_p75: number | null
-          inp_p90: number | null
-          inp_p95: number | null
-          inp_p99: number | null
-          inp_samples: number | null
-          lcp_avg: number | null
-          lcp_max: number | null
-          lcp_min: number | null
-          lcp_p50: number | null
-          lcp_p75: number | null
-          lcp_p90: number | null
-          lcp_p95: number | null
-          lcp_p99: number | null
-          lcp_samples: number | null
-          page_view_count: number
-          ttfb_avg: number | null
-          ttfb_max: number | null
-          ttfb_min: number | null
-          ttfb_p50: number | null
-          ttfb_p75: number | null
-          ttfb_p90: number | null
-          ttfb_p95: number | null
-          ttfb_p99: number | null
-          ttfb_samples: number | null
-        }
+          avg_pages_per_session: number | null;
+          bounce_rate: number | null;
+          cls_good: number | null;
+          cls_needs_improvement: number | null;
+          cls_p50: number | null;
+          cls_p75: number | null;
+          cls_p90: number | null;
+          cls_p95: number | null;
+          cls_p99: number | null;
+          cls_poor: number | null;
+          country_distribution: Json;
+          created_at: string | null;
+          date_collected: string;
+          device_type: string;
+          domain_name: string;
+          fcp_good: number | null;
+          fcp_needs_improvement: number | null;
+          fcp_p50: number | null;
+          fcp_p75: number | null;
+          fcp_p90: number | null;
+          fcp_p95: number | null;
+          fcp_p99: number | null;
+          fcp_poor: number | null;
+          id: number;
+          inp_good: number | null;
+          inp_needs_improvement: number | null;
+          inp_p50: number | null;
+          inp_p75: number | null;
+          inp_p90: number | null;
+          inp_p95: number | null;
+          inp_p99: number | null;
+          inp_poor: number | null;
+          lcp_good: number | null;
+          lcp_needs_improvement: number | null;
+          lcp_p50: number | null;
+          lcp_p75: number | null;
+          lcp_p90: number | null;
+          lcp_p95: number | null;
+          lcp_p99: number | null;
+          lcp_poor: number | null;
+          total_pageviews: number;
+          total_sessions: number;
+          ttfb_good: number | null;
+          ttfb_needs_improvement: number | null;
+          ttfb_p50: number | null;
+          ttfb_p75: number | null;
+          ttfb_p90: number | null;
+          ttfb_p95: number | null;
+          ttfb_p99: number | null;
+          ttfb_poor: number | null;
+        };
         Insert: {
-          cls_avg?: number | null
-          cls_max?: number | null
-          cls_min?: number | null
-          cls_p50?: number | null
-          cls_p75?: number | null
-          cls_p90?: number | null
-          cls_p95?: number | null
-          cls_p99?: number | null
-          cls_samples?: number | null
-          created_at?: string | null
-          date: string
-          device_type: string
-          domain_name: string
-          fcp_avg?: number | null
-          fcp_max?: number | null
-          fcp_min?: number | null
-          fcp_p50?: number | null
-          fcp_p75?: number | null
-          fcp_p90?: number | null
-          fcp_p95?: number | null
-          fcp_p99?: number | null
-          fcp_samples?: number | null
-          id?: never
-          inp_avg?: number | null
-          inp_max?: number | null
-          inp_min?: number | null
-          inp_p50?: number | null
-          inp_p75?: number | null
-          inp_p90?: number | null
-          inp_p95?: number | null
-          inp_p99?: number | null
-          inp_samples?: number | null
-          lcp_avg?: number | null
-          lcp_max?: number | null
-          lcp_min?: number | null
-          lcp_p50?: number | null
-          lcp_p75?: number | null
-          lcp_p90?: number | null
-          lcp_p95?: number | null
-          lcp_p99?: number | null
-          lcp_samples?: number | null
-          page_view_count?: number
-          ttfb_avg?: number | null
-          ttfb_max?: number | null
-          ttfb_min?: number | null
-          ttfb_p50?: number | null
-          ttfb_p75?: number | null
-          ttfb_p90?: number | null
-          ttfb_p95?: number | null
-          ttfb_p99?: number | null
-          ttfb_samples?: number | null
-        }
+          avg_pages_per_session?: number | null;
+          bounce_rate?: number | null;
+          cls_good?: number | null;
+          cls_needs_improvement?: number | null;
+          cls_p50?: number | null;
+          cls_p75?: number | null;
+          cls_p90?: number | null;
+          cls_p95?: number | null;
+          cls_p99?: number | null;
+          cls_poor?: number | null;
+          country_distribution?: Json;
+          created_at?: string | null;
+          date_collected: string;
+          device_type: string;
+          domain_name: string;
+          fcp_good?: number | null;
+          fcp_needs_improvement?: number | null;
+          fcp_p50?: number | null;
+          fcp_p75?: number | null;
+          fcp_p90?: number | null;
+          fcp_p95?: number | null;
+          fcp_p99?: number | null;
+          fcp_poor?: number | null;
+          id?: never;
+          inp_good?: number | null;
+          inp_needs_improvement?: number | null;
+          inp_p50?: number | null;
+          inp_p75?: number | null;
+          inp_p90?: number | null;
+          inp_p95?: number | null;
+          inp_p99?: number | null;
+          inp_poor?: number | null;
+          lcp_good?: number | null;
+          lcp_needs_improvement?: number | null;
+          lcp_p50?: number | null;
+          lcp_p75?: number | null;
+          lcp_p90?: number | null;
+          lcp_p95?: number | null;
+          lcp_p99?: number | null;
+          lcp_poor?: number | null;
+          total_pageviews: number;
+          total_sessions: number;
+          ttfb_good?: number | null;
+          ttfb_needs_improvement?: number | null;
+          ttfb_p50?: number | null;
+          ttfb_p75?: number | null;
+          ttfb_p90?: number | null;
+          ttfb_p95?: number | null;
+          ttfb_p99?: number | null;
+          ttfb_poor?: number | null;
+        };
         Update: {
-          cls_avg?: number | null
-          cls_max?: number | null
-          cls_min?: number | null
-          cls_p50?: number | null
-          cls_p75?: number | null
-          cls_p90?: number | null
-          cls_p95?: number | null
-          cls_p99?: number | null
-          cls_samples?: number | null
-          created_at?: string | null
-          date?: string
-          device_type?: string
-          domain_name?: string
-          fcp_avg?: number | null
-          fcp_max?: number | null
-          fcp_min?: number | null
-          fcp_p50?: number | null
-          fcp_p75?: number | null
-          fcp_p90?: number | null
-          fcp_p95?: number | null
-          fcp_p99?: number | null
-          fcp_samples?: number | null
-          id?: never
-          inp_avg?: number | null
-          inp_max?: number | null
-          inp_min?: number | null
-          inp_p50?: number | null
-          inp_p75?: number | null
-          inp_p90?: number | null
-          inp_p95?: number | null
-          inp_p99?: number | null
-          inp_samples?: number | null
-          lcp_avg?: number | null
-          lcp_max?: number | null
-          lcp_min?: number | null
-          lcp_p50?: number | null
-          lcp_p75?: number | null
-          lcp_p90?: number | null
-          lcp_p95?: number | null
-          lcp_p99?: number | null
-          lcp_samples?: number | null
-          page_view_count?: number
-          ttfb_avg?: number | null
-          ttfb_max?: number | null
-          ttfb_min?: number | null
-          ttfb_p50?: number | null
-          ttfb_p75?: number | null
-          ttfb_p90?: number | null
-          ttfb_p95?: number | null
-          ttfb_p99?: number | null
-          ttfb_samples?: number | null
-        }
-        Relationships: []
-      }
+          avg_pages_per_session?: number | null;
+          bounce_rate?: number | null;
+          cls_good?: number | null;
+          cls_needs_improvement?: number | null;
+          cls_p50?: number | null;
+          cls_p75?: number | null;
+          cls_p90?: number | null;
+          cls_p95?: number | null;
+          cls_p99?: number | null;
+          cls_poor?: number | null;
+          country_distribution?: Json;
+          created_at?: string | null;
+          date_collected?: string;
+          device_type?: string;
+          domain_name?: string;
+          fcp_good?: number | null;
+          fcp_needs_improvement?: number | null;
+          fcp_p50?: number | null;
+          fcp_p75?: number | null;
+          fcp_p90?: number | null;
+          fcp_p95?: number | null;
+          fcp_p99?: number | null;
+          fcp_poor?: number | null;
+          id?: never;
+          inp_good?: number | null;
+          inp_needs_improvement?: number | null;
+          inp_p50?: number | null;
+          inp_p75?: number | null;
+          inp_p90?: number | null;
+          inp_p95?: number | null;
+          inp_p99?: number | null;
+          inp_poor?: number | null;
+          lcp_good?: number | null;
+          lcp_needs_improvement?: number | null;
+          lcp_p50?: number | null;
+          lcp_p75?: number | null;
+          lcp_p90?: number | null;
+          lcp_p95?: number | null;
+          lcp_p99?: number | null;
+          lcp_poor?: number | null;
+          total_pageviews?: number;
+          total_sessions?: number;
+          ttfb_good?: number | null;
+          ttfb_needs_improvement?: number | null;
+          ttfb_p50?: number | null;
+          ttfb_p75?: number | null;
+          ttfb_p90?: number | null;
+          ttfb_p95?: number | null;
+          ttfb_p99?: number | null;
+          ttfb_poor?: number | null;
+        };
+        Relationships: [];
+      };
+      journeys: {
+        Row: {
+          created_at: string | null;
+          id: number;
+          is_active: boolean | null;
+          name: string;
+          order_id: string;
+          session_key: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: number;
+          is_active?: boolean | null;
+          name: string;
+          order_id: string;
+          session_key?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: number;
+          is_active?: boolean | null;
+          name?: string;
+          order_id?: string;
+          session_key?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "journeys_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["order_id"];
+          }
+        ];
+      };
       orders: {
         Row: {
-          favicon_file: string | null
-          gsc_token: string | null
-          order_date: string
-          order_id: string
-          order_status: boolean
-          user_email: string
-          user_id: string | null
-          website_address: string
-          website_name: string
-        }
+          favicon_file: string | null;
+          gsc_token: string | null;
+          journey_count: number | null;
+          order_date: string;
+          order_id: string;
+          order_status: boolean;
+          user_email: string;
+          user_id: string | null;
+          website_address: string;
+          website_name: string;
+        };
         Insert: {
-          favicon_file?: string | null
-          gsc_token?: string | null
-          order_date?: string
-          order_id?: string
-          order_status: boolean
-          user_email: string
-          user_id?: string | null
-          website_address: string
-          website_name: string
-        }
+          favicon_file?: string | null;
+          gsc_token?: string | null;
+          journey_count?: number | null;
+          order_date?: string;
+          order_id?: string;
+          order_status: boolean;
+          user_email: string;
+          user_id?: string | null;
+          website_address: string;
+          website_name: string;
+        };
         Update: {
-          favicon_file?: string | null
-          gsc_token?: string | null
-          order_date?: string
-          order_id?: string
-          order_status?: boolean
-          user_email?: string
-          user_id?: string | null
-          website_address?: string
-          website_name?: string
-        }
+          favicon_file?: string | null;
+          gsc_token?: string | null;
+          journey_count?: number | null;
+          order_date?: string;
+          order_id?: string;
+          order_status?: boolean;
+          user_email?: string;
+          user_id?: string | null;
+          website_address?: string;
+          website_name?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "orders_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+            foreignKeyName: "orders_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       pageperf_data: {
         Row: {
-          blocking_scripts: Json | null
-          browser: string | null
-          browser_version: string | null
-          cls_data: Json | null
-          created_at: string
-          crux_cls_avg: number | null
-          crux_cls_good: number | null
-          crux_cls_p75: number | null
-          crux_cls_poor: number | null
-          crux_fcp_avg: number | null
-          crux_fcp_good: number | null
-          crux_fcp_p75: number | null
-          crux_fcp_poor: number | null
-          crux_inp_avg: number | null
-          crux_inp_good: number | null
-          crux_inp_p75: number | null
-          crux_inp_poor: number | null
-          crux_lcp_avg: number | null
-          crux_lcp_good: number | null
-          crux_lcp_p75: number | null
-          crux_lcp_poor: number | null
-          crux_ttfb_avg: number | null
-          crux_ttfb_good: number | null
-          crux_ttfb_p75: number | null
-          crux_ttfb_poor: number | null
-          device_type: string
-          document_decodedbody_size: number | null
-          document_encodedbody_size: number | null
-          document_timing: Json | null
-          document_transfersize: number | null
-          documenttitle: string | null
-          dom_complete_max: number | null
-          dom_complete_mean: number | null
-          dom_complete_min: number | null
-          dom_elements_max: number | null
-          dom_elements_mean: number | null
-          dom_elements_min: number | null
-          dom_interactive_max: number | null
-          dom_interactive_mean: number | null
-          dom_interactive_min: number | null
-          domain: string | null
-          domains: Json | null
-          inp_latency_max: number | null
-          inp_latency_mean: number | null
-          inp_latency_min: number | null
-          lab_cls_max: number | null
-          lab_cls_mean: number | null
-          lab_cls_min: number | null
-          lab_contentsize: number | null
-          lab_css_contentsize_max: number | null
-          lab_css_contentsize_mean: number | null
-          lab_css_contentsize_min: number | null
-          lab_css_request_count_max: number | null
-          lab_css_request_count_mean: number | null
-          lab_css_request_count_min: number | null
-          lab_css_transfersize_max: number | null
-          lab_css_transfersize_mean: number | null
-          lab_css_transfersize_min: number | null
-          lab_domain_lookup: number | null
-          lab_error_max: number | null
-          lab_error_mean: number | null
-          lab_error_min: number | null
-          lab_fcp_max: number | null
-          lab_fcp_mean: number | null
-          lab_fcp_min: number | null
-          lab_fid_max: number | null
-          lab_fid_mean: number | null
-          lab_fid_min: number | null
-          lab_firstmeaningfulpaint_max: number | null
-          lab_firstmeaningfulpaint_mean: number | null
-          lab_firstmeaningfulpaint_min: number | null
-          lab_font_contentsize_max: number | null
-          lab_font_contentsize_mean: number | null
-          lab_font_contentsize_min: number | null
-          lab_font_request_count_max: number | null
-          lab_font_request_count_mean: number | null
-          lab_font_request_count_min: number | null
-          lab_font_transfersize_max: number | null
-          lab_font_transfersize_mean: number | null
-          lab_font_transfersize_min: number | null
-          lab_fullyloaded_max: number | null
-          lab_fullyloaded_mean: number | null
-          lab_fullyloaded_min: number | null
-          lab_html_contentsize_max: number | null
-          lab_html_contentsize_mean: number | null
-          lab_html_contentsize_min: number | null
-          lab_html_request_count_max: number | null
-          lab_html_request_count_mean: number | null
-          lab_html_request_count_min: number | null
-          lab_html_transfersize_max: number | null
-          lab_html_transfersize_mean: number | null
-          lab_html_transfersize_min: number | null
-          lab_image_contentsize_max: number | null
-          lab_image_contentsize_mean: number | null
-          lab_image_contentsize_min: number | null
-          lab_image_request_count_max: number | null
-          lab_image_request_count_mean: number | null
-          lab_image_request_count_min: number | null
-          lab_image_transfersize_max: number | null
-          lab_image_transfersize_mean: number | null
-          lab_image_transfersize_min: number | null
-          lab_js_contentsize_max: number | null
-          lab_js_contentsize_mean: number | null
-          lab_js_contentsize_min: number | null
-          lab_js_request_count_max: number | null
-          lab_js_request_count_mean: number | null
-          lab_js_request_count_min: number | null
-          lab_js_transfersize_max: number | null
-          lab_js_transfersize_mean: number | null
-          lab_js_transfersize_min: number | null
-          lab_json_contentsize_max: number | null
-          lab_json_contentsize_mean: number | null
-          lab_json_contentsize_min: number | null
-          lab_json_request_count_max: number | null
-          lab_json_request_count_mean: number | null
-          lab_json_request_count_min: number | null
-          lab_json_transfersize_max: number | null
-          lab_json_transfersize_mean: number | null
-          lab_json_transfersize_min: number | null
-          lab_lcp_max: number | null
-          lab_lcp_mean: number | null
-          lab_lcp_min: number | null
-          lab_speed_index_max: number | null
-          lab_speed_index_mean: number | null
-          lab_speed_index_min: number | null
-          lab_srt_max: number | null
-          lab_srt_mean: number | null
-          lab_srt_min: number | null
-          lab_svg_contentsize_max: number | null
-          lab_svg_contentsize_mean: number | null
-          lab_svg_contentsize_min: number | null
-          lab_svg_request_count_max: number | null
-          lab_svg_request_count_mean: number | null
-          lab_svg_request_count_min: number | null
-          lab_svg_transfersize_max: number | null
-          lab_svg_transfersize_mean: number | null
-          lab_svg_transfersize_min: number | null
-          lab_tbt_max: number | null
-          lab_tbt_mean: number | null
-          lab_tbt_min: number | null
-          lab_total_contentsize_max: number | null
-          lab_total_contentsize_mean: number | null
-          lab_total_contentsize_min: number | null
-          lab_total_requests_max: number | null
-          lab_total_requests_mean: number | null
-          lab_total_requests_min: number | null
-          lab_total_transfersize_max: number | null
-          lab_total_transfersize_mean: number | null
-          lab_total_transfersize_min: number | null
-          lab_ttfb_max: number | null
-          lab_ttfb_mean: number | null
-          lab_ttfb_min: number | null
-          lcp_data: Json | null
-          lcp_element_size_max: number | null
-          lcp_element_size_mean: number | null
-          lcp_element_size_min: number | null
-          lcp_timing: Json | null
-          page_address: string
-          page_filmstrip: string | null
-          page_screenshot: string | null
-          pageload_timing: Json | null
-          pageweight: number | null
-          performance_score_max: number | null
-          performance_score_mean: number | null
-          performance_score_min: number | null
-          record_id: string
-          third_party_content_size_max: number | null
-          third_party_content_size_mean: number | null
-          third_party_content_size_min: number | null
-          third_party_req_max: number | null
-          third_party_req_mean: number | null
-          third_party_req_min: number | null
-          third_party_transfer_size_max: number | null
-          third_party_transfer_size_mean: number | null
-          third_party_transfer_size_min: number | null
-          useragent: string | null
-          windowsize: string | null
-        }
+          blocking_scripts: Json | null;
+          browser: string | null;
+          browser_version: string | null;
+          cls_data: Json | null;
+          created_at: string;
+          crux_cls_avg: number | null;
+          crux_cls_good: number | null;
+          crux_cls_p75: number | null;
+          crux_cls_poor: number | null;
+          crux_fcp_avg: number | null;
+          crux_fcp_good: number | null;
+          crux_fcp_p75: number | null;
+          crux_fcp_poor: number | null;
+          crux_inp_avg: number | null;
+          crux_inp_good: number | null;
+          crux_inp_p75: number | null;
+          crux_inp_poor: number | null;
+          crux_lcp_avg: number | null;
+          crux_lcp_good: number | null;
+          crux_lcp_p75: number | null;
+          crux_lcp_poor: number | null;
+          crux_ttfb_avg: number | null;
+          crux_ttfb_good: number | null;
+          crux_ttfb_p75: number | null;
+          crux_ttfb_poor: number | null;
+          device_type: string;
+          document_decodedbody_size: number | null;
+          document_encodedbody_size: number | null;
+          document_timing: Json | null;
+          document_transfersize: number | null;
+          documenttitle: string | null;
+          dom_complete_max: number | null;
+          dom_complete_mean: number | null;
+          dom_complete_min: number | null;
+          dom_elements_max: number | null;
+          dom_elements_mean: number | null;
+          dom_elements_min: number | null;
+          dom_interactive_max: number | null;
+          dom_interactive_mean: number | null;
+          dom_interactive_min: number | null;
+          domain: string | null;
+          domains: Json | null;
+          inp_latency_max: number | null;
+          inp_latency_mean: number | null;
+          inp_latency_min: number | null;
+          lab_cls_max: number | null;
+          lab_cls_mean: number | null;
+          lab_cls_min: number | null;
+          lab_contentsize: number | null;
+          lab_css_contentsize_max: number | null;
+          lab_css_contentsize_mean: number | null;
+          lab_css_contentsize_min: number | null;
+          lab_css_request_count_max: number | null;
+          lab_css_request_count_mean: number | null;
+          lab_css_request_count_min: number | null;
+          lab_css_transfersize_max: number | null;
+          lab_css_transfersize_mean: number | null;
+          lab_css_transfersize_min: number | null;
+          lab_domain_lookup: number | null;
+          lab_error_max: number | null;
+          lab_error_mean: number | null;
+          lab_error_min: number | null;
+          lab_fcp_max: number | null;
+          lab_fcp_mean: number | null;
+          lab_fcp_min: number | null;
+          lab_fid_max: number | null;
+          lab_fid_mean: number | null;
+          lab_fid_min: number | null;
+          lab_firstmeaningfulpaint_max: number | null;
+          lab_firstmeaningfulpaint_mean: number | null;
+          lab_firstmeaningfulpaint_min: number | null;
+          lab_font_contentsize_max: number | null;
+          lab_font_contentsize_mean: number | null;
+          lab_font_contentsize_min: number | null;
+          lab_font_request_count_max: number | null;
+          lab_font_request_count_mean: number | null;
+          lab_font_request_count_min: number | null;
+          lab_font_transfersize_max: number | null;
+          lab_font_transfersize_mean: number | null;
+          lab_font_transfersize_min: number | null;
+          lab_fullyloaded_max: number | null;
+          lab_fullyloaded_mean: number | null;
+          lab_fullyloaded_min: number | null;
+          lab_html_contentsize_max: number | null;
+          lab_html_contentsize_mean: number | null;
+          lab_html_contentsize_min: number | null;
+          lab_html_request_count_max: number | null;
+          lab_html_request_count_mean: number | null;
+          lab_html_request_count_min: number | null;
+          lab_html_transfersize_max: number | null;
+          lab_html_transfersize_mean: number | null;
+          lab_html_transfersize_min: number | null;
+          lab_image_contentsize_max: number | null;
+          lab_image_contentsize_mean: number | null;
+          lab_image_contentsize_min: number | null;
+          lab_image_request_count_max: number | null;
+          lab_image_request_count_mean: number | null;
+          lab_image_request_count_min: number | null;
+          lab_image_transfersize_max: number | null;
+          lab_image_transfersize_mean: number | null;
+          lab_image_transfersize_min: number | null;
+          lab_js_contentsize_max: number | null;
+          lab_js_contentsize_mean: number | null;
+          lab_js_contentsize_min: number | null;
+          lab_js_request_count_max: number | null;
+          lab_js_request_count_mean: number | null;
+          lab_js_request_count_min: number | null;
+          lab_js_transfersize_max: number | null;
+          lab_js_transfersize_mean: number | null;
+          lab_js_transfersize_min: number | null;
+          lab_json_contentsize_max: number | null;
+          lab_json_contentsize_mean: number | null;
+          lab_json_contentsize_min: number | null;
+          lab_json_request_count_max: number | null;
+          lab_json_request_count_mean: number | null;
+          lab_json_request_count_min: number | null;
+          lab_json_transfersize_max: number | null;
+          lab_json_transfersize_mean: number | null;
+          lab_json_transfersize_min: number | null;
+          lab_lcp_max: number | null;
+          lab_lcp_mean: number | null;
+          lab_lcp_min: number | null;
+          lab_speed_index_max: number | null;
+          lab_speed_index_mean: number | null;
+          lab_speed_index_min: number | null;
+          lab_srt_max: number | null;
+          lab_srt_mean: number | null;
+          lab_srt_min: number | null;
+          lab_svg_contentsize_max: number | null;
+          lab_svg_contentsize_mean: number | null;
+          lab_svg_contentsize_min: number | null;
+          lab_svg_request_count_max: number | null;
+          lab_svg_request_count_mean: number | null;
+          lab_svg_request_count_min: number | null;
+          lab_svg_transfersize_max: number | null;
+          lab_svg_transfersize_mean: number | null;
+          lab_svg_transfersize_min: number | null;
+          lab_tbt_max: number | null;
+          lab_tbt_mean: number | null;
+          lab_tbt_min: number | null;
+          lab_total_contentsize_max: number | null;
+          lab_total_contentsize_mean: number | null;
+          lab_total_contentsize_min: number | null;
+          lab_total_requests_max: number | null;
+          lab_total_requests_mean: number | null;
+          lab_total_requests_min: number | null;
+          lab_total_transfersize_max: number | null;
+          lab_total_transfersize_mean: number | null;
+          lab_total_transfersize_min: number | null;
+          lab_ttfb_max: number | null;
+          lab_ttfb_mean: number | null;
+          lab_ttfb_min: number | null;
+          lcp_data: Json | null;
+          lcp_element_size_max: number | null;
+          lcp_element_size_mean: number | null;
+          lcp_element_size_min: number | null;
+          lcp_timing: Json | null;
+          page_address: string;
+          page_filmstrip: string | null;
+          page_screenshot: string | null;
+          pageload_timing: Json | null;
+          pageweight: number | null;
+          performance_score_max: number | null;
+          performance_score_mean: number | null;
+          performance_score_min: number | null;
+          record_id: string;
+          third_party_content_size_max: number | null;
+          third_party_content_size_mean: number | null;
+          third_party_content_size_min: number | null;
+          third_party_req_max: number | null;
+          third_party_req_mean: number | null;
+          third_party_req_min: number | null;
+          third_party_transfer_size_max: number | null;
+          third_party_transfer_size_mean: number | null;
+          third_party_transfer_size_min: number | null;
+          useragent: string | null;
+          windowsize: string | null;
+        };
         Insert: {
-          blocking_scripts?: Json | null
-          browser?: string | null
-          browser_version?: string | null
-          cls_data?: Json | null
-          created_at: string
-          crux_cls_avg?: number | null
-          crux_cls_good?: number | null
-          crux_cls_p75?: number | null
-          crux_cls_poor?: number | null
-          crux_fcp_avg?: number | null
-          crux_fcp_good?: number | null
-          crux_fcp_p75?: number | null
-          crux_fcp_poor?: number | null
-          crux_inp_avg?: number | null
-          crux_inp_good?: number | null
-          crux_inp_p75?: number | null
-          crux_inp_poor?: number | null
-          crux_lcp_avg?: number | null
-          crux_lcp_good?: number | null
-          crux_lcp_p75?: number | null
-          crux_lcp_poor?: number | null
-          crux_ttfb_avg?: number | null
-          crux_ttfb_good?: number | null
-          crux_ttfb_p75?: number | null
-          crux_ttfb_poor?: number | null
-          device_type: string
-          document_decodedbody_size?: number | null
-          document_encodedbody_size?: number | null
-          document_timing?: Json | null
-          document_transfersize?: number | null
-          documenttitle?: string | null
-          dom_complete_max?: number | null
-          dom_complete_mean?: number | null
-          dom_complete_min?: number | null
-          dom_elements_max?: number | null
-          dom_elements_mean?: number | null
-          dom_elements_min?: number | null
-          dom_interactive_max?: number | null
-          dom_interactive_mean?: number | null
-          dom_interactive_min?: number | null
-          domain?: string | null
-          domains?: Json | null
-          inp_latency_max?: number | null
-          inp_latency_mean?: number | null
-          inp_latency_min?: number | null
-          lab_cls_max?: number | null
-          lab_cls_mean?: number | null
-          lab_cls_min?: number | null
-          lab_contentsize?: number | null
-          lab_css_contentsize_max?: number | null
-          lab_css_contentsize_mean?: number | null
-          lab_css_contentsize_min?: number | null
-          lab_css_request_count_max?: number | null
-          lab_css_request_count_mean?: number | null
-          lab_css_request_count_min?: number | null
-          lab_css_transfersize_max?: number | null
-          lab_css_transfersize_mean?: number | null
-          lab_css_transfersize_min?: number | null
-          lab_domain_lookup?: number | null
-          lab_error_max?: number | null
-          lab_error_mean?: number | null
-          lab_error_min?: number | null
-          lab_fcp_max?: number | null
-          lab_fcp_mean?: number | null
-          lab_fcp_min?: number | null
-          lab_fid_max?: number | null
-          lab_fid_mean?: number | null
-          lab_fid_min?: number | null
-          lab_firstmeaningfulpaint_max?: number | null
-          lab_firstmeaningfulpaint_mean?: number | null
-          lab_firstmeaningfulpaint_min?: number | null
-          lab_font_contentsize_max?: number | null
-          lab_font_contentsize_mean?: number | null
-          lab_font_contentsize_min?: number | null
-          lab_font_request_count_max?: number | null
-          lab_font_request_count_mean?: number | null
-          lab_font_request_count_min?: number | null
-          lab_font_transfersize_max?: number | null
-          lab_font_transfersize_mean?: number | null
-          lab_font_transfersize_min?: number | null
-          lab_fullyloaded_max?: number | null
-          lab_fullyloaded_mean?: number | null
-          lab_fullyloaded_min?: number | null
-          lab_html_contentsize_max?: number | null
-          lab_html_contentsize_mean?: number | null
-          lab_html_contentsize_min?: number | null
-          lab_html_request_count_max?: number | null
-          lab_html_request_count_mean?: number | null
-          lab_html_request_count_min?: number | null
-          lab_html_transfersize_max?: number | null
-          lab_html_transfersize_mean?: number | null
-          lab_html_transfersize_min?: number | null
-          lab_image_contentsize_max?: number | null
-          lab_image_contentsize_mean?: number | null
-          lab_image_contentsize_min?: number | null
-          lab_image_request_count_max?: number | null
-          lab_image_request_count_mean?: number | null
-          lab_image_request_count_min?: number | null
-          lab_image_transfersize_max?: number | null
-          lab_image_transfersize_mean?: number | null
-          lab_image_transfersize_min?: number | null
-          lab_js_contentsize_max?: number | null
-          lab_js_contentsize_mean?: number | null
-          lab_js_contentsize_min?: number | null
-          lab_js_request_count_max?: number | null
-          lab_js_request_count_mean?: number | null
-          lab_js_request_count_min?: number | null
-          lab_js_transfersize_max?: number | null
-          lab_js_transfersize_mean?: number | null
-          lab_js_transfersize_min?: number | null
-          lab_json_contentsize_max?: number | null
-          lab_json_contentsize_mean?: number | null
-          lab_json_contentsize_min?: number | null
-          lab_json_request_count_max?: number | null
-          lab_json_request_count_mean?: number | null
-          lab_json_request_count_min?: number | null
-          lab_json_transfersize_max?: number | null
-          lab_json_transfersize_mean?: number | null
-          lab_json_transfersize_min?: number | null
-          lab_lcp_max?: number | null
-          lab_lcp_mean?: number | null
-          lab_lcp_min?: number | null
-          lab_speed_index_max?: number | null
-          lab_speed_index_mean?: number | null
-          lab_speed_index_min?: number | null
-          lab_srt_max?: number | null
-          lab_srt_mean?: number | null
-          lab_srt_min?: number | null
-          lab_svg_contentsize_max?: number | null
-          lab_svg_contentsize_mean?: number | null
-          lab_svg_contentsize_min?: number | null
-          lab_svg_request_count_max?: number | null
-          lab_svg_request_count_mean?: number | null
-          lab_svg_request_count_min?: number | null
-          lab_svg_transfersize_max?: number | null
-          lab_svg_transfersize_mean?: number | null
-          lab_svg_transfersize_min?: number | null
-          lab_tbt_max?: number | null
-          lab_tbt_mean?: number | null
-          lab_tbt_min?: number | null
-          lab_total_contentsize_max?: number | null
-          lab_total_contentsize_mean?: number | null
-          lab_total_contentsize_min?: number | null
-          lab_total_requests_max?: number | null
-          lab_total_requests_mean?: number | null
-          lab_total_requests_min?: number | null
-          lab_total_transfersize_max?: number | null
-          lab_total_transfersize_mean?: number | null
-          lab_total_transfersize_min?: number | null
-          lab_ttfb_max?: number | null
-          lab_ttfb_mean?: number | null
-          lab_ttfb_min?: number | null
-          lcp_data?: Json | null
-          lcp_element_size_max?: number | null
-          lcp_element_size_mean?: number | null
-          lcp_element_size_min?: number | null
-          lcp_timing?: Json | null
-          page_address: string
-          page_filmstrip?: string | null
-          page_screenshot?: string | null
-          pageload_timing?: Json | null
-          pageweight?: number | null
-          performance_score_max?: number | null
-          performance_score_mean?: number | null
-          performance_score_min?: number | null
-          record_id?: string
-          third_party_content_size_max?: number | null
-          third_party_content_size_mean?: number | null
-          third_party_content_size_min?: number | null
-          third_party_req_max?: number | null
-          third_party_req_mean?: number | null
-          third_party_req_min?: number | null
-          third_party_transfer_size_max?: number | null
-          third_party_transfer_size_mean?: number | null
-          third_party_transfer_size_min?: number | null
-          useragent?: string | null
-          windowsize?: string | null
-        }
+          blocking_scripts?: Json | null;
+          browser?: string | null;
+          browser_version?: string | null;
+          cls_data?: Json | null;
+          created_at: string;
+          crux_cls_avg?: number | null;
+          crux_cls_good?: number | null;
+          crux_cls_p75?: number | null;
+          crux_cls_poor?: number | null;
+          crux_fcp_avg?: number | null;
+          crux_fcp_good?: number | null;
+          crux_fcp_p75?: number | null;
+          crux_fcp_poor?: number | null;
+          crux_inp_avg?: number | null;
+          crux_inp_good?: number | null;
+          crux_inp_p75?: number | null;
+          crux_inp_poor?: number | null;
+          crux_lcp_avg?: number | null;
+          crux_lcp_good?: number | null;
+          crux_lcp_p75?: number | null;
+          crux_lcp_poor?: number | null;
+          crux_ttfb_avg?: number | null;
+          crux_ttfb_good?: number | null;
+          crux_ttfb_p75?: number | null;
+          crux_ttfb_poor?: number | null;
+          device_type: string;
+          document_decodedbody_size?: number | null;
+          document_encodedbody_size?: number | null;
+          document_timing?: Json | null;
+          document_transfersize?: number | null;
+          documenttitle?: string | null;
+          dom_complete_max?: number | null;
+          dom_complete_mean?: number | null;
+          dom_complete_min?: number | null;
+          dom_elements_max?: number | null;
+          dom_elements_mean?: number | null;
+          dom_elements_min?: number | null;
+          dom_interactive_max?: number | null;
+          dom_interactive_mean?: number | null;
+          dom_interactive_min?: number | null;
+          domain?: string | null;
+          domains?: Json | null;
+          inp_latency_max?: number | null;
+          inp_latency_mean?: number | null;
+          inp_latency_min?: number | null;
+          lab_cls_max?: number | null;
+          lab_cls_mean?: number | null;
+          lab_cls_min?: number | null;
+          lab_contentsize?: number | null;
+          lab_css_contentsize_max?: number | null;
+          lab_css_contentsize_mean?: number | null;
+          lab_css_contentsize_min?: number | null;
+          lab_css_request_count_max?: number | null;
+          lab_css_request_count_mean?: number | null;
+          lab_css_request_count_min?: number | null;
+          lab_css_transfersize_max?: number | null;
+          lab_css_transfersize_mean?: number | null;
+          lab_css_transfersize_min?: number | null;
+          lab_domain_lookup?: number | null;
+          lab_error_max?: number | null;
+          lab_error_mean?: number | null;
+          lab_error_min?: number | null;
+          lab_fcp_max?: number | null;
+          lab_fcp_mean?: number | null;
+          lab_fcp_min?: number | null;
+          lab_fid_max?: number | null;
+          lab_fid_mean?: number | null;
+          lab_fid_min?: number | null;
+          lab_firstmeaningfulpaint_max?: number | null;
+          lab_firstmeaningfulpaint_mean?: number | null;
+          lab_firstmeaningfulpaint_min?: number | null;
+          lab_font_contentsize_max?: number | null;
+          lab_font_contentsize_mean?: number | null;
+          lab_font_contentsize_min?: number | null;
+          lab_font_request_count_max?: number | null;
+          lab_font_request_count_mean?: number | null;
+          lab_font_request_count_min?: number | null;
+          lab_font_transfersize_max?: number | null;
+          lab_font_transfersize_mean?: number | null;
+          lab_font_transfersize_min?: number | null;
+          lab_fullyloaded_max?: number | null;
+          lab_fullyloaded_mean?: number | null;
+          lab_fullyloaded_min?: number | null;
+          lab_html_contentsize_max?: number | null;
+          lab_html_contentsize_mean?: number | null;
+          lab_html_contentsize_min?: number | null;
+          lab_html_request_count_max?: number | null;
+          lab_html_request_count_mean?: number | null;
+          lab_html_request_count_min?: number | null;
+          lab_html_transfersize_max?: number | null;
+          lab_html_transfersize_mean?: number | null;
+          lab_html_transfersize_min?: number | null;
+          lab_image_contentsize_max?: number | null;
+          lab_image_contentsize_mean?: number | null;
+          lab_image_contentsize_min?: number | null;
+          lab_image_request_count_max?: number | null;
+          lab_image_request_count_mean?: number | null;
+          lab_image_request_count_min?: number | null;
+          lab_image_transfersize_max?: number | null;
+          lab_image_transfersize_mean?: number | null;
+          lab_image_transfersize_min?: number | null;
+          lab_js_contentsize_max?: number | null;
+          lab_js_contentsize_mean?: number | null;
+          lab_js_contentsize_min?: number | null;
+          lab_js_request_count_max?: number | null;
+          lab_js_request_count_mean?: number | null;
+          lab_js_request_count_min?: number | null;
+          lab_js_transfersize_max?: number | null;
+          lab_js_transfersize_mean?: number | null;
+          lab_js_transfersize_min?: number | null;
+          lab_json_contentsize_max?: number | null;
+          lab_json_contentsize_mean?: number | null;
+          lab_json_contentsize_min?: number | null;
+          lab_json_request_count_max?: number | null;
+          lab_json_request_count_mean?: number | null;
+          lab_json_request_count_min?: number | null;
+          lab_json_transfersize_max?: number | null;
+          lab_json_transfersize_mean?: number | null;
+          lab_json_transfersize_min?: number | null;
+          lab_lcp_max?: number | null;
+          lab_lcp_mean?: number | null;
+          lab_lcp_min?: number | null;
+          lab_speed_index_max?: number | null;
+          lab_speed_index_mean?: number | null;
+          lab_speed_index_min?: number | null;
+          lab_srt_max?: number | null;
+          lab_srt_mean?: number | null;
+          lab_srt_min?: number | null;
+          lab_svg_contentsize_max?: number | null;
+          lab_svg_contentsize_mean?: number | null;
+          lab_svg_contentsize_min?: number | null;
+          lab_svg_request_count_max?: number | null;
+          lab_svg_request_count_mean?: number | null;
+          lab_svg_request_count_min?: number | null;
+          lab_svg_transfersize_max?: number | null;
+          lab_svg_transfersize_mean?: number | null;
+          lab_svg_transfersize_min?: number | null;
+          lab_tbt_max?: number | null;
+          lab_tbt_mean?: number | null;
+          lab_tbt_min?: number | null;
+          lab_total_contentsize_max?: number | null;
+          lab_total_contentsize_mean?: number | null;
+          lab_total_contentsize_min?: number | null;
+          lab_total_requests_max?: number | null;
+          lab_total_requests_mean?: number | null;
+          lab_total_requests_min?: number | null;
+          lab_total_transfersize_max?: number | null;
+          lab_total_transfersize_mean?: number | null;
+          lab_total_transfersize_min?: number | null;
+          lab_ttfb_max?: number | null;
+          lab_ttfb_mean?: number | null;
+          lab_ttfb_min?: number | null;
+          lcp_data?: Json | null;
+          lcp_element_size_max?: number | null;
+          lcp_element_size_mean?: number | null;
+          lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
+          page_address: string;
+          page_filmstrip?: string | null;
+          page_screenshot?: string | null;
+          pageload_timing?: Json | null;
+          pageweight?: number | null;
+          performance_score_max?: number | null;
+          performance_score_mean?: number | null;
+          performance_score_min?: number | null;
+          record_id?: string;
+          third_party_content_size_max?: number | null;
+          third_party_content_size_mean?: number | null;
+          third_party_content_size_min?: number | null;
+          third_party_req_max?: number | null;
+          third_party_req_mean?: number | null;
+          third_party_req_min?: number | null;
+          third_party_transfer_size_max?: number | null;
+          third_party_transfer_size_mean?: number | null;
+          third_party_transfer_size_min?: number | null;
+          useragent?: string | null;
+          windowsize?: string | null;
+        };
         Update: {
-          blocking_scripts?: Json | null
-          browser?: string | null
-          browser_version?: string | null
-          cls_data?: Json | null
-          created_at?: string
-          crux_cls_avg?: number | null
-          crux_cls_good?: number | null
-          crux_cls_p75?: number | null
-          crux_cls_poor?: number | null
-          crux_fcp_avg?: number | null
-          crux_fcp_good?: number | null
-          crux_fcp_p75?: number | null
-          crux_fcp_poor?: number | null
-          crux_inp_avg?: number | null
-          crux_inp_good?: number | null
-          crux_inp_p75?: number | null
-          crux_inp_poor?: number | null
-          crux_lcp_avg?: number | null
-          crux_lcp_good?: number | null
-          crux_lcp_p75?: number | null
-          crux_lcp_poor?: number | null
-          crux_ttfb_avg?: number | null
-          crux_ttfb_good?: number | null
-          crux_ttfb_p75?: number | null
-          crux_ttfb_poor?: number | null
-          device_type?: string
-          document_decodedbody_size?: number | null
-          document_encodedbody_size?: number | null
-          document_timing?: Json | null
-          document_transfersize?: number | null
-          documenttitle?: string | null
-          dom_complete_max?: number | null
-          dom_complete_mean?: number | null
-          dom_complete_min?: number | null
-          dom_elements_max?: number | null
-          dom_elements_mean?: number | null
-          dom_elements_min?: number | null
-          dom_interactive_max?: number | null
-          dom_interactive_mean?: number | null
-          dom_interactive_min?: number | null
-          domain?: string | null
-          domains?: Json | null
-          inp_latency_max?: number | null
-          inp_latency_mean?: number | null
-          inp_latency_min?: number | null
-          lab_cls_max?: number | null
-          lab_cls_mean?: number | null
-          lab_cls_min?: number | null
-          lab_contentsize?: number | null
-          lab_css_contentsize_max?: number | null
-          lab_css_contentsize_mean?: number | null
-          lab_css_contentsize_min?: number | null
-          lab_css_request_count_max?: number | null
-          lab_css_request_count_mean?: number | null
-          lab_css_request_count_min?: number | null
-          lab_css_transfersize_max?: number | null
-          lab_css_transfersize_mean?: number | null
-          lab_css_transfersize_min?: number | null
-          lab_domain_lookup?: number | null
-          lab_error_max?: number | null
-          lab_error_mean?: number | null
-          lab_error_min?: number | null
-          lab_fcp_max?: number | null
-          lab_fcp_mean?: number | null
-          lab_fcp_min?: number | null
-          lab_fid_max?: number | null
-          lab_fid_mean?: number | null
-          lab_fid_min?: number | null
-          lab_firstmeaningfulpaint_max?: number | null
-          lab_firstmeaningfulpaint_mean?: number | null
-          lab_firstmeaningfulpaint_min?: number | null
-          lab_font_contentsize_max?: number | null
-          lab_font_contentsize_mean?: number | null
-          lab_font_contentsize_min?: number | null
-          lab_font_request_count_max?: number | null
-          lab_font_request_count_mean?: number | null
-          lab_font_request_count_min?: number | null
-          lab_font_transfersize_max?: number | null
-          lab_font_transfersize_mean?: number | null
-          lab_font_transfersize_min?: number | null
-          lab_fullyloaded_max?: number | null
-          lab_fullyloaded_mean?: number | null
-          lab_fullyloaded_min?: number | null
-          lab_html_contentsize_max?: number | null
-          lab_html_contentsize_mean?: number | null
-          lab_html_contentsize_min?: number | null
-          lab_html_request_count_max?: number | null
-          lab_html_request_count_mean?: number | null
-          lab_html_request_count_min?: number | null
-          lab_html_transfersize_max?: number | null
-          lab_html_transfersize_mean?: number | null
-          lab_html_transfersize_min?: number | null
-          lab_image_contentsize_max?: number | null
-          lab_image_contentsize_mean?: number | null
-          lab_image_contentsize_min?: number | null
-          lab_image_request_count_max?: number | null
-          lab_image_request_count_mean?: number | null
-          lab_image_request_count_min?: number | null
-          lab_image_transfersize_max?: number | null
-          lab_image_transfersize_mean?: number | null
-          lab_image_transfersize_min?: number | null
-          lab_js_contentsize_max?: number | null
-          lab_js_contentsize_mean?: number | null
-          lab_js_contentsize_min?: number | null
-          lab_js_request_count_max?: number | null
-          lab_js_request_count_mean?: number | null
-          lab_js_request_count_min?: number | null
-          lab_js_transfersize_max?: number | null
-          lab_js_transfersize_mean?: number | null
-          lab_js_transfersize_min?: number | null
-          lab_json_contentsize_max?: number | null
-          lab_json_contentsize_mean?: number | null
-          lab_json_contentsize_min?: number | null
-          lab_json_request_count_max?: number | null
-          lab_json_request_count_mean?: number | null
-          lab_json_request_count_min?: number | null
-          lab_json_transfersize_max?: number | null
-          lab_json_transfersize_mean?: number | null
-          lab_json_transfersize_min?: number | null
-          lab_lcp_max?: number | null
-          lab_lcp_mean?: number | null
-          lab_lcp_min?: number | null
-          lab_speed_index_max?: number | null
-          lab_speed_index_mean?: number | null
-          lab_speed_index_min?: number | null
-          lab_srt_max?: number | null
-          lab_srt_mean?: number | null
-          lab_srt_min?: number | null
-          lab_svg_contentsize_max?: number | null
-          lab_svg_contentsize_mean?: number | null
-          lab_svg_contentsize_min?: number | null
-          lab_svg_request_count_max?: number | null
-          lab_svg_request_count_mean?: number | null
-          lab_svg_request_count_min?: number | null
-          lab_svg_transfersize_max?: number | null
-          lab_svg_transfersize_mean?: number | null
-          lab_svg_transfersize_min?: number | null
-          lab_tbt_max?: number | null
-          lab_tbt_mean?: number | null
-          lab_tbt_min?: number | null
-          lab_total_contentsize_max?: number | null
-          lab_total_contentsize_mean?: number | null
-          lab_total_contentsize_min?: number | null
-          lab_total_requests_max?: number | null
-          lab_total_requests_mean?: number | null
-          lab_total_requests_min?: number | null
-          lab_total_transfersize_max?: number | null
-          lab_total_transfersize_mean?: number | null
-          lab_total_transfersize_min?: number | null
-          lab_ttfb_max?: number | null
-          lab_ttfb_mean?: number | null
-          lab_ttfb_min?: number | null
-          lcp_data?: Json | null
-          lcp_element_size_max?: number | null
-          lcp_element_size_mean?: number | null
-          lcp_element_size_min?: number | null
-          lcp_timing?: Json | null
-          page_address?: string
-          page_filmstrip?: string | null
-          page_screenshot?: string | null
-          pageload_timing?: Json | null
-          pageweight?: number | null
-          performance_score_max?: number | null
-          performance_score_mean?: number | null
-          performance_score_min?: number | null
-          record_id?: string
-          third_party_content_size_max?: number | null
-          third_party_content_size_mean?: number | null
-          third_party_content_size_min?: number | null
-          third_party_req_max?: number | null
-          third_party_req_mean?: number | null
-          third_party_req_min?: number | null
-          third_party_transfer_size_max?: number | null
-          third_party_transfer_size_mean?: number | null
-          third_party_transfer_size_min?: number | null
-          useragent?: string | null
-          windowsize?: string | null
-        }
-        Relationships: []
-      }
+          blocking_scripts?: Json | null;
+          browser?: string | null;
+          browser_version?: string | null;
+          cls_data?: Json | null;
+          created_at?: string;
+          crux_cls_avg?: number | null;
+          crux_cls_good?: number | null;
+          crux_cls_p75?: number | null;
+          crux_cls_poor?: number | null;
+          crux_fcp_avg?: number | null;
+          crux_fcp_good?: number | null;
+          crux_fcp_p75?: number | null;
+          crux_fcp_poor?: number | null;
+          crux_inp_avg?: number | null;
+          crux_inp_good?: number | null;
+          crux_inp_p75?: number | null;
+          crux_inp_poor?: number | null;
+          crux_lcp_avg?: number | null;
+          crux_lcp_good?: number | null;
+          crux_lcp_p75?: number | null;
+          crux_lcp_poor?: number | null;
+          crux_ttfb_avg?: number | null;
+          crux_ttfb_good?: number | null;
+          crux_ttfb_p75?: number | null;
+          crux_ttfb_poor?: number | null;
+          device_type?: string;
+          document_decodedbody_size?: number | null;
+          document_encodedbody_size?: number | null;
+          document_timing?: Json | null;
+          document_transfersize?: number | null;
+          documenttitle?: string | null;
+          dom_complete_max?: number | null;
+          dom_complete_mean?: number | null;
+          dom_complete_min?: number | null;
+          dom_elements_max?: number | null;
+          dom_elements_mean?: number | null;
+          dom_elements_min?: number | null;
+          dom_interactive_max?: number | null;
+          dom_interactive_mean?: number | null;
+          dom_interactive_min?: number | null;
+          domain?: string | null;
+          domains?: Json | null;
+          inp_latency_max?: number | null;
+          inp_latency_mean?: number | null;
+          inp_latency_min?: number | null;
+          lab_cls_max?: number | null;
+          lab_cls_mean?: number | null;
+          lab_cls_min?: number | null;
+          lab_contentsize?: number | null;
+          lab_css_contentsize_max?: number | null;
+          lab_css_contentsize_mean?: number | null;
+          lab_css_contentsize_min?: number | null;
+          lab_css_request_count_max?: number | null;
+          lab_css_request_count_mean?: number | null;
+          lab_css_request_count_min?: number | null;
+          lab_css_transfersize_max?: number | null;
+          lab_css_transfersize_mean?: number | null;
+          lab_css_transfersize_min?: number | null;
+          lab_domain_lookup?: number | null;
+          lab_error_max?: number | null;
+          lab_error_mean?: number | null;
+          lab_error_min?: number | null;
+          lab_fcp_max?: number | null;
+          lab_fcp_mean?: number | null;
+          lab_fcp_min?: number | null;
+          lab_fid_max?: number | null;
+          lab_fid_mean?: number | null;
+          lab_fid_min?: number | null;
+          lab_firstmeaningfulpaint_max?: number | null;
+          lab_firstmeaningfulpaint_mean?: number | null;
+          lab_firstmeaningfulpaint_min?: number | null;
+          lab_font_contentsize_max?: number | null;
+          lab_font_contentsize_mean?: number | null;
+          lab_font_contentsize_min?: number | null;
+          lab_font_request_count_max?: number | null;
+          lab_font_request_count_mean?: number | null;
+          lab_font_request_count_min?: number | null;
+          lab_font_transfersize_max?: number | null;
+          lab_font_transfersize_mean?: number | null;
+          lab_font_transfersize_min?: number | null;
+          lab_fullyloaded_max?: number | null;
+          lab_fullyloaded_mean?: number | null;
+          lab_fullyloaded_min?: number | null;
+          lab_html_contentsize_max?: number | null;
+          lab_html_contentsize_mean?: number | null;
+          lab_html_contentsize_min?: number | null;
+          lab_html_request_count_max?: number | null;
+          lab_html_request_count_mean?: number | null;
+          lab_html_request_count_min?: number | null;
+          lab_html_transfersize_max?: number | null;
+          lab_html_transfersize_mean?: number | null;
+          lab_html_transfersize_min?: number | null;
+          lab_image_contentsize_max?: number | null;
+          lab_image_contentsize_mean?: number | null;
+          lab_image_contentsize_min?: number | null;
+          lab_image_request_count_max?: number | null;
+          lab_image_request_count_mean?: number | null;
+          lab_image_request_count_min?: number | null;
+          lab_image_transfersize_max?: number | null;
+          lab_image_transfersize_mean?: number | null;
+          lab_image_transfersize_min?: number | null;
+          lab_js_contentsize_max?: number | null;
+          lab_js_contentsize_mean?: number | null;
+          lab_js_contentsize_min?: number | null;
+          lab_js_request_count_max?: number | null;
+          lab_js_request_count_mean?: number | null;
+          lab_js_request_count_min?: number | null;
+          lab_js_transfersize_max?: number | null;
+          lab_js_transfersize_mean?: number | null;
+          lab_js_transfersize_min?: number | null;
+          lab_json_contentsize_max?: number | null;
+          lab_json_contentsize_mean?: number | null;
+          lab_json_contentsize_min?: number | null;
+          lab_json_request_count_max?: number | null;
+          lab_json_request_count_mean?: number | null;
+          lab_json_request_count_min?: number | null;
+          lab_json_transfersize_max?: number | null;
+          lab_json_transfersize_mean?: number | null;
+          lab_json_transfersize_min?: number | null;
+          lab_lcp_max?: number | null;
+          lab_lcp_mean?: number | null;
+          lab_lcp_min?: number | null;
+          lab_speed_index_max?: number | null;
+          lab_speed_index_mean?: number | null;
+          lab_speed_index_min?: number | null;
+          lab_srt_max?: number | null;
+          lab_srt_mean?: number | null;
+          lab_srt_min?: number | null;
+          lab_svg_contentsize_max?: number | null;
+          lab_svg_contentsize_mean?: number | null;
+          lab_svg_contentsize_min?: number | null;
+          lab_svg_request_count_max?: number | null;
+          lab_svg_request_count_mean?: number | null;
+          lab_svg_request_count_min?: number | null;
+          lab_svg_transfersize_max?: number | null;
+          lab_svg_transfersize_mean?: number | null;
+          lab_svg_transfersize_min?: number | null;
+          lab_tbt_max?: number | null;
+          lab_tbt_mean?: number | null;
+          lab_tbt_min?: number | null;
+          lab_total_contentsize_max?: number | null;
+          lab_total_contentsize_mean?: number | null;
+          lab_total_contentsize_min?: number | null;
+          lab_total_requests_max?: number | null;
+          lab_total_requests_mean?: number | null;
+          lab_total_requests_min?: number | null;
+          lab_total_transfersize_max?: number | null;
+          lab_total_transfersize_mean?: number | null;
+          lab_total_transfersize_min?: number | null;
+          lab_ttfb_max?: number | null;
+          lab_ttfb_mean?: number | null;
+          lab_ttfb_min?: number | null;
+          lcp_data?: Json | null;
+          lcp_element_size_max?: number | null;
+          lcp_element_size_mean?: number | null;
+          lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
+          page_address?: string;
+          page_filmstrip?: string | null;
+          page_screenshot?: string | null;
+          pageload_timing?: Json | null;
+          pageweight?: number | null;
+          performance_score_max?: number | null;
+          performance_score_mean?: number | null;
+          performance_score_min?: number | null;
+          record_id?: string;
+          third_party_content_size_max?: number | null;
+          third_party_content_size_mean?: number | null;
+          third_party_content_size_min?: number | null;
+          third_party_req_max?: number | null;
+          third_party_req_mean?: number | null;
+          third_party_req_min?: number | null;
+          third_party_transfer_size_max?: number | null;
+          third_party_transfer_size_mean?: number | null;
+          third_party_transfer_size_min?: number | null;
+          useragent?: string | null;
+          windowsize?: string | null;
+        };
+        Relationships: [];
+      };
       pageperf_data_desktop: {
         Row: {
-          blocking_scripts: Json | null
-          browser: string | null
-          browser_version: string | null
-          cls_data: Json | null
-          created_at: string
-          crux_cls_avg: number | null
-          crux_cls_good: number | null
-          crux_cls_p75: number | null
-          crux_cls_poor: number | null
-          crux_fcp_avg: number | null
-          crux_fcp_good: number | null
-          crux_fcp_p75: number | null
-          crux_fcp_poor: number | null
-          crux_inp_avg: number | null
-          crux_inp_good: number | null
-          crux_inp_p75: number | null
-          crux_inp_poor: number | null
-          crux_lcp_avg: number | null
-          crux_lcp_good: number | null
-          crux_lcp_p75: number | null
-          crux_lcp_poor: number | null
-          crux_ttfb_avg: number | null
-          crux_ttfb_good: number | null
-          crux_ttfb_p75: number | null
-          crux_ttfb_poor: number | null
-          device_type: string
-          document_decodedbody_size: number | null
-          document_encodedbody_size: number | null
-          document_timing: Json | null
-          document_transfersize: number | null
-          documenttitle: string | null
-          dom_complete_max: number | null
-          dom_complete_mean: number | null
-          dom_complete_min: number | null
-          dom_elements_max: number | null
-          dom_elements_mean: number | null
-          dom_elements_min: number | null
-          dom_interactive_max: number | null
-          dom_interactive_mean: number | null
-          dom_interactive_min: number | null
-          domain: string | null
-          domains: Json | null
-          inp_latency_max: number | null
-          inp_latency_mean: number | null
-          inp_latency_min: number | null
-          lab_cls_max: number | null
-          lab_cls_mean: number | null
-          lab_cls_min: number | null
-          lab_contentsize: number | null
-          lab_css_contentsize_max: number | null
-          lab_css_contentsize_mean: number | null
-          lab_css_contentsize_min: number | null
-          lab_css_request_count_max: number | null
-          lab_css_request_count_mean: number | null
-          lab_css_request_count_min: number | null
-          lab_css_transfersize_max: number | null
-          lab_css_transfersize_mean: number | null
-          lab_css_transfersize_min: number | null
-          lab_domain_lookup: number | null
-          lab_error_max: number | null
-          lab_error_mean: number | null
-          lab_error_min: number | null
-          lab_fcp_max: number | null
-          lab_fcp_mean: number | null
-          lab_fcp_min: number | null
-          lab_fid_max: number | null
-          lab_fid_mean: number | null
-          lab_fid_min: number | null
-          lab_firstmeaningfulpaint_max: number | null
-          lab_firstmeaningfulpaint_mean: number | null
-          lab_firstmeaningfulpaint_min: number | null
-          lab_font_contentsize_max: number | null
-          lab_font_contentsize_mean: number | null
-          lab_font_contentsize_min: number | null
-          lab_font_request_count_max: number | null
-          lab_font_request_count_mean: number | null
-          lab_font_request_count_min: number | null
-          lab_font_transfersize_max: number | null
-          lab_font_transfersize_mean: number | null
-          lab_font_transfersize_min: number | null
-          lab_fullyloaded_max: number | null
-          lab_fullyloaded_mean: number | null
-          lab_fullyloaded_min: number | null
-          lab_html_contentsize_max: number | null
-          lab_html_contentsize_mean: number | null
-          lab_html_contentsize_min: number | null
-          lab_html_request_count_max: number | null
-          lab_html_request_count_mean: number | null
-          lab_html_request_count_min: number | null
-          lab_html_transfersize_max: number | null
-          lab_html_transfersize_mean: number | null
-          lab_html_transfersize_min: number | null
-          lab_image_contentsize_max: number | null
-          lab_image_contentsize_mean: number | null
-          lab_image_contentsize_min: number | null
-          lab_image_request_count_max: number | null
-          lab_image_request_count_mean: number | null
-          lab_image_request_count_min: number | null
-          lab_image_transfersize_max: number | null
-          lab_image_transfersize_mean: number | null
-          lab_image_transfersize_min: number | null
-          lab_js_contentsize_max: number | null
-          lab_js_contentsize_mean: number | null
-          lab_js_contentsize_min: number | null
-          lab_js_request_count_max: number | null
-          lab_js_request_count_mean: number | null
-          lab_js_request_count_min: number | null
-          lab_js_transfersize_max: number | null
-          lab_js_transfersize_mean: number | null
-          lab_js_transfersize_min: number | null
-          lab_json_contentsize_max: number | null
-          lab_json_contentsize_mean: number | null
-          lab_json_contentsize_min: number | null
-          lab_json_request_count_max: number | null
-          lab_json_request_count_mean: number | null
-          lab_json_request_count_min: number | null
-          lab_json_transfersize_max: number | null
-          lab_json_transfersize_mean: number | null
-          lab_json_transfersize_min: number | null
-          lab_lcp_max: number | null
-          lab_lcp_mean: number | null
-          lab_lcp_min: number | null
-          lab_speed_index_max: number | null
-          lab_speed_index_mean: number | null
-          lab_speed_index_min: number | null
-          lab_srt_max: number | null
-          lab_srt_mean: number | null
-          lab_srt_min: number | null
-          lab_svg_contentsize_max: number | null
-          lab_svg_contentsize_mean: number | null
-          lab_svg_contentsize_min: number | null
-          lab_svg_request_count_max: number | null
-          lab_svg_request_count_mean: number | null
-          lab_svg_request_count_min: number | null
-          lab_svg_transfersize_max: number | null
-          lab_svg_transfersize_mean: number | null
-          lab_svg_transfersize_min: number | null
-          lab_tbt_max: number | null
-          lab_tbt_mean: number | null
-          lab_tbt_min: number | null
-          lab_total_contentsize_max: number | null
-          lab_total_contentsize_mean: number | null
-          lab_total_contentsize_min: number | null
-          lab_total_requests_max: number | null
-          lab_total_requests_mean: number | null
-          lab_total_requests_min: number | null
-          lab_total_transfersize_max: number | null
-          lab_total_transfersize_mean: number | null
-          lab_total_transfersize_min: number | null
-          lab_ttfb_max: number | null
-          lab_ttfb_mean: number | null
-          lab_ttfb_min: number | null
-          lcp_data: Json | null
-          lcp_element_size_max: number | null
-          lcp_element_size_mean: number | null
-          lcp_element_size_min: number | null
-          lcp_timing: Json | null
-          page_address: string
-          page_filmstrip: string | null
-          page_screenshot: string | null
-          pageload_timing: Json | null
-          pageweight: number | null
-          performance_score_max: number | null
-          performance_score_mean: number | null
-          performance_score_min: number | null
-          record_id: string
-          third_party_content_size_max: number | null
-          third_party_content_size_mean: number | null
-          third_party_content_size_min: number | null
-          third_party_req_max: number | null
-          third_party_req_mean: number | null
-          third_party_req_min: number | null
-          third_party_transfer_size_max: number | null
-          third_party_transfer_size_mean: number | null
-          third_party_transfer_size_min: number | null
-          useragent: string | null
-          windowsize: string | null
-        }
+          blocking_scripts: Json | null;
+          browser: string | null;
+          browser_version: string | null;
+          cls_data: Json | null;
+          created_at: string;
+          crux_cls_avg: number | null;
+          crux_cls_good: number | null;
+          crux_cls_p75: number | null;
+          crux_cls_poor: number | null;
+          crux_fcp_avg: number | null;
+          crux_fcp_good: number | null;
+          crux_fcp_p75: number | null;
+          crux_fcp_poor: number | null;
+          crux_inp_avg: number | null;
+          crux_inp_good: number | null;
+          crux_inp_p75: number | null;
+          crux_inp_poor: number | null;
+          crux_lcp_avg: number | null;
+          crux_lcp_good: number | null;
+          crux_lcp_p75: number | null;
+          crux_lcp_poor: number | null;
+          crux_ttfb_avg: number | null;
+          crux_ttfb_good: number | null;
+          crux_ttfb_p75: number | null;
+          crux_ttfb_poor: number | null;
+          device_type: string;
+          document_decodedbody_size: number | null;
+          document_encodedbody_size: number | null;
+          document_timing: Json | null;
+          document_transfersize: number | null;
+          documenttitle: string | null;
+          dom_complete_max: number | null;
+          dom_complete_mean: number | null;
+          dom_complete_min: number | null;
+          dom_elements_max: number | null;
+          dom_elements_mean: number | null;
+          dom_elements_min: number | null;
+          dom_interactive_max: number | null;
+          dom_interactive_mean: number | null;
+          dom_interactive_min: number | null;
+          domain: string | null;
+          domains: Json | null;
+          inp_latency_max: number | null;
+          inp_latency_mean: number | null;
+          inp_latency_min: number | null;
+          lab_cls_max: number | null;
+          lab_cls_mean: number | null;
+          lab_cls_min: number | null;
+          lab_contentsize: number | null;
+          lab_css_contentsize_max: number | null;
+          lab_css_contentsize_mean: number | null;
+          lab_css_contentsize_min: number | null;
+          lab_css_request_count_max: number | null;
+          lab_css_request_count_mean: number | null;
+          lab_css_request_count_min: number | null;
+          lab_css_transfersize_max: number | null;
+          lab_css_transfersize_mean: number | null;
+          lab_css_transfersize_min: number | null;
+          lab_domain_lookup: number | null;
+          lab_error_max: number | null;
+          lab_error_mean: number | null;
+          lab_error_min: number | null;
+          lab_fcp_max: number | null;
+          lab_fcp_mean: number | null;
+          lab_fcp_min: number | null;
+          lab_fid_max: number | null;
+          lab_fid_mean: number | null;
+          lab_fid_min: number | null;
+          lab_firstmeaningfulpaint_max: number | null;
+          lab_firstmeaningfulpaint_mean: number | null;
+          lab_firstmeaningfulpaint_min: number | null;
+          lab_font_contentsize_max: number | null;
+          lab_font_contentsize_mean: number | null;
+          lab_font_contentsize_min: number | null;
+          lab_font_request_count_max: number | null;
+          lab_font_request_count_mean: number | null;
+          lab_font_request_count_min: number | null;
+          lab_font_transfersize_max: number | null;
+          lab_font_transfersize_mean: number | null;
+          lab_font_transfersize_min: number | null;
+          lab_fullyloaded_max: number | null;
+          lab_fullyloaded_mean: number | null;
+          lab_fullyloaded_min: number | null;
+          lab_html_contentsize_max: number | null;
+          lab_html_contentsize_mean: number | null;
+          lab_html_contentsize_min: number | null;
+          lab_html_request_count_max: number | null;
+          lab_html_request_count_mean: number | null;
+          lab_html_request_count_min: number | null;
+          lab_html_transfersize_max: number | null;
+          lab_html_transfersize_mean: number | null;
+          lab_html_transfersize_min: number | null;
+          lab_image_contentsize_max: number | null;
+          lab_image_contentsize_mean: number | null;
+          lab_image_contentsize_min: number | null;
+          lab_image_request_count_max: number | null;
+          lab_image_request_count_mean: number | null;
+          lab_image_request_count_min: number | null;
+          lab_image_transfersize_max: number | null;
+          lab_image_transfersize_mean: number | null;
+          lab_image_transfersize_min: number | null;
+          lab_js_contentsize_max: number | null;
+          lab_js_contentsize_mean: number | null;
+          lab_js_contentsize_min: number | null;
+          lab_js_request_count_max: number | null;
+          lab_js_request_count_mean: number | null;
+          lab_js_request_count_min: number | null;
+          lab_js_transfersize_max: number | null;
+          lab_js_transfersize_mean: number | null;
+          lab_js_transfersize_min: number | null;
+          lab_json_contentsize_max: number | null;
+          lab_json_contentsize_mean: number | null;
+          lab_json_contentsize_min: number | null;
+          lab_json_request_count_max: number | null;
+          lab_json_request_count_mean: number | null;
+          lab_json_request_count_min: number | null;
+          lab_json_transfersize_max: number | null;
+          lab_json_transfersize_mean: number | null;
+          lab_json_transfersize_min: number | null;
+          lab_lcp_max: number | null;
+          lab_lcp_mean: number | null;
+          lab_lcp_min: number | null;
+          lab_speed_index_max: number | null;
+          lab_speed_index_mean: number | null;
+          lab_speed_index_min: number | null;
+          lab_srt_max: number | null;
+          lab_srt_mean: number | null;
+          lab_srt_min: number | null;
+          lab_svg_contentsize_max: number | null;
+          lab_svg_contentsize_mean: number | null;
+          lab_svg_contentsize_min: number | null;
+          lab_svg_request_count_max: number | null;
+          lab_svg_request_count_mean: number | null;
+          lab_svg_request_count_min: number | null;
+          lab_svg_transfersize_max: number | null;
+          lab_svg_transfersize_mean: number | null;
+          lab_svg_transfersize_min: number | null;
+          lab_tbt_max: number | null;
+          lab_tbt_mean: number | null;
+          lab_tbt_min: number | null;
+          lab_total_contentsize_max: number | null;
+          lab_total_contentsize_mean: number | null;
+          lab_total_contentsize_min: number | null;
+          lab_total_requests_max: number | null;
+          lab_total_requests_mean: number | null;
+          lab_total_requests_min: number | null;
+          lab_total_transfersize_max: number | null;
+          lab_total_transfersize_mean: number | null;
+          lab_total_transfersize_min: number | null;
+          lab_ttfb_max: number | null;
+          lab_ttfb_mean: number | null;
+          lab_ttfb_min: number | null;
+          lcp_data: Json | null;
+          lcp_element_size_max: number | null;
+          lcp_element_size_mean: number | null;
+          lcp_element_size_min: number | null;
+          lcp_timing: Json | null;
+          page_address: string;
+          page_filmstrip: string | null;
+          page_screenshot: string | null;
+          pageload_timing: Json | null;
+          pageweight: number | null;
+          performance_score_max: number | null;
+          performance_score_mean: number | null;
+          performance_score_min: number | null;
+          record_id: string;
+          third_party_content_size_max: number | null;
+          third_party_content_size_mean: number | null;
+          third_party_content_size_min: number | null;
+          third_party_req_max: number | null;
+          third_party_req_mean: number | null;
+          third_party_req_min: number | null;
+          third_party_transfer_size_max: number | null;
+          third_party_transfer_size_mean: number | null;
+          third_party_transfer_size_min: number | null;
+          useragent: string | null;
+          windowsize: string | null;
+        };
         Insert: {
-          blocking_scripts?: Json | null
-          browser?: string | null
-          browser_version?: string | null
-          cls_data?: Json | null
-          created_at: string
-          crux_cls_avg?: number | null
-          crux_cls_good?: number | null
-          crux_cls_p75?: number | null
-          crux_cls_poor?: number | null
-          crux_fcp_avg?: number | null
-          crux_fcp_good?: number | null
-          crux_fcp_p75?: number | null
-          crux_fcp_poor?: number | null
-          crux_inp_avg?: number | null
-          crux_inp_good?: number | null
-          crux_inp_p75?: number | null
-          crux_inp_poor?: number | null
-          crux_lcp_avg?: number | null
-          crux_lcp_good?: number | null
-          crux_lcp_p75?: number | null
-          crux_lcp_poor?: number | null
-          crux_ttfb_avg?: number | null
-          crux_ttfb_good?: number | null
-          crux_ttfb_p75?: number | null
-          crux_ttfb_poor?: number | null
-          device_type: string
-          document_decodedbody_size?: number | null
-          document_encodedbody_size?: number | null
-          document_timing?: Json | null
-          document_transfersize?: number | null
-          documenttitle?: string | null
-          dom_complete_max?: number | null
-          dom_complete_mean?: number | null
-          dom_complete_min?: number | null
-          dom_elements_max?: number | null
-          dom_elements_mean?: number | null
-          dom_elements_min?: number | null
-          dom_interactive_max?: number | null
-          dom_interactive_mean?: number | null
-          dom_interactive_min?: number | null
-          domain?: string | null
-          domains?: Json | null
-          inp_latency_max?: number | null
-          inp_latency_mean?: number | null
-          inp_latency_min?: number | null
-          lab_cls_max?: number | null
-          lab_cls_mean?: number | null
-          lab_cls_min?: number | null
-          lab_contentsize?: number | null
-          lab_css_contentsize_max?: number | null
-          lab_css_contentsize_mean?: number | null
-          lab_css_contentsize_min?: number | null
-          lab_css_request_count_max?: number | null
-          lab_css_request_count_mean?: number | null
-          lab_css_request_count_min?: number | null
-          lab_css_transfersize_max?: number | null
-          lab_css_transfersize_mean?: number | null
-          lab_css_transfersize_min?: number | null
-          lab_domain_lookup?: number | null
-          lab_error_max?: number | null
-          lab_error_mean?: number | null
-          lab_error_min?: number | null
-          lab_fcp_max?: number | null
-          lab_fcp_mean?: number | null
-          lab_fcp_min?: number | null
-          lab_fid_max?: number | null
-          lab_fid_mean?: number | null
-          lab_fid_min?: number | null
-          lab_firstmeaningfulpaint_max?: number | null
-          lab_firstmeaningfulpaint_mean?: number | null
-          lab_firstmeaningfulpaint_min?: number | null
-          lab_font_contentsize_max?: number | null
-          lab_font_contentsize_mean?: number | null
-          lab_font_contentsize_min?: number | null
-          lab_font_request_count_max?: number | null
-          lab_font_request_count_mean?: number | null
-          lab_font_request_count_min?: number | null
-          lab_font_transfersize_max?: number | null
-          lab_font_transfersize_mean?: number | null
-          lab_font_transfersize_min?: number | null
-          lab_fullyloaded_max?: number | null
-          lab_fullyloaded_mean?: number | null
-          lab_fullyloaded_min?: number | null
-          lab_html_contentsize_max?: number | null
-          lab_html_contentsize_mean?: number | null
-          lab_html_contentsize_min?: number | null
-          lab_html_request_count_max?: number | null
-          lab_html_request_count_mean?: number | null
-          lab_html_request_count_min?: number | null
-          lab_html_transfersize_max?: number | null
-          lab_html_transfersize_mean?: number | null
-          lab_html_transfersize_min?: number | null
-          lab_image_contentsize_max?: number | null
-          lab_image_contentsize_mean?: number | null
-          lab_image_contentsize_min?: number | null
-          lab_image_request_count_max?: number | null
-          lab_image_request_count_mean?: number | null
-          lab_image_request_count_min?: number | null
-          lab_image_transfersize_max?: number | null
-          lab_image_transfersize_mean?: number | null
-          lab_image_transfersize_min?: number | null
-          lab_js_contentsize_max?: number | null
-          lab_js_contentsize_mean?: number | null
-          lab_js_contentsize_min?: number | null
-          lab_js_request_count_max?: number | null
-          lab_js_request_count_mean?: number | null
-          lab_js_request_count_min?: number | null
-          lab_js_transfersize_max?: number | null
-          lab_js_transfersize_mean?: number | null
-          lab_js_transfersize_min?: number | null
-          lab_json_contentsize_max?: number | null
-          lab_json_contentsize_mean?: number | null
-          lab_json_contentsize_min?: number | null
-          lab_json_request_count_max?: number | null
-          lab_json_request_count_mean?: number | null
-          lab_json_request_count_min?: number | null
-          lab_json_transfersize_max?: number | null
-          lab_json_transfersize_mean?: number | null
-          lab_json_transfersize_min?: number | null
-          lab_lcp_max?: number | null
-          lab_lcp_mean?: number | null
-          lab_lcp_min?: number | null
-          lab_speed_index_max?: number | null
-          lab_speed_index_mean?: number | null
-          lab_speed_index_min?: number | null
-          lab_srt_max?: number | null
-          lab_srt_mean?: number | null
-          lab_srt_min?: number | null
-          lab_svg_contentsize_max?: number | null
-          lab_svg_contentsize_mean?: number | null
-          lab_svg_contentsize_min?: number | null
-          lab_svg_request_count_max?: number | null
-          lab_svg_request_count_mean?: number | null
-          lab_svg_request_count_min?: number | null
-          lab_svg_transfersize_max?: number | null
-          lab_svg_transfersize_mean?: number | null
-          lab_svg_transfersize_min?: number | null
-          lab_tbt_max?: number | null
-          lab_tbt_mean?: number | null
-          lab_tbt_min?: number | null
-          lab_total_contentsize_max?: number | null
-          lab_total_contentsize_mean?: number | null
-          lab_total_contentsize_min?: number | null
-          lab_total_requests_max?: number | null
-          lab_total_requests_mean?: number | null
-          lab_total_requests_min?: number | null
-          lab_total_transfersize_max?: number | null
-          lab_total_transfersize_mean?: number | null
-          lab_total_transfersize_min?: number | null
-          lab_ttfb_max?: number | null
-          lab_ttfb_mean?: number | null
-          lab_ttfb_min?: number | null
-          lcp_data?: Json | null
-          lcp_element_size_max?: number | null
-          lcp_element_size_mean?: number | null
-          lcp_element_size_min?: number | null
-          lcp_timing?: Json | null
-          page_address: string
-          page_filmstrip?: string | null
-          page_screenshot?: string | null
-          pageload_timing?: Json | null
-          pageweight?: number | null
-          performance_score_max?: number | null
-          performance_score_mean?: number | null
-          performance_score_min?: number | null
-          record_id?: string
-          third_party_content_size_max?: number | null
-          third_party_content_size_mean?: number | null
-          third_party_content_size_min?: number | null
-          third_party_req_max?: number | null
-          third_party_req_mean?: number | null
-          third_party_req_min?: number | null
-          third_party_transfer_size_max?: number | null
-          third_party_transfer_size_mean?: number | null
-          third_party_transfer_size_min?: number | null
-          useragent?: string | null
-          windowsize?: string | null
-        }
+          blocking_scripts?: Json | null;
+          browser?: string | null;
+          browser_version?: string | null;
+          cls_data?: Json | null;
+          created_at: string;
+          crux_cls_avg?: number | null;
+          crux_cls_good?: number | null;
+          crux_cls_p75?: number | null;
+          crux_cls_poor?: number | null;
+          crux_fcp_avg?: number | null;
+          crux_fcp_good?: number | null;
+          crux_fcp_p75?: number | null;
+          crux_fcp_poor?: number | null;
+          crux_inp_avg?: number | null;
+          crux_inp_good?: number | null;
+          crux_inp_p75?: number | null;
+          crux_inp_poor?: number | null;
+          crux_lcp_avg?: number | null;
+          crux_lcp_good?: number | null;
+          crux_lcp_p75?: number | null;
+          crux_lcp_poor?: number | null;
+          crux_ttfb_avg?: number | null;
+          crux_ttfb_good?: number | null;
+          crux_ttfb_p75?: number | null;
+          crux_ttfb_poor?: number | null;
+          device_type: string;
+          document_decodedbody_size?: number | null;
+          document_encodedbody_size?: number | null;
+          document_timing?: Json | null;
+          document_transfersize?: number | null;
+          documenttitle?: string | null;
+          dom_complete_max?: number | null;
+          dom_complete_mean?: number | null;
+          dom_complete_min?: number | null;
+          dom_elements_max?: number | null;
+          dom_elements_mean?: number | null;
+          dom_elements_min?: number | null;
+          dom_interactive_max?: number | null;
+          dom_interactive_mean?: number | null;
+          dom_interactive_min?: number | null;
+          domain?: string | null;
+          domains?: Json | null;
+          inp_latency_max?: number | null;
+          inp_latency_mean?: number | null;
+          inp_latency_min?: number | null;
+          lab_cls_max?: number | null;
+          lab_cls_mean?: number | null;
+          lab_cls_min?: number | null;
+          lab_contentsize?: number | null;
+          lab_css_contentsize_max?: number | null;
+          lab_css_contentsize_mean?: number | null;
+          lab_css_contentsize_min?: number | null;
+          lab_css_request_count_max?: number | null;
+          lab_css_request_count_mean?: number | null;
+          lab_css_request_count_min?: number | null;
+          lab_css_transfersize_max?: number | null;
+          lab_css_transfersize_mean?: number | null;
+          lab_css_transfersize_min?: number | null;
+          lab_domain_lookup?: number | null;
+          lab_error_max?: number | null;
+          lab_error_mean?: number | null;
+          lab_error_min?: number | null;
+          lab_fcp_max?: number | null;
+          lab_fcp_mean?: number | null;
+          lab_fcp_min?: number | null;
+          lab_fid_max?: number | null;
+          lab_fid_mean?: number | null;
+          lab_fid_min?: number | null;
+          lab_firstmeaningfulpaint_max?: number | null;
+          lab_firstmeaningfulpaint_mean?: number | null;
+          lab_firstmeaningfulpaint_min?: number | null;
+          lab_font_contentsize_max?: number | null;
+          lab_font_contentsize_mean?: number | null;
+          lab_font_contentsize_min?: number | null;
+          lab_font_request_count_max?: number | null;
+          lab_font_request_count_mean?: number | null;
+          lab_font_request_count_min?: number | null;
+          lab_font_transfersize_max?: number | null;
+          lab_font_transfersize_mean?: number | null;
+          lab_font_transfersize_min?: number | null;
+          lab_fullyloaded_max?: number | null;
+          lab_fullyloaded_mean?: number | null;
+          lab_fullyloaded_min?: number | null;
+          lab_html_contentsize_max?: number | null;
+          lab_html_contentsize_mean?: number | null;
+          lab_html_contentsize_min?: number | null;
+          lab_html_request_count_max?: number | null;
+          lab_html_request_count_mean?: number | null;
+          lab_html_request_count_min?: number | null;
+          lab_html_transfersize_max?: number | null;
+          lab_html_transfersize_mean?: number | null;
+          lab_html_transfersize_min?: number | null;
+          lab_image_contentsize_max?: number | null;
+          lab_image_contentsize_mean?: number | null;
+          lab_image_contentsize_min?: number | null;
+          lab_image_request_count_max?: number | null;
+          lab_image_request_count_mean?: number | null;
+          lab_image_request_count_min?: number | null;
+          lab_image_transfersize_max?: number | null;
+          lab_image_transfersize_mean?: number | null;
+          lab_image_transfersize_min?: number | null;
+          lab_js_contentsize_max?: number | null;
+          lab_js_contentsize_mean?: number | null;
+          lab_js_contentsize_min?: number | null;
+          lab_js_request_count_max?: number | null;
+          lab_js_request_count_mean?: number | null;
+          lab_js_request_count_min?: number | null;
+          lab_js_transfersize_max?: number | null;
+          lab_js_transfersize_mean?: number | null;
+          lab_js_transfersize_min?: number | null;
+          lab_json_contentsize_max?: number | null;
+          lab_json_contentsize_mean?: number | null;
+          lab_json_contentsize_min?: number | null;
+          lab_json_request_count_max?: number | null;
+          lab_json_request_count_mean?: number | null;
+          lab_json_request_count_min?: number | null;
+          lab_json_transfersize_max?: number | null;
+          lab_json_transfersize_mean?: number | null;
+          lab_json_transfersize_min?: number | null;
+          lab_lcp_max?: number | null;
+          lab_lcp_mean?: number | null;
+          lab_lcp_min?: number | null;
+          lab_speed_index_max?: number | null;
+          lab_speed_index_mean?: number | null;
+          lab_speed_index_min?: number | null;
+          lab_srt_max?: number | null;
+          lab_srt_mean?: number | null;
+          lab_srt_min?: number | null;
+          lab_svg_contentsize_max?: number | null;
+          lab_svg_contentsize_mean?: number | null;
+          lab_svg_contentsize_min?: number | null;
+          lab_svg_request_count_max?: number | null;
+          lab_svg_request_count_mean?: number | null;
+          lab_svg_request_count_min?: number | null;
+          lab_svg_transfersize_max?: number | null;
+          lab_svg_transfersize_mean?: number | null;
+          lab_svg_transfersize_min?: number | null;
+          lab_tbt_max?: number | null;
+          lab_tbt_mean?: number | null;
+          lab_tbt_min?: number | null;
+          lab_total_contentsize_max?: number | null;
+          lab_total_contentsize_mean?: number | null;
+          lab_total_contentsize_min?: number | null;
+          lab_total_requests_max?: number | null;
+          lab_total_requests_mean?: number | null;
+          lab_total_requests_min?: number | null;
+          lab_total_transfersize_max?: number | null;
+          lab_total_transfersize_mean?: number | null;
+          lab_total_transfersize_min?: number | null;
+          lab_ttfb_max?: number | null;
+          lab_ttfb_mean?: number | null;
+          lab_ttfb_min?: number | null;
+          lcp_data?: Json | null;
+          lcp_element_size_max?: number | null;
+          lcp_element_size_mean?: number | null;
+          lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
+          page_address: string;
+          page_filmstrip?: string | null;
+          page_screenshot?: string | null;
+          pageload_timing?: Json | null;
+          pageweight?: number | null;
+          performance_score_max?: number | null;
+          performance_score_mean?: number | null;
+          performance_score_min?: number | null;
+          record_id?: string;
+          third_party_content_size_max?: number | null;
+          third_party_content_size_mean?: number | null;
+          third_party_content_size_min?: number | null;
+          third_party_req_max?: number | null;
+          third_party_req_mean?: number | null;
+          third_party_req_min?: number | null;
+          third_party_transfer_size_max?: number | null;
+          third_party_transfer_size_mean?: number | null;
+          third_party_transfer_size_min?: number | null;
+          useragent?: string | null;
+          windowsize?: string | null;
+        };
         Update: {
-          blocking_scripts?: Json | null
-          browser?: string | null
-          browser_version?: string | null
-          cls_data?: Json | null
-          created_at?: string
-          crux_cls_avg?: number | null
-          crux_cls_good?: number | null
-          crux_cls_p75?: number | null
-          crux_cls_poor?: number | null
-          crux_fcp_avg?: number | null
-          crux_fcp_good?: number | null
-          crux_fcp_p75?: number | null
-          crux_fcp_poor?: number | null
-          crux_inp_avg?: number | null
-          crux_inp_good?: number | null
-          crux_inp_p75?: number | null
-          crux_inp_poor?: number | null
-          crux_lcp_avg?: number | null
-          crux_lcp_good?: number | null
-          crux_lcp_p75?: number | null
-          crux_lcp_poor?: number | null
-          crux_ttfb_avg?: number | null
-          crux_ttfb_good?: number | null
-          crux_ttfb_p75?: number | null
-          crux_ttfb_poor?: number | null
-          device_type?: string
-          document_decodedbody_size?: number | null
-          document_encodedbody_size?: number | null
-          document_timing?: Json | null
-          document_transfersize?: number | null
-          documenttitle?: string | null
-          dom_complete_max?: number | null
-          dom_complete_mean?: number | null
-          dom_complete_min?: number | null
-          dom_elements_max?: number | null
-          dom_elements_mean?: number | null
-          dom_elements_min?: number | null
-          dom_interactive_max?: number | null
-          dom_interactive_mean?: number | null
-          dom_interactive_min?: number | null
-          domain?: string | null
-          domains?: Json | null
-          inp_latency_max?: number | null
-          inp_latency_mean?: number | null
-          inp_latency_min?: number | null
-          lab_cls_max?: number | null
-          lab_cls_mean?: number | null
-          lab_cls_min?: number | null
-          lab_contentsize?: number | null
-          lab_css_contentsize_max?: number | null
-          lab_css_contentsize_mean?: number | null
-          lab_css_contentsize_min?: number | null
-          lab_css_request_count_max?: number | null
-          lab_css_request_count_mean?: number | null
-          lab_css_request_count_min?: number | null
-          lab_css_transfersize_max?: number | null
-          lab_css_transfersize_mean?: number | null
-          lab_css_transfersize_min?: number | null
-          lab_domain_lookup?: number | null
-          lab_error_max?: number | null
-          lab_error_mean?: number | null
-          lab_error_min?: number | null
-          lab_fcp_max?: number | null
-          lab_fcp_mean?: number | null
-          lab_fcp_min?: number | null
-          lab_fid_max?: number | null
-          lab_fid_mean?: number | null
-          lab_fid_min?: number | null
-          lab_firstmeaningfulpaint_max?: number | null
-          lab_firstmeaningfulpaint_mean?: number | null
-          lab_firstmeaningfulpaint_min?: number | null
-          lab_font_contentsize_max?: number | null
-          lab_font_contentsize_mean?: number | null
-          lab_font_contentsize_min?: number | null
-          lab_font_request_count_max?: number | null
-          lab_font_request_count_mean?: number | null
-          lab_font_request_count_min?: number | null
-          lab_font_transfersize_max?: number | null
-          lab_font_transfersize_mean?: number | null
-          lab_font_transfersize_min?: number | null
-          lab_fullyloaded_max?: number | null
-          lab_fullyloaded_mean?: number | null
-          lab_fullyloaded_min?: number | null
-          lab_html_contentsize_max?: number | null
-          lab_html_contentsize_mean?: number | null
-          lab_html_contentsize_min?: number | null
-          lab_html_request_count_max?: number | null
-          lab_html_request_count_mean?: number | null
-          lab_html_request_count_min?: number | null
-          lab_html_transfersize_max?: number | null
-          lab_html_transfersize_mean?: number | null
-          lab_html_transfersize_min?: number | null
-          lab_image_contentsize_max?: number | null
-          lab_image_contentsize_mean?: number | null
-          lab_image_contentsize_min?: number | null
-          lab_image_request_count_max?: number | null
-          lab_image_request_count_mean?: number | null
-          lab_image_request_count_min?: number | null
-          lab_image_transfersize_max?: number | null
-          lab_image_transfersize_mean?: number | null
-          lab_image_transfersize_min?: number | null
-          lab_js_contentsize_max?: number | null
-          lab_js_contentsize_mean?: number | null
-          lab_js_contentsize_min?: number | null
-          lab_js_request_count_max?: number | null
-          lab_js_request_count_mean?: number | null
-          lab_js_request_count_min?: number | null
-          lab_js_transfersize_max?: number | null
-          lab_js_transfersize_mean?: number | null
-          lab_js_transfersize_min?: number | null
-          lab_json_contentsize_max?: number | null
-          lab_json_contentsize_mean?: number | null
-          lab_json_contentsize_min?: number | null
-          lab_json_request_count_max?: number | null
-          lab_json_request_count_mean?: number | null
-          lab_json_request_count_min?: number | null
-          lab_json_transfersize_max?: number | null
-          lab_json_transfersize_mean?: number | null
-          lab_json_transfersize_min?: number | null
-          lab_lcp_max?: number | null
-          lab_lcp_mean?: number | null
-          lab_lcp_min?: number | null
-          lab_speed_index_max?: number | null
-          lab_speed_index_mean?: number | null
-          lab_speed_index_min?: number | null
-          lab_srt_max?: number | null
-          lab_srt_mean?: number | null
-          lab_srt_min?: number | null
-          lab_svg_contentsize_max?: number | null
-          lab_svg_contentsize_mean?: number | null
-          lab_svg_contentsize_min?: number | null
-          lab_svg_request_count_max?: number | null
-          lab_svg_request_count_mean?: number | null
-          lab_svg_request_count_min?: number | null
-          lab_svg_transfersize_max?: number | null
-          lab_svg_transfersize_mean?: number | null
-          lab_svg_transfersize_min?: number | null
-          lab_tbt_max?: number | null
-          lab_tbt_mean?: number | null
-          lab_tbt_min?: number | null
-          lab_total_contentsize_max?: number | null
-          lab_total_contentsize_mean?: number | null
-          lab_total_contentsize_min?: number | null
-          lab_total_requests_max?: number | null
-          lab_total_requests_mean?: number | null
-          lab_total_requests_min?: number | null
-          lab_total_transfersize_max?: number | null
-          lab_total_transfersize_mean?: number | null
-          lab_total_transfersize_min?: number | null
-          lab_ttfb_max?: number | null
-          lab_ttfb_mean?: number | null
-          lab_ttfb_min?: number | null
-          lcp_data?: Json | null
-          lcp_element_size_max?: number | null
-          lcp_element_size_mean?: number | null
-          lcp_element_size_min?: number | null
-          lcp_timing?: Json | null
-          page_address?: string
-          page_filmstrip?: string | null
-          page_screenshot?: string | null
-          pageload_timing?: Json | null
-          pageweight?: number | null
-          performance_score_max?: number | null
-          performance_score_mean?: number | null
-          performance_score_min?: number | null
-          record_id?: string
-          third_party_content_size_max?: number | null
-          third_party_content_size_mean?: number | null
-          third_party_content_size_min?: number | null
-          third_party_req_max?: number | null
-          third_party_req_mean?: number | null
-          third_party_req_min?: number | null
-          third_party_transfer_size_max?: number | null
-          third_party_transfer_size_mean?: number | null
-          third_party_transfer_size_min?: number | null
-          useragent?: string | null
-          windowsize?: string | null
-        }
-        Relationships: []
-      }
+          blocking_scripts?: Json | null;
+          browser?: string | null;
+          browser_version?: string | null;
+          cls_data?: Json | null;
+          created_at?: string;
+          crux_cls_avg?: number | null;
+          crux_cls_good?: number | null;
+          crux_cls_p75?: number | null;
+          crux_cls_poor?: number | null;
+          crux_fcp_avg?: number | null;
+          crux_fcp_good?: number | null;
+          crux_fcp_p75?: number | null;
+          crux_fcp_poor?: number | null;
+          crux_inp_avg?: number | null;
+          crux_inp_good?: number | null;
+          crux_inp_p75?: number | null;
+          crux_inp_poor?: number | null;
+          crux_lcp_avg?: number | null;
+          crux_lcp_good?: number | null;
+          crux_lcp_p75?: number | null;
+          crux_lcp_poor?: number | null;
+          crux_ttfb_avg?: number | null;
+          crux_ttfb_good?: number | null;
+          crux_ttfb_p75?: number | null;
+          crux_ttfb_poor?: number | null;
+          device_type?: string;
+          document_decodedbody_size?: number | null;
+          document_encodedbody_size?: number | null;
+          document_timing?: Json | null;
+          document_transfersize?: number | null;
+          documenttitle?: string | null;
+          dom_complete_max?: number | null;
+          dom_complete_mean?: number | null;
+          dom_complete_min?: number | null;
+          dom_elements_max?: number | null;
+          dom_elements_mean?: number | null;
+          dom_elements_min?: number | null;
+          dom_interactive_max?: number | null;
+          dom_interactive_mean?: number | null;
+          dom_interactive_min?: number | null;
+          domain?: string | null;
+          domains?: Json | null;
+          inp_latency_max?: number | null;
+          inp_latency_mean?: number | null;
+          inp_latency_min?: number | null;
+          lab_cls_max?: number | null;
+          lab_cls_mean?: number | null;
+          lab_cls_min?: number | null;
+          lab_contentsize?: number | null;
+          lab_css_contentsize_max?: number | null;
+          lab_css_contentsize_mean?: number | null;
+          lab_css_contentsize_min?: number | null;
+          lab_css_request_count_max?: number | null;
+          lab_css_request_count_mean?: number | null;
+          lab_css_request_count_min?: number | null;
+          lab_css_transfersize_max?: number | null;
+          lab_css_transfersize_mean?: number | null;
+          lab_css_transfersize_min?: number | null;
+          lab_domain_lookup?: number | null;
+          lab_error_max?: number | null;
+          lab_error_mean?: number | null;
+          lab_error_min?: number | null;
+          lab_fcp_max?: number | null;
+          lab_fcp_mean?: number | null;
+          lab_fcp_min?: number | null;
+          lab_fid_max?: number | null;
+          lab_fid_mean?: number | null;
+          lab_fid_min?: number | null;
+          lab_firstmeaningfulpaint_max?: number | null;
+          lab_firstmeaningfulpaint_mean?: number | null;
+          lab_firstmeaningfulpaint_min?: number | null;
+          lab_font_contentsize_max?: number | null;
+          lab_font_contentsize_mean?: number | null;
+          lab_font_contentsize_min?: number | null;
+          lab_font_request_count_max?: number | null;
+          lab_font_request_count_mean?: number | null;
+          lab_font_request_count_min?: number | null;
+          lab_font_transfersize_max?: number | null;
+          lab_font_transfersize_mean?: number | null;
+          lab_font_transfersize_min?: number | null;
+          lab_fullyloaded_max?: number | null;
+          lab_fullyloaded_mean?: number | null;
+          lab_fullyloaded_min?: number | null;
+          lab_html_contentsize_max?: number | null;
+          lab_html_contentsize_mean?: number | null;
+          lab_html_contentsize_min?: number | null;
+          lab_html_request_count_max?: number | null;
+          lab_html_request_count_mean?: number | null;
+          lab_html_request_count_min?: number | null;
+          lab_html_transfersize_max?: number | null;
+          lab_html_transfersize_mean?: number | null;
+          lab_html_transfersize_min?: number | null;
+          lab_image_contentsize_max?: number | null;
+          lab_image_contentsize_mean?: number | null;
+          lab_image_contentsize_min?: number | null;
+          lab_image_request_count_max?: number | null;
+          lab_image_request_count_mean?: number | null;
+          lab_image_request_count_min?: number | null;
+          lab_image_transfersize_max?: number | null;
+          lab_image_transfersize_mean?: number | null;
+          lab_image_transfersize_min?: number | null;
+          lab_js_contentsize_max?: number | null;
+          lab_js_contentsize_mean?: number | null;
+          lab_js_contentsize_min?: number | null;
+          lab_js_request_count_max?: number | null;
+          lab_js_request_count_mean?: number | null;
+          lab_js_request_count_min?: number | null;
+          lab_js_transfersize_max?: number | null;
+          lab_js_transfersize_mean?: number | null;
+          lab_js_transfersize_min?: number | null;
+          lab_json_contentsize_max?: number | null;
+          lab_json_contentsize_mean?: number | null;
+          lab_json_contentsize_min?: number | null;
+          lab_json_request_count_max?: number | null;
+          lab_json_request_count_mean?: number | null;
+          lab_json_request_count_min?: number | null;
+          lab_json_transfersize_max?: number | null;
+          lab_json_transfersize_mean?: number | null;
+          lab_json_transfersize_min?: number | null;
+          lab_lcp_max?: number | null;
+          lab_lcp_mean?: number | null;
+          lab_lcp_min?: number | null;
+          lab_speed_index_max?: number | null;
+          lab_speed_index_mean?: number | null;
+          lab_speed_index_min?: number | null;
+          lab_srt_max?: number | null;
+          lab_srt_mean?: number | null;
+          lab_srt_min?: number | null;
+          lab_svg_contentsize_max?: number | null;
+          lab_svg_contentsize_mean?: number | null;
+          lab_svg_contentsize_min?: number | null;
+          lab_svg_request_count_max?: number | null;
+          lab_svg_request_count_mean?: number | null;
+          lab_svg_request_count_min?: number | null;
+          lab_svg_transfersize_max?: number | null;
+          lab_svg_transfersize_mean?: number | null;
+          lab_svg_transfersize_min?: number | null;
+          lab_tbt_max?: number | null;
+          lab_tbt_mean?: number | null;
+          lab_tbt_min?: number | null;
+          lab_total_contentsize_max?: number | null;
+          lab_total_contentsize_mean?: number | null;
+          lab_total_contentsize_min?: number | null;
+          lab_total_requests_max?: number | null;
+          lab_total_requests_mean?: number | null;
+          lab_total_requests_min?: number | null;
+          lab_total_transfersize_max?: number | null;
+          lab_total_transfersize_mean?: number | null;
+          lab_total_transfersize_min?: number | null;
+          lab_ttfb_max?: number | null;
+          lab_ttfb_mean?: number | null;
+          lab_ttfb_min?: number | null;
+          lcp_data?: Json | null;
+          lcp_element_size_max?: number | null;
+          lcp_element_size_mean?: number | null;
+          lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
+          page_address?: string;
+          page_filmstrip?: string | null;
+          page_screenshot?: string | null;
+          pageload_timing?: Json | null;
+          pageweight?: number | null;
+          performance_score_max?: number | null;
+          performance_score_mean?: number | null;
+          performance_score_min?: number | null;
+          record_id?: string;
+          third_party_content_size_max?: number | null;
+          third_party_content_size_mean?: number | null;
+          third_party_content_size_min?: number | null;
+          third_party_req_max?: number | null;
+          third_party_req_mean?: number | null;
+          third_party_req_min?: number | null;
+          third_party_transfer_size_max?: number | null;
+          third_party_transfer_size_mean?: number | null;
+          third_party_transfer_size_min?: number | null;
+          useragent?: string | null;
+          windowsize?: string | null;
+        };
+        Relationships: [];
+      };
       pageperf_data_mobile: {
         Row: {
-          blocking_scripts: Json | null
-          browser: string | null
-          browser_version: string | null
-          cls_data: Json | null
-          created_at: string
-          crux_cls_avg: number | null
-          crux_cls_good: number | null
-          crux_cls_p75: number | null
-          crux_cls_poor: number | null
-          crux_fcp_avg: number | null
-          crux_fcp_good: number | null
-          crux_fcp_p75: number | null
-          crux_fcp_poor: number | null
-          crux_inp_avg: number | null
-          crux_inp_good: number | null
-          crux_inp_p75: number | null
-          crux_inp_poor: number | null
-          crux_lcp_avg: number | null
-          crux_lcp_good: number | null
-          crux_lcp_p75: number | null
-          crux_lcp_poor: number | null
-          crux_ttfb_avg: number | null
-          crux_ttfb_good: number | null
-          crux_ttfb_p75: number | null
-          crux_ttfb_poor: number | null
-          device_type: string
-          document_decodedbody_size: number | null
-          document_encodedbody_size: number | null
-          document_timing: Json | null
-          document_transfersize: number | null
-          documenttitle: string | null
-          dom_complete_max: number | null
-          dom_complete_mean: number | null
-          dom_complete_min: number | null
-          dom_elements_max: number | null
-          dom_elements_mean: number | null
-          dom_elements_min: number | null
-          dom_interactive_max: number | null
-          dom_interactive_mean: number | null
-          dom_interactive_min: number | null
-          domain: string | null
-          domains: Json | null
-          inp_latency_max: number | null
-          inp_latency_mean: number | null
-          inp_latency_min: number | null
-          lab_cls_max: number | null
-          lab_cls_mean: number | null
-          lab_cls_min: number | null
-          lab_contentsize: number | null
-          lab_css_contentsize_max: number | null
-          lab_css_contentsize_mean: number | null
-          lab_css_contentsize_min: number | null
-          lab_css_request_count_max: number | null
-          lab_css_request_count_mean: number | null
-          lab_css_request_count_min: number | null
-          lab_css_transfersize_max: number | null
-          lab_css_transfersize_mean: number | null
-          lab_css_transfersize_min: number | null
-          lab_domain_lookup: number | null
-          lab_error_max: number | null
-          lab_error_mean: number | null
-          lab_error_min: number | null
-          lab_fcp_max: number | null
-          lab_fcp_mean: number | null
-          lab_fcp_min: number | null
-          lab_fid_max: number | null
-          lab_fid_mean: number | null
-          lab_fid_min: number | null
-          lab_firstmeaningfulpaint_max: number | null
-          lab_firstmeaningfulpaint_mean: number | null
-          lab_firstmeaningfulpaint_min: number | null
-          lab_font_contentsize_max: number | null
-          lab_font_contentsize_mean: number | null
-          lab_font_contentsize_min: number | null
-          lab_font_request_count_max: number | null
-          lab_font_request_count_mean: number | null
-          lab_font_request_count_min: number | null
-          lab_font_transfersize_max: number | null
-          lab_font_transfersize_mean: number | null
-          lab_font_transfersize_min: number | null
-          lab_fullyloaded_max: number | null
-          lab_fullyloaded_mean: number | null
-          lab_fullyloaded_min: number | null
-          lab_html_contentsize_max: number | null
-          lab_html_contentsize_mean: number | null
-          lab_html_contentsize_min: number | null
-          lab_html_request_count_max: number | null
-          lab_html_request_count_mean: number | null
-          lab_html_request_count_min: number | null
-          lab_html_transfersize_max: number | null
-          lab_html_transfersize_mean: number | null
-          lab_html_transfersize_min: number | null
-          lab_image_contentsize_max: number | null
-          lab_image_contentsize_mean: number | null
-          lab_image_contentsize_min: number | null
-          lab_image_request_count_max: number | null
-          lab_image_request_count_mean: number | null
-          lab_image_request_count_min: number | null
-          lab_image_transfersize_max: number | null
-          lab_image_transfersize_mean: number | null
-          lab_image_transfersize_min: number | null
-          lab_js_contentsize_max: number | null
-          lab_js_contentsize_mean: number | null
-          lab_js_contentsize_min: number | null
-          lab_js_request_count_max: number | null
-          lab_js_request_count_mean: number | null
-          lab_js_request_count_min: number | null
-          lab_js_transfersize_max: number | null
-          lab_js_transfersize_mean: number | null
-          lab_js_transfersize_min: number | null
-          lab_json_contentsize_max: number | null
-          lab_json_contentsize_mean: number | null
-          lab_json_contentsize_min: number | null
-          lab_json_request_count_max: number | null
-          lab_json_request_count_mean: number | null
-          lab_json_request_count_min: number | null
-          lab_json_transfersize_max: number | null
-          lab_json_transfersize_mean: number | null
-          lab_json_transfersize_min: number | null
-          lab_lcp_max: number | null
-          lab_lcp_mean: number | null
-          lab_lcp_min: number | null
-          lab_speed_index_max: number | null
-          lab_speed_index_mean: number | null
-          lab_speed_index_min: number | null
-          lab_srt_max: number | null
-          lab_srt_mean: number | null
-          lab_srt_min: number | null
-          lab_svg_contentsize_max: number | null
-          lab_svg_contentsize_mean: number | null
-          lab_svg_contentsize_min: number | null
-          lab_svg_request_count_max: number | null
-          lab_svg_request_count_mean: number | null
-          lab_svg_request_count_min: number | null
-          lab_svg_transfersize_max: number | null
-          lab_svg_transfersize_mean: number | null
-          lab_svg_transfersize_min: number | null
-          lab_tbt_max: number | null
-          lab_tbt_mean: number | null
-          lab_tbt_min: number | null
-          lab_total_contentsize_max: number | null
-          lab_total_contentsize_mean: number | null
-          lab_total_contentsize_min: number | null
-          lab_total_requests_max: number | null
-          lab_total_requests_mean: number | null
-          lab_total_requests_min: number | null
-          lab_total_transfersize_max: number | null
-          lab_total_transfersize_mean: number | null
-          lab_total_transfersize_min: number | null
-          lab_ttfb_max: number | null
-          lab_ttfb_mean: number | null
-          lab_ttfb_min: number | null
-          lcp_data: Json | null
-          lcp_element_size_max: number | null
-          lcp_element_size_mean: number | null
-          lcp_element_size_min: number | null
-          lcp_timing: Json | null
-          page_address: string
-          page_filmstrip: string | null
-          page_screenshot: string | null
-          pageload_timing: Json | null
-          pageweight: number | null
-          performance_score_max: number | null
-          performance_score_mean: number | null
-          performance_score_min: number | null
-          record_id: string
-          third_party_content_size_max: number | null
-          third_party_content_size_mean: number | null
-          third_party_content_size_min: number | null
-          third_party_req_max: number | null
-          third_party_req_mean: number | null
-          third_party_req_min: number | null
-          third_party_transfer_size_max: number | null
-          third_party_transfer_size_mean: number | null
-          third_party_transfer_size_min: number | null
-          useragent: string | null
-          windowsize: string | null
-        }
+          blocking_scripts: Json | null;
+          browser: string | null;
+          browser_version: string | null;
+          cls_data: Json | null;
+          created_at: string;
+          crux_cls_avg: number | null;
+          crux_cls_good: number | null;
+          crux_cls_p75: number | null;
+          crux_cls_poor: number | null;
+          crux_fcp_avg: number | null;
+          crux_fcp_good: number | null;
+          crux_fcp_p75: number | null;
+          crux_fcp_poor: number | null;
+          crux_inp_avg: number | null;
+          crux_inp_good: number | null;
+          crux_inp_p75: number | null;
+          crux_inp_poor: number | null;
+          crux_lcp_avg: number | null;
+          crux_lcp_good: number | null;
+          crux_lcp_p75: number | null;
+          crux_lcp_poor: number | null;
+          crux_ttfb_avg: number | null;
+          crux_ttfb_good: number | null;
+          crux_ttfb_p75: number | null;
+          crux_ttfb_poor: number | null;
+          device_type: string;
+          document_decodedbody_size: number | null;
+          document_encodedbody_size: number | null;
+          document_timing: Json | null;
+          document_transfersize: number | null;
+          documenttitle: string | null;
+          dom_complete_max: number | null;
+          dom_complete_mean: number | null;
+          dom_complete_min: number | null;
+          dom_elements_max: number | null;
+          dom_elements_mean: number | null;
+          dom_elements_min: number | null;
+          dom_interactive_max: number | null;
+          dom_interactive_mean: number | null;
+          dom_interactive_min: number | null;
+          domain: string | null;
+          domains: Json | null;
+          inp_latency_max: number | null;
+          inp_latency_mean: number | null;
+          inp_latency_min: number | null;
+          lab_cls_max: number | null;
+          lab_cls_mean: number | null;
+          lab_cls_min: number | null;
+          lab_contentsize: number | null;
+          lab_css_contentsize_max: number | null;
+          lab_css_contentsize_mean: number | null;
+          lab_css_contentsize_min: number | null;
+          lab_css_request_count_max: number | null;
+          lab_css_request_count_mean: number | null;
+          lab_css_request_count_min: number | null;
+          lab_css_transfersize_max: number | null;
+          lab_css_transfersize_mean: number | null;
+          lab_css_transfersize_min: number | null;
+          lab_domain_lookup: number | null;
+          lab_error_max: number | null;
+          lab_error_mean: number | null;
+          lab_error_min: number | null;
+          lab_fcp_max: number | null;
+          lab_fcp_mean: number | null;
+          lab_fcp_min: number | null;
+          lab_fid_max: number | null;
+          lab_fid_mean: number | null;
+          lab_fid_min: number | null;
+          lab_firstmeaningfulpaint_max: number | null;
+          lab_firstmeaningfulpaint_mean: number | null;
+          lab_firstmeaningfulpaint_min: number | null;
+          lab_font_contentsize_max: number | null;
+          lab_font_contentsize_mean: number | null;
+          lab_font_contentsize_min: number | null;
+          lab_font_request_count_max: number | null;
+          lab_font_request_count_mean: number | null;
+          lab_font_request_count_min: number | null;
+          lab_font_transfersize_max: number | null;
+          lab_font_transfersize_mean: number | null;
+          lab_font_transfersize_min: number | null;
+          lab_fullyloaded_max: number | null;
+          lab_fullyloaded_mean: number | null;
+          lab_fullyloaded_min: number | null;
+          lab_html_contentsize_max: number | null;
+          lab_html_contentsize_mean: number | null;
+          lab_html_contentsize_min: number | null;
+          lab_html_request_count_max: number | null;
+          lab_html_request_count_mean: number | null;
+          lab_html_request_count_min: number | null;
+          lab_html_transfersize_max: number | null;
+          lab_html_transfersize_mean: number | null;
+          lab_html_transfersize_min: number | null;
+          lab_image_contentsize_max: number | null;
+          lab_image_contentsize_mean: number | null;
+          lab_image_contentsize_min: number | null;
+          lab_image_request_count_max: number | null;
+          lab_image_request_count_mean: number | null;
+          lab_image_request_count_min: number | null;
+          lab_image_transfersize_max: number | null;
+          lab_image_transfersize_mean: number | null;
+          lab_image_transfersize_min: number | null;
+          lab_js_contentsize_max: number | null;
+          lab_js_contentsize_mean: number | null;
+          lab_js_contentsize_min: number | null;
+          lab_js_request_count_max: number | null;
+          lab_js_request_count_mean: number | null;
+          lab_js_request_count_min: number | null;
+          lab_js_transfersize_max: number | null;
+          lab_js_transfersize_mean: number | null;
+          lab_js_transfersize_min: number | null;
+          lab_json_contentsize_max: number | null;
+          lab_json_contentsize_mean: number | null;
+          lab_json_contentsize_min: number | null;
+          lab_json_request_count_max: number | null;
+          lab_json_request_count_mean: number | null;
+          lab_json_request_count_min: number | null;
+          lab_json_transfersize_max: number | null;
+          lab_json_transfersize_mean: number | null;
+          lab_json_transfersize_min: number | null;
+          lab_lcp_max: number | null;
+          lab_lcp_mean: number | null;
+          lab_lcp_min: number | null;
+          lab_speed_index_max: number | null;
+          lab_speed_index_mean: number | null;
+          lab_speed_index_min: number | null;
+          lab_srt_max: number | null;
+          lab_srt_mean: number | null;
+          lab_srt_min: number | null;
+          lab_svg_contentsize_max: number | null;
+          lab_svg_contentsize_mean: number | null;
+          lab_svg_contentsize_min: number | null;
+          lab_svg_request_count_max: number | null;
+          lab_svg_request_count_mean: number | null;
+          lab_svg_request_count_min: number | null;
+          lab_svg_transfersize_max: number | null;
+          lab_svg_transfersize_mean: number | null;
+          lab_svg_transfersize_min: number | null;
+          lab_tbt_max: number | null;
+          lab_tbt_mean: number | null;
+          lab_tbt_min: number | null;
+          lab_total_contentsize_max: number | null;
+          lab_total_contentsize_mean: number | null;
+          lab_total_contentsize_min: number | null;
+          lab_total_requests_max: number | null;
+          lab_total_requests_mean: number | null;
+          lab_total_requests_min: number | null;
+          lab_total_transfersize_max: number | null;
+          lab_total_transfersize_mean: number | null;
+          lab_total_transfersize_min: number | null;
+          lab_ttfb_max: number | null;
+          lab_ttfb_mean: number | null;
+          lab_ttfb_min: number | null;
+          lcp_data: Json | null;
+          lcp_element_size_max: number | null;
+          lcp_element_size_mean: number | null;
+          lcp_element_size_min: number | null;
+          lcp_timing: Json | null;
+          page_address: string;
+          page_filmstrip: string | null;
+          page_screenshot: string | null;
+          pageload_timing: Json | null;
+          pageweight: number | null;
+          performance_score_max: number | null;
+          performance_score_mean: number | null;
+          performance_score_min: number | null;
+          record_id: string;
+          third_party_content_size_max: number | null;
+          third_party_content_size_mean: number | null;
+          third_party_content_size_min: number | null;
+          third_party_req_max: number | null;
+          third_party_req_mean: number | null;
+          third_party_req_min: number | null;
+          third_party_transfer_size_max: number | null;
+          third_party_transfer_size_mean: number | null;
+          third_party_transfer_size_min: number | null;
+          useragent: string | null;
+          windowsize: string | null;
+        };
         Insert: {
-          blocking_scripts?: Json | null
-          browser?: string | null
-          browser_version?: string | null
-          cls_data?: Json | null
-          created_at: string
-          crux_cls_avg?: number | null
-          crux_cls_good?: number | null
-          crux_cls_p75?: number | null
-          crux_cls_poor?: number | null
-          crux_fcp_avg?: number | null
-          crux_fcp_good?: number | null
-          crux_fcp_p75?: number | null
-          crux_fcp_poor?: number | null
-          crux_inp_avg?: number | null
-          crux_inp_good?: number | null
-          crux_inp_p75?: number | null
-          crux_inp_poor?: number | null
-          crux_lcp_avg?: number | null
-          crux_lcp_good?: number | null
-          crux_lcp_p75?: number | null
-          crux_lcp_poor?: number | null
-          crux_ttfb_avg?: number | null
-          crux_ttfb_good?: number | null
-          crux_ttfb_p75?: number | null
-          crux_ttfb_poor?: number | null
-          device_type: string
-          document_decodedbody_size?: number | null
-          document_encodedbody_size?: number | null
-          document_timing?: Json | null
-          document_transfersize?: number | null
-          documenttitle?: string | null
-          dom_complete_max?: number | null
-          dom_complete_mean?: number | null
-          dom_complete_min?: number | null
-          dom_elements_max?: number | null
-          dom_elements_mean?: number | null
-          dom_elements_min?: number | null
-          dom_interactive_max?: number | null
-          dom_interactive_mean?: number | null
-          dom_interactive_min?: number | null
-          domain?: string | null
-          domains?: Json | null
-          inp_latency_max?: number | null
-          inp_latency_mean?: number | null
-          inp_latency_min?: number | null
-          lab_cls_max?: number | null
-          lab_cls_mean?: number | null
-          lab_cls_min?: number | null
-          lab_contentsize?: number | null
-          lab_css_contentsize_max?: number | null
-          lab_css_contentsize_mean?: number | null
-          lab_css_contentsize_min?: number | null
-          lab_css_request_count_max?: number | null
-          lab_css_request_count_mean?: number | null
-          lab_css_request_count_min?: number | null
-          lab_css_transfersize_max?: number | null
-          lab_css_transfersize_mean?: number | null
-          lab_css_transfersize_min?: number | null
-          lab_domain_lookup?: number | null
-          lab_error_max?: number | null
-          lab_error_mean?: number | null
-          lab_error_min?: number | null
-          lab_fcp_max?: number | null
-          lab_fcp_mean?: number | null
-          lab_fcp_min?: number | null
-          lab_fid_max?: number | null
-          lab_fid_mean?: number | null
-          lab_fid_min?: number | null
-          lab_firstmeaningfulpaint_max?: number | null
-          lab_firstmeaningfulpaint_mean?: number | null
-          lab_firstmeaningfulpaint_min?: number | null
-          lab_font_contentsize_max?: number | null
-          lab_font_contentsize_mean?: number | null
-          lab_font_contentsize_min?: number | null
-          lab_font_request_count_max?: number | null
-          lab_font_request_count_mean?: number | null
-          lab_font_request_count_min?: number | null
-          lab_font_transfersize_max?: number | null
-          lab_font_transfersize_mean?: number | null
-          lab_font_transfersize_min?: number | null
-          lab_fullyloaded_max?: number | null
-          lab_fullyloaded_mean?: number | null
-          lab_fullyloaded_min?: number | null
-          lab_html_contentsize_max?: number | null
-          lab_html_contentsize_mean?: number | null
-          lab_html_contentsize_min?: number | null
-          lab_html_request_count_max?: number | null
-          lab_html_request_count_mean?: number | null
-          lab_html_request_count_min?: number | null
-          lab_html_transfersize_max?: number | null
-          lab_html_transfersize_mean?: number | null
-          lab_html_transfersize_min?: number | null
-          lab_image_contentsize_max?: number | null
-          lab_image_contentsize_mean?: number | null
-          lab_image_contentsize_min?: number | null
-          lab_image_request_count_max?: number | null
-          lab_image_request_count_mean?: number | null
-          lab_image_request_count_min?: number | null
-          lab_image_transfersize_max?: number | null
-          lab_image_transfersize_mean?: number | null
-          lab_image_transfersize_min?: number | null
-          lab_js_contentsize_max?: number | null
-          lab_js_contentsize_mean?: number | null
-          lab_js_contentsize_min?: number | null
-          lab_js_request_count_max?: number | null
-          lab_js_request_count_mean?: number | null
-          lab_js_request_count_min?: number | null
-          lab_js_transfersize_max?: number | null
-          lab_js_transfersize_mean?: number | null
-          lab_js_transfersize_min?: number | null
-          lab_json_contentsize_max?: number | null
-          lab_json_contentsize_mean?: number | null
-          lab_json_contentsize_min?: number | null
-          lab_json_request_count_max?: number | null
-          lab_json_request_count_mean?: number | null
-          lab_json_request_count_min?: number | null
-          lab_json_transfersize_max?: number | null
-          lab_json_transfersize_mean?: number | null
-          lab_json_transfersize_min?: number | null
-          lab_lcp_max?: number | null
-          lab_lcp_mean?: number | null
-          lab_lcp_min?: number | null
-          lab_speed_index_max?: number | null
-          lab_speed_index_mean?: number | null
-          lab_speed_index_min?: number | null
-          lab_srt_max?: number | null
-          lab_srt_mean?: number | null
-          lab_srt_min?: number | null
-          lab_svg_contentsize_max?: number | null
-          lab_svg_contentsize_mean?: number | null
-          lab_svg_contentsize_min?: number | null
-          lab_svg_request_count_max?: number | null
-          lab_svg_request_count_mean?: number | null
-          lab_svg_request_count_min?: number | null
-          lab_svg_transfersize_max?: number | null
-          lab_svg_transfersize_mean?: number | null
-          lab_svg_transfersize_min?: number | null
-          lab_tbt_max?: number | null
-          lab_tbt_mean?: number | null
-          lab_tbt_min?: number | null
-          lab_total_contentsize_max?: number | null
-          lab_total_contentsize_mean?: number | null
-          lab_total_contentsize_min?: number | null
-          lab_total_requests_max?: number | null
-          lab_total_requests_mean?: number | null
-          lab_total_requests_min?: number | null
-          lab_total_transfersize_max?: number | null
-          lab_total_transfersize_mean?: number | null
-          lab_total_transfersize_min?: number | null
-          lab_ttfb_max?: number | null
-          lab_ttfb_mean?: number | null
-          lab_ttfb_min?: number | null
-          lcp_data?: Json | null
-          lcp_element_size_max?: number | null
-          lcp_element_size_mean?: number | null
-          lcp_element_size_min?: number | null
-          lcp_timing?: Json | null
-          page_address: string
-          page_filmstrip?: string | null
-          page_screenshot?: string | null
-          pageload_timing?: Json | null
-          pageweight?: number | null
-          performance_score_max?: number | null
-          performance_score_mean?: number | null
-          performance_score_min?: number | null
-          record_id?: string
-          third_party_content_size_max?: number | null
-          third_party_content_size_mean?: number | null
-          third_party_content_size_min?: number | null
-          third_party_req_max?: number | null
-          third_party_req_mean?: number | null
-          third_party_req_min?: number | null
-          third_party_transfer_size_max?: number | null
-          third_party_transfer_size_mean?: number | null
-          third_party_transfer_size_min?: number | null
-          useragent?: string | null
-          windowsize?: string | null
-        }
+          blocking_scripts?: Json | null;
+          browser?: string | null;
+          browser_version?: string | null;
+          cls_data?: Json | null;
+          created_at: string;
+          crux_cls_avg?: number | null;
+          crux_cls_good?: number | null;
+          crux_cls_p75?: number | null;
+          crux_cls_poor?: number | null;
+          crux_fcp_avg?: number | null;
+          crux_fcp_good?: number | null;
+          crux_fcp_p75?: number | null;
+          crux_fcp_poor?: number | null;
+          crux_inp_avg?: number | null;
+          crux_inp_good?: number | null;
+          crux_inp_p75?: number | null;
+          crux_inp_poor?: number | null;
+          crux_lcp_avg?: number | null;
+          crux_lcp_good?: number | null;
+          crux_lcp_p75?: number | null;
+          crux_lcp_poor?: number | null;
+          crux_ttfb_avg?: number | null;
+          crux_ttfb_good?: number | null;
+          crux_ttfb_p75?: number | null;
+          crux_ttfb_poor?: number | null;
+          device_type: string;
+          document_decodedbody_size?: number | null;
+          document_encodedbody_size?: number | null;
+          document_timing?: Json | null;
+          document_transfersize?: number | null;
+          documenttitle?: string | null;
+          dom_complete_max?: number | null;
+          dom_complete_mean?: number | null;
+          dom_complete_min?: number | null;
+          dom_elements_max?: number | null;
+          dom_elements_mean?: number | null;
+          dom_elements_min?: number | null;
+          dom_interactive_max?: number | null;
+          dom_interactive_mean?: number | null;
+          dom_interactive_min?: number | null;
+          domain?: string | null;
+          domains?: Json | null;
+          inp_latency_max?: number | null;
+          inp_latency_mean?: number | null;
+          inp_latency_min?: number | null;
+          lab_cls_max?: number | null;
+          lab_cls_mean?: number | null;
+          lab_cls_min?: number | null;
+          lab_contentsize?: number | null;
+          lab_css_contentsize_max?: number | null;
+          lab_css_contentsize_mean?: number | null;
+          lab_css_contentsize_min?: number | null;
+          lab_css_request_count_max?: number | null;
+          lab_css_request_count_mean?: number | null;
+          lab_css_request_count_min?: number | null;
+          lab_css_transfersize_max?: number | null;
+          lab_css_transfersize_mean?: number | null;
+          lab_css_transfersize_min?: number | null;
+          lab_domain_lookup?: number | null;
+          lab_error_max?: number | null;
+          lab_error_mean?: number | null;
+          lab_error_min?: number | null;
+          lab_fcp_max?: number | null;
+          lab_fcp_mean?: number | null;
+          lab_fcp_min?: number | null;
+          lab_fid_max?: number | null;
+          lab_fid_mean?: number | null;
+          lab_fid_min?: number | null;
+          lab_firstmeaningfulpaint_max?: number | null;
+          lab_firstmeaningfulpaint_mean?: number | null;
+          lab_firstmeaningfulpaint_min?: number | null;
+          lab_font_contentsize_max?: number | null;
+          lab_font_contentsize_mean?: number | null;
+          lab_font_contentsize_min?: number | null;
+          lab_font_request_count_max?: number | null;
+          lab_font_request_count_mean?: number | null;
+          lab_font_request_count_min?: number | null;
+          lab_font_transfersize_max?: number | null;
+          lab_font_transfersize_mean?: number | null;
+          lab_font_transfersize_min?: number | null;
+          lab_fullyloaded_max?: number | null;
+          lab_fullyloaded_mean?: number | null;
+          lab_fullyloaded_min?: number | null;
+          lab_html_contentsize_max?: number | null;
+          lab_html_contentsize_mean?: number | null;
+          lab_html_contentsize_min?: number | null;
+          lab_html_request_count_max?: number | null;
+          lab_html_request_count_mean?: number | null;
+          lab_html_request_count_min?: number | null;
+          lab_html_transfersize_max?: number | null;
+          lab_html_transfersize_mean?: number | null;
+          lab_html_transfersize_min?: number | null;
+          lab_image_contentsize_max?: number | null;
+          lab_image_contentsize_mean?: number | null;
+          lab_image_contentsize_min?: number | null;
+          lab_image_request_count_max?: number | null;
+          lab_image_request_count_mean?: number | null;
+          lab_image_request_count_min?: number | null;
+          lab_image_transfersize_max?: number | null;
+          lab_image_transfersize_mean?: number | null;
+          lab_image_transfersize_min?: number | null;
+          lab_js_contentsize_max?: number | null;
+          lab_js_contentsize_mean?: number | null;
+          lab_js_contentsize_min?: number | null;
+          lab_js_request_count_max?: number | null;
+          lab_js_request_count_mean?: number | null;
+          lab_js_request_count_min?: number | null;
+          lab_js_transfersize_max?: number | null;
+          lab_js_transfersize_mean?: number | null;
+          lab_js_transfersize_min?: number | null;
+          lab_json_contentsize_max?: number | null;
+          lab_json_contentsize_mean?: number | null;
+          lab_json_contentsize_min?: number | null;
+          lab_json_request_count_max?: number | null;
+          lab_json_request_count_mean?: number | null;
+          lab_json_request_count_min?: number | null;
+          lab_json_transfersize_max?: number | null;
+          lab_json_transfersize_mean?: number | null;
+          lab_json_transfersize_min?: number | null;
+          lab_lcp_max?: number | null;
+          lab_lcp_mean?: number | null;
+          lab_lcp_min?: number | null;
+          lab_speed_index_max?: number | null;
+          lab_speed_index_mean?: number | null;
+          lab_speed_index_min?: number | null;
+          lab_srt_max?: number | null;
+          lab_srt_mean?: number | null;
+          lab_srt_min?: number | null;
+          lab_svg_contentsize_max?: number | null;
+          lab_svg_contentsize_mean?: number | null;
+          lab_svg_contentsize_min?: number | null;
+          lab_svg_request_count_max?: number | null;
+          lab_svg_request_count_mean?: number | null;
+          lab_svg_request_count_min?: number | null;
+          lab_svg_transfersize_max?: number | null;
+          lab_svg_transfersize_mean?: number | null;
+          lab_svg_transfersize_min?: number | null;
+          lab_tbt_max?: number | null;
+          lab_tbt_mean?: number | null;
+          lab_tbt_min?: number | null;
+          lab_total_contentsize_max?: number | null;
+          lab_total_contentsize_mean?: number | null;
+          lab_total_contentsize_min?: number | null;
+          lab_total_requests_max?: number | null;
+          lab_total_requests_mean?: number | null;
+          lab_total_requests_min?: number | null;
+          lab_total_transfersize_max?: number | null;
+          lab_total_transfersize_mean?: number | null;
+          lab_total_transfersize_min?: number | null;
+          lab_ttfb_max?: number | null;
+          lab_ttfb_mean?: number | null;
+          lab_ttfb_min?: number | null;
+          lcp_data?: Json | null;
+          lcp_element_size_max?: number | null;
+          lcp_element_size_mean?: number | null;
+          lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
+          page_address: string;
+          page_filmstrip?: string | null;
+          page_screenshot?: string | null;
+          pageload_timing?: Json | null;
+          pageweight?: number | null;
+          performance_score_max?: number | null;
+          performance_score_mean?: number | null;
+          performance_score_min?: number | null;
+          record_id?: string;
+          third_party_content_size_max?: number | null;
+          third_party_content_size_mean?: number | null;
+          third_party_content_size_min?: number | null;
+          third_party_req_max?: number | null;
+          third_party_req_mean?: number | null;
+          third_party_req_min?: number | null;
+          third_party_transfer_size_max?: number | null;
+          third_party_transfer_size_mean?: number | null;
+          third_party_transfer_size_min?: number | null;
+          useragent?: string | null;
+          windowsize?: string | null;
+        };
         Update: {
-          blocking_scripts?: Json | null
-          browser?: string | null
-          browser_version?: string | null
-          cls_data?: Json | null
-          created_at?: string
-          crux_cls_avg?: number | null
-          crux_cls_good?: number | null
-          crux_cls_p75?: number | null
-          crux_cls_poor?: number | null
-          crux_fcp_avg?: number | null
-          crux_fcp_good?: number | null
-          crux_fcp_p75?: number | null
-          crux_fcp_poor?: number | null
-          crux_inp_avg?: number | null
-          crux_inp_good?: number | null
-          crux_inp_p75?: number | null
-          crux_inp_poor?: number | null
-          crux_lcp_avg?: number | null
-          crux_lcp_good?: number | null
-          crux_lcp_p75?: number | null
-          crux_lcp_poor?: number | null
-          crux_ttfb_avg?: number | null
-          crux_ttfb_good?: number | null
-          crux_ttfb_p75?: number | null
-          crux_ttfb_poor?: number | null
-          device_type?: string
-          document_decodedbody_size?: number | null
-          document_encodedbody_size?: number | null
-          document_timing?: Json | null
-          document_transfersize?: number | null
-          documenttitle?: string | null
-          dom_complete_max?: number | null
-          dom_complete_mean?: number | null
-          dom_complete_min?: number | null
-          dom_elements_max?: number | null
-          dom_elements_mean?: number | null
-          dom_elements_min?: number | null
-          dom_interactive_max?: number | null
-          dom_interactive_mean?: number | null
-          dom_interactive_min?: number | null
-          domain?: string | null
-          domains?: Json | null
-          inp_latency_max?: number | null
-          inp_latency_mean?: number | null
-          inp_latency_min?: number | null
-          lab_cls_max?: number | null
-          lab_cls_mean?: number | null
-          lab_cls_min?: number | null
-          lab_contentsize?: number | null
-          lab_css_contentsize_max?: number | null
-          lab_css_contentsize_mean?: number | null
-          lab_css_contentsize_min?: number | null
-          lab_css_request_count_max?: number | null
-          lab_css_request_count_mean?: number | null
-          lab_css_request_count_min?: number | null
-          lab_css_transfersize_max?: number | null
-          lab_css_transfersize_mean?: number | null
-          lab_css_transfersize_min?: number | null
-          lab_domain_lookup?: number | null
-          lab_error_max?: number | null
-          lab_error_mean?: number | null
-          lab_error_min?: number | null
-          lab_fcp_max?: number | null
-          lab_fcp_mean?: number | null
-          lab_fcp_min?: number | null
-          lab_fid_max?: number | null
-          lab_fid_mean?: number | null
-          lab_fid_min?: number | null
-          lab_firstmeaningfulpaint_max?: number | null
-          lab_firstmeaningfulpaint_mean?: number | null
-          lab_firstmeaningfulpaint_min?: number | null
-          lab_font_contentsize_max?: number | null
-          lab_font_contentsize_mean?: number | null
-          lab_font_contentsize_min?: number | null
-          lab_font_request_count_max?: number | null
-          lab_font_request_count_mean?: number | null
-          lab_font_request_count_min?: number | null
-          lab_font_transfersize_max?: number | null
-          lab_font_transfersize_mean?: number | null
-          lab_font_transfersize_min?: number | null
-          lab_fullyloaded_max?: number | null
-          lab_fullyloaded_mean?: number | null
-          lab_fullyloaded_min?: number | null
-          lab_html_contentsize_max?: number | null
-          lab_html_contentsize_mean?: number | null
-          lab_html_contentsize_min?: number | null
-          lab_html_request_count_max?: number | null
-          lab_html_request_count_mean?: number | null
-          lab_html_request_count_min?: number | null
-          lab_html_transfersize_max?: number | null
-          lab_html_transfersize_mean?: number | null
-          lab_html_transfersize_min?: number | null
-          lab_image_contentsize_max?: number | null
-          lab_image_contentsize_mean?: number | null
-          lab_image_contentsize_min?: number | null
-          lab_image_request_count_max?: number | null
-          lab_image_request_count_mean?: number | null
-          lab_image_request_count_min?: number | null
-          lab_image_transfersize_max?: number | null
-          lab_image_transfersize_mean?: number | null
-          lab_image_transfersize_min?: number | null
-          lab_js_contentsize_max?: number | null
-          lab_js_contentsize_mean?: number | null
-          lab_js_contentsize_min?: number | null
-          lab_js_request_count_max?: number | null
-          lab_js_request_count_mean?: number | null
-          lab_js_request_count_min?: number | null
-          lab_js_transfersize_max?: number | null
-          lab_js_transfersize_mean?: number | null
-          lab_js_transfersize_min?: number | null
-          lab_json_contentsize_max?: number | null
-          lab_json_contentsize_mean?: number | null
-          lab_json_contentsize_min?: number | null
-          lab_json_request_count_max?: number | null
-          lab_json_request_count_mean?: number | null
-          lab_json_request_count_min?: number | null
-          lab_json_transfersize_max?: number | null
-          lab_json_transfersize_mean?: number | null
-          lab_json_transfersize_min?: number | null
-          lab_lcp_max?: number | null
-          lab_lcp_mean?: number | null
-          lab_lcp_min?: number | null
-          lab_speed_index_max?: number | null
-          lab_speed_index_mean?: number | null
-          lab_speed_index_min?: number | null
-          lab_srt_max?: number | null
-          lab_srt_mean?: number | null
-          lab_srt_min?: number | null
-          lab_svg_contentsize_max?: number | null
-          lab_svg_contentsize_mean?: number | null
-          lab_svg_contentsize_min?: number | null
-          lab_svg_request_count_max?: number | null
-          lab_svg_request_count_mean?: number | null
-          lab_svg_request_count_min?: number | null
-          lab_svg_transfersize_max?: number | null
-          lab_svg_transfersize_mean?: number | null
-          lab_svg_transfersize_min?: number | null
-          lab_tbt_max?: number | null
-          lab_tbt_mean?: number | null
-          lab_tbt_min?: number | null
-          lab_total_contentsize_max?: number | null
-          lab_total_contentsize_mean?: number | null
-          lab_total_contentsize_min?: number | null
-          lab_total_requests_max?: number | null
-          lab_total_requests_mean?: number | null
-          lab_total_requests_min?: number | null
-          lab_total_transfersize_max?: number | null
-          lab_total_transfersize_mean?: number | null
-          lab_total_transfersize_min?: number | null
-          lab_ttfb_max?: number | null
-          lab_ttfb_mean?: number | null
-          lab_ttfb_min?: number | null
-          lcp_data?: Json | null
-          lcp_element_size_max?: number | null
-          lcp_element_size_mean?: number | null
-          lcp_element_size_min?: number | null
-          lcp_timing?: Json | null
-          page_address?: string
-          page_filmstrip?: string | null
-          page_screenshot?: string | null
-          pageload_timing?: Json | null
-          pageweight?: number | null
-          performance_score_max?: number | null
-          performance_score_mean?: number | null
-          performance_score_min?: number | null
-          record_id?: string
-          third_party_content_size_max?: number | null
-          third_party_content_size_mean?: number | null
-          third_party_content_size_min?: number | null
-          third_party_req_max?: number | null
-          third_party_req_mean?: number | null
-          third_party_req_min?: number | null
-          third_party_transfer_size_max?: number | null
-          third_party_transfer_size_mean?: number | null
-          third_party_transfer_size_min?: number | null
-          useragent?: string | null
-          windowsize?: string | null
-        }
-        Relationships: []
-      }
-      pageSummery: {
-        Row: {
-          created_at: string
-          data: Json
-          device_type: string | null
-          id: number
-          page_address: string | null
-        }
-        Insert: {
-          created_at?: string
-          data: Json
-          device_type?: string | null
-          id?: number
-          page_address?: string | null
-        }
-        Update: {
-          created_at?: string
-          data?: Json
-          device_type?: string | null
-          id?: number
-          page_address?: string | null
-        }
-        Relationships: []
-      }
+          blocking_scripts?: Json | null;
+          browser?: string | null;
+          browser_version?: string | null;
+          cls_data?: Json | null;
+          created_at?: string;
+          crux_cls_avg?: number | null;
+          crux_cls_good?: number | null;
+          crux_cls_p75?: number | null;
+          crux_cls_poor?: number | null;
+          crux_fcp_avg?: number | null;
+          crux_fcp_good?: number | null;
+          crux_fcp_p75?: number | null;
+          crux_fcp_poor?: number | null;
+          crux_inp_avg?: number | null;
+          crux_inp_good?: number | null;
+          crux_inp_p75?: number | null;
+          crux_inp_poor?: number | null;
+          crux_lcp_avg?: number | null;
+          crux_lcp_good?: number | null;
+          crux_lcp_p75?: number | null;
+          crux_lcp_poor?: number | null;
+          crux_ttfb_avg?: number | null;
+          crux_ttfb_good?: number | null;
+          crux_ttfb_p75?: number | null;
+          crux_ttfb_poor?: number | null;
+          device_type?: string;
+          document_decodedbody_size?: number | null;
+          document_encodedbody_size?: number | null;
+          document_timing?: Json | null;
+          document_transfersize?: number | null;
+          documenttitle?: string | null;
+          dom_complete_max?: number | null;
+          dom_complete_mean?: number | null;
+          dom_complete_min?: number | null;
+          dom_elements_max?: number | null;
+          dom_elements_mean?: number | null;
+          dom_elements_min?: number | null;
+          dom_interactive_max?: number | null;
+          dom_interactive_mean?: number | null;
+          dom_interactive_min?: number | null;
+          domain?: string | null;
+          domains?: Json | null;
+          inp_latency_max?: number | null;
+          inp_latency_mean?: number | null;
+          inp_latency_min?: number | null;
+          lab_cls_max?: number | null;
+          lab_cls_mean?: number | null;
+          lab_cls_min?: number | null;
+          lab_contentsize?: number | null;
+          lab_css_contentsize_max?: number | null;
+          lab_css_contentsize_mean?: number | null;
+          lab_css_contentsize_min?: number | null;
+          lab_css_request_count_max?: number | null;
+          lab_css_request_count_mean?: number | null;
+          lab_css_request_count_min?: number | null;
+          lab_css_transfersize_max?: number | null;
+          lab_css_transfersize_mean?: number | null;
+          lab_css_transfersize_min?: number | null;
+          lab_domain_lookup?: number | null;
+          lab_error_max?: number | null;
+          lab_error_mean?: number | null;
+          lab_error_min?: number | null;
+          lab_fcp_max?: number | null;
+          lab_fcp_mean?: number | null;
+          lab_fcp_min?: number | null;
+          lab_fid_max?: number | null;
+          lab_fid_mean?: number | null;
+          lab_fid_min?: number | null;
+          lab_firstmeaningfulpaint_max?: number | null;
+          lab_firstmeaningfulpaint_mean?: number | null;
+          lab_firstmeaningfulpaint_min?: number | null;
+          lab_font_contentsize_max?: number | null;
+          lab_font_contentsize_mean?: number | null;
+          lab_font_contentsize_min?: number | null;
+          lab_font_request_count_max?: number | null;
+          lab_font_request_count_mean?: number | null;
+          lab_font_request_count_min?: number | null;
+          lab_font_transfersize_max?: number | null;
+          lab_font_transfersize_mean?: number | null;
+          lab_font_transfersize_min?: number | null;
+          lab_fullyloaded_max?: number | null;
+          lab_fullyloaded_mean?: number | null;
+          lab_fullyloaded_min?: number | null;
+          lab_html_contentsize_max?: number | null;
+          lab_html_contentsize_mean?: number | null;
+          lab_html_contentsize_min?: number | null;
+          lab_html_request_count_max?: number | null;
+          lab_html_request_count_mean?: number | null;
+          lab_html_request_count_min?: number | null;
+          lab_html_transfersize_max?: number | null;
+          lab_html_transfersize_mean?: number | null;
+          lab_html_transfersize_min?: number | null;
+          lab_image_contentsize_max?: number | null;
+          lab_image_contentsize_mean?: number | null;
+          lab_image_contentsize_min?: number | null;
+          lab_image_request_count_max?: number | null;
+          lab_image_request_count_mean?: number | null;
+          lab_image_request_count_min?: number | null;
+          lab_image_transfersize_max?: number | null;
+          lab_image_transfersize_mean?: number | null;
+          lab_image_transfersize_min?: number | null;
+          lab_js_contentsize_max?: number | null;
+          lab_js_contentsize_mean?: number | null;
+          lab_js_contentsize_min?: number | null;
+          lab_js_request_count_max?: number | null;
+          lab_js_request_count_mean?: number | null;
+          lab_js_request_count_min?: number | null;
+          lab_js_transfersize_max?: number | null;
+          lab_js_transfersize_mean?: number | null;
+          lab_js_transfersize_min?: number | null;
+          lab_json_contentsize_max?: number | null;
+          lab_json_contentsize_mean?: number | null;
+          lab_json_contentsize_min?: number | null;
+          lab_json_request_count_max?: number | null;
+          lab_json_request_count_mean?: number | null;
+          lab_json_request_count_min?: number | null;
+          lab_json_transfersize_max?: number | null;
+          lab_json_transfersize_mean?: number | null;
+          lab_json_transfersize_min?: number | null;
+          lab_lcp_max?: number | null;
+          lab_lcp_mean?: number | null;
+          lab_lcp_min?: number | null;
+          lab_speed_index_max?: number | null;
+          lab_speed_index_mean?: number | null;
+          lab_speed_index_min?: number | null;
+          lab_srt_max?: number | null;
+          lab_srt_mean?: number | null;
+          lab_srt_min?: number | null;
+          lab_svg_contentsize_max?: number | null;
+          lab_svg_contentsize_mean?: number | null;
+          lab_svg_contentsize_min?: number | null;
+          lab_svg_request_count_max?: number | null;
+          lab_svg_request_count_mean?: number | null;
+          lab_svg_request_count_min?: number | null;
+          lab_svg_transfersize_max?: number | null;
+          lab_svg_transfersize_mean?: number | null;
+          lab_svg_transfersize_min?: number | null;
+          lab_tbt_max?: number | null;
+          lab_tbt_mean?: number | null;
+          lab_tbt_min?: number | null;
+          lab_total_contentsize_max?: number | null;
+          lab_total_contentsize_mean?: number | null;
+          lab_total_contentsize_min?: number | null;
+          lab_total_requests_max?: number | null;
+          lab_total_requests_mean?: number | null;
+          lab_total_requests_min?: number | null;
+          lab_total_transfersize_max?: number | null;
+          lab_total_transfersize_mean?: number | null;
+          lab_total_transfersize_min?: number | null;
+          lab_ttfb_max?: number | null;
+          lab_ttfb_mean?: number | null;
+          lab_ttfb_min?: number | null;
+          lcp_data?: Json | null;
+          lcp_element_size_max?: number | null;
+          lcp_element_size_mean?: number | null;
+          lcp_element_size_min?: number | null;
+          lcp_timing?: Json | null;
+          page_address?: string;
+          page_filmstrip?: string | null;
+          page_screenshot?: string | null;
+          pageload_timing?: Json | null;
+          pageweight?: number | null;
+          performance_score_max?: number | null;
+          performance_score_mean?: number | null;
+          performance_score_min?: number | null;
+          record_id?: string;
+          third_party_content_size_max?: number | null;
+          third_party_content_size_mean?: number | null;
+          third_party_content_size_min?: number | null;
+          third_party_req_max?: number | null;
+          third_party_req_mean?: number | null;
+          third_party_req_min?: number | null;
+          third_party_transfer_size_max?: number | null;
+          third_party_transfer_size_mean?: number | null;
+          third_party_transfer_size_min?: number | null;
+          useragent?: string | null;
+          windowsize?: string | null;
+        };
+        Relationships: [];
+      };
       rum_metrics: {
         Row: {
-          created_at: string | null
-          current_page: string
-          domain_name: string
-          events: Json
-          id: number
-          previous_page: string
-          session_id: string
-        }
+          created_at: string | null;
+          current_page: string | null;
+          domain_name: string | null;
+          events: Json | null;
+          id: number;
+          previous_page: string | null;
+          session_id: string | null;
+        };
         Insert: {
-          created_at?: string | null
-          current_page: string
-          domain_name: string
-          events?: Json
-          id?: number
-          previous_page: string
-          session_id: string
-        }
+          created_at?: string | null;
+          current_page?: string | null;
+          domain_name?: string | null;
+          events?: Json | null;
+          id?: number;
+          previous_page?: string | null;
+          session_id?: string | null;
+        };
         Update: {
-          created_at?: string | null
-          current_page?: string
-          domain_name?: string
-          events?: Json
-          id?: number
-          previous_page?: string
-          session_id?: string
-        }
-        Relationships: []
-      }
+          created_at?: string | null;
+          current_page?: string | null;
+          domain_name?: string | null;
+          events?: Json | null;
+          id?: number;
+          previous_page?: string | null;
+          session_id?: string | null;
+        };
+        Relationships: [];
+      };
+      steps: {
+        Row: {
+          created_at: string | null;
+          event: string | null;
+          id: number;
+          journey_id: number;
+          match_type: string | null;
+          page_path: string | null;
+          selector: string | null;
+          step_order: number;
+          trigger: string;
+          value: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          event?: string | null;
+          id?: number;
+          journey_id: number;
+          match_type?: string | null;
+          page_path?: string | null;
+          selector?: string | null;
+          step_order: number;
+          trigger: string;
+          value: string;
+        };
+        Update: {
+          created_at?: string | null;
+          event?: string | null;
+          id?: number;
+          journey_id?: number;
+          match_type?: string | null;
+          page_path?: string | null;
+          selector?: string | null;
+          step_order?: number;
+          trigger?: string;
+          value?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "steps_journey_id_fkey";
+            columns: ["journey_id"];
+            isOneToOne: false;
+            referencedRelation: "journeys";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       users: {
         Row: {
-          activePlan: string | null
-          created_at: string
-          email: string
-          firstname: string
-          has_lab_access: boolean | null
-          has_rum: boolean | null
-          id: string
-          lastname: string
-          latest_payment_id: string | null
-          max_sites: number
-          period_end: string | null
-          period_start: string | null
-          plan_id: string | null
-          subscription_created_at: string | null
-          subscription_id: string | null
-          subscription_status: string | null
-          updated_at: string
-        }
+          activePlan: string | null;
+          created_at: string;
+          email: string;
+          firstname: string;
+          has_lab_access: boolean | null;
+          has_rum: boolean | null;
+          id: string;
+          lastname: string;
+          latest_payment_id: string | null;
+          max_sites: number;
+          period_end: string | null;
+          period_start: string | null;
+          plan_id: string | null;
+          subscription_created_at: string | null;
+          subscription_id: string | null;
+          subscription_status: string | null;
+          updated_at: string;
+        };
         Insert: {
-          activePlan?: string | null
-          created_at?: string
-          email: string
-          firstname: string
-          has_lab_access?: boolean | null
-          has_rum?: boolean | null
-          id: string
-          lastname: string
-          latest_payment_id?: string | null
-          max_sites?: number
-          period_end?: string | null
-          period_start?: string | null
-          plan_id?: string | null
-          subscription_created_at?: string | null
-          subscription_id?: string | null
-          subscription_status?: string | null
-          updated_at?: string
-        }
+          activePlan?: string | null;
+          created_at?: string;
+          email: string;
+          firstname: string;
+          has_lab_access?: boolean | null;
+          has_rum?: boolean | null;
+          id: string;
+          lastname: string;
+          latest_payment_id?: string | null;
+          max_sites?: number;
+          period_end?: string | null;
+          period_start?: string | null;
+          plan_id?: string | null;
+          subscription_created_at?: string | null;
+          subscription_id?: string | null;
+          subscription_status?: string | null;
+          updated_at?: string;
+        };
         Update: {
-          activePlan?: string | null
-          created_at?: string
-          email?: string
-          firstname?: string
-          has_lab_access?: boolean | null
-          has_rum?: boolean | null
-          id?: string
-          lastname?: string
-          latest_payment_id?: string | null
-          max_sites?: number
-          period_end?: string | null
-          period_start?: string | null
-          plan_id?: string | null
-          subscription_created_at?: string | null
-          subscription_id?: string | null
-          subscription_status?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-    }
+          activePlan?: string | null;
+          created_at?: string;
+          email?: string;
+          firstname?: string;
+          has_lab_access?: boolean | null;
+          has_rum?: boolean | null;
+          id?: string;
+          lastname?: string;
+          latest_payment_id?: string | null;
+          max_sites?: number;
+          period_end?: string | null;
+          period_start?: string | null;
+          plan_id?: string | null;
+          subscription_created_at?: string | null;
+          subscription_id?: string | null;
+          subscription_status?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
+      aggregate_daily_web_metrics: {
+        Args: { target_date: string };
+        Returns: undefined;
+      };
+      aggregate_web_metrics_for_date_range: {
+        Args: { start_date: string; end_date: string };
+        Returns: undefined;
+      };
+      aggregate_web_metrics_for_today: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      analyze_cls_by_device: {
+        Args: { domain_filter?: string; time_range?: string };
+        Returns: {
+          device_type: string;
+          affected_component: string;
+          occurrence_count: number;
+          avg_cls_value: number;
+          min_cls_value: number;
+          max_cls_value: number;
+          good_count: number;
+          needs_improvement_count: number;
+          poor_count: number;
+        }[];
+      };
+      analyze_domain_performance: {
+        Args: { target_domain: string; start_date?: string; end_date?: string };
+        Returns: {
+          result_type: string;
+          device_type: string;
+          domain: string;
+          page_address: string;
+          measurement_date: string;
+          unique_pages: number;
+          lcp_p75: number;
+          cls_p75: number;
+          inp_p75: number;
+          ttfb_p75: number;
+          fcp_p75: number;
+          performance_score: number;
+          page_size_mb: number;
+          request_count: number;
+          pct_image_content: number;
+          pct_js_content: number;
+          pct_css_content: number;
+          pct_third_party_content: number;
+          pct_third_party_requests: number;
+          pct_passing_lcp: number;
+          pct_passing_cls: number;
+          pct_passing_inp: number;
+          pct_passing_ttfb: number;
+          overall_cwv_pass_rate: number;
+          normalized_score: number;
+          metrics_available: number;
+          measurement_count: number;
+          performance_rank: number;
+          cwv_failure_score: number;
+          performance_impact: number;
+          lcp_status: string;
+          cls_status: string;
+          inp_status: string;
+          page_rank: number;
+        }[];
+      };
+      analyze_fcp_by_device: {
+        Args: { domain_filter?: string; time_range?: string };
+        Returns: {
+          device_type: string;
+          connection_type: string;
+          occurrence_count: number;
+          avg_fcp_value: number;
+          min_fcp_value: number;
+          max_fcp_value: number;
+          p75_fcp_value: number;
+          p90_fcp_value: number;
+          p95_fcp_value: number;
+          good_count: number;
+          needs_improvement_count: number;
+          poor_count: number;
+        }[];
+      };
+      analyze_inp_by_device: {
+        Args: { domain_filter?: string; time_range?: string };
+        Returns: {
+          device_type: string;
+          interaction_type: string;
+          affected_element: string;
+          occurrence_count: number;
+          avg_inp_value: number;
+          min_inp_value: number;
+          max_inp_value: number;
+          good_count: number;
+          needs_improvement_count: number;
+          poor_count: number;
+        }[];
+      };
+      analyze_lcp_by_device: {
+        Args: { domain_filter: string; time_range?: string };
+        Returns: {
+          device_type: string;
+          element_target: string;
+          page_url: string;
+          image_url: string;
+          occurrence_count: number;
+          avg_lcp_value: number;
+          min_lcp_value: number;
+          max_lcp_value: number;
+          avg_resource_load_delay: number;
+          avg_element_render_delay: number;
+          avg_resource_load_duration: number;
+          good_count: number;
+          needs_improvement_count: number;
+          poor_count: number;
+        }[];
+      };
+      analyze_ttfb_by_device: {
+        Args: { domain_filter?: string; time_range?: string };
+        Returns: {
+          device_type: string;
+          connection_type: string;
+          occurrence_count: number;
+          avg_ttfb_value: number;
+          min_ttfb_value: number;
+          max_ttfb_value: number;
+          p75_dns_duration: number;
+          p75_connection_duration: number;
+          p75_request_duration: number;
+          p75_waiting_duration: number;
+          good_count: number;
+          needs_improvement_count: number;
+          poor_count: number;
+          urls: Json;
+        }[];
+      };
+      analyze_web_vitals_by_page: {
+        Args: { domain_filter?: string; time_range?: string };
+        Returns: {
+          page_url: string;
+          page_address: string;
+          device_type: string;
+          page_view_count: number;
+          avg_ttfb: number;
+          avg_lcp: number;
+          avg_cls: number;
+          avg_fid: number;
+          avg_fcp: number;
+          avg_inp: number;
+          ttfb_good_pct: number;
+          ttfb_needs_improvement_pct: number;
+          ttfb_poor_pct: number;
+          lcp_good_pct: number;
+          lcp_needs_improvement_pct: number;
+          lcp_poor_pct: number;
+          cls_good_pct: number;
+          cls_needs_improvement_pct: number;
+          cls_poor_pct: number;
+          fid_good_pct: number;
+          fid_needs_improvement_pct: number;
+          fid_poor_pct: number;
+          fcp_good_pct: number;
+          fcp_needs_improvement_pct: number;
+          fcp_poor_pct: number;
+          inp_good_pct: number;
+          inp_needs_improvement_pct: number;
+          inp_poor_pct: number;
+          overall_score: number;
+          performance_category: string;
+        }[];
+      };
+      dashboard_multimetrix: {
+        Args: { domain_name_param: string; date_range_days?: number };
+        Returns: {
+          date_collected: string;
+          device_type: string;
+          sample_count: number;
+          lcp_p75: number;
+          cls_p75: number;
+          inp_p75: number;
+          ttfb_p75: number;
+          overall_performance_score: number;
+          engagement_quality_score: number;
+          speed_index: number;
+          user_experience_score: number;
+          conversion_potential_index: number;
+          total_pageviews: number;
+          total_sessions: number;
+          bounce_rate: number;
+          avg_pages_per_session: number;
+          device_order: number;
+        }[];
+      };
+      delete_old_rum_metrics: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       get_ai_citation: {
-        Args: { p_date_range: string; p_domain_filter?: string }
+        Args: { p_domain_name: string };
         Returns: {
-          domain: string
-          device_type: string
-          total_sessions: number
-          avg_citation_score: number
-          min_citation_score: number
-          max_citation_score: number
-          std_dev_citation_score: number
-          avg_ttfb: number
-          avg_dom_content_loaded: number
-          ai_citation_possibility: string
-        }[]
-      }
+          domain: string;
+          device_type: string;
+          total_sessions: number;
+          avg_citation_score: number;
+          min_citation_score: number;
+          max_citation_score: number;
+          std_dev_citation_score: number;
+          avg_ttfb: number;
+          avg_dom_content_loaded: number;
+          ai_citation_possibility: string;
+        }[];
+      };
       get_analytics_by_device_and_country: {
-        Args:
-          | Record<PropertyKey, never>
-          | { p_domain_name: string; p_time_range?: string }
+        Args: { p_domain_name: string; p_time_range?: string };
         Returns: {
-          device_type: string
-          country: string
-          total_page_views: number
-          total_sessions: number
-          unique_visitors: number
-          unique_languages: number
-          bounce_rate_percentage: number
-          avg_pages_per_session: number
-        }[]
-      }
+          device_type: string;
+          country: string;
+          total_page_views: number;
+          total_sessions: number;
+          unique_visitors: number;
+          unique_languages: number;
+          bounce_rate_percentage: number;
+          avg_pages_per_session: number;
+        }[];
+      };
+      get_filtered_rum_metrics: {
+        Args: {
+          p_domain_name: string;
+          p_date_range: string;
+          p_device_type?: string;
+          p_end_date?: string;
+          p_top_countries_limit?: number;
+        };
+        Returns: {
+          result_type: string;
+          result_data: Json;
+        }[];
+      };
+      get_lcp_image_metrics: {
+        Args: { p_domain_name?: string; p_time_range?: string };
+        Returns: {
+          period: string;
+          domain_name: string;
+          device_type: string;
+          image_url: string;
+          occurrence_count: number;
+          avg_lcp_ms: number;
+          min_lcp_ms: number;
+          max_lcp_ms: number;
+          p75_lcp_ms: number;
+          pct_exceeding_cwv: number;
+          avg_width: number;
+          avg_height: number;
+          pct_lazy: number;
+          avg_transfer_size: number;
+          avg_decoded_body_size: number;
+          avg_time_to_first_byte: number;
+          avg_resource_load_delay: number;
+          avg_element_render_delay: number;
+          avg_resource_load_duration: number;
+        }[];
+      };
+      get_rum_web_vitals_metrics: {
+        Args: { p_domain_name: string; p_date_range?: string };
+        Returns: {
+          report_date: string;
+          device_category: string;
+          fcp_samples: number;
+          fcp_avg: number;
+          fcp_min: number;
+          fcp_max: number;
+          fcp_p50: number;
+          fcp_p75: number;
+          fcp_p90: number;
+          fcp_p95: number;
+          fcp_p99: number;
+          lcp_samples: number;
+          lcp_avg: number;
+          lcp_min: number;
+          lcp_max: number;
+          lcp_p50: number;
+          lcp_p75: number;
+          lcp_p90: number;
+          lcp_p95: number;
+          lcp_p99: number;
+          cls_samples: number;
+          cls_avg: number;
+          cls_min: number;
+          cls_max: number;
+          cls_p50: number;
+          cls_p75: number;
+          cls_p90: number;
+          cls_p95: number;
+          cls_p99: number;
+          inp_samples: number;
+          inp_avg: number;
+          inp_min: number;
+          inp_max: number;
+          inp_p50: number;
+          inp_p75: number;
+          inp_p90: number;
+          inp_p95: number;
+          inp_p99: number;
+          ttfb_samples: number;
+          ttfb_avg: number;
+          ttfb_min: number;
+          ttfb_max: number;
+          ttfb_p50: number;
+          ttfb_p75: number;
+          ttfb_p90: number;
+          ttfb_p95: number;
+          ttfb_p99: number;
+        }[];
+      };
       get_web_vitals_metrics: {
-        Args:
-          | { p_domain: string; p_date_range?: string }
-          | { p_domain_name: string; p_start_date: string }
+        Args: { p_domain: string; p_date_range?: string };
         Returns: {
-          domain_name: string
-          page: string
-          device_type: string
-          metric_name: string
-          sample_count: number
-          avg_value: number
-          p50: number
-          p75: number
-          p90: number
-          p95: number
-          p99: number
-          min_value: number
-          max_value: number
-          good_percent: number
-          needs_improvement_percent: number
-          poor_percent: number
-        }[]
-      }
-      process_daily_web_vitals: {
-        Args: { target_date?: string }
-        Returns: number
-      }
+          domain_name: string;
+          page: string;
+          device_type: string;
+          metric_name: string;
+          sample_count: number;
+          avg_value: number;
+          p50: number;
+          p75: number;
+          p90: number;
+          p95: number;
+          p99: number;
+          min_value: number;
+          max_value: number;
+          good_percent: number;
+          needs_improvement_percent: number;
+          poor_percent: number;
+        }[];
+      };
+      page_performance_analysis: {
+        Args: { p_domain?: string; p_hours?: number };
+        Returns: {
+          device_type: string;
+          performance_group: string;
+          current_page: string;
+          visit_count: number;
+          avg_lcp_ms: number;
+          avg_fcp_ms: number;
+          avg_cls: number;
+          avg_ttfb_ms: number;
+          avg_inp_ms: number;
+          lcp_targets: Json;
+          inp_targets: Json;
+          cls_targets: Json;
+        }[];
+      };
       process_web_vitals_date_range: {
-        Args: { start_date: string; end_date?: string }
+        Args: { start_date: string; end_date?: string };
         Returns: {
-          process_date: string
-          rows_inserted: number
-        }[]
-      }
+          process_date: string;
+          rows_inserted: number;
+        }[];
+      };
       user_happiness: {
-        Args: { p_domain?: string; p_date_range?: string }
+        Args: { p_domain?: string; p_date_range?: string };
         Returns: {
-          device_type: string
-          experience_quality: string
-          session_count: number
-          avg_fcp: number
-          avg_cls: number
-          avg_ttfb: number
-          avg_lcp: number
-          avg_inp: number
-          avg_performance_score: number
-          avg_long_tasks: number
-          avg_slow_api_calls: number
-          avg_trackers: number
-          percentage_in_device_type: number
-          country_count: number
-        }[]
-      }
-    }
+          device_type: string;
+          experience_quality: string;
+          session_count: number;
+          avg_fcp: number;
+          avg_cls: number;
+          avg_ttfb: number;
+          avg_lcp: number;
+          avg_inp: number;
+          avg_performance_score: number;
+          avg_long_tasks: number;
+          avg_slow_api_calls: number;
+          avg_trackers: number;
+          percentage_in_device_type: number;
+          country_count: number;
+        }[];
+      };
+      web_vitals: {
+        Args: { p_domain_name: string; p_time_range: string };
+        Returns: {
+          device_type: string;
+          country: string;
+          total_page_views: number;
+          total_sessions: number;
+          unique_visitors: number;
+          unique_languages: number;
+          bounce_rate_percentage: number;
+          avg_pages_per_session: number;
+        }[];
+      };
+    };
     Enums: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<
+  keyof Database,
+  "public"
+>];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never = never
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
+      DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] &
+      DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R;
+    }
+    ? R
     : never
+  : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never = never
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Insert: infer I;
+    }
+    ? I
     : never
+  : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never = never
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Update: infer U;
+    }
+    ? U
     : never
+  : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never = never
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never = never
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never;
 
 export const Constants = {
   public: {
     Enums: {},
   },
-} as const
+} as const;

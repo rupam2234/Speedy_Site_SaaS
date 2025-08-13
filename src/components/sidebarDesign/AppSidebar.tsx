@@ -127,7 +127,7 @@ export default function AppSidebar({
           },
           {
             title: "Configure Journey",
-            url: `/dashboard/configure?site=${selectedSite}`,
+            url: `/dashboard/funnels/configure?site=${selectedSite}`,
           },
         ],
       },

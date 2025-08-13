@@ -34,8 +34,6 @@ export class MyDurableObject extends DurableObject {
 		try {
 			const data = await request.json();
 
-			// console.log('📥 Incoming /collect data (via DO):', JSON.stringify(data, null, 2));
-
 			const payload = {
 				session_id: data.sessionId,
 				domain_name: data.siteDomain,

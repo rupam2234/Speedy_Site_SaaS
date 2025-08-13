@@ -160,8 +160,7 @@ const getCLSInsights = (
   occurrenceContext: string;
   action: string;
 } => {
-  const { avg_cls_value, max_cls_value, occurrence_count, affected_component } =
-    item;
+  const { avg_cls_value, max_cls_value, occurrence_count } = item;
 
   // Determine severity based on avg_cls_value
   const severity =
@@ -216,18 +215,6 @@ const getCLSInsights = (
       ? "May warrant investigation"
       : "Possible false positive";
 
-  console.log(`Insights for ${affected_component}:`, {
-    priorityScore,
-    normalizedPriority: normalizedPriority.toFixed(1),
-    severity,
-    priority,
-    occurrence,
-    occurrenceContext,
-    action,
-    avg_cls_value,
-    max_cls_value,
-  });
-
   return {
     priority,
     priorityScore: normalizedPriority,
@@ -264,7 +251,6 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
         return valB - valA;
       });
 
-    console.log(`Filtered data for device ${selectedDevice}:`, filtered);
     return filtered;
   }, [data, selectedDevice, sortKey]);
 
@@ -280,10 +266,8 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
   useEffect(() => {
     if (filteredData.length > 0 && !selectedItem) {
       setSelectedItem(filteredData[0]);
-      console.log("Default selected item:", filteredData[0]);
     } else if (filteredData.length === 0) {
       setSelectedItem(null);
-      console.log("No valid data to select an item.");
     }
     setIsLoading(false);
   }, [filteredData, selectedItem]);
@@ -353,7 +337,6 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
               value={sortKey}
               onChange={(e) => {
                 setSortKey(e.target.value as keyof CLSElementData);
-                console.log("Sort key changed:", e.target.value);
               }}
             >
               {SORT_OPTIONS.map((opt) => (
@@ -374,7 +357,6 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
               }`}
               onClick={() => {
                 setSelectedItem(item);
-                console.log("Selected item:", item);
               }}
             >
               <p className="text-sm font-medium text-primary/90">

@@ -300,7 +300,7 @@ export default function SignInPage() {
                                 asChild
                                 resend
                                 className="text-muted-foreground"
-                                fallback={({ resendableAfter }) => (
+                                fallback={({ resendableAfter }: any) => (
                                   <p className="text-muted-foreground cursor-wait text-[13px] mb-0 sm:mb-4 ">
                                     Didn&apos;t receive a code? Resend code in{" "}
                                     {resendableAfter} second(s)

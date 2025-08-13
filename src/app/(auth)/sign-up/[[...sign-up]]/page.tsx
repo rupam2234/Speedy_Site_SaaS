@@ -310,7 +310,7 @@ export default function SignUpPage() {
                             asChild
                             resend
                             className="text-muted-foreground"
-                            fallback={({ resendableAfter }) => (
+                            fallback={({ resendableAfter }: any) => (
                               <p className="text-muted-foreground text-[13px]">
                                 Didn&apos;t receive a code? Resend code in{" "}
                                 {resendableAfter} second(s)

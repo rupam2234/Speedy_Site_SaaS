@@ -20,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "noImplicitAny": true
   },
   "include": [
     "**/*.ts",
@@ -30,7 +31,8 @@
     "src/hooks/ParticleBackground.tsx",
     "C:/projectbuild/speedy-next-cache/types/**/*.ts",
     "src/app/(dashboard)/dashboard/rum/page.tsx.bak",
-    "src/app/(dashboard)/dashboard/rum/helpers/ExperienceBar.tsx.bak"
+    "src/app/(dashboard)/dashboard/rum/helpers/ExperienceBar.tsx.bak",
+    "scripts/journey.js"
   ],
   "exclude": ["node_modules"]
 }

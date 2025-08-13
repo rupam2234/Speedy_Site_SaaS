@@ -66,7 +66,6 @@ function LayoutContent({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="flex-1 dark:bg-background bg-background">
-          {/* <DashboardToolbar /> */}
           {children}
           <Toaster />
         </main>

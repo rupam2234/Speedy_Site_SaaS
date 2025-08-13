@@ -222,7 +222,7 @@ export default function RUMpages() {
     <>
       <DashboardToolbar />
       <div className="min-h-screen p-5">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-auto">
           <div className="flex gap-2 mb-4">
             {performanceTabs.map((tab) => (
               <button

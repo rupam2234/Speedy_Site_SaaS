@@ -121,8 +121,6 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
     device?.toLowerCase().trim();
 
   const filteredData = useMemo(() => {
-    console.log("selectedDevice:", selectedDevice);
-    console.log("data:", data);
     const filtered = data
       .filter(
         (item) =>
@@ -134,7 +132,6 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
         const valB = Number(b[sortKey as keyof TTFBData]) || 0;
         return valB - valA;
       });
-    console.log("filteredData:", filtered);
     return filtered;
   }, [data, selectedDevice, sortKey]);
 
@@ -159,10 +156,6 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
         (item) => item.connection_type === selectedConnection
       );
       if (!validConnection) {
-        console.log(
-          "Setting selectedConnection to:",
-          filteredData[0].connection_type
-        );
         setSelectedConnection(filteredData[0].connection_type);
       }
     }
