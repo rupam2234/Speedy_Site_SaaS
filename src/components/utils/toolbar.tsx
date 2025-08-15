@@ -45,7 +45,9 @@ export default function DashboardToolbar() {
     pathname.includes("/dashboard/cwv");
   const isOnRum =
     pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv`;
-  const pageGroupsRum = pathname === "/dashboard/rum/pages";
+  const pageGroupsRum =
+    pathname === "/dashboard/rum/pages" ||
+    pathname === "/dashboard/rum/third-party";
   const isRumPath = pathname.includes("rum");
   const isJourney = pathname === "/dashboard/funnels";
 
@@ -125,7 +127,7 @@ export default function DashboardToolbar() {
     `/dashboard`,
     `/dashboard/rum/lcp-images`,
     `/dashboard/rum/pages`,
-    `/dashboard/funnels`,
+    `/dashboard/rum/third-party`,
   ];
 
   const isToolbarVisible = allowedPaths.includes(pathname);

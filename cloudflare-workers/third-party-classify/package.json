@@ -1,5 +1,5 @@
 {
-	"name": "journey",
+	"name": "third-party-classify",
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
@@ -11,6 +11,6 @@
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
 		"vitest": "~3.2.0",
-		"wrangler": "^4.28.1"
+		"wrangler": "^4.30.0"
 	}
 }

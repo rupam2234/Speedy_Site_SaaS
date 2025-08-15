@@ -29,12 +29,6 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <head>
-          <script
-            src="https://journey.thespeedysite.workers.dev/journey"
-            defer
-          ></script>
-        </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >

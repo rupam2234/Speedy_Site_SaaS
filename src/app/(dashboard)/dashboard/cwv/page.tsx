@@ -199,7 +199,9 @@ export default function WebsitePage() {
 
   function handleClick() {
     if (router) {
-      router.push(`/dashboard/${selectedSite}/pages`, { scroll: true });
+      router.push(`/dashboard/rum/pages?site=${selectedSite}`, {
+        scroll: true,
+      });
     }
   }
 

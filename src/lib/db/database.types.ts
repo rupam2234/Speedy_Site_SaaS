@@ -7,7 +7,7 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)";
@@ -260,46 +260,10 @@ export type Database = {
         };
         Relationships: [];
       };
-      journeys: {
-        Row: {
-          created_at: string | null;
-          id: number;
-          is_active: boolean | null;
-          name: string;
-          order_id: string;
-          session_key: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          id?: number;
-          is_active?: boolean | null;
-          name: string;
-          order_id: string;
-          session_key?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          id?: number;
-          is_active?: boolean | null;
-          name?: string;
-          order_id?: string;
-          session_key?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "journeys_order_id_fkey";
-            columns: ["order_id"];
-            isOneToOne: false;
-            referencedRelation: "orders";
-            referencedColumns: ["order_id"];
-          }
-        ];
-      };
       orders: {
         Row: {
           favicon_file: string | null;
           gsc_token: string | null;
-          journey_count: number | null;
           order_date: string;
           order_id: string;
           order_status: boolean;
@@ -311,7 +275,6 @@ export type Database = {
         Insert: {
           favicon_file?: string | null;
           gsc_token?: string | null;
-          journey_count?: number | null;
           order_date?: string;
           order_id?: string;
           order_status: boolean;
@@ -323,7 +286,6 @@ export type Database = {
         Update: {
           favicon_file?: string | null;
           gsc_token?: string | null;
-          journey_count?: number | null;
           order_date?: string;
           order_id?: string;
           order_status?: boolean;
@@ -1992,53 +1954,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      steps: {
-        Row: {
-          created_at: string | null;
-          event: string | null;
-          id: number;
-          journey_id: number;
-          match_type: string | null;
-          page_path: string | null;
-          selector: string | null;
-          step_order: number;
-          trigger: string;
-          value: string;
-        };
-        Insert: {
-          created_at?: string | null;
-          event?: string | null;
-          id?: number;
-          journey_id: number;
-          match_type?: string | null;
-          page_path?: string | null;
-          selector?: string | null;
-          step_order: number;
-          trigger: string;
-          value: string;
-        };
-        Update: {
-          created_at?: string | null;
-          event?: string | null;
-          id?: number;
-          journey_id?: number;
-          match_type?: string | null;
-          page_path?: string | null;
-          selector?: string | null;
-          step_order?: number;
-          trigger?: string;
-          value?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "steps_journey_id_fkey";
-            columns: ["journey_id"];
-            isOneToOne: false;
-            referencedRelation: "journeys";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
       users: {
         Row: {
           activePlan: string | null;
@@ -2109,7 +2024,7 @@ export type Database = {
         Returns: undefined;
       };
       aggregate_web_metrics_for_date_range: {
-        Args: { start_date: string; end_date: string };
+        Args: { end_date: string; start_date: string };
         Returns: undefined;
       };
       aggregate_web_metrics_for_today: {
@@ -2119,122 +2034,122 @@ export type Database = {
       analyze_cls_by_device: {
         Args: { domain_filter?: string; time_range?: string };
         Returns: {
-          device_type: string;
           affected_component: string;
-          occurrence_count: number;
           avg_cls_value: number;
-          min_cls_value: number;
-          max_cls_value: number;
+          device_type: string;
           good_count: number;
+          max_cls_value: number;
+          min_cls_value: number;
           needs_improvement_count: number;
+          occurrence_count: number;
           poor_count: number;
         }[];
       };
       analyze_domain_performance: {
-        Args: { target_domain: string; start_date?: string; end_date?: string };
+        Args: { end_date?: string; start_date?: string; target_domain: string };
         Returns: {
-          result_type: string;
+          cls_p75: number;
+          cls_status: string;
+          cwv_failure_score: number;
           device_type: string;
           domain: string;
-          page_address: string;
-          measurement_date: string;
-          unique_pages: number;
-          lcp_p75: number;
-          cls_p75: number;
-          inp_p75: number;
-          ttfb_p75: number;
           fcp_p75: number;
-          performance_score: number;
+          inp_p75: number;
+          inp_status: string;
+          lcp_p75: number;
+          lcp_status: string;
+          measurement_count: number;
+          measurement_date: string;
+          metrics_available: number;
+          normalized_score: number;
+          overall_cwv_pass_rate: number;
+          page_address: string;
+          page_rank: number;
           page_size_mb: number;
-          request_count: number;
+          pct_css_content: number;
           pct_image_content: number;
           pct_js_content: number;
-          pct_css_content: number;
-          pct_third_party_content: number;
-          pct_third_party_requests: number;
-          pct_passing_lcp: number;
           pct_passing_cls: number;
           pct_passing_inp: number;
+          pct_passing_lcp: number;
           pct_passing_ttfb: number;
-          overall_cwv_pass_rate: number;
-          normalized_score: number;
-          metrics_available: number;
-          measurement_count: number;
-          performance_rank: number;
-          cwv_failure_score: number;
+          pct_third_party_content: number;
+          pct_third_party_requests: number;
           performance_impact: number;
-          lcp_status: string;
-          cls_status: string;
-          inp_status: string;
-          page_rank: number;
+          performance_rank: number;
+          performance_score: number;
+          request_count: number;
+          result_type: string;
+          ttfb_p75: number;
+          unique_pages: number;
         }[];
       };
       analyze_fcp_by_device: {
         Args: { domain_filter?: string; time_range?: string };
         Returns: {
-          device_type: string;
-          connection_type: string;
-          occurrence_count: number;
           avg_fcp_value: number;
-          min_fcp_value: number;
+          connection_type: string;
+          device_type: string;
+          good_count: number;
           max_fcp_value: number;
+          min_fcp_value: number;
+          needs_improvement_count: number;
+          occurrence_count: number;
           p75_fcp_value: number;
           p90_fcp_value: number;
           p95_fcp_value: number;
-          good_count: number;
-          needs_improvement_count: number;
           poor_count: number;
         }[];
       };
       analyze_inp_by_device: {
         Args: { domain_filter?: string; time_range?: string };
         Returns: {
-          device_type: string;
-          interaction_type: string;
           affected_element: string;
-          occurrence_count: number;
           avg_inp_value: number;
-          min_inp_value: number;
-          max_inp_value: number;
+          device_type: string;
           good_count: number;
+          interaction_type: string;
+          max_inp_value: number;
+          min_inp_value: number;
           needs_improvement_count: number;
+          occurrence_count: number;
           poor_count: number;
         }[];
       };
       analyze_lcp_by_device: {
         Args: { domain_filter: string; time_range?: string };
         Returns: {
+          avg_element_render_delay: number;
+          avg_lcp_value: number;
+          avg_resource_load_delay: number;
+          avg_resource_load_duration: number;
           device_type: string;
           element_target: string;
-          page_url: string;
-          image_url: string;
-          occurrence_count: number;
-          avg_lcp_value: number;
-          min_lcp_value: number;
-          max_lcp_value: number;
-          avg_resource_load_delay: number;
-          avg_element_render_delay: number;
-          avg_resource_load_duration: number;
           good_count: number;
+          image_url: string;
+          max_lcp_value: number;
+          min_lcp_value: number;
           needs_improvement_count: number;
+          occurrence_count: number;
+          page_url: string;
           poor_count: number;
         }[];
       };
       analyze_ttfb_by_device: {
         Args: { domain_filter?: string; time_range?: string };
         Returns: {
-          device_type: string;
-          connection_type: string;
-          occurrence_count: number;
           avg_ttfb_value: number;
-          min_ttfb_value: number;
+          connection_type: string;
+          device_type: string;
+          good_count: number;
           max_ttfb_value: number;
-          p75_dns_duration: number;
+          min_ttfb_value: number;
+          needs_improvement_count: number;
+          occurrence_count: number;
           p75_connection_duration: number;
+          p75_dns_duration: number;
           p75_request_duration: number;
           p75_waiting_duration: number;
-          good_count: number;
-          needs_improvement_count: number;
           poor_count: number;
           urls: Json;
         }[];
@@ -2242,58 +2157,58 @@ export type Database = {
       analyze_web_vitals_by_page: {
         Args: { domain_filter?: string; time_range?: string };
         Returns: {
-          page_url: string;
-          page_address: string;
-          device_type: string;
-          page_view_count: number;
-          avg_ttfb: number;
-          avg_lcp: number;
           avg_cls: number;
-          avg_fid: number;
           avg_fcp: number;
+          avg_fid: number;
           avg_inp: number;
-          ttfb_good_pct: number;
-          ttfb_needs_improvement_pct: number;
-          ttfb_poor_pct: number;
-          lcp_good_pct: number;
-          lcp_needs_improvement_pct: number;
-          lcp_poor_pct: number;
+          avg_lcp: number;
+          avg_ttfb: number;
           cls_good_pct: number;
           cls_needs_improvement_pct: number;
           cls_poor_pct: number;
-          fid_good_pct: number;
-          fid_needs_improvement_pct: number;
-          fid_poor_pct: number;
+          device_type: string;
           fcp_good_pct: number;
           fcp_needs_improvement_pct: number;
           fcp_poor_pct: number;
+          fid_good_pct: number;
+          fid_needs_improvement_pct: number;
+          fid_poor_pct: number;
           inp_good_pct: number;
           inp_needs_improvement_pct: number;
           inp_poor_pct: number;
+          lcp_good_pct: number;
+          lcp_needs_improvement_pct: number;
+          lcp_poor_pct: number;
           overall_score: number;
+          page_address: string;
+          page_url: string;
+          page_view_count: number;
           performance_category: string;
+          ttfb_good_pct: number;
+          ttfb_needs_improvement_pct: number;
+          ttfb_poor_pct: number;
         }[];
       };
       dashboard_multimetrix: {
-        Args: { domain_name_param: string; date_range_days?: number };
+        Args: { date_range_days?: number; domain_name_param: string };
         Returns: {
-          date_collected: string;
-          device_type: string;
-          sample_count: number;
-          lcp_p75: number;
+          avg_pages_per_session: number;
+          bounce_rate: number;
           cls_p75: number;
-          inp_p75: number;
-          ttfb_p75: number;
-          overall_performance_score: number;
-          engagement_quality_score: number;
-          speed_index: number;
-          user_experience_score: number;
           conversion_potential_index: number;
+          date_collected: string;
+          device_order: number;
+          device_type: string;
+          engagement_quality_score: number;
+          inp_p75: number;
+          lcp_p75: number;
+          overall_performance_score: number;
+          sample_count: number;
+          speed_index: number;
           total_pageviews: number;
           total_sessions: number;
-          bounce_rate: number;
-          avg_pages_per_session: number;
-          device_order: number;
+          ttfb_p75: number;
+          user_experience_score: number;
         }[];
       };
       delete_old_rum_metrics: {
@@ -2303,195 +2218,203 @@ export type Database = {
       get_ai_citation: {
         Args: { p_domain_name: string };
         Returns: {
-          domain: string;
-          device_type: string;
-          total_sessions: number;
-          avg_citation_score: number;
-          min_citation_score: number;
-          max_citation_score: number;
-          std_dev_citation_score: number;
-          avg_ttfb: number;
-          avg_dom_content_loaded: number;
           ai_citation_possibility: string;
+          avg_citation_score: number;
+          avg_dom_content_loaded: number;
+          avg_ttfb: number;
+          device_type: string;
+          domain: string;
+          max_citation_score: number;
+          min_citation_score: number;
+          std_dev_citation_score: number;
+          total_sessions: number;
         }[];
       };
       get_analytics_by_device_and_country: {
         Args: { p_domain_name: string; p_time_range?: string };
         Returns: {
-          device_type: string;
+          avg_pages_per_session: number;
+          bounce_rate_percentage: number;
           country: string;
+          device_type: string;
           total_page_views: number;
           total_sessions: number;
-          unique_visitors: number;
           unique_languages: number;
-          bounce_rate_percentage: number;
-          avg_pages_per_session: number;
+          unique_visitors: number;
         }[];
       };
       get_filtered_rum_metrics: {
         Args: {
-          p_domain_name: string;
           p_date_range: string;
           p_device_type?: string;
+          p_domain_name: string;
           p_end_date?: string;
           p_top_countries_limit?: number;
         };
         Returns: {
-          result_type: string;
           result_data: Json;
+          result_type: string;
         }[];
       };
       get_lcp_image_metrics: {
         Args: { p_domain_name?: string; p_time_range?: string };
         Returns: {
-          period: string;
-          domain_name: string;
-          device_type: string;
-          image_url: string;
-          occurrence_count: number;
+          avg_decoded_body_size: number;
+          avg_element_render_delay: number;
+          avg_height: number;
           avg_lcp_ms: number;
-          min_lcp_ms: number;
+          avg_resource_load_delay: number;
+          avg_resource_load_duration: number;
+          avg_time_to_first_byte: number;
+          avg_transfer_size: number;
+          avg_width: number;
+          device_type: string;
+          domain_name: string;
+          image_url: string;
           max_lcp_ms: number;
+          min_lcp_ms: number;
+          occurrence_count: number;
           p75_lcp_ms: number;
           pct_exceeding_cwv: number;
-          avg_width: number;
-          avg_height: number;
           pct_lazy: number;
-          avg_transfer_size: number;
-          avg_decoded_body_size: number;
-          avg_time_to_first_byte: number;
-          avg_resource_load_delay: number;
-          avg_element_render_delay: number;
-          avg_resource_load_duration: number;
+          period: string;
         }[];
       };
       get_rum_web_vitals_metrics: {
-        Args: { p_domain_name: string; p_date_range?: string };
+        Args: { p_date_range?: string; p_domain_name: string };
         Returns: {
-          report_date: string;
-          device_category: string;
-          fcp_samples: number;
-          fcp_avg: number;
-          fcp_min: number;
-          fcp_max: number;
-          fcp_p50: number;
-          fcp_p75: number;
-          fcp_p90: number;
-          fcp_p95: number;
-          fcp_p99: number;
-          lcp_samples: number;
-          lcp_avg: number;
-          lcp_min: number;
-          lcp_max: number;
-          lcp_p50: number;
-          lcp_p75: number;
-          lcp_p90: number;
-          lcp_p95: number;
-          lcp_p99: number;
-          cls_samples: number;
           cls_avg: number;
-          cls_min: number;
           cls_max: number;
+          cls_min: number;
           cls_p50: number;
           cls_p75: number;
           cls_p90: number;
           cls_p95: number;
           cls_p99: number;
-          inp_samples: number;
+          cls_samples: number;
+          device_category: string;
+          fcp_avg: number;
+          fcp_max: number;
+          fcp_min: number;
+          fcp_p50: number;
+          fcp_p75: number;
+          fcp_p90: number;
+          fcp_p95: number;
+          fcp_p99: number;
+          fcp_samples: number;
           inp_avg: number;
-          inp_min: number;
           inp_max: number;
+          inp_min: number;
           inp_p50: number;
           inp_p75: number;
           inp_p90: number;
           inp_p95: number;
           inp_p99: number;
-          ttfb_samples: number;
+          inp_samples: number;
+          lcp_avg: number;
+          lcp_max: number;
+          lcp_min: number;
+          lcp_p50: number;
+          lcp_p75: number;
+          lcp_p90: number;
+          lcp_p95: number;
+          lcp_p99: number;
+          lcp_samples: number;
+          report_date: string;
           ttfb_avg: number;
-          ttfb_min: number;
           ttfb_max: number;
+          ttfb_min: number;
           ttfb_p50: number;
           ttfb_p75: number;
           ttfb_p90: number;
           ttfb_p95: number;
           ttfb_p99: number;
+          ttfb_samples: number;
         }[];
       };
       get_web_vitals_metrics: {
-        Args: { p_domain: string; p_date_range?: string };
+        Args: { p_date_range?: string; p_domain: string };
         Returns: {
-          domain_name: string;
-          page: string;
-          device_type: string;
-          metric_name: string;
-          sample_count: number;
           avg_value: number;
+          device_type: string;
+          domain_name: string;
+          good_percent: number;
+          max_value: number;
+          metric_name: string;
+          min_value: number;
+          needs_improvement_percent: number;
           p50: number;
           p75: number;
           p90: number;
           p95: number;
           p99: number;
-          min_value: number;
-          max_value: number;
-          good_percent: number;
-          needs_improvement_percent: number;
+          page: string;
           poor_percent: number;
+          sample_count: number;
         }[];
       };
       page_performance_analysis: {
         Args: { p_domain?: string; p_hours?: number };
         Returns: {
-          device_type: string;
-          performance_group: string;
-          current_page: string;
-          visit_count: number;
-          avg_lcp_ms: number;
-          avg_fcp_ms: number;
           avg_cls: number;
-          avg_ttfb_ms: number;
+          avg_fcp_ms: number;
           avg_inp_ms: number;
-          lcp_targets: Json;
-          inp_targets: Json;
+          avg_lcp_ms: number;
+          avg_ttfb_ms: number;
           cls_targets: Json;
+          current_page: string;
+          device_type: string;
+          inp_targets: Json;
+          lcp_targets: Json;
+          performance_group: string;
+          visit_count: number;
         }[];
       };
       process_web_vitals_date_range: {
-        Args: { start_date: string; end_date?: string };
+        Args: { end_date?: string; start_date: string };
         Returns: {
           process_date: string;
           rows_inserted: number;
         }[];
       };
-      user_happiness: {
-        Args: { p_domain?: string; p_date_range?: string };
+      third_party_domains: {
+        Args: { site_filter?: string; time_range?: string };
         Returns: {
           device_type: string;
-          experience_quality: string;
-          session_count: number;
-          avg_fcp: number;
+          site_domain: string;
+          top_domains: Json;
+        }[];
+      };
+      user_happiness: {
+        Args: { p_date_range?: string; p_domain?: string };
+        Returns: {
           avg_cls: number;
-          avg_ttfb: number;
-          avg_lcp: number;
+          avg_fcp: number;
           avg_inp: number;
-          avg_performance_score: number;
+          avg_lcp: number;
           avg_long_tasks: number;
+          avg_performance_score: number;
           avg_slow_api_calls: number;
           avg_trackers: number;
-          percentage_in_device_type: number;
+          avg_ttfb: number;
           country_count: number;
+          device_type: string;
+          experience_quality: string;
+          percentage_in_device_type: number;
+          session_count: number;
         }[];
       };
       web_vitals: {
         Args: { p_domain_name: string; p_time_range: string };
         Returns: {
-          device_type: string;
+          avg_pages_per_session: number;
+          bounce_rate_percentage: number;
           country: string;
+          device_type: string;
           total_page_views: number;
           total_sessions: number;
-          unique_visitors: number;
           unique_languages: number;
-          bounce_rate_percentage: number;
-          avg_pages_per_session: number;
+          unique_visitors: number;
         }[];
       };
     };

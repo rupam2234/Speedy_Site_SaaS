@@ -7,7 +7,6 @@ import {
   LayoutDashboardIcon,
   Settings2,
   User2Icon,
-  Waypoints,
 } from "lucide-react";
 import {
   Sidebar,
@@ -106,28 +105,16 @@ export default function AppSidebar({
             url: `/dashboard/rum/cwv?site=${selectedSite}`,
           },
           {
-            title: "LCP Images",
-            url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
-          },
-          {
             title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
-        ],
-      },
-      {
-        title: "User Journey",
-        url: "#",
-        icon: Waypoints,
-        isActive: true,
-        items: [
           {
-            title: "Funnels",
-            url: `/dashboard/funnels?site=${selectedSite}`,
+            title: "Third Party",
+            url: `/dashboard/rum/third-party?site=${selectedSite}`,
           },
           {
-            title: "Configure Journey",
-            url: `/dashboard/funnels/configure?site=${selectedSite}`,
+            title: "LCP (Images)",
+            url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
           },
         ],
       },

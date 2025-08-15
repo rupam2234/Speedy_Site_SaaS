@@ -1,13 +1,12 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PlanValidation } from "@/components/utils/activePlanValidation";
-import { Copy, Settings2 } from "lucide-react";
+import { Copy, Edit, Trash } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,41 +16,17 @@ import { toast } from "sonner";
 import TrackingIntegration from "./trackingIntegration";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 
-const useUserPagesWithRunCounts = () => {
-  return [
-    { id: "1", url: "https://example.com/home", runsThisMonth: 120 },
-    { id: "2", url: "https://example.com/about", runsThisMonth: 180 },
-    { id: "3", url: "https://example.com/contact", runsThisMonth: 75 },
-  ];
-};
-
 export default function SettingsPage() {
   const [copied, setCopied] = useState("");
   const [siteData, setSiteData] = useState<OrderData>();
   const { selectedSite, fetchOrders } = useSiteContext();
-  const [remainingTime, setRemainingTime] = useState(getTimeUntilNextTest());
-  const [activeUrls, setActiveUrls] = useState<number | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-
-  const pages = useUserPagesWithRunCounts();
-  const totalQuota = 1800;
-  const totalUsage = pages.reduce((sum, p) => sum + p.runsThisMonth, 0);
-  const totalRemaining = totalQuota - totalUsage;
-  const totalUsedPercent = Math.min((totalUsage / totalQuota) * 100, 100);
 
   PlanValidation();
 
   useEffect(() => {
     fetchDomainData(selectedSite);
-    fetchPagesWithVitals();
   }, [selectedSite]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRemainingTime(getTimeUntilNextTest());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const formattedDate = new Date(siteData?.order_date ?? "").toLocaleString(
     "en-GB",
@@ -66,20 +41,6 @@ export default function SettingsPage() {
       timeZone: "UTC",
     }
   );
-
-  function getTimeUntilNextTest() {
-    const now = new Date();
-    const targetUtc = new Date();
-    targetUtc.setUTCHours(13, 30, 0, 0);
-    if (targetUtc.getTime() <= now.getTime()) {
-      targetUtc.setUTCDate(targetUtc.getUTCDate() + 1);
-    }
-    const diffMs = targetUtc.getTime() - now.getTime();
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-    return `${hours}h ${minutes}m ${seconds}s`;
-  }
 
   async function handleCopy(text: string) {
     try {
@@ -111,21 +72,6 @@ export default function SettingsPage() {
       setSiteData(data.data[0]);
     } catch (error) {
       console.error("Network or server error:", error);
-    }
-  }
-
-  async function fetchPagesWithVitals() {
-    if (!selectedSite) return;
-
-    const res = await fetch("/api/jobs/active_urls", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(selectedSite),
-    });
-
-    const data = await res.json();
-    if (data) {
-      setActiveUrls(data.data?.[0]?.urls.length);
     }
   }
 
@@ -165,134 +111,100 @@ export default function SettingsPage() {
   }
 
   return (
-    <>
-      <div className="m-5 border rounded-sm p-4 bg-primary-foreground dark:bg-secondary-background">
-        <div className="border-b flex gap-2 justify-between items-center">
-          <span className="flex gap-2 items-center">
-            <Settings2 />
-            <h2 className="my-3 font-bold text-2xl">Lab Settings</h2>
-          </span>
-          {confirmingDelete ? (
-            <div className="flex gap-2">
-              <Button variant="destructive" onClick={handleDelete}>
-                Confirm
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setConfirmingDelete(false)}
-              >
-                Cancel
-              </Button>
+    <div className="w-full p-5">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+        {/* Site Info Card */}
+        <div className="border rounded-sm p-4 bg-primary-foreground dark:bg-secondary-background text-sm col-span-1 md:col-span-4 relative h-fit">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-semibold">Site Info</h2>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Edit
+                    size={16}
+                    className="cursor-pointer text-muted-foreground hover:text-primary"
+                    onClick={() => toast.info("Edit feature coming soon")}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>Edit Site</TooltipContent>
+              </Tooltip>
             </div>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="destructive"
-                  className="opacity-70 hover:opacity-100"
-                  onClick={() => setConfirmingDelete(true)}
-                >
-                  Delete Site
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                This action cannot be undone. All site data will be permanently
-                removed.
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 my-5">
-          <div className="col-span-1 md:col-span-6">
-            <p className="text-primary/70 dark:text-primary/70 mb-4">
-              Site related information
-            </p>
-            <div className="grid gap-4">
+            {confirmingDelete ? (
+              <div className="flex gap-1 items-center">
+                <button
+                  className="text-red-500 px-2 py-0 text-xs hover:font-semibold cursor-pointer"
+                  onClick={handleDelete}
+                >
+                  Confirm
+                </button>
+                <button
+                  className="text-muted-foreground px-2 py-0 cursor-pointer hover:font-semibold text-xs"
+                  onClick={() => setConfirmingDelete(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Trash
+                    size={16}
+                    className="cursor-pointer text-muted-foreground hover:text-red-500"
+                    onClick={() => setConfirmingDelete(true)}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>Delete site</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label className="text-muted-foreground">Website</Label>
               <Input
                 value={siteData?.website_name ?? ""}
                 readOnly
-                className="mt-1 bg-gray-100 text-primary border-0 rounded-sm dark:bg-gray-800"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 border-0 text-primary text-sm"
               />
-              <div className="flex gap-2 items-center text-sm">
-                <Label className="font-medium">Site ID:</Label>
-                <div className="text-gray-400 dark:text-primary flex gap-2 items-center">
-                  {siteData?.order_id
-                    ? siteData.order_id.split("-")[0]
-                    : "Loading..."}
+            </div>
+
+            <div className="grid gap-2">
+              <div className="flex justify-between">
+                <Label className="text-muted-foreground">Site ID</Label>
+                <div className="flex items-center gap-2 text-primary">
+                  <span>{siteData?.order_id?.split("-")[0]}</span>
                   <Copy
                     size={14}
                     onClick={() => handleCopy(siteData?.order_id ?? "")}
-                    className="hover:text-blue-500 cursor-pointer"
+                    className="cursor-pointer hover:text-blue-500"
                   />
-                  {copied && <span className="text-green-500">Copied!</span>}
+                  {copied && (
+                    <span className="text-green-500 text-xs">Copied!</span>
+                  )}
                 </div>
               </div>
-              <div className="flex gap-2 items-center text-sm">
-                <Label className="font-medium">Created date:</Label>
-                <div className="text-gray-400 dark:text-primary">
-                  {formattedDate}
-                </div>
+
+              <div className="flex justify-between">
+                <Label className="text-muted-foreground">Created</Label>
+                <span className="text-primary">{formattedDate}</span>
               </div>
-              <div className="flex gap-2 items-center text-sm">
-                <Label className="font-medium">Monitoring status:</Label>
-                <div className="text-gray-400 dark:text-primary">
+
+              <div className="flex justify-between">
+                <Label className="text-muted-foreground">Status</Label>
+                <span className="text-primary">
                   {siteData?.order_status === true ? "Running" : "Stopped"}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-span-1 md:col-span-6 border border-muted rounded-md p-4 bg-muted/30 dark:bg-muted/20">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wide">
-              Usage
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm font-medium text-primary">
-                  <span>
-                    {totalUsage} / {totalQuota} lab runs used
-                  </span>
-                  <span className="text-green-500">{totalRemaining} left</span>
-                </div>
-                <div className="mt-2 h-3 w-full bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500 transition-all"
-                    style={{ width: `${totalUsedPercent}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground">
-                <div className="flex justify-between">
-                  <span>Next test in:</span>
-                  <span className="text-primary">{remainingTime}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Active pages monitored:</span>
-                  <span className="text-primary">
-                    {typeof activeUrls === "number"
-                      ? `${activeUrls}/10`
-                      : "Loading..."}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Runs per report:</span>
-                  <span className="text-primary">3</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Test location:</span>
-                  <span className="text-primary">Canada, Ontario</span>
-                </div>
+                </span>
               </div>
             </div>
           </div>
         </div>
+
+        {/* RUM Integration - Wider Section */}
+        <div className="col-span-1 md:col-span-8">
+          <TrackingIntegration />
+        </div>
       </div>
-      <div className="mt-8">
-        <TrackingIntegration />
-      </div>
-    </>
+    </div>
   );
 }

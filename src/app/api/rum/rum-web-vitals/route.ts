@@ -98,7 +98,6 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (err: any) {
-    console.error("Unexpected error:", err);
     return NextResponse.json(
       { error: "Internal server error", details: err.message },
       { status: 500 }

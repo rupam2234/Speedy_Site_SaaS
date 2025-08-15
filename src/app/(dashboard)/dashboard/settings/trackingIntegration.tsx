@@ -54,7 +54,7 @@ export default function TrackingIntegration() {
   }, [selectedSite]);
 
   return (
-    <div className="m-5 border rounded-sm p-4 bg-primary-foreground dark:bg-secondary-background">
+    <div className=" border rounded-sm p-4 bg-primary-foreground dark:bg-secondary-background">
       <span className="flex gap-2 items-center">
         <Settings2 />
         <h2 className="my-3 font-bold text-2xl">RUM Integration</h2>
