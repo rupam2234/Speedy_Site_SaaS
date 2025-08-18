@@ -16,6 +16,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const isDev = process.env.NODE_ENV === "development";
+
+    const BASE_URL = isDev
+      ? process.env.NEXT_PUBLIC_DEV_BASE_URL
+      : process.env.NEXT_PUBLIC_PROD_BASE_URL;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "subscription",
@@ -30,8 +36,8 @@ export async function POST(request: Request) {
           },
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_DEV_BASE_URL}/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_DEV_BASE_URL}/cancel`,
+      success_url: `${BASE_URL}/success`,
+      cancel_url: `${BASE_URL}/cancel`,
     });
 
     return NextResponse.json({ url: session.url });
