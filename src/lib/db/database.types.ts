@@ -2019,66 +2019,6 @@ export type Database = {
           }
         ];
       };
-      users: {
-        Row: {
-          activePlan: string | null;
-          created_at: string;
-          email: string;
-          firstname: string;
-          has_lab_access: boolean | null;
-          has_rum: boolean | null;
-          id: string;
-          lastname: string;
-          latest_payment_id: string | null;
-          max_sites: number;
-          period_end: string | null;
-          period_start: string | null;
-          plan_id: string | null;
-          subscription_created_at: string | null;
-          subscription_id: string | null;
-          subscription_status: string | null;
-          updated_at: string;
-        };
-        Insert: {
-          activePlan?: string | null;
-          created_at?: string;
-          email: string;
-          firstname: string;
-          has_lab_access?: boolean | null;
-          has_rum?: boolean | null;
-          id: string;
-          lastname: string;
-          latest_payment_id?: string | null;
-          max_sites?: number;
-          period_end?: string | null;
-          period_start?: string | null;
-          plan_id?: string | null;
-          subscription_created_at?: string | null;
-          subscription_id?: string | null;
-          subscription_status?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          activePlan?: string | null;
-          created_at?: string;
-          email?: string;
-          firstname?: string;
-          has_lab_access?: boolean | null;
-          has_rum?: boolean | null;
-          id?: string;
-          lastname?: string;
-          latest_payment_id?: string | null;
-          max_sites?: number;
-          period_end?: string | null;
-          period_start?: string | null;
-          plan_id?: string | null;
-          subscription_created_at?: string | null;
-          subscription_id?: string | null;
-          subscription_status?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
     };
     Views: {
       subscription_with_limit: {
