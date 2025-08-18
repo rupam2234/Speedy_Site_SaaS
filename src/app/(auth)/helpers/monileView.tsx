@@ -29,7 +29,9 @@ export function MobileViewHandler() {
                     <Image
                       src={review.avatar}
                       alt={review.name}
-                      className="w-8 h-8 rounded-full"
+                      width={32}
+                      height={32}
+                      className="wrounded-full"
                     />
                     <span className="font-semibold text-sm">{review.name}</span>
                   </div>
@@ -47,7 +49,9 @@ export function MobileViewHandler() {
                     <Image
                       src={review.avatar}
                       alt={review.name}
-                      className="w-8 h-8 rounded-full"
+                      width={32}
+                      height={32}
+                      className="rounded-full"
                     />
                     <span className="font-semibold text-sm">{review.name}</span>
                   </div>

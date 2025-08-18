@@ -5,7 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   const worker = setupDB();
 
-  const { supabase } = serverClient(req);
+  const res = NextResponse.next();
+
+  const supabase = serverClient(req, res);
+
   const {
     data: { user },
   } = await supabase.auth.getUser();

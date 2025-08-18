@@ -6,8 +6,9 @@ export async function POST(req: NextRequest) {
   const worker = setupDB();
 
   const body: any = await req.json();
+  const res = NextResponse.next();
 
-  const { supabase } = serverClient(req);
+  const supabase = serverClient(req, res);
   const {
     data: { user },
   } = await supabase.auth.getUser();

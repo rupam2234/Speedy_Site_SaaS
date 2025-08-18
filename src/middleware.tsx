@@ -3,7 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { serverClient } from "./lib/db/server_client";
 
 export async function middleware(req: NextRequest) {
-  const { supabase, res } = serverClient(req);
+  const res = NextResponse.next();
+
+  const supabase = serverClient(req, res);
 
   const {
     data: { user },
