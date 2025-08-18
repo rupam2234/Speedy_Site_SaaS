@@ -44,7 +44,7 @@ export default function TrackingIntegration() {
       body: JSON.stringify({ domain_name: selectedSite }),
     })
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: any) => {
         setRowCount(data.row_count);
       })
       .catch((err) => {

@@ -16,8 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
-import { useClerk } from "@clerk/nextjs";
-import { pageMetricCache } from "../globalData/cachedPageData";
+import { pageMetricCache } from "../../data/cachedPageData";
+import { useSignOut } from "../utils/supabase/signOutUser";
 
 export default function FooterNav({
   items,
@@ -44,7 +44,7 @@ export default function FooterNav({
   }, [NameAvatar, items]);
 
   const { isMobile } = useSidebar();
-  const { signOut } = useClerk();
+  const signOut = useSignOut();
 
   return (
     <SidebarMenu>
@@ -110,7 +110,7 @@ export default function FooterNav({
                 sessionStorage.removeItem("ordersEmail");
                 sessionStorage.removeItem("selectedSite");
                 resetPageMetric();
-                signOut({ redirectUrl: "/sign-in" });
+                signOut({ redirectTo: "/sign-in" });
               }}
             >
               <LogOut />

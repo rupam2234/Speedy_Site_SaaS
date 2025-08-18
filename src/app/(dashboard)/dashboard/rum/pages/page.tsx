@@ -103,7 +103,7 @@ export default function RUMpages() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         const metrics: PageData[] = (data.metrics || []).filter(
           (x: PageData) => x.device_type !== "unknown"
         );

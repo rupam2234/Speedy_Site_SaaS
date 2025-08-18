@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useSiteContext } from "./siteContext";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
-import { PlanValidation } from "@/components/utils/activePlanValidation";
+// import { PlanValidation } from "@/components/utils/activePlanValidation";
 import WebsitePage from "./helpers/main";
 
 export default function Dashboard() {
   const { selectedSite } = useSiteContext();
   const [showPrompt, setShowPrompt] = useState(false);
 
-  PlanValidation(); // redirect to billing if no active plan
+  // PlanValidation(); // redirect to billing if no active plan
 
   // Wait for 8 seconds before showing "Select a website" message
   useEffect(() => {
@@ -35,10 +35,7 @@ export default function Dashboard() {
   if (!selectedSite && showPrompt) {
     return (
       <div className="flex flex-col space-y-4 md:mt-[-50px] items-center justify-center min-h-full dark:text-secondary-background p-8">
-        <p
-          className="text-4xl md:text-6xl font-bold"
-          style={{ color: "rgba(0, 0, 0, 0.2)" }}
-        >
+        <p className="text-4xl md:text-6xl font-bold text-primary/50">
           Website 404
         </p>
         <p className="text-center text-muted-foreground w-full">

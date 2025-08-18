@@ -30,7 +30,7 @@ const CACHE_WORKER_URL =
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { domains, frequency } = body;
+    const { domains, frequency }: any = body;
 
     if (!Array.isArray(domains) || domains.some((d) => typeof d !== "string")) {
       return NextResponse.json(

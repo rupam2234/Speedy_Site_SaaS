@@ -45,7 +45,7 @@ export async function pageCrux(page: string) {
     const results = await Promise.all(FORM_FACTORS.map(fetchCrUXForPage));
 
     const filtered = results.filter((item) => !!item);
-    const parsedData: PageCrux[] = filtered.map((x) => ({
+    const parsedData: PageCrux[] = filtered.map((x: any) => ({
       device_type:
         x?.record?.key?.formFactor === "PHONE" ? "Mobile" : "Desktop",
       page_address: page,
@@ -208,7 +208,7 @@ export async function fetchCrUXData(
       if (allResponses404) {
         setCruxData([]);
       } else {
-        const validData = data
+        const validData: any = data
           .filter((item) => item.data !== null)
           .map((item) => item.data);
 

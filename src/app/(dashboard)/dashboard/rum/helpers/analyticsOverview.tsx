@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React from "react";
 // import { useSiteContext } from "../../siteContext";
 
@@ -63,7 +64,7 @@ export default function AnalyticsOverview({ data }: Props) {
             .filter((x) => x !== "Unknown")
             .slice(0, 6)
             .map((code) => (
-              <img
+              <Image
                 key={code}
                 src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
                 alt={code}

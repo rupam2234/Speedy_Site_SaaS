@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
-import { auth } from "@clerk/nextjs/server";
+import { serverClient } from "@/lib/db/server_client";
 
 export interface TokenProps {
   token: string;
@@ -8,9 +8,12 @@ export interface TokenProps {
 const worker = setupDB();
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
+  const { supabase } = serverClient(req);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!userId) {
+  if (!user) {
     return NextResponse.json(
       { message: "Unauthorized: No user ID found" },
       { status: 401 }
@@ -40,8 +43,8 @@ export async function POST(req: NextRequest) {
   try {
     const { error, status } = await worker
       .from("orders")
-      .update({ gsc_token: body.token })
-      .eq("user_id", userId);
+      .update({})
+      .eq("user_id", user?.id);
 
     if (error) {
       return NextResponse.json(

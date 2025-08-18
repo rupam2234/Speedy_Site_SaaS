@@ -6,7 +6,7 @@ const worker = setupDB();
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  const { domain, newUrls } = body;
+  const { domain, newUrls }: any = body;
 
   if (!domain || !Array.isArray(newUrls)) {
     return NextResponse.json(

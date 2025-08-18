@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     domains: ["tmpvygehhshrgsqxzaty.supabase.co"],
   },
+  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

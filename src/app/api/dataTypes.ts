@@ -6,8 +6,8 @@ export type OrderData = Database["public"]["Tables"]["orders"]["Insert"];
 
 export type PageQueue = Database["public"]["Tables"]["crux_jobs"]["Insert"];
 
-export interface OrderPerPlan {
-  free_users: number;
-  basic_plan: number;
-  pro: number;
-}
+export type Subscriptions =
+  Database["public"]["Tables"]["subscriptions"]["Insert"];
+
+export type PlanMetadata =
+  Database["public"]["Tables"]["plan_metadata"]["Insert"];

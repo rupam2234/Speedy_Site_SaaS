@@ -9,27 +9,23 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
 import { ReactNode, Suspense, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { PlanValidation } from "@/components/utils/activePlanValidation";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 function LayoutContent({ children }: { children: ReactNode }) {
-  const { user, isSignedIn } = useUser();
-  const { fetchOrders, selectedSite } = useSiteContext();
+  const { selectedSite } = useSiteContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  PlanValidation(); // optional client-side redirect if needed
-
-  // set site param
+  // Update the `site` query param in the URL
   useEffect(() => {
     if (selectedSite) {
       const currentPath = pathname;
@@ -39,20 +35,15 @@ function LayoutContent({ children }: { children: ReactNode }) {
     }
   }, [selectedSite, pathname, router, searchParams]);
 
-  // redirect back to dashboard if no site
+  // Redirect back to dashboard if no site is selected
   useEffect(() => {
-    if (!user || !isSignedIn) return;
-
-    const site = selectedSite || searchParams.get("site");
-
     const timeout = setTimeout(() => {
       if (!selectedSite) {
         router.push("/dashboard");
       }
     }, 500);
-    fetchOrders(site!);
     return () => clearTimeout(timeout);
-  }, [user, isSignedIn, selectedSite, searchParams, router, fetchOrders]);
+  }, [selectedSite, router]);
 
   return (
     <>
@@ -77,11 +68,13 @@ function LayoutContent({ children }: { children: ReactNode }) {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
-      <SiteContextProvider>
-        <Suspense fallback={<LoadingAnimation />}>
-          <LayoutContent>{children}</LayoutContent>
-        </Suspense>
-      </SiteContextProvider>
+      <AuthProvider>
+        <SiteContextProvider>
+          <Suspense fallback={<LoadingAnimation />}>
+            <LayoutContent>{children}</LayoutContent>
+          </Suspense>
+        </SiteContextProvider>
+      </AuthProvider>
     </SidebarProvider>
   );
 }

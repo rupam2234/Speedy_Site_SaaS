@@ -1,57 +1,57 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
 import { OrderData } from "../../dataTypes";
-import { auth } from "@clerk/nextjs/server";
 
 const worker = setupDB();
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { user_id }: any = await req.json();
 
-    if (!userId) {
+    if (!user_id) {
       return NextResponse.json(
-        { message: "Unauthorized: No user ID found" },
+        { message: "Unauthorized: No user ID provided" },
         { status: 401 }
       );
-    } else {
-      const { data: orderData } = await worker
-        .from("orders")
-        .select("*")
-        .eq("user_id", userId);
-
-      if (orderData && orderData.length > 0) {
-        const typeOrderData: OrderData[] = orderData.map((order: any) => ({
-          orderId: order.order_id,
-          orderDate: order.order_date,
-          gsc_token: order.gsc_token,
-          website_name: order.website_name,
-          website_address: order.website_address,
-          favicon_file: order.favicon_file,
-          order_status: order.order_status,
-          user_email: order.user_email,
-        }));
-
-        return NextResponse.json(
-          {
-            message: "Order data fetched successfully",
-            data: typeOrderData, // Return the fetched rows
-          },
-          { status: 200 }
-        );
-      } else {
-        const typeOrderData: OrderData[] = [];
-
-        return NextResponse.json(
-          {
-            message: "No orders found for this email",
-            data: typeOrderData,
-          },
-          { status: 200 }
-        );
-      }
     }
+
+    const { data: orderData, error } = await worker
+      .from("orders")
+      .select("*")
+      .eq("user_id", user_id);
+
+    if (error) {
+      return NextResponse.json(
+        { message: "Failed to fetch orders", error: error.message },
+        { status: 500 }
+      );
+    }
+
+    const typeOrderData: OrderData[] = (orderData || []).map((order: any) => ({
+      orderId: order.order_id,
+      orderDate: order.order_date,
+      gsc_token: order.gsc_token,
+      website_name: order.website_name,
+      website_address: order.website_address,
+      favicon_file: order.favicon_file,
+      order_status: order.order_status,
+      user_email: order.user_email,
+    }));
+
+    return NextResponse.json(
+      {
+        message: typeOrderData.length
+          ? "Order data fetched successfully"
+          : "No orders found for this user",
+        data: typeOrderData,
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    console.log("Unable to fetch website data: ", error);
+    console.error("Unable to fetch website data: ", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

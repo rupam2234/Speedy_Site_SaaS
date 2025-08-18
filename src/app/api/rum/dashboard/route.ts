@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { domain_name, date_range = "7days" } = body;
+    const { domain_name, date_range = "7days" }: any = body;
 
     if (!domain_name) {
       return NextResponse.json(

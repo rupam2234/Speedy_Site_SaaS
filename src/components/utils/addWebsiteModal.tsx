@@ -1,7 +1,4 @@
-// "use client";
-
 import { useState } from "react";
-import { useClerk } from "@clerk/nextjs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,9 +11,9 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-// Ensure this path is correct for your OrderData interface
 import { OrderData } from "@/app/api/dataTypes";
 import { LoaderIcon } from "lucide-react";
+import { useSupabaseUser } from "./supabase/AuthProvider";
 
 interface AddWebsiteModalProps {
   open: boolean;
@@ -29,7 +26,8 @@ export function AddWebsiteModal({
   onOpenChange,
   onSuccess,
 }: AddWebsiteModalProps) {
-  const { user } = useClerk();
+  const user = useSupabaseUser();
+
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false); // To disable button during async operations
@@ -60,7 +58,10 @@ export function AddWebsiteModal({
   }
 
   //#region Upload favicon to db
-  async function uploadFavicon(faviconFile: string): Promise<string | null> {
+  async function uploadFavicon(
+    faviconFile: string,
+    domain: string
+  ): Promise<string | null> {
     if (!faviconFile) return null;
 
     try {
@@ -69,12 +70,12 @@ export function AddWebsiteModal({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ imageUrl: faviconFile }),
+        body: JSON.stringify({ imageUrl: faviconFile, domain: domain }),
       });
 
       if (!res.ok) {
         // Handle non-2xx responses
-        const errorBody = await res.json();
+        const errorBody: any = await res.json();
         console.error(
           "Favicon upload failed:",
           errorBody.message || res.statusText
@@ -82,7 +83,7 @@ export function AddWebsiteModal({
         return null;
       }
 
-      const body = await res.json();
+      const body: any = await res.json();
       return body.url || null; // Ensure we always return null if url is not present
     } catch (err) {
       console.error("Error during favicon upload:", err);
@@ -107,7 +108,7 @@ export function AddWebsiteModal({
 
       if (!res.ok) {
         // Handle non-2xx responses
-        const errorBody = await res.json();
+        const errorBody: any = await res.json();
         console.error(
           "Favicon fetch failed:",
           errorBody.message || res.statusText
@@ -115,7 +116,7 @@ export function AddWebsiteModal({
         return null;
       }
 
-      const body = await res.json();
+      const body: any = await res.json();
       // Safely access nested property
       return body.faviconData?.favicon || null;
     } catch (err) {
@@ -134,10 +135,8 @@ export function AddWebsiteModal({
 
     const orderData: OrderData = {
       order_status: true,
-      user_email: user?.emailAddresses[0]?.emailAddress ?? "",
       website_address: `https://${domain}`,
       website_name: domain,
-      gsc_token: null,
       favicon_file: uploadedFavicon,
     };
 
@@ -147,7 +146,7 @@ export function AddWebsiteModal({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(orderData),
+        body: JSON.stringify({ orderData: orderData, user_id: user?.id }),
       });
 
       if (res.status === 200) {
@@ -157,7 +156,7 @@ export function AddWebsiteModal({
         return { success: false, status: res.status };
       } else {
         // Log error from backend if available
-        const errorBody = await res.json();
+        const errorBody: any = await res.json();
         console.error(
           "Failed to add order:",
           errorBody.details || res.statusText
@@ -189,7 +188,7 @@ export function AddWebsiteModal({
 
       if (favicon) {
         try {
-          uploaded_url = await uploadFavicon(favicon);
+          uploaded_url = await uploadFavicon(favicon, cleanedDomain);
           if (!uploaded_url) {
             console.warn("Favicon upload failed. Proceeding without it.");
           }

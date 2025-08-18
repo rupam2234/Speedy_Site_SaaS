@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Missing req body!" }, { status: 400 });
   }
 
-  const body = await req.json();
+  const body: any = await req.json();
 
   if (body) {
     try {

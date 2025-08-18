@@ -1,6 +1,7 @@
 "use client";
 
 import { OrderData } from "@/app/api/dataTypes";
+import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { CruxData, DailyCrux } from "@/data/cruxData";
 import React, {
   createContext,
@@ -15,7 +16,7 @@ type SiteContextType = {
   setSelectedSite: (site: string) => void;
   orders: OrderData[] | null;
   setOrders: (orders: OrderData[] | null) => void;
-  fetchOrders: (siteFromUrl?: string) => Promise<void>;
+  fetchOrders: (siteFromUrl?: string, userId?: string) => Promise<void>;
   dailyCrux: DailyCrux[];
   setDailyCrux: (dailyData: DailyCrux[]) => void;
   cruxData: CruxData[];
@@ -58,8 +59,6 @@ type SiteContextType = {
   setActiveTimingMetric: (
     metric: "Document Timing" | "LCP Timing" | "Page Timing"
   ) => void;
-  activePlan: "free_user" | "basic_plan" | "pro";
-  setActivePlan: (activePlan: "free_user" | "basic_plan" | "pro") => void;
 };
 
 export const SiteContext = createContext<SiteContextType>({
@@ -88,8 +87,6 @@ export const SiteContext = createContext<SiteContextType>({
   setActiveAssetMetric: () => {},
   activeTimingMetric: "Document Timing",
   setActiveTimingMetric: () => {},
-  activePlan: "basic_plan",
-  setActivePlan: () => {},
   rumDistribution: "p75",
   setRumDistribution: () => {},
   rumDateRange: "7days",
@@ -128,15 +125,15 @@ export default function SiteContextProvider({
   const [activeTimingMetric, setActiveTimingMetric] = useState<
     "Document Timing" | "LCP Timing" | "Page Timing"
   >("Document Timing");
-  const [activePlan, setActivePlan] = useState<
-    "free_user" | "basic_plan" | "pro"
-  >("basic_plan");
+
   const [rumDistribution, setRumDistribution] = useState<
     "p50" | "p75" | "p90" | "p95" | "p99"
   >("p75");
   const [rumDateRange, setRumDateRange] = useState<
     "24hours" | "7days" | "30days" | "90days"
   >("30days");
+
+  const user = useSupabaseUser();
 
   // Load from sessionStorage only if it matches the current user email
   useEffect(() => {
@@ -183,6 +180,13 @@ export default function SiteContextProvider({
     }
   }, [selectedSite]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const siteFromUrl = new URLSearchParams(window.location.search).get("site");
+    fetchOrders(siteFromUrl ?? "", user.id);
+  }, [user?.id]);
+
   const updateDateRange = (startDate: string, endDate: string) => {
     setDateRange((prev) => {
       if (prev[0] === startDate && prev[1] === endDate) return prev;
@@ -190,62 +194,71 @@ export default function SiteContextProvider({
     });
   };
 
-  const fetchOrders = useCallback(async (siteFromUrl?: string) => {
-    const storedOrders = sessionStorage.getItem("orders");
-
-    if (storedOrders) {
-      const parsedOrders = JSON.parse(storedOrders);
-      if (parsedOrders?.length > 0) {
-        setOrders(parsedOrders);
-
-        if (
-          siteFromUrl &&
-          parsedOrders.some((o: OrderData) => o.website_name === siteFromUrl)
-        ) {
-          setSelectedSite(siteFromUrl);
-        } else {
-          setSelectedSite("");
-        }
-
+  // Fetch fresh data from server
+  const fetchOrders = useCallback(
+    async (siteFromUrl?: string, userId?: string) => {
+      if (!userId) {
+        console.warn("User ID not available, skipping fetchOrders");
         return;
       }
-    }
 
-    try {
-      const response = await fetch("/api/orders/fetchOrder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // No body needed since userId is read from auth in backend
-      });
+      // Show cached orders immediately if available
+      const storedOrders = sessionStorage.getItem("orders");
 
-      if (!response.ok) throw new Error("Failed to fetch orders");
+      if (storedOrders) {
+        const parsedOrders = JSON.parse(storedOrders);
+        if (parsedOrders?.length > 0) {
+          setOrders(parsedOrders);
 
-      const { data } = await response.json();
-
-      if (data?.length > 0) {
-        sessionStorage.setItem("orders", JSON.stringify(data));
-        setOrders(data);
-
-        if (
-          siteFromUrl &&
-          data.some((o: OrderData) => o.website_name === siteFromUrl)
-        ) {
-          setSelectedSite(siteFromUrl);
-        } else {
-          setSelectedSite("");
+          if (
+            siteFromUrl &&
+            parsedOrders.some((o: OrderData) => o.website_name === siteFromUrl)
+          ) {
+            setSelectedSite(siteFromUrl);
+          } else {
+            setSelectedSite("");
+          }
+          // Continue to fetch fresh data
         }
-      } else {
+      }
+
+      try {
+        const response = await fetch("/api/orders/fetchOrder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: userId }),
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch orders");
+
+        const { data }: any = await response.json();
+
+        if (data?.length > 0) {
+          sessionStorage.setItem("orders", JSON.stringify(data));
+          setOrders(data);
+
+          if (
+            siteFromUrl &&
+            data.some((o: OrderData) => o.website_name === siteFromUrl)
+          ) {
+            setSelectedSite(siteFromUrl);
+          } else {
+            setSelectedSite("");
+          }
+        } else {
+          setOrders(null);
+          setSelectedSite("");
+          sessionStorage.removeItem("orders");
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error);
         setOrders(null);
         setSelectedSite("");
         sessionStorage.removeItem("orders");
       }
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      setOrders(null);
-      setSelectedSite("");
-      sessionStorage.removeItem("orders");
-    }
-  }, []);
+    },
+    []
+  );
 
   return (
     <SiteContext.Provider
@@ -275,8 +288,6 @@ export default function SiteContextProvider({
         setActiveAssetMetric,
         activeTimingMetric,
         setActiveTimingMetric,
-        activePlan,
-        setActivePlan,
         rumDistribution,
         setRumDistribution,
         rumDateRange,

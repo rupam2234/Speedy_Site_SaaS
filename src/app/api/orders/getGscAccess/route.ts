@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "req body missing" }, { status: 400 });
   }
 
-  const body = await req.json();
+  const body: any = await req.json();
 
   if (!body.site) {
     return NextResponse.json({ message: "Missing website!" }, { status: 400 });

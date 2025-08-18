@@ -5,7 +5,7 @@ const supabase = setupDB();
 
 export async function POST(req: NextRequest) {
   try {
-    const { domain } = await req.json();
+    const { domain }: any = await req.json();
 
     if (!domain) {
       return NextResponse.json({ error: "Missing domain" }, { status: 400 });

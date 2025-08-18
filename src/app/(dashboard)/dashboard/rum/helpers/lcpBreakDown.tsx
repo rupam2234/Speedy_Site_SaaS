@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import BeatLoader from "react-spinners/BeatLoader";
 import { ChartPie } from "lucide-react";
+import Image from "next/image";
 
 interface LCPElementData {
   element_target: string;
@@ -408,7 +409,7 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
               {/* image if available */}
               <div className="md:block hidden md:space-y-3">
                 {selectedElement?.image_url ? (
-                  <img
+                  <Image
                     src={selectedElement.image_url}
                     width={200}
                     alt={

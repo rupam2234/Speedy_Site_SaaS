@@ -3,6 +3,7 @@
 import {
   Activity,
   CreditCard,
+  FlaskConical,
   HeartPulse,
   LayoutDashboardIcon,
   Settings2,
@@ -15,13 +16,15 @@ import {
   SidebarHeader,
   useSidebar,
 } from "../ui/sidebar";
-import { useUser } from "@clerk/nextjs";
 import MainNav from "./Main-Nav";
 import FooterNav from "./Footer-Nav";
 import { SelectSite } from "../utils/SiteSelect";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useSupabaseUser } from "../utils/supabase/AuthProvider";
+import { useTheme } from "../theme/ThemeProvider";
+import { DynamicLogo } from "@/app/(auth)/helpers/dynamicLogo";
 
 // Hook to detect if the screen is mobile
 function useIsMobile() {
@@ -42,37 +45,34 @@ function useIsMobile() {
 export default function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useUser();
   const { state } = useSidebar();
   const { selectedSite } = useSiteContext();
   const pathname = usePathname();
-
   const isMobile = useIsMobile();
+  const user = useSupabaseUser();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const sidebarOpen =
     state === "expanded" ? false : state === "collapsed" ? true : null;
 
-  // Always expanded on mobile, default logic on desktop
   const selectSiteCollapsed = isMobile ? false : sidebarOpen ?? false;
   const selectSiteDisabled = pathname.includes("/account");
 
   const data = {
     user: {
-      name: user?.fullName?.toString() ?? "",
-      email:
-        user?.emailAddresses
-          ?.map(({ emailAddress }) => emailAddress)
-          .join(", ") || "",
+      name: user?.email?.split("@")[0] || "",
+      email: user?.email ?? "",
       avatar: "",
       items: [
         {
           title: "Account",
-          url: "/account",
+          url: "#",
           icon: User2Icon,
         },
         {
           title: "Billing",
-          url: "/account/billing",
+          url: "/account/subscription",
           icon: CreditCard,
         },
       ],
@@ -118,6 +118,54 @@ export default function AppSidebar({
           },
         ],
       },
+      // {
+      //   title: "Optimized Image Delivery",
+      //   url: "#",
+      //   icon: FlaskConical,
+      //   isActive: true,
+      //   items: [
+      //     {
+      //       title: "How it works?",
+      //       url: `/dashboard#?site=${selectedSite}`,
+      //     },
+      //     {
+      //       title: "Optimize on fly",
+      //       url: `/dashboard#?site=${selectedSite}`,
+      //     },
+      //   ],
+      // },
+      // {
+      //   title: "AI Citation",
+      //   url: "#",
+      //   icon: Brain,
+      //   isActive: false,
+      //   items: [
+      //     {
+      //       title: "Report",
+      //       url: `#`,
+      //     },
+      //   ],
+      // },
+      {
+        title: "Speedy Site Assistance",
+        url: "#",
+        icon: FlaskConical,
+        isActive: true,
+        items: [
+          {
+            title: "How it works",
+            url: `#`,
+          },
+          {
+            title: "Send Performance Report",
+            url: `#`,
+          },
+          {
+            title: "Request Optimization",
+            url: `#`,
+          },
+        ],
+      },
     ],
   };
 
@@ -130,10 +178,13 @@ export default function AppSidebar({
       <SidebarHeader className="mb-5 mt-2">
         <div className="flex gap-4 items-center">
           <div className="flex-1">
-            <SelectSite
-              collapsed={selectSiteCollapsed}
-              disabled={selectSiteDisabled}
-            />
+            {selectSiteDisabled === true ? (
+              <div className="px-2">
+                <DynamicLogo isDark={isDark} />
+              </div>
+            ) : (
+              <SelectSite collapsed={selectSiteCollapsed} disabled={false} />
+            )}
           </div>
         </div>
       </SidebarHeader>

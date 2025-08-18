@@ -9,7 +9,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { CirclePlus } from "lucide-react";
@@ -23,10 +23,11 @@ export function SelectSite({
   collapsed?: boolean;
   disabled?: boolean;
 }) {
-  const { selectedSite, setSelectedSite, orders, setCollapsed, fetchOrders } =
+  const { selectedSite, setSelectedSite, orders, setCollapsed } =
     useSiteContext();
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   // managing the sidebar state (collapsed or open?)
   useEffect(() => {
@@ -34,9 +35,8 @@ export function SelectSite({
   }, [collapsed]);
 
   const handleChange = (value: string) => {
-    // when someone's adding a site
     if (value === "__add__") {
-      setShowAddModal(true); // Open modal
+      setShowAddModal(true);
       return;
     }
 
@@ -56,7 +56,6 @@ export function SelectSite({
     if (found) {
       setSelectedSite(found.website_name);
     } else {
-      // fallback to first order if no match in URL
       setSelectedSite(orders[0].website_name);
     }
   }, [orders, pathname, selectedSite, setSelectedSite]);
@@ -134,7 +133,7 @@ export function SelectSite({
               toast.success("Website added!", {
                 style: { backgroundColor: "green", color: "white" },
               });
-              fetchOrders(); // optional: refresh some data
+              router.push("/dashboard");
             }}
           />
         </SelectGroup>

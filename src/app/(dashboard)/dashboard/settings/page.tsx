@@ -5,7 +5,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { PlanValidation } from "@/components/utils/activePlanValidation";
 import { Copy, Edit, Trash } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -21,8 +20,6 @@ export default function SettingsPage() {
   const [siteData, setSiteData] = useState<OrderData>();
   const { selectedSite, fetchOrders } = useSiteContext();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-
-  PlanValidation();
 
   useEffect(() => {
     fetchDomainData(selectedSite);
@@ -68,7 +65,7 @@ export default function SettingsPage() {
         return;
       }
 
-      const data = await response.json();
+      const data: any = await response.json();
       setSiteData(data.data[0]);
     } catch (error) {
       console.error("Network or server error:", error);

@@ -62,7 +62,7 @@ export type Database = {
           status: string | null;
           updated_at: string | null;
           urls: string[];
-          user_id: string | null;
+          user_id: string;
         };
         Insert: {
           created_at?: string | null;
@@ -72,7 +72,7 @@ export type Database = {
           status?: string | null;
           updated_at?: string | null;
           urls: string[];
-          user_id?: string | null;
+          user_id?: string;
         };
         Update: {
           created_at?: string | null;
@@ -82,7 +82,7 @@ export type Database = {
           status?: string | null;
           updated_at?: string | null;
           urls?: string[];
-          user_id?: string | null;
+          user_id?: string;
         };
         Relationships: [
           {
@@ -91,13 +91,6 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "orders";
             referencedColumns: ["website_name"];
-          },
-          {
-            foreignKeyName: "crux_jobs_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
           }
         ];
       };
@@ -263,46 +256,32 @@ export type Database = {
       orders: {
         Row: {
           favicon_file: string | null;
-          gsc_token: string | null;
           order_date: string;
           order_id: string;
           order_status: boolean;
-          user_email: string;
-          user_id: string | null;
+          user_id: string;
           website_address: string;
           website_name: string;
         };
         Insert: {
           favicon_file?: string | null;
-          gsc_token?: string | null;
           order_date?: string;
           order_id?: string;
           order_status: boolean;
-          user_email: string;
-          user_id?: string | null;
+          user_id?: string;
           website_address: string;
           website_name: string;
         };
         Update: {
           favicon_file?: string | null;
-          gsc_token?: string | null;
           order_date?: string;
           order_id?: string;
           order_status?: boolean;
-          user_email?: string;
-          user_id?: string | null;
+          user_id?: string;
           website_address?: string;
           website_name?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "orders_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          }
-        ];
+        Relationships: [];
       };
       pageperf_data: {
         Row: {
@@ -1924,6 +1903,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      plan_metadata: {
+        Row: {
+          default_billing_interval: string | null;
+          degradation_policy: string;
+          monthly_price: number | null;
+          plan: string;
+          price: number;
+          usage_limit: number;
+          yearly_price: number | null;
+        };
+        Insert: {
+          default_billing_interval?: string | null;
+          degradation_policy?: string;
+          monthly_price?: number | null;
+          plan: string;
+          price?: number;
+          usage_limit: number;
+          yearly_price?: number | null;
+        };
+        Update: {
+          default_billing_interval?: string | null;
+          degradation_policy?: string;
+          monthly_price?: number | null;
+          plan?: string;
+          price?: number;
+          usage_limit?: number;
+          yearly_price?: number | null;
+        };
+        Relationships: [];
+      };
       rum_metrics: {
         Row: {
           created_at: string | null;
@@ -1953,6 +1962,62 @@ export type Database = {
           session_id?: string | null;
         };
         Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          billing_interval: string | null;
+          created_at: string | null;
+          current_usage: number;
+          period_ends_at: string | null;
+          period_starts_at: string | null;
+          plan: string;
+          quantity: number;
+          status: string;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          trial_ends_at: string | null;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          billing_interval?: string | null;
+          created_at?: string | null;
+          current_usage?: number;
+          period_ends_at?: string | null;
+          period_starts_at?: string | null;
+          plan?: string;
+          quantity?: number;
+          status?: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          trial_ends_at?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          billing_interval?: string | null;
+          created_at?: string | null;
+          current_usage?: number;
+          period_ends_at?: string | null;
+          period_starts_at?: string | null;
+          plan?: string;
+          quantity?: number;
+          status?: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          trial_ends_at?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_fkey";
+            columns: ["plan"];
+            isOneToOne: false;
+            referencedRelation: "plan_metadata";
+            referencedColumns: ["plan"];
+          }
+        ];
       };
       users: {
         Row: {
@@ -2016,7 +2081,33 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      subscription_with_limit: {
+        Row: {
+          active_sites: number | null;
+          computed_usage_limit: number | null;
+          created_at: string | null;
+          current_usage: number | null;
+          degradation_policy: string | null;
+          period_ends_at: string | null;
+          period_starts_at: string | null;
+          plan: string | null;
+          quantity: number | null;
+          status: string | null;
+          trial_ends_at: string | null;
+          updated_at: string | null;
+          usage_limit: number | null;
+          user_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_fkey";
+            columns: ["plan"];
+            isOneToOne: false;
+            referencedRelation: "plan_metadata";
+            referencedColumns: ["plan"];
+          }
+        ];
+      };
     };
     Functions: {
       aggregate_daily_web_metrics: {

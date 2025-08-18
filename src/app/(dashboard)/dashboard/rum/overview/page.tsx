@@ -69,8 +69,8 @@ export default function RUM() {
         if (!liveRes.ok || !mixedRes.ok)
           throw new Error("Failed to fetch RUM data");
 
-        const live = await liveRes.json();
-        const mixed = await mixedRes.json();
+        const live: any = await liveRes.json();
+        const mixed: any = await mixedRes.json();
 
         setDistData(live?.metrics?.webVitals || []);
         setHappinessData(live?.metrics?.userHappiness || []);

@@ -2,7 +2,7 @@ import { PageManagementHelper } from "@/app/(dashboard)/dashboard/pages/helper/h
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { code } = await req.json();
+  const { code }: any = await req.json();
 
   if (!code) {
     return NextResponse.json(
@@ -19,31 +19,31 @@ export async function POST(req: NextRequest) {
       throw new Error("Token missing in response");
     }
 
-    // Fetch sites from Google Search Console
-    const sitesRes = await fetch(
-      "https://www.googleapis.com/webmasters/v3/sites",
-      {
-        headers: {
-          Authorization: `Bearer ${token.tokens.access_token}`,
-        },
-      }
-    );
+    // // Fetch sites from Google Search Console
+    // const sitesRes = await fetch(
+    //   "https://www.googleapis.com/webmasters/v3/sites",
+    //   {
+    //     headers: {
+    //       Authorization: `Bearer ${token.tokens.access_token}`,
+    //     },
+    //   }
+    // );
 
-    const sitesData = await sitesRes.json();
+    // const sitesData = await sitesRes.json();
 
-    const verifiedSites =
-      sitesData?.siteEntry
-        ?.filter(
-          (entry: any) =>
-            entry.permissionLevel === "siteOwner" ||
-            entry.permissionLevel === "siteFullUser" ||
-            entry.permissionLevel === "siteRestrictedUser"
-        )
-        .map((entry: any) => entry.siteUrl) || [];
+    // const verifiedSites =
+    //   sitesData?.siteEntry
+    //     ?.filter(
+    //       (entry: any) =>
+    //         entry.permissionLevel === "siteOwner" ||
+    //         entry.permissionLevel === "siteFullUser" ||
+    //         entry.permissionLevel === "siteRestrictedUser"
+    //     )
+    //     .map((entry: any) => entry.siteUrl) || [];
 
     return NextResponse.json(
       {
-        sites: verifiedSites,
+        // sites: verifiedSites,
         accessToken: token.tokens.access_token, // will use this to pull the site urls
       },
       { status: 200 }

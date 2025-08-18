@@ -1,13 +1,18 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { Menu } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import Logo from "../logo/logo";
+import { useSupabaseUser } from "../utils/supabase/AuthProvider";
+import { DynamicLogo } from "@/app/(auth)/helpers/dynamicLogo";
+import { useTheme } from "../theme/ThemeProvider";
 
 export default function BlogHeader() {
-  const { user, isSignedIn } = useUser();
+  const user = useSupabaseUser();
+  const { theme } = useTheme();
+
+  const isDark = theme === "dark";
+
   const [isMenuOpen, setMenuOpen] = useState<boolean>(false);
 
   function handleMenuButton() {
@@ -18,7 +23,7 @@ export default function BlogHeader() {
     <header className="w-full py-4 md:py-4 md:px-8 px-4 flex items-center bg-indigo-700">
       <div className="max-w-7xl flex items-center justify-between mx-auto container">
         <div className="text-2xl md:text-3xl font-bold text-white">
-          <Logo />
+          <DynamicLogo isDark={isDark} />
         </div>
         {/* mobile navigation */}
         <div className="z-50">
@@ -42,7 +47,7 @@ export default function BlogHeader() {
             <span className="flex flex-col items-end text-lg hover:text-pink-300 py-3">
               <a href={"/blog"}>Blog</a>
             </span>
-            {isSignedIn ? (
+            {user ? (
               <span className="flex flex-col items-end text-lg hover:text-pink-300 py-3">
                 <span className="flex gap-2 items-center">
                   <a href={"/dashboard"}>Account</a>
@@ -70,21 +75,18 @@ export default function BlogHeader() {
             </Link>
           </span>
 
-          {isSignedIn === undefined ? (
+          {user === undefined ? (
             <div className="pl-4">
               <li className="animate-pulse w-[100px] h-8 bg-gray-200/20 rounded-lg" />
             </div>
-          ) : isSignedIn ? (
+          ) : user ? (
             <li className="flex gap-2 pl-4 items-center">
               <span className="text-white hover:text-purple-300 font-semibold cursor-pointer">
                 <Link href={"/dashboard"}>Account</Link>
               </span>
               <span className="h-8 w-8 bg-gray-100/20 relative justify-center flex items-center rounded-full">
                 <p className="font-semibold text-white">
-                  {user.emailAddresses?.[0]?.emailAddress
-                    .trim()
-                    .charAt(0)
-                    .toUpperCase()}
+                  {user?.email!.trim().charAt(0).toUpperCase()}
                 </p>
               </span>
             </li>

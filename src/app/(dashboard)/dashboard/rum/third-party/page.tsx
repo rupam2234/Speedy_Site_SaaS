@@ -68,7 +68,7 @@ export default function ThirdParty() {
         return;
       }
 
-      const data = await res.json();
+      const data: any = await res.json();
 
       if (selectedSite === data.domain_name) {
         setThirdPartyData(data.metrics);
@@ -109,9 +109,8 @@ export default function ThirdParty() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
 
-        // ✅ Only update state if data changed
         if (JSON.stringify(data) !== JSON.stringify(classifyData)) {
           setClassifyData(data);
         }

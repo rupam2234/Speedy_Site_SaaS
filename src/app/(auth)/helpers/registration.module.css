@@ -1,0 +1,39 @@
+.marquee {
+  overflow: hidden;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.1) 10%,
+    black 50%,
+    rgba(0, 0, 0, 0.1) 90%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.1) 10%,
+    black 50%,
+    rgba(0, 0, 0, 0.1) 90%,
+    transparent 100%
+  );
+}
+
+.marqueeInner {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+.marqueeGroup {
+  display: flex;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

@@ -3,11 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    let { domain_name } = body;
+    const body: any = await request.json();
     const date_range: string = body.date_range;
 
-    if (!domain_name) {
+    if (!body.domain_name) {
       return NextResponse.json(
         { error: "domain_name is required in the request body" },
         { status: 400 }
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Normalize and try domain variants: non-www first, then www
-    const strippedDomain = domain_name.replace(/^www\./i, "");
+    const strippedDomain = body.domain_name.replace(/^www\./i, "");
     const domainVariants = [strippedDomain, `www.${strippedDomain}`];
 
     let data = null;
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
 
       if (result.data && result.data.length > 0) {
         data = result.data;
-        domain_name = variant; // Use the working domain
+        body.domain_name = variant; // Use the working domain
         break;
       }
     }
@@ -62,9 +61,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const domain = body.domain_name;
+
     return NextResponse.json(
       {
-        domain_name,
+        domain,
         time_period: date_range,
         metrics: data,
       },

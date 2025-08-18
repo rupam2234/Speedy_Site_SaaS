@@ -5,9 +5,15 @@ const storage_handler = setupDB();
 
 export async function POST(req: Request) {
   try {
-    const { imageUrl } = await req.json();
+    const { imageUrl, domain }: { imageUrl: string; domain: string } =
+      await req.json();
+
     if (!imageUrl) {
       return NextResponse.json({ error: "Missing imageUrl" }, { status: 400 });
+    }
+
+    if (!domain) {
+      return NextResponse.json({ error: "Missing domain" }, { status: 400 });
     }
 
     // Fetch the favicon image from the given URL
@@ -23,12 +29,14 @@ export async function POST(req: Request) {
     const arrayBuffer = await response.arrayBuffer();
     const imageBuffer = Buffer.from(arrayBuffer);
 
-    // Get file extension from URL
+    // Get file extension from URL (default to png)
     const file_extension = imageUrl.split(".").pop()?.split("?")[0] || "png";
-    const fileName = `favicon-${Date.now()}.${file_extension}`;
-    const filePath = `${fileName}`;
 
-    // Upload to Supabase Storage
+    // Use the passed domain as the filename (assuming domain is already sanitized)
+    const fileName = `favicon-${domain}.${file_extension}`;
+    const filePath = fileName;
+
+    // Upload to Supabase Storage with upsert to overwrite existing file
     const { error } = await storage_handler.storage
       .from("favicons")
       .upload(filePath, imageBuffer, {
@@ -40,11 +48,6 @@ export async function POST(req: Request) {
       console.error("Error uploading favicon:", error.message);
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
-
-    // // Get the public URL of the uploaded image
-    // const { data: publicUrlData } = storage_handler.storage
-    //   .from("favicons")
-    //   .getPublicUrl(filePath);
 
     return NextResponse.json({ success: true, url: filePath });
   } catch (error) {

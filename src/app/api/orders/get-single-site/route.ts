@@ -1,10 +1,14 @@
 import { setupDB } from "@/lib/db";
-import { auth } from "@clerk/nextjs/server";
+import { serverClient } from "@/lib/db/server_client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const worker = setupDB();
-  const user = await auth();
+
+  const { supabase } = serverClient(req);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!req) {
     return NextResponse.json(
@@ -15,14 +19,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!user.userId) {
+  if (!user?.id) {
     return NextResponse.json(
       { message: "Missing user authorization" },
       { status: 401 }
     );
   }
 
-  const body = await req.json();
+  const body: any = await req.json();
 
   try {
     const { error, status, data } = await worker

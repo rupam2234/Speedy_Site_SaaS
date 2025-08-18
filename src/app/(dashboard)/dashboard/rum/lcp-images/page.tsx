@@ -7,6 +7,8 @@ import BeatLoader from "react-spinners/BeatLoader";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import DashboardToolbar from "@/components/utils/toolbar";
 import SuggestionsToggle from "../helpers/suggestion_toggle";
+import Image from "next/image";
+import Link from "next/link";
 
 export interface LcpImageMetric {
   period: string;
@@ -88,7 +90,7 @@ export default function LcpImageDebugger() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         const metrics: LcpImageMetric[] = data.metrics || [];
         setRawLcpImageData(metrics);
       } else {
@@ -153,20 +155,20 @@ export default function LcpImageDebugger() {
                 }`}
                 onClick={() => setSelectedImage(metric)}
               >
-                <img
+                <Image
                   src={metric.image_url}
                   alt={`LCP image ${index}`}
                   className="h-10 w-16 object-cover rounded-sm border"
                 />
                 <div className="flex-1">
-                  <a
+                  <Link
                     href={metric.image_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs hover:underline max-w-[600px] block truncate"
                   >
                     {metric.image_url.split("/").pop()}
-                  </a>
+                  </Link>
                   <div className="w-full bg-gray-200 dark:bg-zinc-800 h-3 rounded overflow-hidden mt-1">
                     <div
                       className="h-3"
@@ -191,7 +193,7 @@ export default function LcpImageDebugger() {
           {selectedImage ? (
             <>
               <div className="overflow-hidden">
-                <img
+                <Image
                   src={selectedImage.image_url}
                   alt="Selected LCP image"
                   className="w-full p-2 h-64 object-cover border"

@@ -1,12 +1,18 @@
 import { setupDB } from "@/lib/db";
-import { auth } from "@clerk/nextjs/server";
+import { serverClient } from "@/lib/db/server_client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const worker = setupDB();
-  const user = await auth();
 
-  if (!user.userId) {
+  const body: any = await req.json();
+
+  const { supabase } = serverClient(req);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
     return NextResponse.json({ message: "User unauthorized" }, { status: 401 });
   }
 
@@ -16,8 +22,6 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-
-  const body = await req.json();
 
   try {
     const { error, status } = await worker

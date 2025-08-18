@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get domain_name and optional date_range from request body
     const body = await request.json();
-    const { domain_name, date_range = "30days" } = body;
+    const { domain_name, date_range = "30days" }: any = body;
 
     // Validate domain_name parameter
     if (!domain_name) {

@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    let { domain_name } = body;
+    let { domain_name }: any = body;
 
     if (!domain_name) {
       return NextResponse.json(

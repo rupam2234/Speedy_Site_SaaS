@@ -50,7 +50,7 @@ export default function OAuthCallbackPage() {
           throw new Error("Failed to exchange code");
         }
 
-        const data = await res.json();
+        const data: any = await res.json();
         setSites(data?.sites || []);
         setToken(data?.accessToken || "");
       } catch (err: any) {
@@ -194,11 +194,11 @@ async function FetchPageAddresses(domain: string, token: string) {
     });
 
     if (!res.ok) {
-      const error = await res.json();
+      const error: any = await res.json();
       throw new Error(error.message || "Failed to fetch pages");
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
     return data.pages;
   } catch (err) {
     console.error("Error fetching GSC pages:", err);

@@ -1,6 +1,6 @@
 "use client";
 
-import { pageMetricCache } from "@/components/globalData/cachedPageData";
+import { pageMetricCache } from "@/data/cachedPageData";
 import { Button } from "@/components/ui/button";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import { useEffect, useState } from "react";

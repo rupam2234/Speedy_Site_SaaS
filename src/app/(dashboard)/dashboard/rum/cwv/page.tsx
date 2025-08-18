@@ -63,7 +63,7 @@ export default function RUMCWV() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         setActiveData(data.metrics || []);
       } else {
         setActiveData([]);
@@ -86,7 +86,7 @@ export default function RUMCWV() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         set_lcp_analysis(data.metrics || []);
       } else {
         set_lcp_analysis([]);
@@ -109,7 +109,7 @@ export default function RUMCWV() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         set_cls_analysis(data.metrics || []);
       } else {
         set_cls_analysis([]);
@@ -132,7 +132,7 @@ export default function RUMCWV() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         set_inp_analysis(data.metrics || []);
       } else {
         set_inp_analysis([]);
@@ -155,7 +155,7 @@ export default function RUMCWV() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         set_ttfb_analysis(data.metrics || []);
       } else {
         set_ttfb_analysis([]);
@@ -178,7 +178,7 @@ export default function RUMCWV() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         set_fcp_analysis(data.metrics || []);
       } else {
         set_fcp_analysis([]);
@@ -188,8 +188,6 @@ export default function RUMCWV() {
       set_fcp_analysis([]);
     }
   }
-
-  // console.log(lcp_image_data);
 
   const triggerList: Trigger[] = [
     { value: "lcp", name: "Largest Contentful Paint" },

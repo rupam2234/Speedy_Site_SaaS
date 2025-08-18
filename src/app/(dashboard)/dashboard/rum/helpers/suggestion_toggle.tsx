@@ -65,7 +65,7 @@ export default function SuggestionsToggle({
         body: JSON.stringify({ metric: image }),
       });
 
-      const data = await res.json();
+      const data: any = await res.json();
 
       if (res.ok && data?.title && Array.isArray(data?.tips)) {
         setAiSuggestions(data);

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { domain, time_range } = await req.json();
+  const { domain, time_range }: any = await req.json();
 
   try {
     const { data, error } = await worker.rpc("third_party_domains", {

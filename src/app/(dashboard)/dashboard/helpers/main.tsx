@@ -11,7 +11,7 @@ import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Helpers } from "../cwv/helper/helperFunc";
 import { cwv_metrics } from "../cwv/helper/cwvMetrics";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
-import { PlanValidation } from "@/components/utils/activePlanValidation";
+// import { PlanValidation } from "@/components/utils/activePlanValidation";
 import DashboardToolbar from "@/components/utils/toolbar";
 
 export default function WebsitePage() {
@@ -21,7 +21,7 @@ export default function WebsitePage() {
 
   const helper = new Helpers();
 
-  PlanValidation(); // redirect to billing if no active plan
+  // PlanValidation(); // redirect to billing if no active plan
 
   useEffect(() => {
     if (selectedSite) {

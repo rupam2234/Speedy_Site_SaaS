@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { domain, accessToken } = await req.json();
+  const { domain, accessToken }: any = await req.json();
 
   // Validate inputs
   if (!domain || !accessToken) {
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     );
 
     if (!res.ok) {
-      const errorData = await res.json();
+      const errorData: any = await res.json();
       const errorMessage =
         errorData.error?.message ||
         `API request failed with status ${res.status}`;
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       throw new Error(errorMessage);
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
 
     const pages =
       data.rows?.map((row: any) => ({

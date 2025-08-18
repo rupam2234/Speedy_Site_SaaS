@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing API key" }, { status: 400 });
   }
 
-  const body = await req.json();
+  const body: any = await req.json();
   const metric: LcpImageMetric = body.metric;
 
   if (!metric || !metric.image_url) {
