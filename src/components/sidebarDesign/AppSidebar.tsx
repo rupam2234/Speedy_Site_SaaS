@@ -147,21 +147,21 @@ export default function AppSidebar({
       //   ],
       // },
       {
-        title: "Speedy Site Assistance",
+        title: "Enhancements",
         url: "#",
         icon: FlaskConical,
         isActive: true,
         items: [
           {
-            title: "How it works",
+            title: "Boost TTFB",
             url: `#`,
           },
           {
-            title: "Send Performance Report",
+            title: "Auto Optimize Images",
             url: `#`,
           },
           {
-            title: "Request Optimization",
+            title: "WP Optimization",
             url: `#`,
           },
         ],

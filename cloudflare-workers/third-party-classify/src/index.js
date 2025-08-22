@@ -17,7 +17,7 @@ export default {
 
 		if (request.method === 'PUT') {
 			const value = await request.text();
-			await env.DOMAIN_CACHE.put(domain, value, { expirationTtl: 86400 });
+			await env.DOMAIN_CACHE.put(domain, value);
 			return new Response('OK');
 		}
 

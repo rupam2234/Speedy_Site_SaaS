@@ -1,0 +1,21 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "sub-kv-metadata",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-08-19",
+	"observability": {
+		"enabled": true
+	},
+	"placement": { "mode": "smart" },
+	"vars": {
+		"SUPABASE_URL": "https://tmpvygehhshrgsqxzaty.supabase.co",
+		"SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcHZ5Z2VoaHNocmdzcXh6YXR5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNTg5MzA0NSwiZXhwIjoyMDUxNDY5MDQ1fQ.JhZfXtfo1Q1KhPDz-I4cbkAJo8ElHYEceb5stZLxfh8"
+	},
+	"triggers": { "crons": ["0 * * * *"] },
+	"kv_namespaces": [
+		{
+			"binding": "SUBSCRIPTION_METADATA",
+			"id": "deb4358e164a44fe93dc81a4ef4033b1"
+		}
+	]
+}

@@ -3,10 +3,10 @@ import script from './rum.txt';
 export default {
 	async fetch(request) {
 		const url = new URL(request.url);
-		const userAgent = request.headers.get('user-agent') || 'unknown';
+		// const userAgent = request.headers.get('user-agent') || 'unknown';
 
-		console.log('Requested path:', url.pathname);
-		console.log('User-Agent:', userAgent);
+		// console.log('Requested path:', url.pathname);
+		// console.log('User-Agent:', userAgent);
 
 		if (url.pathname === '/rum.js') {
 			return new Response(script, {

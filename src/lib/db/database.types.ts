@@ -89,6 +89,13 @@ export type Database = {
             foreignKeyName: "crux_jobs_domain_fkey";
             columns: ["domain"];
             isOneToOne: false;
+            referencedRelation: "cloudflare_kv_tracking";
+            referencedColumns: ["website_name"];
+          },
+          {
+            foreignKeyName: "crux_jobs_domain_fkey";
+            columns: ["domain"];
+            isOneToOne: false;
             referencedRelation: "orders";
             referencedColumns: ["website_name"];
           }
@@ -259,6 +266,7 @@ export type Database = {
           order_date: string;
           order_id: string;
           order_status: boolean;
+          usage_by_site: number;
           user_id: string;
           website_address: string;
           website_name: string;
@@ -268,6 +276,7 @@ export type Database = {
           order_date?: string;
           order_id?: string;
           order_status: boolean;
+          usage_by_site?: number;
           user_id?: string;
           website_address: string;
           website_name: string;
@@ -277,6 +286,7 @@ export type Database = {
           order_date?: string;
           order_id?: string;
           order_status?: boolean;
+          usage_by_site?: number;
           user_id?: string;
           website_address?: string;
           website_name?: string;
@@ -1907,29 +1917,23 @@ export type Database = {
         Row: {
           default_billing_interval: string | null;
           degradation_policy: string;
-          monthly_price: number | null;
           plan: string;
           price: number;
           usage_limit: number;
-          yearly_price: number | null;
         };
         Insert: {
           default_billing_interval?: string | null;
           degradation_policy?: string;
-          monthly_price?: number | null;
           plan: string;
           price?: number;
           usage_limit: number;
-          yearly_price?: number | null;
         };
         Update: {
           default_billing_interval?: string | null;
           degradation_policy?: string;
-          monthly_price?: number | null;
           plan?: string;
           price?: number;
           usage_limit?: number;
-          yearly_price?: number | null;
         };
         Relationships: [];
       };
@@ -2021,6 +2025,36 @@ export type Database = {
       };
     };
     Views: {
+      cloudflare_kv_tracking: {
+        Row: {
+          created_at: string | null;
+          current_usage: number | null;
+          default_billing_interval: string | null;
+          degradation_policy: string | null;
+          order_id: string | null;
+          period_ends_at: string | null;
+          period_starts_at: string | null;
+          plan: string | null;
+          price: number | null;
+          quantity: number | null;
+          status: string | null;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          updated_at: string | null;
+          usage_limit: number | null;
+          user_id: string | null;
+          website_name: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_fkey";
+            columns: ["plan"];
+            isOneToOne: false;
+            referencedRelation: "plan_metadata";
+            referencedColumns: ["plan"];
+          }
+        ];
+      };
       subscription_with_limit: {
         Row: {
           active_sites: number | null;
@@ -2220,6 +2254,17 @@ export type Database = {
           ttfb_poor_pct: number;
         }[];
       };
+      bytea_to_text: {
+        Args: { data: string };
+        Returns: string;
+      };
+      daily_aggregate_usage_by_userid: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          total_usage: number;
+          user_id: string;
+        }[];
+      };
       dashboard_multimetrix: {
         Args: { date_range_days?: number; domain_name_param: string };
         Returns: {
@@ -2384,6 +2429,64 @@ export type Database = {
           sample_count: number;
         }[];
       };
+      get_yesterday_usage_counts: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          domain_name: string;
+          usage_count: number;
+        }[];
+      };
+      http: {
+        Args: { request: Database["public"]["CompositeTypes"]["http_request"] };
+        Returns: Database["public"]["CompositeTypes"]["http_response"];
+      };
+      http_delete: {
+        Args:
+          | { content: string; content_type: string; uri: string }
+          | { uri: string };
+        Returns: Database["public"]["CompositeTypes"]["http_response"];
+      };
+      http_get: {
+        Args: { data: Json; uri: string } | { uri: string };
+        Returns: Database["public"]["CompositeTypes"]["http_response"];
+      };
+      http_head: {
+        Args: { uri: string };
+        Returns: Database["public"]["CompositeTypes"]["http_response"];
+      };
+      http_header: {
+        Args: { field: string; value: string };
+        Returns: Database["public"]["CompositeTypes"]["http_header"];
+      };
+      http_list_curlopt: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          curlopt: string;
+          value: string;
+        }[];
+      };
+      http_patch: {
+        Args: { content: string; content_type: string; uri: string };
+        Returns: Database["public"]["CompositeTypes"]["http_response"];
+      };
+      http_post: {
+        Args:
+          | { content: string; content_type: string; uri: string }
+          | { data: Json; uri: string };
+        Returns: Database["public"]["CompositeTypes"]["http_response"];
+      };
+      http_put: {
+        Args: { content: string; content_type: string; uri: string };
+        Returns: Database["public"]["CompositeTypes"]["http_response"];
+      };
+      http_reset_curlopt: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      http_set_curlopt: {
+        Args: { curlopt: string; value: string };
+        Returns: boolean;
+      };
       page_performance_analysis: {
         Args: { p_domain?: string; p_hours?: number };
         Returns: {
@@ -2408,6 +2511,10 @@ export type Database = {
           rows_inserted: number;
         }[];
       };
+      text_to_bytea: {
+        Args: { data: string };
+        Returns: string;
+      };
       third_party_domains: {
         Args: { site_filter?: string; time_range?: string };
         Returns: {
@@ -2415,6 +2522,10 @@ export type Database = {
           site_domain: string;
           top_domains: Json;
         }[];
+      };
+      urlencode: {
+        Args: { data: Json } | { string: string } | { string: string };
+        Returns: string;
       };
       user_happiness: {
         Args: { p_date_range?: string; p_domain?: string };
@@ -2453,7 +2564,23 @@ export type Database = {
       [_ in never]: never;
     };
     CompositeTypes: {
-      [_ in never]: never;
+      http_header: {
+        field: string | null;
+        value: string | null;
+      };
+      http_request: {
+        method: unknown | null;
+        uri: string | null;
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null;
+        content_type: string | null;
+        content: string | null;
+      };
+      http_response: {
+        status: number | null;
+        content_type: string | null;
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null;
+        content: string | null;
+      };
     };
   };
 };

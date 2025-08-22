@@ -69,7 +69,9 @@ export default function AnalyticsOverview({ data }: Props) {
                 src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
                 alt={code}
                 title={code}
-                className="w-6 h-4 object-cover"
+                className="object-cover"
+                width={24}
+                height={16}
               />
             ))}
         </div>
