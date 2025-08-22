@@ -1,5 +1,12 @@
-import HomepageComponent from "../components/home/homepage";
+"use client";
+
+import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
+import HomepageComponent from "./(home)/homepage";
 
 export default function Home() {
-  return <HomepageComponent />;
+  return (
+    <AuthProvider>
+      <HomepageComponent />
+    </AuthProvider>
+  );
 }

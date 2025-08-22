@@ -60,7 +60,6 @@ export const getSuggestions = (
     lower.includes(".webp") ||
     lower.includes(".avif");
 
-  // 🖼️ LCP Image-specific solutions
   if (isImage) {
     suggestions.push(
       'Do not lazy-load above-the-fold LCP images. Use `loading="eager"` or omit the attribute.',
@@ -412,6 +411,7 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
                   <Image
                     src={selectedElement.image_url}
                     width={200}
+                    height={150}
                     alt={
                       selectedElement.image_url.split("/")[
                         selectedElement.image_url.split("/").length - 1

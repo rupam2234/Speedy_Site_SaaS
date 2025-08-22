@@ -1,4 +1,4 @@
-import { PageManagementHelper } from "@/app/(dashboard)/dashboard/pages/helper/helperFunc";
+import { PageManagementHelper } from "@/app/(dashboard)/dashboard/_pages/helper/helperFunc";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

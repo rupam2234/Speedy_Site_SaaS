@@ -162,7 +162,7 @@ export default function AppSidebar({
           },
           {
             title: "WP Optimization",
-            url: `#`,
+            url: `https://my.speedy.site/`,
           },
         ],
       },
