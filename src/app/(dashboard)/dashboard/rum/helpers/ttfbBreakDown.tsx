@@ -19,6 +19,7 @@ import { PieChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import BeatLoader from "react-spinners/BeatLoader";
 
 echarts.use([
   TitleComponent,
@@ -177,6 +178,7 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
     } = selectedData;
 
     const option = {
+      backgroundColor: "transparent",
       tooltip: {
         trigger: "item",
         formatter: "{b}: {c}ms ({d}%)",
@@ -194,6 +196,11 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
           name: "TTFB Timing Breakdown",
           type: "pie",
           radius: "50%",
+          label: {
+            show: true,
+            color: theme === "dark" ? "#fff" : "#000",
+            fontSize: 12,
+          },
           data: [
             {
               value: Math.round(p75_dns_duration),
@@ -265,9 +272,12 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
 
   if (!filteredData.length) {
     return (
-      <div className="text-center text-sm text-muted-foreground">
-        No data available for {selectedDevice}.
-      </div>
+      <BeatLoader
+        color={"green"}
+        loading={true}
+        data-testid="loader"
+        size={10}
+      />
     );
   }
 
@@ -386,7 +396,14 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
           <h3 className="text-sm font-medium">
             TTFB Timing Breakdown for {selectedConnection} on {selectedDevice}
           </h3>
-          <div ref={chartRef} style={{ width: "100%", height: "200px" }} />
+          <div
+            ref={chartRef}
+            style={{
+              width: "100%",
+              height: "200px",
+              backgroundColor: "transparent",
+            }}
+          />
 
           <h3 className="text-sm font-medium">
             URL Performance for {selectedConnection} on {selectedDevice}

@@ -7,7 +7,6 @@ import BeatLoader from "react-spinners/BeatLoader";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import DashboardToolbar from "@/components/utils/toolbar";
 import SuggestionsToggle from "../helpers/suggestion_toggle";
-import Image from "next/image";
 import Link from "next/link";
 
 export interface LcpImageMetric {
@@ -155,10 +154,10 @@ export default function LcpImageDebugger() {
                 }`}
                 onClick={() => setSelectedImage(metric)}
               >
-                <Image
+                <img
                   src={metric.image_url}
                   alt={`LCP image ${index}`}
-                  className="h-10 w-16 object-cover rounded-sm border"
+                  className="object-cover rounded-sm border w-14 h-14"
                 />
                 <div className="flex-1">
                   <Link
@@ -193,7 +192,7 @@ export default function LcpImageDebugger() {
           {selectedImage ? (
             <>
               <div className="overflow-hidden">
-                <Image
+                <img
                   src={selectedImage.image_url}
                   alt="Selected LCP image"
                   className="w-full p-2 h-64 object-cover border"

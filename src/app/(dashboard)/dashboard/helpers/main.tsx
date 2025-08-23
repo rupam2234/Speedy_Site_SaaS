@@ -8,8 +8,8 @@ import { getCWVStatus } from "@/lib/cwv_helper/checkCwvStatus";
 import SegmentedBar from "@/components/utils/webVitalBars";
 import { Tooltip } from "@radix-ui/react-tooltip";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Helpers } from "../_cwv/helper/helperFunc";
-import { cwv_metrics } from "../_cwv/helper/cwvMetrics";
+import { Helpers } from "../cwv/helper/helperFunc";
+import { cwv_metrics } from "../cwv/helper/cwvMetrics";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import DashboardToolbar from "@/components/utils/toolbar";
 

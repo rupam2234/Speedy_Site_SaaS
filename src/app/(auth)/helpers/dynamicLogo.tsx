@@ -10,7 +10,7 @@ export function DynamicLogo({ isDark }: { isDark: boolean }) {
             src="/images/SpeedySite-logo-dark.png"
             alt="SpeedySite-logo-dark"
             width={200}
-            height={50}
+            height={39.53}
           />
         </Link>
       ) : (
@@ -19,7 +19,7 @@ export function DynamicLogo({ isDark }: { isDark: boolean }) {
             src="/images/SpeedySite_logo_trasnparent.png"
             alt="SpeedySite-logo-light"
             width={200}
-            height={50}
+            height={39.53}
           />
         </Link>
       )}
