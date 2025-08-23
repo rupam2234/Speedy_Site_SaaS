@@ -1,13 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ReactNode, useRef } from "react";
-import { useInView } from "framer-motion";
+import { ReactNode } from "react";
 import SiteHeader from "./header";
 import { Link2Icon } from "lucide-react";
 import Link from "next/link";
+import FeatureBlock from "./helper";
 
-interface FeatureCore {
+export interface FeatureCore {
   title: string;
   desc: ReactNode;
   image?: string;
@@ -184,12 +184,6 @@ const extraFeatures: FeatureCore[] = [
 export default function Home() {
   const year = new Date().getFullYear();
 
-  const ref = useRef(null);
-  const isInView = useInView(ref, {
-    margin: "-20% 0px -20% 0px",
-    once: false,
-  });
-
   return (
     <main className="bg-white text-gray-900 w-full overflow-x-hidden">
       {/* Navigation */}
@@ -236,53 +230,9 @@ export default function Home() {
       {/* Smooth Transition Features */}
       <section id="features" className="py-24">
         <div className="max-w-7xl mx-auto px-6 space-y-24">
-          {features.map((f, idx) => {
-            const isReversed = idx % 2 === 1;
-
-            return (
-              <div
-                ref={ref}
-                key={f.title}
-                className={`flex flex-col md:flex-row items-center gap-12 ${
-                  isReversed ? "md:flex-row-reverse" : ""
-                }`}
-              >
-                {/* Image animation */}
-                <motion.div
-                  initial={{ opacity: 0, x: isReversed ? 100 : -100 }}
-                  animate={
-                    isInView
-                      ? { opacity: 1, x: 0 }
-                      : { opacity: 0, x: isReversed ? 100 : -100 }
-                  }
-                  transition={{ duration: 0.5 }}
-                  className="flex-1"
-                >
-                  <img
-                    src={f.image}
-                    alt={f.title}
-                    fetchPriority="high"
-                    className="w-auto h-auto rounded-sm shadow"
-                  />
-                </motion.div>
-
-                {/* Text animation */}
-                <motion.div
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={
-                    isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }
-                  }
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                  className="flex-1"
-                >
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    {f.title}
-                  </h3>
-                  <div className="mt-4">{f.desc}</div>
-                </motion.div>
-              </div>
-            );
-          })}
+          {features.map((f, idx) => (
+            <FeatureBlock key={f.title} feature={f} reversed={idx % 2 === 1} />
+          ))}
         </div>
       </section>
 
