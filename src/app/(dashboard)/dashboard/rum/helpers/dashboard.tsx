@@ -108,7 +108,7 @@ export default function RumDashboard({
         <span className="flex items-center gap-2">
           <CircleGauge
             size={20}
-            className="fill-pink-600/30 text-primary/70 dark:text-accent/70"
+            className="fill-pink-600/30 dark:fill-pink-600/60 text-primary/70 dark:text-primary/70"
           />
           <h2 className="text-md md:text-xl font-bold text-primary/90">
             Web Vitals

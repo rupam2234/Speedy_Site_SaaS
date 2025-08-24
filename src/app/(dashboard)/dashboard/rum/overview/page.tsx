@@ -48,14 +48,6 @@ export default function RUM() {
               date_range: controlledDateRange,
             }),
           }),
-          // fetch("/api/rum/previous", {
-          //   method: "POST",
-          //   headers: { "Content-Type": "application/json" },
-          //   body: JSON.stringify({
-          //     domain_name: selectedSite,
-          //     date_range: controlledDateRange,
-          //   }),
-          // }),
           fetch("/api/rum/dashboard/mixed-metric", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -161,7 +153,7 @@ export default function RUM() {
           <span className="flex gap-2 items-center">
             <ChartNoAxesGantt
               size={30}
-              className="fill-pink-600/30 text-primary/70 dark:text-accent/70"
+              className="fill-pink-600/30 text-primary/70 dark:text-primary/70"
             />
             <h2 className="text-md md:text-2xl font-bold text-primary/90">
               Weekly Overview

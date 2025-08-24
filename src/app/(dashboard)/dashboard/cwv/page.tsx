@@ -24,8 +24,27 @@ import DistributionChart from "./helper/distributionChart";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import DashboardToolbar from "@/components/utils/toolbar";
+import TooltipIcon from "@/components/utils/customTooltip";
 
 const helper = new Helpers();
+
+interface Experience {
+  type: "p75" | "Distribution";
+  tooltip: string;
+}
+
+const ExperienceConfig: Experience[] = [
+  {
+    type: "p75",
+    tooltip:
+      "75th percentile ensures a majority of users have a good experience, not just an average.",
+  },
+  {
+    type: "Distribution",
+    tooltip:
+      "Distribution refers to how the metric values are spread across real users' experiences.",
+  },
+];
 
 export default function WebsitePage() {
   const {
@@ -36,6 +55,7 @@ export default function WebsitePage() {
     selectedDevice,
     setDailyCrux,
     experienceType,
+    setExperienceType,
   } = useSiteContext();
 
   const [selectedMetric, setSelectedMetric] = useState<string>(
@@ -49,121 +69,6 @@ export default function WebsitePage() {
   const [latestMetric, setlatestMetric] = useState<number | string>(); // state for managing the latest metric data for daily card
   const [CruxChange, setCruxChange] = useState<number>(0);
   const router = useRouter();
-
-  // useEffect(() => {
-  //   let cumulativeLayoutShift = 0;
-
-  //   const observer = new PerformanceObserver((entryList) => {
-  //     for (const entry of entryList.getEntries() as any[]) {
-  //       if (!entry.hadRecentInput) {
-  //         cumulativeLayoutShift += entry.value;
-  //       }
-
-  //       console.log("CLS update:", entry.value, entry);
-  //       console.log("Cumulative CLS:", cumulativeLayoutShift);
-  //     }
-  //   });
-
-  //   observer.observe({ type: "layout-shift", buffered: true });
-
-  //   return () => {
-  //     observer.disconnect();
-  //   };
-  // }, []);
-
-  // useEffect(() => {
-  //   let perFrameLayoutShiftData: { score: number; timestamp: number }[] = [];
-  //   let cumulativeLayoutShiftScore = 0;
-
-  //   function updateCLS(entries: PerformanceEntryList) {
-  //     for (const entry of entries as any[]) {
-  //       if (entry.hadRecentInput) return;
-
-  //       const shiftInfo = {
-  //         score: entry.value,
-  //         timestamp: entry.startTime,
-  //       };
-
-  //       perFrameLayoutShiftData.push(shiftInfo);
-  //       cumulativeLayoutShiftScore += entry.value;
-
-  //       console.log("Layout shift recorded:", shiftInfo);
-  //     }
-  //   }
-
-  //   const observer = new PerformanceObserver((list) => {
-  //     updateCLS(list.getEntries());
-  //   });
-
-  //   observer.observe({ type: "layout-shift", buffered: true });
-
-  //   const handleVisibilityChange = () => {
-  //     if (document.visibilityState === "hidden") {
-  //       updateCLS(observer.takeRecords());
-
-  //       console.log("Final CLS data:", {
-  //         perFrameLayoutShiftData,
-  //         cumulativeLayoutShiftScore,
-  //       });
-  //     }
-  //   };
-
-  //   document.addEventListener("visibilitychange", handleVisibilityChange);
-
-  //   return () => {
-  //     observer.disconnect();
-  //     document.removeEventListener("visibilitychange", handleVisibilityChange);
-  //   };
-  // }, []);
-
-  // useEffect(() => {
-  //   function getCLSDebugTarget(entries: any[]) {
-  //     const largestEntry = entries.reduce((a, b) => {
-  //       console.log("Comparing shift values:", a?.value, b?.value);
-  //       return a && a.value > b.value ? a : b;
-  //     });
-
-  //     if (largestEntry) {
-  //       console.log("Largest CLS entry:", largestEntry);
-
-  //       if (largestEntry.sources?.length) {
-  //         const largestSource = largestEntry.sources.reduce(
-  //           (
-  //             a: { node: any; previousRect: any },
-  //             b: { node: any; previousRect: any }
-  //           ) => {
-  //             const area = (el: any) =>
-  //               el.previousRect.width * el.previousRect.height;
-  //             console.log("Comparing source areas:", area(a), area(b));
-  //             return a.node && area(a) > area(b) ? a : b;
-  //           }
-  //         );
-
-  //         if (largestSource) {
-  //           console.log("Largest shifting element:", largestSource.node);
-  //           return largestSource.node;
-  //         }
-  //       } else {
-  //         console.log("No sources found in the largest CLS entry");
-  //       }
-  //     } else {
-  //       console.log("No layout shift entries found");
-  //     }
-  //   }
-
-  //   const observer = new PerformanceObserver((list) => {
-  //     const entries = list.getEntries() as any[];
-  //     getCLSDebugTarget(entries);
-  //   });
-
-  //   observer.observe({ type: "layout-shift", buffered: true });
-
-  //   return () => {
-  //     observer.disconnect();
-  //   };
-  // }, []);
-
-  // set change of crux data and to previous crux data
 
   useEffect(() => {
     setCruxChange(
@@ -203,6 +108,10 @@ export default function WebsitePage() {
         scroll: true,
       });
     }
+  }
+
+  function handleExperience(type: string) {
+    setExperienceType(type === "p75" ? "p75" : "Distribution");
   }
 
   function setMetricKey(newMetric: string) {
@@ -251,8 +160,46 @@ export default function WebsitePage() {
         </div>
         {/* Render charts and controls */}
         <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
-          <div className="col-span-1 order-2 md:order-1 overflow-hidden overflow-x-clip md:col-span-7 w-full border-gray-500/20 dark:bg-secondary-background bg-primary-foreground border rounded-sm px-4">
+          <div className="relative pt-7 col-span-1 order-2 md:order-1 overflow-hidden overflow-x-clip md:col-span-7 w-full border-gray-500/20 dark:bg-secondary-background bg-primary-foreground border rounded-sm px-4">
             {/* chart */}
+            <div className="absolute z-50 top-4 left-6">
+              {ExperienceConfig.map((x, index) => (
+                <TooltipIcon
+                  side="right"
+                  delay={1000}
+                  key={index}
+                  trigger={
+                    <button
+                      className={`px-3 mx-1 text-sm py-1 rounded-sm cursor-pointer ${
+                        experienceType === x.type
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-primary/30 dark:text-primary text-primary-foreground"
+                      }`}
+                      onClick={() => handleExperience(x.type)}
+                    >
+                      {x.type}
+                    </button>
+                  }
+                  content={x.tooltip}
+                />
+              ))}
+            </div>
+            <div className="absolute z-50 top-5 right-8">
+              <div className="flex gap-2 items-center justify-around">
+                {[
+                  { color: "bg-[#66cc8f]", label: "Good" },
+                  { color: "bg-[#FFEEA9]", label: "Okay" },
+                  { color: "bg-[#FF9898]", label: "Poor" },
+                ].map((x, index) => {
+                  return (
+                    <div className="flex gap-2 items-center" key={index}>
+                      <div className={`w-7 h-3 rounded-[2px] ${x.color}`} />
+                      <p>{x.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             {experienceType === "p75" ? (
               <div className="relative w-full h-[400px]">
                 <ChartComponent metric_key={newMetricKey} />
@@ -332,7 +279,7 @@ export default function WebsitePage() {
                       {/* Solid green dot */}
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                     </div>
-                    <p>Live Trend</p>
+                    <p>Daily Trend</p>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent className="w-[200px] md:w-[400px] text-[16px]">
@@ -375,21 +322,6 @@ export default function WebsitePage() {
                     : `${CruxChange} %`}
                 </span>
               </div>
-            </div>
-            {/* color legend */}
-            <div className="flex gap-2 items-center justify-around">
-              {[
-                { color: "bg-[#66cc8f]", label: "Good" },
-                { color: "bg-[#FFEEA9]", label: "Okay" },
-                { color: "bg-[#FF9898]", label: "Poor" },
-              ].map((x, index) => {
-                return (
-                  <div className="flex gap-2 items-center mt-3" key={index}>
-                    <div className={`w-7 h-3 rounded-[2px] ${x.color}`} />
-                    <p>{x.label}</p>
-                  </div>
-                );
-              })}
             </div>
           </div>
         </div>

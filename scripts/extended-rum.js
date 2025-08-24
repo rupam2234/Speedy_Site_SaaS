@@ -15,11 +15,14 @@ const CONFIG = {
   FCP_THRESHOLDS: [1800, 3000],
   TTFB_THRESHOLDS: [800, 1800],
   AI_CITATION_WEIGHTS: {
-    domContentLoaded: 0.3,
-    ttfb: 0.25,
-    contentTypeScore: 0.1,
-    semanticMarkupScore: 0.2,
-    docSizeScore: 0.15,
+      domContentLoaded: 0.15,
+      ttfb: 0.15,
+      semanticMarkupScore: 0.25,
+      headingScore: 0.15,
+      structuredDataPresent: 0.1,
+      docSizeScore: 0.1,
+      langTagPresent: 0.05,
+      titleDescriptionPresent: 0.05,
   },
 };
 
@@ -61,8 +64,13 @@ const aiCitationMetrics = {
   ttfb: null,
   contentType: null,
   semanticMarkupScore: null,
+  headingScore: null,
+  structuredDataPresent: null,
   docSize: null,
+  langTagPresent: null,
+  titleDescriptionPresent: null,
 };
+
 
 // === Initialize Web Vitals ===
 function initializeWebVitals() {
@@ -194,28 +202,54 @@ function getDocSizeScore() {
   const size = document.documentElement.outerHTML.length;
   return size < 50000 ? 1 : size < 150000 ? 0.5 : 0.2;
 }
+function computeHeadingScore() {
+  const h1 = document.querySelectorAll("h1").length;
+  const h2 = document.querySelectorAll("h2").length;
+  const h3 = document.querySelectorAll("h3").length;
+
+  const score = (h1 > 0 ? 0.4 : 0) + (h2 > 0 ? 0.3 : 0) + (h3 > 0 ? 0.3 : 0);
+  return Math.min(score, 1);
+}
+
+function checkStructuredDataPresent() {
+  return !!document.querySelector('script[type="application/ld+json"]');
+}
+
+function checkLangTagPresent() {
+  return document.documentElement.hasAttribute("lang");
+}
+
+function checkTitleAndDescriptionPresent() {
+  const title = document.querySelector("title");
+  const desc = document.querySelector('meta[name="description"]');
+  return !!title && !!desc;
+}
 
 function computeAICitationScore(m) {
+  const weights = CONFIG.AI_CITATION_WEIGHTS;
+
   const dom = 1 - Math.min(m.domContentLoaded ?? 10000, 10000) / 10000;
   const ttfb = 1 - Math.min(m.ttfb ?? 2000, 2000) / 2000;
-  const type =
-    m.contentType?.includes("text/html") ||
-    m.contentType?.includes("application/json")
-      ? 1
-      : 0;
-  const semantic = m.semanticMarkupScore ?? 0;
-  const doc = m.docSize ?? 1;
+  const semantic = computeSemanticMarkupScore(); // already cached
+  const heading = computeHeadingScore();
+  const structured = checkStructuredDataPresent() ? 1 : 0;
+  const doc = getDocSizeScore();
+  const lang = checkLangTagPresent() ? 1 : 0;
+  const titleDesc = checkTitleAndDescriptionPresent() ? 1 : 0;
 
-  return Number(
-    (
-      dom * CONFIG.AI_CITATION_WEIGHTS.domContentLoaded +
-      ttfb * CONFIG.AI_CITATION_WEIGHTS.ttfb +
-      type * CONFIG.AI_CITATION_WEIGHTS.contentTypeScore +
-      semantic * CONFIG.AI_CITATION_WEIGHTS.semanticMarkupScore +
-      doc * CONFIG.AI_CITATION_WEIGHTS.docSizeScore
-    ).toFixed(2) * 100
-  );
+  const score =
+    dom * weights.domContentLoaded +
+    ttfb * weights.ttfb +
+    semantic * weights.semanticMarkupScore +
+    heading * weights.headingScore +
+    structured * weights.structuredDataPresent +
+    doc * weights.docSizeScore +
+    lang * weights.langTagPresent +
+    titleDesc * weights.titleDescriptionPresent;
+
+  return Math.round(score * 100); // returns 0–100
 }
+
 
 function runAICitation() {
   if (aiCitationMetrics.ttfb == null) return;
@@ -225,10 +259,10 @@ function runAICitation() {
 
   aiCitationMetrics.semanticMarkupScore = computeSemanticMarkupScore();
   aiCitationMetrics.docSize = getDocSizeScore();
-  aiCitationMetrics.contentType =
-    document.contentType ||
-    document.querySelector("meta[http-equiv='Content-Type']")?.content ||
-    "unknown";
+  aiCitationMetrics.headingScore = computeHeadingScore();
+  aiCitationMetrics.structuredDataPresent = checkStructuredDataPresent();
+  aiCitationMetrics.langTagPresent = checkLangTagPresent();
+  aiCitationMetrics.titleDescriptionPresent = checkTitleAndDescriptionPresent();
 
   const score = computeAICitationScore(aiCitationMetrics);
 
@@ -236,11 +270,11 @@ function runAICitation() {
     type: "ai-citation-ready",
     siteDomain,
     score,
-    domContentLoaded: aiCitationMetrics.domContentLoaded,
-    ttfb: aiCitationMetrics.ttfb,
+    ...aiCitationMetrics.domContentLoaded,
     timestamp: Date.now(),
   });
 }
+
 
 function classifyMetric(value, thresholds) {
   if (value <= thresholds[0]) return "good";
@@ -378,6 +412,8 @@ function handleTTFB(metric) {
 const thirdPartyAssetDomains = new Set();
 const thirdPartyAssetTypes = new Set();
 
+const thirdPartyDomainTimings = {};
+
 new PerformanceObserver((list) => {
   for (const entry of list.getEntries()) {
     if (
@@ -392,6 +428,35 @@ new PerformanceObserver((list) => {
         if (url.hostname) {
           thirdPartyAssetDomains.add(url.hostname);
           thirdPartyAssetTypes.add(entry.initiatorType);
+
+          if (!thirdPartyDomainTimings[url.hostname]) {
+            thirdPartyDomainTimings[url.hostname] = {
+              count: 0,
+              totalDuration: 0,
+              maxDuration: 0,
+              totalTransferSize: 0,
+              totalEncodedBodySize: 0,
+              totalTTFB: 0,         
+              maxTTFB: 0,
+              countTTFB: 0,
+            };
+          }
+
+          const domainData = thirdPartyDomainTimings[url.hostname];
+          domainData.count += 1;
+          domainData.totalDuration += entry.duration || 0;
+          domainData.maxDuration = Math.max(domainData.maxDuration, entry.duration || 0);
+          domainData.totalTransferSize += entry.transferSize || 0;
+          domainData.totalEncodedBodySize += entry.encodedBodySize || 0;
+
+          const resourceTTFB = (entry.responseStart && entry.fetchStart) 
+            ? (entry.responseStart - entry.fetchStart) 
+            : 0;
+
+          domainData.totalTTFB += resourceTTFB;
+          domainData.maxTTFB = Math.max(domainData.maxTTFB, resourceTTFB);
+          domainData.countTTFB += 1;
+
         }
       } catch (error) {
         console.warn(`Invalid URL in resource entry: ${entry.name}`, error);
@@ -472,14 +537,31 @@ function flushMetrics() {
 
   try {
     if (!assetSummarySent && thirdPartyAssetDomains.size > 0) {
+      const assetTypes = Array.from(thirdPartyAssetTypes);
+
+      const domains = Array.from(thirdPartyAssetDomains).map((domain) => {
+        const data = thirdPartyDomainTimings[domain];
+        return {
+          count: data?.count ?? 0,
+          averageDuration: data ? data.totalDuration / data.count : 0,
+          maxDuration: data?.maxDuration ?? 0,
+          totalTransferSize: data?.totalTransferSize ?? 0,
+          totalEncodedBodySize: data?.totalEncodedBodySize ?? 0,
+          averageTTFB:
+            data && data.countTTFB > 0 ? data.totalTTFB / data.countTTFB : 0,
+          maxTTFB: data?.maxTTFB ?? 0,
+        };
+      });
+
       queueEvent({
         type: "third-party-asset-summary",
-        count: thirdPartyAssetDomains.size,
-        assetTypes: Array.from(thirdPartyAssetTypes),
-        domains: Array.from(thirdPartyAssetDomains),
+        count: domains.length,
+        assetTypes,
+        domains,
         siteDomain,
         timestamp: Date.now(),
       });
+
       assetSummarySent = true;
     }
 

@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import clsx from "clsx";
 
 interface TooltipIconProps {
   content: string;
   side?: "top" | "right" | "bottom" | "left";
   trigger?: React.ReactNode;
-  maxWidth?: string; // e.g. "16rem", "200px", or "none" (default auto)
+  maxWidth?: string;
+  delay?: number; // delay in ms
 }
 
 const TooltipIcon: React.FC<TooltipIconProps> = ({
@@ -13,9 +14,22 @@ const TooltipIcon: React.FC<TooltipIconProps> = ({
   side = "left",
   trigger,
   maxWidth,
+  delay = 300, // default 300ms delay
 }) => {
+  const [visible, setVisible] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showTooltip = () => {
+    timeoutRef.current = setTimeout(() => setVisible(true), delay);
+  };
+
+  const hideTooltip = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setVisible(false);
+  };
+
   const tooltipBaseClasses =
-    "absolute z-10 hidden p-2 text-xs text-white bg-gray-700 rounded shadow-md group-hover:block";
+    "absolute z-50 p-2 text-xs text-white bg-gray-700 rounded shadow-md";
 
   const getTooltipPosition = () => {
     switch (side) {
@@ -48,7 +62,11 @@ const TooltipIcon: React.FC<TooltipIconProps> = ({
   };
 
   return (
-    <span className="relative group cursor-pointer inline-block">
+    <span
+      className="relative inline-block cursor-pointer"
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+    >
       {trigger ?? (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -67,13 +85,15 @@ const TooltipIcon: React.FC<TooltipIconProps> = ({
         </svg>
       )}
 
-      <div
-        className={clsx(tooltipBaseClasses, getTooltipPosition())}
-        style={{ maxWidth: maxWidth || "300px", width: "max-content" }}
-      >
-        <div className={clsx(arrowBaseClasses, getArrowPosition())} />
-        {content}
-      </div>
+      {visible && (
+        <div
+          className={clsx(tooltipBaseClasses, getTooltipPosition())}
+          style={{ maxWidth: maxWidth || "300px", width: "max-content" }}
+        >
+          <div className={clsx(arrowBaseClasses, getArrowPosition())} />
+          {content}
+        </div>
+      )}
     </span>
   );
 };

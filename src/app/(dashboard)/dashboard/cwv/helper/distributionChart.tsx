@@ -118,7 +118,7 @@ export default function DistributionChart({ metric_key }: ChartProps) {
   );
 
   const grid = {
-    left: 50,
+    left: 40,
     right: 20,
     top: 40,
     bottom: 30,
@@ -218,13 +218,6 @@ export default function DistributionChart({ metric_key }: ChartProps) {
     });
 
     if (chartRef.current) resizeObserver.observe(chartRef.current);
-
-    // return () => {
-    //   if (chartInstanceRef.current) {
-    //     chartInstanceRef.current.dispose();
-    //     chartInstanceRef.current = null;
-    //   }
-    // };
 
     return () => {
       resizeObserver.disconnect();

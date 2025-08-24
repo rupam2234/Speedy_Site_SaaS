@@ -135,39 +135,6 @@ export default function SiteContextProvider({
 
   const user = useSupabaseUser();
 
-  // Load from sessionStorage only if it matches the current user email
-  useEffect(() => {
-    const storedOrders = sessionStorage.getItem("orders");
-    const storedSite = sessionStorage.getItem("selectedSite");
-    const storedEmail = sessionStorage.getItem("ordersEmail");
-
-    if (storedOrders && storedEmail) {
-      setOrders(JSON.parse(storedOrders));
-    }
-
-    const pathname = window.location.pathname;
-    const pathSegments = pathname.split("/").filter(Boolean);
-    const hasSiteSegment =
-      pathSegments.length >= 2 && pathSegments[0] === "dashboard";
-
-    const activeEmail =
-      typeof window !== "undefined"
-        ? JSON.parse(sessionStorage.getItem("__clerk_db") || "{}")?.user
-            ?.primaryEmailAddress?.emailAddress
-        : "";
-
-    // Only set selectedSite if storedSite exists AND email matches
-    if (
-      storedSite &&
-      hasSiteSegment &&
-      storedEmail &&
-      activeEmail &&
-      storedEmail === activeEmail
-    ) {
-      setSelectedSite(storedSite);
-    }
-  }, []);
-
   useEffect(() => {
     if (orders?.length !== undefined && orders?.length > 0) {
       sessionStorage.setItem("orders", JSON.stringify(orders));

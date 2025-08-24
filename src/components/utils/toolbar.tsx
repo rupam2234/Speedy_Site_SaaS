@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  CalendarArrowDown,
-  ChartScatter,
-  MonitorSmartphone,
-  Split,
-} from "lucide-react";
+import { ChartScatter, MonitorSmartphone } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,7 +12,6 @@ import {
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import TooltipIcon from "./customTooltip";
 
 interface DateRangeProps {
@@ -31,15 +25,12 @@ export default function DashboardToolbar() {
     selectedDevice,
     setSelectedDevice,
     setDateRange,
-    experienceType,
-    setExperienceType,
     rumDistribution,
     setRumDistribution,
     setRumDateRange,
   } = useSiteContext();
 
   const rumOverview = pathname === `/dashboard/rum/overview`;
-  const isOnCWVPage = pathname === `/dashboard/cwv`;
   const isLab =
     pathname.includes("/dashboard/pages") ||
     pathname.includes("/dashboard/cwv");
@@ -75,7 +66,7 @@ export default function DashboardToolbar() {
     : [];
 
   const [selectedRangeId, setSelectedRangeId] = useState<string>(
-    pageGroupsRum ? "last7" : DateRangeData[2]?.id || "last7"
+    pageGroupsRum ? "last7" : DateRangeData[3]?.id || "last7"
   );
 
   useEffect(() => {
@@ -278,56 +269,6 @@ export default function DashboardToolbar() {
           </div>
         )}
 
-        {isOnCWVPage && (
-          <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-[160px] border-[1px] px-1 rounded-sm">
-            <div className="flex justify-between items-center pl-2 py-[2px] w-full">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Split size={18} className="cursor-help " />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="text-md space-y-2 w-[400px]"
-                >
-                  <ul className="list-disc p-4">
-                    <li>
-                      The <strong>75th percentile (p75)</strong> reflects the
-                      experience of most users — lower is better for metrics
-                      like LCP, INP, and TTFB.
-                    </li>
-                    <li>
-                      The <strong>distribution</strong> shows how user
-                      performance is spread across Good, Needs Improvement, and
-                      Poor categories.
-                    </li>
-                  </ul>
-                </TooltipContent>
-              </Tooltip>
-
-              <Select value={experienceType} onValueChange={setExperienceType}>
-                <SelectTrigger className="py-0 cursor-pointer border-0 ring-0 shadow-none focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background rounded-sm border-none focus:ring-0 focus:outline-none">
-                  <span className="text-primary font-medium">
-                    {experienceType}
-                  </span>
-                </SelectTrigger>
-                <SelectContent
-                  className="w-[200px]"
-                  side="bottom"
-                  align="center"
-                >
-                  <SelectGroup>
-                    {["p75", "Distribution"].map((x, index) => (
-                      <SelectItem key={index} value={x}>
-                        {x}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-
         {isOnRum && (
           <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
             <TooltipIcon
@@ -371,27 +312,24 @@ export default function DashboardToolbar() {
 
       {!rumOverview && !isJourney && (
         <div className="p-[2px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
-          <div className="flex gap-2 w-[220px] justify-between items-center pl-2">
-            <CalendarArrowDown size={18} className="mr-2" />
-            <Select value={selectedRangeId} onValueChange={setSelectedRangeId}>
-              <SelectTrigger className="px-4 py-0 text-sm ring-0 text-primary focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background font-medium rounded-sm bg-transparent border-none focus:ring-0 focus:outline-none">
-                <SelectValue placeholder="Select Range">
-                  {selectedRange?.range}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="w-[200px] md:mr-[10px]">
-                <SelectGroup>
-                  {(pageGroupsRum ? MaxSevenDays : DateRangeData).map(
-                    (item, index) => (
-                      <SelectItem value={item.id} key={index}>
-                        {item.range}
-                      </SelectItem>
-                    )
-                  )}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={selectedRangeId} onValueChange={setSelectedRangeId}>
+            <SelectTrigger className="px-4 py-0 text-end text-sm ring-0 text-primary focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background font-medium rounded-sm bg-transparent border-none focus:ring-0 focus:outline-none">
+              <SelectValue placeholder="Select Range">
+                {selectedRange?.range}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="w-auto">
+              <SelectGroup>
+                {(pageGroupsRum ? MaxSevenDays : DateRangeData).map(
+                  (item, index) => (
+                    <SelectItem value={item.id} key={index}>
+                      {item.range}
+                    </SelectItem>
+                  )
+                )}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
       )}
 
