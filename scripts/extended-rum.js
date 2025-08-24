@@ -250,7 +250,6 @@ function computeAICitationScore(m) {
   return Math.round(score * 100); // returns 0–100
 }
 
-
 function runAICitation() {
   if (aiCitationMetrics.ttfb == null) return;
   if (aiCitationMetrics.domContentLoaded == null) {
@@ -274,7 +273,6 @@ function runAICitation() {
     timestamp: Date.now(),
   });
 }
-
 
 function classifyMetric(value, thresholds) {
   if (value <= thresholds[0]) return "good";
