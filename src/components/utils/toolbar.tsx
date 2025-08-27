@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartScatter, MonitorSmartphone } from "lucide-react";
+import { ChartScatter, InfoIcon, MonitorSmartphone } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -270,40 +270,46 @@ export default function DashboardToolbar() {
         )}
 
         {isOnRum && (
-          <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
+          <div className="flex items-center gap-2">
+            <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
+              <div className="flex justify-between items-center pl-2 py-[2px] w-full">
+                <ChartScatter size={18} />
+                <Select
+                  value={rumDistribution}
+                  onValueChange={setRumDistribution}
+                >
+                  <SelectTrigger className="py-0 cursor-pointer border-0 ring-0 shadow-none focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background rounded-sm border-none focus:ring-0 focus:outline-none">
+                    <span className="text-primary font-medium">
+                      {rumDistribution}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent
+                    className="min-w-[--radix-select-trigger-width] p-0 dark:bg-secondary-background"
+                    side="bottom"
+                    align="center"
+                  >
+                    <SelectGroup>
+                      {["p50", "p75", "p90", "p95", "p99"].map((x, index) => (
+                        <SelectItem key={index} value={x}>
+                          {x}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <TooltipIcon
               content={
-                "Percentiles represent how your users experience performance. For example, P50 is the median (typical) experience, P75 means 75% of users have this performance or better, and P90 shows the experience of 90% of users. These help identify how fast or slow your site feels for most visitors, not just the average."
+                "Percentiles help normalize performance by showing real user experiences. P50 shows the median (typical) experience, P75 is used in Core Web Vitals to represent the majority of users, and higher percentiles like P90 or P99 highlight slower experiences at the tail end. These help uncover issues that averages or medians might miss."
               }
               maxWidth="16rem"
               side="bottom"
               trigger={
-                <div className="flex justify-between items-center pl-2 py-[2px] w-full">
-                  <ChartScatter size={18} />
-                  <Select
-                    value={rumDistribution}
-                    onValueChange={setRumDistribution}
-                  >
-                    <SelectTrigger className="py-0 cursor-pointer border-0 ring-0 shadow-none focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background rounded-sm border-none focus:ring-0 focus:outline-none">
-                      <span className="text-primary font-medium">
-                        {rumDistribution}
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent
-                      className="min-w-[--radix-select-trigger-width] p-0 dark:bg-secondary-background"
-                      side="bottom"
-                      align="center"
-                    >
-                      <SelectGroup>
-                        {["p50", "p75", "p90", "p95", "p99"].map((x, index) => (
-                          <SelectItem key={index} value={x}>
-                            {x}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <InfoIcon
+                  className="bg-transparent hover:bg-primary/5 text-primary/50 p-[2px] rounded-full"
+                  size={22}
+                />
               }
             />
           </div>

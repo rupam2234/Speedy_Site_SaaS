@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/tooltip";
 import BeatLoader from "react-spinners/BeatLoader";
 import {
-  ChartPie,
   AlertCircle,
   CheckCircle,
   TriangleAlert,
@@ -329,8 +328,9 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <ChartPie size={15} className="fill-green-500/30" />
-              <h3 className="text-sm font-medium">CLS Breakdown</h3>
+              <h3 className="text-sm text-primary/80 font-medium">
+                Current Top CLS Occurrences
+              </h3>
             </div>
             <select
               className="text-xs bg-gray-500/20 px-2 py-1 rounded border border-muted-foreground/10"
@@ -387,7 +387,7 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
         {/* Right: Insights and Suggestions */}
         <div className="space-y-4 md:sticky md:top-20 md:self-start">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-primary/80">
+            <h3 className="text-sm font-medium text-primary/80">
               CLS Insights
             </h3>
           </div>
@@ -409,7 +409,7 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
                     priorityScore,
                     severity,
                     occurrence,
-                    occurrenceContext,
+                    // occurrenceContext,
                     action,
                   } = getCLSInsights(selectedItem, maxPriorityScore);
                   return (
@@ -462,9 +462,9 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
                           <Users size={16} className="text-primary/80" />
                           {occurrence}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        {/* <span className="text-xs text-muted-foreground">
                           {occurrenceContext}
-                        </span>
+                        </span> */}
                       </div>
                       <div className="flex items-center gap-2 py-2">
                         <Clock size={16} className="text-primary/80 mt-0.5" />

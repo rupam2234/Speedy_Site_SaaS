@@ -8,6 +8,8 @@ import RumCwvChart from "../helpers/webvitalscharts";
 import { ArrowLeftSquare, ArrowRightSquare } from "lucide-react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import LCPBreakdownChart from "../helpers/lcpBreakDown";
+import CLSBreakdownChart from "../helpers/clsBreakDown";
+import TTFBBreakdownChart from "../helpers/ttfbBreakDown";
 
 interface MetricKey {
   name: string;
@@ -247,6 +249,8 @@ export default function RumCWV() {
   const [activeMetric, setActiveMetric] = useState<MetricKey>(baseMetrics[1]);
   const [descTrigger, setDescTrigger] = useState<boolean>(true);
   const [lcp_analysis, set_lcp_analysis] = useState<any>();
+  const [cls_analysis, set_cls_analysis] = useState<any>();
+  const [ttfb_analysis, set_ttfb_analysis] = useState<any>();
 
   useEffect(() => {
     if (selectedSite) {
@@ -257,6 +261,12 @@ export default function RumCWV() {
   useEffect(() => {
     if (selectedSite && activeMetric.abbreviation === "LCP") {
       get_lcp_analysis();
+    }
+    if (selectedSite && activeMetric.abbreviation === "CLS") {
+      get_cls_analysis();
+    }
+    if (selectedSite && activeMetric.abbreviation === "TTFB") {
+      get_ttfb_analysis();
     }
   }, [selectedSite, activeMetric, rumDateRange]);
 
@@ -454,9 +464,17 @@ export default function RumCWV() {
           </div>
           <div className="my-4 md:my-7">
             {activeMetric.abbreviation === "LCP" ? (
-              <div>
+              <>
                 <LCPBreakdownChart data={lcp_analysis || []} />
-              </div>
+              </>
+            ) : activeMetric.abbreviation === "CLS" ? (
+              <>
+                <CLSBreakdownChart data={cls_analysis || []} />
+              </>
+            ) : activeMetric.abbreviation == "TTFB" ? (
+              <>
+                <TTFBBreakdownChart data={ttfb_analysis || []} />
+              </>
             ) : (
               <></>
             )}
@@ -544,6 +562,52 @@ export default function RumCWV() {
     } catch (error) {
       console.error("Failed to fetch distribution:", error);
       set_lcp_analysis([]);
+    }
+  }
+
+  async function get_cls_analysis() {
+    try {
+      const res = await fetch("/api/rum/cls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain_name: selectedSite,
+          date_range: "24hours",
+        }),
+      });
+
+      if (res.ok) {
+        const data: any = await res.json();
+        set_cls_analysis(data.metrics || []);
+      } else {
+        set_cls_analysis([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch distribution:", error);
+      set_cls_analysis([]);
+    }
+  }
+
+  async function get_ttfb_analysis() {
+    try {
+      const res = await fetch("/api/rum/ttfb", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain_name: selectedSite,
+          date_range: "24hours",
+        }),
+      });
+
+      if (res.ok) {
+        const data: any = await res.json();
+        set_ttfb_analysis(data.metrics || []);
+      } else {
+        set_ttfb_analysis([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch distribution:", error);
+      set_ttfb_analysis([]);
     }
   }
 }

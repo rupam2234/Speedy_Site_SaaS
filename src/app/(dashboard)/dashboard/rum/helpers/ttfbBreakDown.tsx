@@ -8,7 +8,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ChartPie } from "lucide-react";
 import * as echarts from "echarts/core";
 import {
   TitleComponent,
@@ -296,8 +295,9 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <ChartPie size={15} className="fill-green-500/30" />
-              <h3 className="text-sm font-medium">TTFB Breakdown</h3>
+              <h3 className="text-sm font-medium text-primary/80">
+                TTFB Breakdown
+              </h3>
             </div>
             <select
               className="text-xs bg-gray-500/20 px-2 py-1 rounded border border-muted-foreground/10"
@@ -393,7 +393,7 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
 
         {/* Right: Pie Chart and URL Details Table */}
         <div className="space-y-4">
-          <h3 className="text-sm font-medium">
+          <h3 className="text-sm font-medium text-primary/80">
             TTFB Timing Breakdown for {selectedConnection} on {selectedDevice}
           </h3>
           <div
@@ -477,7 +477,7 @@ const TTFBBreakdownChart: React.FC<Props> = ({ data }) => {
                     </td>
                     <td className="p-2 text-right">{urlData.count}</td>
                     <td
-                      className="p-2 text-right"
+                      className="p-2 text-right dark:text-primary-foreground"
                       style={{
                         backgroundColor: getTTFBColor(urlData.avg_ttfb),
                       }}

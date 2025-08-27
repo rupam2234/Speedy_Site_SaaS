@@ -37,11 +37,11 @@ export default function LabView({ url, device }: LabViewProps) {
     "Timings",
   ];
 
-  function handleDataClassButton(
-    key: "Web Vitals" | "Page Weight" | "Timings"
-  ) {
-    // setActiveLabMetric(key);
-  }
+  // function handleDataClassButton(
+  //   key: "Web Vitals" | "Page Weight" | "Timings"
+  // ) {
+  //   // setActiveLabMetric(key);
+  // }
 
   // collect page data
   useEffect(() => {
@@ -104,7 +104,7 @@ export default function LabView({ url, device }: LabViewProps) {
                     //     ? "bg-transparent"
                     //     : "bg-blue-300 dark:bg-blue-900"
                     // } rounded-[2px] hover:text-accent dark:hover:bg-blue-700 dark:hover:text-primary cursor-pointer`}
-                    onClick={() => handleDataClassButton(x)}
+                    // onClick={() => handleDataClassButton(x)}
                   >
                     {x}
                   </Button>
