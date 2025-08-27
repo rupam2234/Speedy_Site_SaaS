@@ -1,3 +1,5 @@
-// 
+//
 
-export default function PageGroups() {return <></>}
+export default function PageGroups() {
+  return <></>;
+}

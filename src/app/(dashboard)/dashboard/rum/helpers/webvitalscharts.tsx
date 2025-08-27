@@ -7,6 +7,8 @@ import {
   TooltipComponent,
   GridComponent,
   DatasetComponent,
+  GraphicComponent,
+  MarkLineComponent,
   TransformComponent,
 } from "echarts/components";
 import { LineChart } from "echarts/charts";
@@ -20,7 +22,9 @@ echarts.use([
   TooltipComponent,
   GridComponent,
   DatasetComponent,
+  GraphicComponent,
   TransformComponent,
+  MarkLineComponent,
   LineChart,
   CanvasRenderer,
   UniversalTransition,
@@ -55,6 +59,7 @@ function debounce(fn: () => void, delay: number) {
 
 const RumCwvChart = ({ data, metric_key }: ChartProps) => {
   const chartRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const { theme } = useTheme();
   const { selectedDevice, rumDistribution } = useSiteContext();
@@ -98,7 +103,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
       : val.toFixed(3);
 
   useEffect(() => {
-    if (!chartRef.current || !chartData.length) return;
+    if (!chartRef.current) return;
 
     if (!chartInstanceRef.current) {
       chartInstanceRef.current = echarts.init(chartRef.current);
@@ -107,6 +112,36 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
     const chart = chartInstanceRef.current;
     const gridLineColor = theme === "dark" ? "#393E46" : "#B3C8CF";
 
+    if (chartData.length === 0) {
+      const option = {
+        xAxis: {
+          type: "category",
+          data: [],
+          axisLabel: {
+            color: theme === "dark" ? "#ccc" : "#333",
+          },
+          boundaryGap: false,
+        },
+        yAxis: {
+          type: "value",
+          splitLine: {
+            show: true,
+            lineStyle: { color: gridLineColor, type: "dashed", width: 1 },
+          },
+          axisLabel: {
+            color: theme === "dark" ? "#ccc" : "#333",
+          },
+        },
+        grid: { top: 40, bottom: 30, left: 50, right: 40, height: 300 },
+        series: [], // No line series
+        // No graphic text
+      };
+
+      chart.setOption(option, { notMerge: true });
+      return;
+    }
+
+    // If there is data, proceed with your full chart options:
     const styledData = chartData.map(([x, y]) => {
       const isHigh = (y as number) >= metricRange.c;
       const isMed =
@@ -149,17 +184,11 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
         formatter: (params: any) => {
           const param = params[0];
           const value = param?.value[1];
-          const isMs =
-            metric_key === "lcp" ||
-            metric_key === "fcp" ||
-            metric_key === "inp" ||
-            metric_key === "ttfb";
-
           const displayValue = isMs
             ? value >= 1000
               ? `${(value / 1000).toFixed(2)}s`
               : `${Math.round(value)}ms`
-            : value.toFixed(3); // for CLS
+            : value.toFixed(3);
 
           const colorClass =
             value >= metricRange?.c
@@ -169,17 +198,15 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
               : "text-[#00E676] dark:text-[#2ae387]";
 
           return `
-            <div class="p-3 bg-[#333446] dark:bg-accent-foreground w-auto rounded-sm text-primary-foreground">
-              <p class="mb-2">${param.name}</p>
-              <p>${rumDistribution.toUpperCase()} of ${selectedDevice.toLowerCase()} page loads experienced ≤ <span class="${colorClass} font-semibold">${displayValue}</span></p>
-            </div>
-          `;
+          <div class="p-3 bg-[#333446] dark:bg-accent-foreground w-auto rounded-sm text-primary-foreground">
+            <p class="mb-2">${param.name}</p>
+            <p>${rumDistribution.toUpperCase()} of ${selectedDevice.toLowerCase()} page loads experienced ≤ <span class="${colorClass} font-semibold">${displayValue}</span></p>
+          </div>
+        `;
         },
       },
       xAxis: {
         type: "category",
-        nameLocation: "middle",
-        nameTextStyle: { fontSize: 10, padding: 5 },
         axisLabel: {
           rotate: 0,
           fontSize: 10,
@@ -189,9 +216,6 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
       },
       yAxis: {
         type: "value",
-        nameTextStyle: { fontSize: 10, padding: 5 },
-        // min: 0,
-        // max: metricRange.d,
         splitLine: {
           show: true,
           lineStyle: { color: gridLineColor, type: "dashed", width: 1 },
@@ -207,7 +231,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
           symbolSize: 8,
           data: styledData,
           lineStyle: {
-            color: theme === "dark" ? "#4ea6f4" : "#007BFF", // soft blue lines
+            color: theme === "dark" ? "#4ea6f4" : "#007BFF",
             width: 1,
           },
           areaStyle: {
@@ -235,11 +259,33 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
           encode: { x: 0, y: 1, tooltip: [1] },
           animationDurationUpdate: 300,
           animationEasingUpdate: "cubicOut",
+          markLine: {
+            symbol: ["none", "none"],
+            emphasis: {
+              disabled: true,
+            },
+            silent: true,
+            data: [
+              {
+                yAxis: metricRange.b,
+                // label: { formatter: "Good (b)" },
+                lineStyle: { color: "#00E676", type: "dashed" },
+              },
+              {
+                yAxis: metricRange.c,
+                lineStyle: { color: "#FFD93D", type: "dashed" },
+              },
+              {
+                yAxis: metricRange.d,
+                lineStyle: { color: "#FF9898", type: "dashed" },
+              },
+            ],
+          },
         },
       ],
     };
 
-    chart.setOption(option, { notMerge: false });
+    chart.setOption(option, { notMerge: true });
 
     const debouncedResize = debounce(() => {
       chart.resize();
@@ -249,7 +295,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
       debouncedResize();
     });
 
-    if (chartRef.current) resizeObserver.observe(chartRef.current);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
 
     return () => {
       resizeObserver.disconnect();
@@ -266,9 +312,9 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
   }, []);
 
   return (
-    <div className="w-full">
+    <div ref={containerRef} className="w-full">
       <div className="flex items-center justify-between px-4 mb-2 text-xs">
-        <div className="flex space-x-3 text-muted-foreground dark:text-muted">
+        <div className="flex space-x-3 text-primary/80">
           <span>
             Min: <strong>{formatValue(min)}</strong>
           </span>

@@ -44,6 +44,7 @@ export class MyDurableObject extends DurableObject {
 
 			if (!valid) {
 				console.log('domain validation failed');
+				console.log(reason);
 				return new Response(reason, { status: 403 });
 			}
 
@@ -131,7 +132,7 @@ export class MyDurableObject extends DurableObject {
 	}
 
 	async validateDomain(domain) {
-		const kvData = await this.env.SUBSCRIPTION_METADATA.get(`domain:${domain}`);
+		const kvData = await this.env.SUBSCRIPTION_METADATA.get(`domain:${domain}`); //SUBSCRIPTION_METADATA
 
 		if (!kvData) {
 			return { valid: false, reason: 'Domain not found' };

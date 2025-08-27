@@ -9,7 +9,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import BeatLoader from "react-spinners/BeatLoader";
-import { ChartPie } from "lucide-react";
 import Image from "next/image";
 
 interface LCPElementData {
@@ -228,8 +227,9 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <ChartPie size={15} className="fill-green-500/30" />
-              <h3 className="text-sm font-medium">LCP Breakdown</h3>
+              <h3 className="text-sm text-primary/80 font-medium">
+                What&apos;s causing LCP?
+              </h3>
             </div>
             <select
               className="text-xs bg-gray-500/20 px-2 py-1 rounded border border-muted-foreground/10"
@@ -281,7 +281,7 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
 
         {/* Right: Suggestions Panel */}
         <div className="space-y-4 md:sticky md:top-20 md:self-start">
-          <h3 className="text-sm font-medium">Suggestions</h3>
+          <h3 className="text-sm text-primary/80 font-medium">Suggestions</h3>
           {selectedElement ? (
             <div className="p-5 border rounded-md bg-muted/10 space-y-5">
               {/* Element Identifier */}

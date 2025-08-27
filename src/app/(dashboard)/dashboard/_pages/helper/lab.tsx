@@ -4,9 +4,9 @@ import { pageMetricCache } from "@/data/cachedPageData";
 import { Button } from "@/components/ui/button";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import { useEffect, useState } from "react";
-import CWV from "./cwv";
-import PageAssets from "./assets";
-import Timings from "./timings";
+// import CWV from "./cwv";
+// import PageAssets from "./assets";
+// import Timings from "./timings";
 import { MonitorCheck, Smartphone } from "lucide-react";
 import {
   Tooltip,
@@ -24,8 +24,8 @@ export default function LabView({ url, device }: LabViewProps) {
   const {
     selectedDevice,
     setSelectedDevice,
-    activeLabMetric,
-    setActiveLabMetric,
+    // activeLabMetric,
+    // setActiveLabMetric,
   } = useSiteContext();
   const pageMetric = pageMetricCache((state) => state.pageMetric);
 
@@ -40,7 +40,7 @@ export default function LabView({ url, device }: LabViewProps) {
   function handleDataClassButton(
     key: "Web Vitals" | "Page Weight" | "Timings"
   ) {
-    setActiveLabMetric(key);
+    // setActiveLabMetric(key);
   }
 
   // collect page data
@@ -94,16 +94,16 @@ export default function LabView({ url, device }: LabViewProps) {
             </div>
             <div className="flex flex-col sm:flex-row flex-wrap gap-2 justify-start sm:justify-end">
               {dataClassButtons?.map((x) => {
-                const isActive = x === activeLabMetric;
+                // const isActive = x === activeLabMetric;
 
                 return (
                   <Button
                     key={x}
-                    className={`px-4 py-1 text-primary ${
-                      isActive
-                        ? "bg-transparent"
-                        : "bg-blue-300 dark:bg-blue-900"
-                    } rounded-[2px] hover:text-accent dark:hover:bg-blue-700 dark:hover:text-primary cursor-pointer`}
+                    // className={`px-4 py-1 text-primary ${
+                    //   isActive
+                    //     ? "bg-transparent"
+                    //     : "bg-blue-300 dark:bg-blue-900"
+                    // } rounded-[2px] hover:text-accent dark:hover:bg-blue-700 dark:hover:text-primary cursor-pointer`}
                     onClick={() => handleDataClassButton(x)}
                   >
                     {x}
@@ -115,7 +115,7 @@ export default function LabView({ url, device }: LabViewProps) {
 
           {/* Content Section */}
 
-          {activeLabMetric === "Web Vitals" ? (
+          {/* {activeLabMetric === "Web Vitals" ? (
             <CWV pageData={pageData} />
           ) : activeLabMetric === "Page Weight" ? (
             <PageAssets pageData={pageData} />
@@ -123,7 +123,7 @@ export default function LabView({ url, device }: LabViewProps) {
             <Timings pageData={pageData} />
           ) : (
             <LoadingAnimation />
-          )}
+          )} */}
         </div>
       ) : (
         <LoadingAnimation />

@@ -43,7 +43,7 @@ function Fallback() {
         Need an upgraded plan
       </h2>
       <p className="text-sm text-center text-primary/60 mb-8 max-w-xl">
-        You’re currently on <strong>FREE</strong> plan.{" "}
+        You&apos;re currently on <strong>FREE</strong> plan.{" "}
         <Link
           className="font-semibold text-indigo-500 cursor-pointer hover:underline"
           href={`/account/subscription`}

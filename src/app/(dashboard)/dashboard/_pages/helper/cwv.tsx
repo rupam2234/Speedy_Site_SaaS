@@ -1,34 +1,34 @@
-import { Button } from "@/components/ui/button";
-import CWVChart from "../charts/cwvChart";
-import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
+// import { Button } from "@/components/ui/button";
+// import CWVChart from "../charts/cwvChart";
+// import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
 interface CWVProps {
   pageData: any;
 }
 
-const MetricTypes = [
-  "Largest Contentful Paint (LCP)",
-  "Interaction to Next Paint (INP)",
-  "Cumulative Layout Shift (CLS)",
-  "First Contentful Paint (FCP)",
-];
+// const MetricTypes = [
+//   "Largest Contentful Paint (LCP)",
+//   "Interaction to Next Paint (INP)",
+//   "Cumulative Layout Shift (CLS)",
+//   "First Contentful Paint (FCP)",
+// ];
 
-export default function CWV({ pageData }: CWVProps) {
-  const { activeCWVMetric, setActiveCWVMetric } = useSiteContext();
+export default function CWV({}: CWVProps) {
+  // const { activeCWVMetric, setActiveCWVMetric } = useSiteContext();
 
   // function to handle active metric
-  function handleActiveMetric(
-    key:
-      | "Largest Contentful Paint (LCP)"
-      | "Interaction to Next Paint (INP)"
-      | "Cumulative Layout Shift (CLS)"
-      | "First Contentful Paint (FCP)"
-  ) {
-    setActiveCWVMetric(key);
-  }
+  // function handleActiveMetric(
+  //   key:
+  //     | "Largest Contentful Paint (LCP)"
+  //     | "Interaction to Next Paint (INP)"
+  //     | "Cumulative Layout Shift (CLS)"
+  //     | "First Contentful Paint (FCP)"
+  // ) {
+  //   // setActiveCWVMetric(key);
+  // }
   return (
     <div className="p-4 h-max">
-      <div className="grid md:grid-cols-12 gap-3 grid-cols-1">
+      {/* <div className="grid md:grid-cols-12 gap-3 grid-cols-1">
         <div className="col-span-1 md:col-span-9 mt-3">
           <CWVChart pageData={pageData} metric_key={activeCWVMetric} />
         </div>
@@ -47,7 +47,7 @@ export default function CWV({ pageData }: CWVProps) {
             </Button>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

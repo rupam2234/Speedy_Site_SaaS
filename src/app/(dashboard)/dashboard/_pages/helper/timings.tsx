@@ -1,48 +1,48 @@
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import TimingPieChart from "../charts/docTimingChart";
-import LCPPieChart from "../charts/lcpTimingChart";
-import PageTimingChart from "../charts/pageTimingChart";
+// import { Button } from "@/components/ui/button";
+// import {
+//   Tooltip,
+//   TooltipContent,
+//   TooltipTrigger,
+// } from "@/components/ui/tooltip";
+// import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
+// import TimingPieChart from "../charts/docTimingChart";
+// import LCPPieChart from "../charts/lcpTimingChart";
+// import PageTimingChart from "../charts/pageTimingChart";
 
 interface TimingProps {
   pageData: any;
 }
 
-const TimingType = [
-  {
-    key: "Document Timing",
-    tooltip:
-      "Breakdown of how the main HTML document loads, from request to render.",
-  },
-  {
-    key: "Page Timing",
-    tooltip:
-      "Overall page load metrics including front-end, back-end, and total load time.",
-  },
-  {
-    key: "LCP Timing",
-    tooltip:
-      "Detailed view of the Largest Contentful Paint (LCP) timing phases and resource types.",
-  },
-];
+// const TimingType = [
+//   {
+//     key: "Document Timing",
+//     tooltip:
+//       "Breakdown of how the main HTML document loads, from request to render.",
+//   },
+//   {
+//     key: "Page Timing",
+//     tooltip:
+//       "Overall page load metrics including front-end, back-end, and total load time.",
+//   },
+//   {
+//     key: "LCP Timing",
+//     tooltip:
+//       "Detailed view of the Largest Contentful Paint (LCP) timing phases and resource types.",
+//   },
+// ];
 
-export default function Timings({ pageData }: TimingProps) {
-  const { activeTimingMetric, setActiveTimingMetric } = useSiteContext();
+export default function Timings({}: TimingProps) {
+  // const { activeTimingMetric, setActiveTimingMetric } = useSiteContext();
 
-  function handleActiveAsset(
-    key: "Document Timing" | "Page Timing" | "LCP Timing"
-  ) {
-    setActiveTimingMetric(key);
-  }
+  // function handleActiveAsset(
+  //   key: "Document Timing" | "Page Timing" | "LCP Timing"
+  // ) {
+  //   // setActiveTimingMetric(key);
+  // }
 
   return (
     <div className="p-4 h-max">
-      <div className="grid md:grid-cols-12 gap-3 grid-cols-1">
+      {/* <div className="grid md:grid-cols-12 gap-3 grid-cols-1">
         <div className="col-span-1 md:col-span-9 mt-3">
           {activeTimingMetric === "Document Timing" ? (
             <TimingPieChart
@@ -82,7 +82,7 @@ export default function Timings({ pageData }: TimingProps) {
             </Tooltip>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
