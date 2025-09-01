@@ -105,6 +105,10 @@ export default function AppSidebar({
             url: `/dashboard/rum/cwv?site=${selectedSite}`,
           },
           {
+            title: "Analytics",
+            url: `/dashboard/rum/analytics?site=${selectedSite}`,
+          },
+          {
             title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },

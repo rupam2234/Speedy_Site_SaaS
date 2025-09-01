@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import DashboardToolbar from "@/components/utils/toolbar";
 import { useSiteContext } from "../../siteContext";
 import Link from "next/link";
@@ -10,6 +10,8 @@ import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import LCPBreakdownChart from "../helpers/lcpBreakDown";
 import CLSBreakdownChart from "../helpers/clsBreakDown";
 import TTFBBreakdownChart from "../helpers/ttfbBreakDown";
+import INPBreakdownChart from "../helpers/inpBreakdown";
+import FCPBreakdownChart from "../helpers/fcpBreakDown";
 
 interface MetricKey {
   name: string;
@@ -21,11 +23,18 @@ interface MetricKey {
   impact?: ReactNode;
 }
 
+type p75s = {
+  cls?: number | null | undefined;
+  inp?: number | null | undefined;
+  lcp?: number | null | undefined;
+  ttfb?: number | null | undefined;
+  fcp?: number | null | undefined;
+};
+
 const baseMetrics: MetricKey[] = [
   {
     name: "User Experience Score",
     abbreviation: "ES",
-    score: 80,
     impact: (
       <div className="space-y-2">
         <ul className="list-disc text-sm pl-5">
@@ -37,44 +46,6 @@ const baseMetrics: MetricKey[] = [
           <li>
             Drops in this score may indicate site-wide regressions that need
             your attention.
-          </li>
-        </ul>
-      </div>
-    ),
-  },
-  {
-    name: "First Contentful Paint",
-    abbreviation: "FCP",
-    desc: (
-      <div className="space-y-1">
-        <p>
-          FCP measures how long it takes for the browser to render the first
-          piece of content — like text or images — after navigating to a page.
-        </p>
-        <Link
-          className="text-blue-400 hover:text-blue-600"
-          href="https://web.dev/fcp/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn more
-        </Link>
-      </div>
-    ),
-    impact: (
-      <div className="space-y-2">
-        <ul className="list-disc text-sm pl-5">
-          <li>
-            Faster FCP builds user confidence and decreases bounce rates by
-            giving immediate visual feedback that the site is loading.
-          </li>
-          <li>
-            Especially critical for mobile and low-bandwidth users who are quick
-            to abandon unresponsive sites.
-          </li>
-          <li>
-            Supports higher engagement and retention by reducing the “blank
-            screen” delay during navigation.
           </li>
         </ul>
       </div>
@@ -195,6 +166,44 @@ const baseMetrics: MetricKey[] = [
     ),
   },
   {
+    name: "First Contentful Paint",
+    abbreviation: "FCP",
+    desc: (
+      <div className="space-y-1">
+        <p>
+          FCP measures how long it takes for the browser to render the first
+          piece of content — like text or images — after navigating to a page.
+        </p>
+        <Link
+          className="text-blue-400 hover:text-blue-600"
+          href="https://web.dev/fcp/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn more
+        </Link>
+      </div>
+    ),
+    impact: (
+      <div className="space-y-2">
+        <ul className="list-disc text-sm pl-5">
+          <li>
+            Faster FCP builds user confidence and decreases bounce rates by
+            giving immediate visual feedback that the site is loading.
+          </li>
+          <li>
+            Especially critical for mobile and low-bandwidth users who are quick
+            to abandon unresponsive sites.
+          </li>
+          <li>
+            Supports higher engagement and retention by reducing the “blank
+            screen” delay during navigation.
+          </li>
+        </ul>
+      </div>
+    ),
+  },
+  {
     name: "Time to First Byte",
     abbreviation: "TTFB",
     desc: (
@@ -251,6 +260,9 @@ export default function RumCWV() {
   const [lcp_analysis, set_lcp_analysis] = useState<any>();
   const [cls_analysis, set_cls_analysis] = useState<any>();
   const [ttfb_analysis, set_ttfb_analysis] = useState<any>();
+  const [inp_analysis, set_inp_analysis] = useState<any>();
+  const [fcp_analysis, set_fcp_analysis] = useState<any>();
+  const [es, setEs] = useState<number | null>(null);
 
   useEffect(() => {
     if (selectedSite) {
@@ -259,23 +271,65 @@ export default function RumCWV() {
   }, [selectedSite, rumDateRange]);
 
   useEffect(() => {
-    if (selectedSite && activeMetric.abbreviation === "LCP") {
-      get_lcp_analysis();
-    }
-    if (selectedSite && activeMetric.abbreviation === "CLS") {
-      get_cls_analysis();
-    }
-    if (selectedSite && activeMetric.abbreviation === "TTFB") {
-      get_ttfb_analysis();
-    }
+    (async () => {
+      if (!selectedSite) return;
+
+      switch (activeMetric.abbreviation) {
+        case "LCP":
+          await get_lcp_analysis();
+          break;
+        case "CLS":
+          await get_cls_analysis();
+          break;
+        case "TTFB":
+          await get_ttfb_analysis();
+          break;
+        case "INP":
+          await get_inp_analysis();
+          break;
+        case "FCP":
+          await get_fcp_analysis();
+          break;
+      }
+    })();
   }, [selectedSite, activeMetric, rumDateRange]);
 
-  const displayMetrics = getUpdatedMetrics();
+  const displayMetrics = useMemo(
+    () => getUpdatedMetrics(),
+    [activeData, selectedDevice, rumDistribution]
+  );
 
-  // Update active metric value if activeMetric changes
   useEffect(() => {
-    const updated = displayMetrics.find((m) => m.name === activeMetric.name);
+    const updated = displayMetrics.find(
+      (m) => m.abbreviation === activeMetric.abbreviation
+    );
     if (updated) setActiveMetric(updated);
+  }, [activeData, selectedDevice]);
+
+  useMemo(() => {
+    let esData: any;
+
+    if (!activeData || activeData.length === 0) return;
+
+    esData = activeData
+      .filter(
+        (x) =>
+          // x.report_date === new Date().toISOString().split("T")[0] &&
+          x.device_category === selectedDevice.toLowerCase()
+      )
+      .map(
+        (i): p75s => ({
+          lcp: i.lcp_p75,
+          cls: i.cls_p75,
+          fcp: i.fcp_p75,
+          inp: i.inp_p75,
+          ttfb: i.ttfb_p75,
+        })
+      );
+
+    console.log(esData);
+
+    setEs(computeExperienceScore(esData));
   }, [activeData, selectedDevice]);
 
   if (activeData.length === 0 || !activeData) {
@@ -316,8 +370,8 @@ export default function RumCWV() {
                 <p className="text-sm font-medium text-primary/80">{x.name}</p>
 
                 <div className="flex items-center gap-4">
-                  {x.name === "User Experience Score" && x.score !== null && (
-                    <ScoreCircle score={x.score!} />
+                  {x.name === "User Experience Score" && es !== null && (
+                    <ScoreCircle score={es} />
                   )}
 
                   {x.name !== "User Experience Score" && (
@@ -396,10 +450,10 @@ export default function RumCWV() {
 
             {/* Description Panel */}
             <div
-              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+              className={`transition-all hidden md:block duration-0 ease-in-out overflow-hidden ${
                 descTrigger
                   ? "w-full md:w-[32%] opacity-100"
-                  : "hidden w-0 opacity-0"
+                  : "md:hidden w-0 opacity-0"
               }`}
             >
               <div className="flex justify-between items-center">
@@ -471,9 +525,17 @@ export default function RumCWV() {
               <>
                 <CLSBreakdownChart data={cls_analysis || []} />
               </>
-            ) : activeMetric.abbreviation == "TTFB" ? (
+            ) : activeMetric.abbreviation === "TTFB" ? (
               <>
                 <TTFBBreakdownChart data={ttfb_analysis || []} />
+              </>
+            ) : activeMetric.abbreviation === "INP" ? (
+              <>
+                <INPBreakdownChart data={inp_analysis || []} />
+              </>
+            ) : activeMetric.abbreviation === "FCP" ? (
+              <>
+                <FCPBreakdownChart data={fcp_analysis || []} />
               </>
             ) : (
               <></>
@@ -610,6 +672,132 @@ export default function RumCWV() {
       set_ttfb_analysis([]);
     }
   }
+
+  async function get_inp_analysis() {
+    try {
+      const res = await fetch("/api/rum/inp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain_name: selectedSite,
+          date_range: "7days",
+        }),
+      });
+
+      if (res.ok) {
+        const data: any = await res.json();
+        set_inp_analysis(data.metrics || []);
+      } else {
+        set_inp_analysis([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch distribution:", error);
+      set_inp_analysis([]);
+    }
+  }
+
+  async function get_fcp_analysis() {
+    try {
+      const res = await fetch("/api/rum/fcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain_name: selectedSite,
+          date_range: "24hours",
+        }),
+      });
+
+      if (res.ok) {
+        const data: any = await res.json();
+        set_fcp_analysis(data.metrics || []);
+      } else {
+        set_fcp_analysis([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch distribution:", error);
+      set_fcp_analysis([]);
+    }
+  }
+
+  function computeExperienceScore(metrics?: p75s[]): number {
+    if (!metrics) return 0;
+
+    let lcp_total = 0,
+      cls_total = 0,
+      fcp_total = 0,
+      inp_total = 0,
+      ttfb_total = 0;
+
+    if (metrics.length > 0) {
+      let lcp_count = 0,
+        fcp_count = 0,
+        inp_count = 0,
+        ttfb_count = 0;
+
+      for (let i = 0; i < metrics.length; i++) {
+        cls_total += (metrics[i].cls ?? 0) / metrics.length;
+
+        if ((metrics[i].lcp ?? 0) !== 0) {
+          lcp_total += metrics[i].lcp ?? 0;
+          lcp_count++;
+        }
+        if ((metrics[i].fcp ?? 0) !== 0) {
+          fcp_total += metrics[i].fcp ?? 0;
+          fcp_count++;
+        }
+        if ((metrics[i].inp ?? 0) !== 0) {
+          inp_total += metrics[i].inp ?? 0;
+          inp_count++;
+        }
+        if ((metrics[i].ttfb ?? 0) !== 0) {
+          ttfb_total += metrics[i].ttfb ?? 0;
+          ttfb_count++;
+        }
+      }
+
+      if (lcp_count > 0) lcp_total /= lcp_count;
+      if (fcp_count > 0) fcp_total /= fcp_count;
+      if (inp_count > 0) inp_total /= inp_count;
+      if (ttfb_count > 0) ttfb_total /= ttfb_count;
+    }
+
+    const weights = {
+      lcp: 0.25,
+      inp: 0.2,
+      cls: 0.25,
+      fcp: 0.1,
+      ttfb: 0.2,
+    };
+
+    function getScore(value: number, range: number[]): number {
+      if (value < range[0]) return 1;
+      if (value >= range[1]) return 0;
+
+      const normalized = (range[1] - value) / (range[1] - range[0]);
+      return Math.pow(normalized, 2); // Penalize faster
+    }
+    console.log("INP average:", inp_total);
+    console.log("INP score:", getScore(inp_total, cwv_ranges.inp));
+    let totalScore = 0;
+
+    if (lcp_total != null) {
+      totalScore += getScore(lcp_total, cwv_ranges.lcp) * weights.lcp;
+    }
+    if (cls_total != null) {
+      totalScore += getScore(cls_total, cwv_ranges.cls) * weights.cls;
+    }
+    if (inp_total != null) {
+      totalScore += getScore(inp_total, cwv_ranges.inp) * weights.inp;
+    }
+    if (ttfb_total != null) {
+      totalScore += getScore(ttfb_total, cwv_ranges.ttfb) * weights.ttfb;
+    }
+    if (fcp_total != null) {
+      totalScore += getScore(fcp_total, cwv_ranges.fcp) * weights.fcp;
+    }
+
+    return Math.round(totalScore * 100);
+  }
 }
 
 function ScoreCircle({ score }: { score: number }) {
@@ -619,7 +807,7 @@ function ScoreCircle({ score }: { score: number }) {
   const offset = circumference - (score / 100) * circumference;
 
   return (
-    <div className="relative w-10 h-10">
+    <div className="relative w-13 h-13">
       <svg
         className="w-full h-full transform -rotate-90"
         viewBox="0 0 36 36"
@@ -646,7 +834,7 @@ function ScoreCircle({ score }: { score: number }) {
           className="text-green-500 transition-all duration-500 ease-out"
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-primary/80">
+      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-primary">
         {score}%
       </span>
     </div>

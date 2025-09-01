@@ -1,0 +1,50 @@
+.tooltipContainer {
+  font-size: 14px;
+  line-height: 1.3;
+  background-color: white;
+  color: black;
+  border-radius: 0.25rem;
+  display: inline-flex;
+  flex-direction: column;
+  width: max-content;
+  white-space: normal;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.tooltipHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0.25rem;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.tooltipFlag {
+  width: 20px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.tooltipCountryName {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: none;
+}
+
+.tooltipVisitors {
+  font-size: 0.875rem;
+  color: #6c757d;
+  white-space: normal;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+
+.tooltipVisitorsStrong {
+  font-weight: 500;
+  color: black;
+}

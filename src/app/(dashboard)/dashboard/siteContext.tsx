@@ -36,30 +36,6 @@ type SiteContextType = {
   setExperienceType: (experienceType: "p75" | "Distribution") => void;
   rumDistribution: "p50" | "p75" | "p90" | "p95" | "p99";
   setRumDistribution: (rumDist: "p50" | "p75" | "p90" | "p95" | "p99") => void;
-  // activeLabMetric: "Web Vitals" | "Page Weight" | "Timings";
-  // setActiveLabMetric: (
-  //   metric: "Web Vitals" | "Page Weight" | "Timings"
-  // ) => void;
-  // activeCWVMetric:
-  //   | "Largest Contentful Paint (LCP)"
-  //   | "Interaction to Next Paint (INP)"
-  //   | "Cumulative Layout Shift (CLS)"
-  //   | "First Contentful Paint (FCP)";
-  // setActiveCWVMetric: (
-  //   metric:
-  //     | "Largest Contentful Paint (LCP)"
-  //     | "Interaction to Next Paint (INP)"
-  //     | "Cumulative Layout Shift (CLS)"
-  //     | "First Contentful Paint (FCP)"
-  // ) => void;
-  // activeAssetMetric: "Content Size" | "Transfer Size" | "Requests Count";
-  // setActiveAssetMetric: (
-  //   metric: "Content Size" | "Transfer Size" | "Requests Count"
-  // ) => void;
-  // activeTimingMetric: "Document Timing" | "LCP Timing" | "Page Timing";
-  // setActiveTimingMetric: (
-  //   metric: "Document Timing" | "LCP Timing" | "Page Timing"
-  // ) => void;
 };
 
 export const SiteContext = createContext<SiteContextType>({

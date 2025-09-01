@@ -52,7 +52,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { message: "Plan acquired", data },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=300",
+        },
+      }
     );
   } catch (error: any) {
     return NextResponse.json({ message: error }, { status: 500 });

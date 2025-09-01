@@ -222,7 +222,7 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
 
   return (
     <TooltipProvider>
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left: LCP items with text and bar */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">

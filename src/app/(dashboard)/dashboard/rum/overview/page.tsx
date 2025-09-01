@@ -134,9 +134,9 @@ export default function RUM() {
   // Show loading until all required data is ready
   if (
     distdata.length === 0 ||
-    happinessData.length === 0 ||
-    citationData.length === 0 ||
-    mixedMetric.length === 0
+    happinessData.length === 0
+    // citationData.length === 0
+    // mixedMetric.length === 0
   ) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">

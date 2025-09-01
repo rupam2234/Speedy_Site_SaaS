@@ -352,7 +352,7 @@ const CLSBreakdownChart: React.FC<Props> = ({ data }) => {
               key={i}
               className={`space-y-1 p-2 border rounded-sm cursor-pointer ${
                 selectedItem?.affected_component === item.affected_component
-                  ? "bg-gray-100 dark:bg-gray-800 border-gray-400"
+                  ? "bg-gray-100 dark:bg-gray-600/20 border-gray-400"
                   : "bg-muted/5 dark:border-gray-200/10 border-gray-200/80"
               }`}
               onClick={() => {

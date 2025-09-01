@@ -225,7 +225,7 @@ export default function RumDashboard({
             />
           </div>
           <div className="col-span-2 bg-white border border-accent-foreground/20 dark:bg-secondary-background max-w-full p-4 rounded-sm">
-            <SingleMetricChart data={mixed_metric ?? []} />
+            {/* <SingleMetricChart data={mixed_metric ?? []} /> */}
           </div>
         </div>
       </div>

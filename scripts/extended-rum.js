@@ -2,6 +2,7 @@ import {
   onCLS,
   onLCP,
   onFCP,
+  onINP,
   onTTFB,
   CLSThresholds,
   INPThresholds,
@@ -15,14 +16,14 @@ const CONFIG = {
   FCP_THRESHOLDS: [1800, 3000],
   TTFB_THRESHOLDS: [800, 1800],
   AI_CITATION_WEIGHTS: {
-      domContentLoaded: 0.15,
-      ttfb: 0.15,
-      semanticMarkupScore: 0.25,
-      headingScore: 0.15,
-      structuredDataPresent: 0.1,
-      docSizeScore: 0.1,
-      langTagPresent: 0.05,
-      titleDescriptionPresent: 0.05,
+    domContentLoaded: 0.15,
+    ttfb: 0.15,
+    semanticMarkupScore: 0.25,
+    headingScore: 0.15,
+    structuredDataPresent: 0.1,
+    docSizeScore: 0.1,
+    langTagPresent: 0.05,
+    titleDescriptionPresent: 0.05,
   },
 };
 
@@ -46,7 +47,9 @@ function setCookie(name, value) {
 
 let sessionId = getCookie("sessionId");
 if (!sessionId) {
-  sessionId = crypto.randomUUID();
+  sessionId = crypto.randomUUID
+    ? crypto.randomUUID()
+    : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`; // Fallback for older browsers
   setCookie("sessionId", sessionId);
 }
 
@@ -71,63 +74,77 @@ const aiCitationMetrics = {
   titleDescriptionPresent: null,
 };
 
+const geo = window.__GEO_INFO__;
 
-// === Initialize Web Vitals ===
+let maxCustomEntry = null;
+let webVitalsINP = null;
+const elementSummaryCache = new WeakMap();
+
+function summarizeElement(el) {
+  if (!el || !el.tagName) {
+    console.debug("summarizeElement: Invalid or null element", el);
+    return "(unknown)";
+  }
+  if (elementSummaryCache.has(el)) {
+    return elementSummaryCache.get(el);
+  }
+
+  function isSignificantElement(element) {
+    if (!element || !element.tagName) return false;
+    const tagName = element.tagName.toLowerCase();
+    const hasId = !!element.id;
+    const hasClass =
+      element.className &&
+      typeof element.className === "string" &&
+      element.className.trim() !== "";
+    const isSemantic = [
+      "article",
+      "main",
+      "header",
+      "footer",
+      "nav",
+      "section",
+      "aside",
+    ].includes(tagName);
+    return hasId || hasClass || isSemantic;
+  }
+
+  let currentEl = el;
+  while (
+    currentEl &&
+    currentEl.tagName &&
+    !isSignificantElement(currentEl) &&
+    currentEl.parentElement
+  ) {
+    currentEl = currentEl.parentElement;
+  }
+
+  if (!currentEl || !currentEl.tagName) {
+    console.debug("summarizeElement: No significant element found", el);
+    return "(unknown)";
+  }
+
+  let summary = `<${currentEl.tagName.toLowerCase()}`;
+  if (currentEl.id) summary += ` id="${currentEl.id}"`;
+  if (currentEl.className && typeof currentEl.className === "string")
+    summary += ` class="${currentEl.className}"`;
+  summary += ">";
+  elementSummaryCache.set(el, summary);
+  console.debug("summarizeElement: Generated summary", summary);
+  return summary;
+}
+
 function initializeWebVitals() {
   onCLS(handleCLS, { reportAllChanges: true });
   onLCP(handleLCP, { reportAllChanges: true });
   onFCP(handleFCP);
   onTTFB(handleTTFB);
+  onINP(handleINP, { reportAllChanges: true });
 
   if (
     "PerformanceObserver" in window &&
     PerformanceObserver.supportedEntryTypes.includes("event")
   ) {
-    let maxINP = null;
-
-    function summarizeElement(el) {
-      if (!el || !el.tagName) return "(unknown)";
-
-      function isSignificantElement(element) {
-        if (!element || !element.tagName) return false;
-        const tagName = element.tagName.toLowerCase();
-        const hasId = !!element.id;
-        const hasClass =
-          element.className &&
-          typeof element.className === "string" &&
-          element.className.trim() !== "";
-        const isSemantic = [
-          "article",
-          "main",
-          "header",
-          "footer",
-          "nav",
-          "section",
-          "aside",
-        ].includes(tagName);
-        return hasId || hasClass || isSemantic;
-      }
-
-      let currentEl = el;
-      while (
-        currentEl &&
-        currentEl.tagName &&
-        !isSignificantElement(currentEl) &&
-        currentEl.parentElement
-      ) {
-        currentEl = currentEl.parentElement;
-      }
-
-      if (!currentEl || !currentEl.tagName) return "(unknown)";
-
-      let summary = `<${currentEl.tagName.toLowerCase()}`;
-      if (currentEl.id) summary += ` id="${currentEl.id}"`;
-      if (currentEl.className && typeof currentEl.className === "string")
-        summary += ` class="${currentEl.className}"`;
-      summary += ">";
-      return summary;
-    }
-
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
         if (
@@ -143,23 +160,13 @@ function initializeWebVitals() {
             "touchend",
           ].includes(entry.name)
         ) {
-          if (!maxINP || entry.duration > maxINP.duration) {
-            maxINP = entry;
-            latestMetrics.INP = {
-              name: "INP",
-              value: entry.duration,
-              delta: entry.duration,
-              id: sessionId,
-              currentPage: location.pathname + location.search,
-              attribution: {
-                target: summarizeElement(entry.target),
-                eventType: entry.name,
-                inputDelay: entry.processingStart - entry.startTime,
-                processingTime:
-                  entry.duration - (entry.processingStart - entry.startTime),
-                presentationDelay: 0,
-              },
-            };
+          if (!maxCustomEntry || entry.duration > maxCustomEntry.duration) {
+            maxCustomEntry = entry;
+            console.debug("Updated maxCustomEntry:", {
+              duration: entry.duration,
+              eventType: entry.name,
+              target: summarizeElement(entry.target),
+            });
           }
         }
       }
@@ -185,9 +192,24 @@ function initializeWebVitals() {
 
 document.addEventListener("DOMContentLoaded", () => {
   aiCitationMetrics.domContentLoaded = performance.now();
+  // Retry unsent data from previous sessions
+  const unsent = localStorage.getItem("unsentMetrics");
+  if (unsent) {
+    navigator.sendBeacon(CONFIG.API_URL, unsent);
+    localStorage.removeItem("unsentMetrics");
+    console.debug("Retried unsent metrics from localStorage");
+  }
 });
 
 initializeWebVitals();
+
+// Reset INP data on SPA navigation
+window.addEventListener("popstate", () => {
+  maxCustomEntry = null;
+  webVitalsINP = null;
+  latestMetrics.INP = null;
+  console.debug("Reset INP data for SPA navigation");
+});
 
 let cachedSemanticScore = null;
 function computeSemanticMarkupScore() {
@@ -202,6 +224,7 @@ function getDocSizeScore() {
   const size = document.documentElement.outerHTML.length;
   return size < 50000 ? 1 : size < 150000 ? 0.5 : 0.2;
 }
+
 function computeHeadingScore() {
   const h1 = document.querySelectorAll("h1").length;
   const h2 = document.querySelectorAll("h2").length;
@@ -230,7 +253,7 @@ function computeAICitationScore(m) {
 
   const dom = 1 - Math.min(m.domContentLoaded ?? 10000, 10000) / 10000;
   const ttfb = 1 - Math.min(m.ttfb ?? 2000, 2000) / 2000;
-  const semantic = computeSemanticMarkupScore(); // already cached
+  const semantic = computeSemanticMarkupScore();
   const heading = computeHeadingScore();
   const structured = checkStructuredDataPresent() ? 1 : 0;
   const doc = getDocSizeScore();
@@ -247,7 +270,7 @@ function computeAICitationScore(m) {
     lang * weights.langTagPresent +
     titleDesc * weights.titleDescriptionPresent;
 
-  return Math.round(score * 100); // returns 0–100
+  return Math.round(score * 100);
 }
 
 function runAICitation() {
@@ -269,7 +292,7 @@ function runAICitation() {
     type: "ai-citation-ready",
     siteDomain,
     score,
-    ...aiCitationMetrics.domContentLoaded,
+    domContentLoaded: aiCitationMetrics.domContentLoaded,
     timestamp: Date.now(),
   });
 }
@@ -308,7 +331,15 @@ function handleCLS(metric) {
   });
 }
 
-// final INP is being handled on flushMetrics before unloading data
+function handleINP(metric) {
+  webVitalsINP = metric;
+  latestMetrics.INP = metric.value;
+  console.debug("Web Vitals INP updated:", {
+    value: metric.value,
+    id: metric.id,
+    attribution: metric.attribution,
+  });
+}
 
 function handleLCP(metric) {
   latestMetrics.LCP = metric.value;
@@ -406,11 +437,20 @@ function handleTTFB(metric) {
   runAICitation();
 }
 
-// === Asset Summary ===
 const thirdPartyAssetDomains = new Set();
 const thirdPartyAssetTypes = new Set();
-
 const thirdPartyDomainTimings = {};
+
+function isProblematicDomain(data) {
+  return (
+    data.count >= 1 &&
+    (data.averageDuration > 3000 ||
+      data.maxDuration > 5000 ||
+      data.averageTTFB > 800 ||
+      data.maxTTFB > 1500 ||
+      data.totalTransferSize > 500000)
+  );
+}
 
 new PerformanceObserver((list) => {
   for (const entry of list.getEntries()) {
@@ -434,7 +474,7 @@ new PerformanceObserver((list) => {
               maxDuration: 0,
               totalTransferSize: 0,
               totalEncodedBodySize: 0,
-              totalTTFB: 0,         
+              totalTTFB: 0,
               maxTTFB: 0,
               countTTFB: 0,
             };
@@ -443,18 +483,21 @@ new PerformanceObserver((list) => {
           const domainData = thirdPartyDomainTimings[url.hostname];
           domainData.count += 1;
           domainData.totalDuration += entry.duration || 0;
-          domainData.maxDuration = Math.max(domainData.maxDuration, entry.duration || 0);
+          domainData.maxDuration = Math.max(
+            domainData.maxDuration,
+            entry.duration || 0
+          );
           domainData.totalTransferSize += entry.transferSize || 0;
           domainData.totalEncodedBodySize += entry.encodedBodySize || 0;
 
-          const resourceTTFB = (entry.responseStart && entry.fetchStart) 
-            ? (entry.responseStart - entry.fetchStart) 
-            : 0;
+          const resourceTTFB =
+            entry.responseStart && entry.fetchStart
+              ? entry.responseStart - entry.fetchStart
+              : 0;
 
           domainData.totalTTFB += resourceTTFB;
           domainData.maxTTFB = Math.max(domainData.maxTTFB, resourceTTFB);
           domainData.countTTFB += 1;
-
         }
       } catch (error) {
         console.warn(`Invalid URL in resource entry: ${entry.name}`, error);
@@ -483,36 +526,30 @@ function getDeviceType() {
       : null,
     userAgent: navigator.userAgent,
     language: navigator.language,
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
 
-  fetch("https://ipapi.co/json/")
-    .then((res) => {
-      if (!res.ok) throw new Error("Geo API request failed");
-      return res.json();
-    })
-    .then((geo) => {
-      const { country_code, country_name, region, country, org } = geo;
-      queueEvent({
-        type: "geo-info",
-        country_code,
-        country_name,
-        region,
-        country,
-        org,
-        siteDomain,
-        timestamp: Date.now(),
-      });
-    })
-    .catch((error) => {
-      console.error("Geo API fetch failed:", error);
-      queueEvent({
-        type: "error",
-        message: `Geo API fetch failed: ${error.message}`,
-        siteDomain,
-        timestamp: Date.now(),
-      });
+  if (geo) {
+    const { country, region, city, timezone, continent, org } = geo;
+    queueEvent({
+      type: "geo-info",
+      siteDomain,
+      country,
+      region,
+      city,
+      timezone,
+      continent,
+      org,
+      timestamp: Date.now(),
     });
+  } else {
+    console.warn("No __GEO_INFO__ found on window");
+    queueEvent({
+      type: "geo-info",
+      siteDomain,
+      message: "No geo data available",
+      timestamp: Date.now(),
+    });
+  }
 })();
 
 queueEvent({
@@ -535,54 +572,89 @@ function flushMetrics() {
 
   try {
     if (!assetSummarySent && thirdPartyAssetDomains.size > 0) {
-      const assetTypes = Array.from(thirdPartyAssetTypes);
+      const domains = Array.from(thirdPartyAssetDomains)
+        .map((domain) => {
+          const data = thirdPartyDomainTimings[domain];
+          return {
+            domain,
+            count: data?.count ?? 0,
+            averageDuration: data ? data.totalDuration / data.count : 0,
+            maxDuration: data?.maxDuration ?? 0,
+            totalTransferSize: data?.totalTransferSize ?? 0,
+            totalEncodedBodySize: data?.totalEncodedBodySize ?? 0,
+            averageTTFB:
+              data && data.countTTFB > 0 ? data.totalTTFB / data.countTTFB : 0,
+            maxTTFB: data?.maxTTFB ?? 0,
+          };
+        })
+        .filter(isProblematicDomain);
 
-      const domains = Array.from(thirdPartyAssetDomains).map((domain) => {
-        const data = thirdPartyDomainTimings[domain];
-        return {
-          count: data?.count ?? 0,
-          averageDuration: data ? data.totalDuration / data.count : 0,
-          maxDuration: data?.maxDuration ?? 0,
-          totalTransferSize: data?.totalTransferSize ?? 0,
-          totalEncodedBodySize: data?.totalEncodedBodySize ?? 0,
-          averageTTFB:
-            data && data.countTTFB > 0 ? data.totalTTFB / data.countTTFB : 0,
-          maxTTFB: data?.maxTTFB ?? 0,
-        };
-      });
-
-      queueEvent({
-        type: "third-party-asset-summary",
-        count: domains.length,
-        assetTypes,
-        domains,
-        siteDomain,
-        timestamp: Date.now(),
-      });
-
-      assetSummarySent = true;
+      if (domains.length > 0) {
+        queueEvent({
+          type: "third-party-asset-summary",
+          count: domains.length,
+          assetTypes: Array.from(thirdPartyAssetTypes),
+          domains,
+          siteDomain,
+          timestamp: Date.now(),
+        });
+        assetSummarySent = true;
+      }
     }
 
-    // Queue the maximum INP event if it exists
-    if (latestMetrics.INP) {
-      const rating = classifyMetric(latestMetrics.INP.value, INPThresholds);
+    if (latestMetrics.INP || maxCustomEntry) {
+      let inpAttribution = {};
+      if (maxCustomEntry && maxCustomEntry.target) {
+        const inputDelay = maxCustomEntry.processingStart - maxCustomEntry.startTime;
+        const processingTime = maxCustomEntry.duration - inputDelay;
+        inpAttribution = {
+          target: summarizeElement(maxCustomEntry.target),
+          eventType: maxCustomEntry.name,
+          inputDelay: isNaN(inputDelay) || inputDelay < 0 ? 0 : inputDelay,
+          processingTime: isNaN(processingTime) || processingTime < 0 ? 0 : processingTime,
+          presentationDelay: 0,
+        };
+      } else if (webVitalsINP && webVitalsINP.attribution) {
+        inpAttribution = webVitalsINP.attribution;
+      } else {
+        console.debug("No valid INP attribution available");
+        inpAttribution = { target: "(unknown)", eventType: "unknown" };
+      }
+
+      let inpValue, inpDelta, inpId;
+      if (webVitalsINP) {
+        inpValue = webVitalsINP.value;
+        inpDelta = webVitalsINP.delta;
+        inpId = webVitalsINP.id;
+      } else if (maxCustomEntry) {
+        inpValue = maxCustomEntry.duration;
+        inpDelta = maxCustomEntry.duration;
+        inpId = sessionId;
+      } else {
+        console.debug("No INP data available to queue");
+        return;
+      }
+
+      const rating = classifyMetric(inpValue, INPThresholds);
       queueEvent({
         type: "web-vital",
         siteDomain,
         name: "INP",
-        value: latestMetrics.INP.value,
+        value: inpValue,
         rating,
-        id: latestMetrics.INP.id,
-        delta: latestMetrics.INP.delta,
-        attribution: {
-          target: latestMetrics.INP.attribution.target,
-          eventType: latestMetrics.INP.attribution.eventType,
-          inputDelay: latestMetrics.INP.attribution.inputDelay,
-          processingTime: latestMetrics.INP.attribution.processingTime,
-          presentationDelay: latestMetrics.INP.attribution.presentationDelay,
-        },
+        id: inpId,
+        delta: inpDelta,
+        attribution: inpAttribution,
         timestamp: Date.now(),
       });
+
+      console.debug("INP event queued:", {
+        value: inpValue,
+        attribution: inpAttribution,
+        source: webVitalsINP ? "web-vitals" : "custom",
+      });
+    } else {
+      console.debug("No INP data available for queuing");
     }
 
     if (batchedData.length > 0) {
@@ -593,21 +665,33 @@ function flushMetrics() {
         previousPage,
         data: batchedData,
       });
-
+      let success = false;
       if (navigator.sendBeacon) {
-        navigator.sendBeacon(CONFIG.API_URL, payload);
-      } else {
-        fetch(CONFIG.API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-          keepalive: true,
-        }).catch((error) => {
-          console.error("Failed to send metrics via fetch:", error);
-        });
+        success = navigator.sendBeacon(CONFIG.API_URL, payload);
       }
-
-      batchedData.length = 0;
+      if (!success) {
+        try {
+          fetch(CONFIG.API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload,
+            keepalive: true,
+          })
+            .then(() => {
+              success = true;
+            })
+            .catch((error) => {
+              console.error("Failed to send metrics via fetch:", error);
+              localStorage.setItem("unsentMetrics", payload);
+            });
+        } catch (error) {
+          console.error("Fetch error:", error);
+          localStorage.setItem("unsentMetrics", payload);
+        }
+      }
+      if (success) {
+        batchedData.length = 0;
+      }
     }
   } finally {
     isFlushing = false;

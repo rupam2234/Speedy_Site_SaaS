@@ -4,9 +4,11 @@ import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { DynamicLogo } from "../(auth)/helpers/dynamicLogo";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function SiteHeader() {
   const user = useSupabaseUser();
+  const isMobile = useIsMobile();
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200">
@@ -31,14 +33,14 @@ export default function SiteHeader() {
         {user ? (
           <Link
             href="/dashboard"
-            className="hidden md:inline-flex items-center gap-1 rounded-md bg-green-600 text-white px-4 py-2 text-sm font-semibold hover:bg-green-500"
+            className="md:inline-flex items-center gap-1 rounded-md bg-green-600 text-white px-4 py-2 text-sm font-semibold hover:bg-green-500"
           >
-            Go to Dashboard
+            {isMobile ? "Dashboard" : "Go to Dashboard"}
           </Link>
         ) : (
           <Link
             href="/sign-in"
-            className="hidden md:inline-flex items-center gap-1 rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-500"
+            className="flex md:inline-flex items-center gap-1 rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-500"
           >
             Sign in <ArrowRight size={16} />
           </Link>
