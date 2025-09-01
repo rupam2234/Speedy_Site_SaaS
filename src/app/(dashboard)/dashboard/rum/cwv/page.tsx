@@ -307,16 +307,10 @@ export default function RumCWV() {
   }, [activeData, selectedDevice]);
 
   useMemo(() => {
-    let esData: any;
-
     if (!activeData || activeData.length === 0) return;
 
-    esData = activeData
-      .filter(
-        (x) =>
-          // x.report_date === new Date().toISOString().split("T")[0] &&
-          x.device_category === selectedDevice.toLowerCase()
-      )
+    const esData = activeData
+      .filter((x) => x.device_category === selectedDevice.toLowerCase())
       .map(
         (i): p75s => ({
           lcp: i.lcp_p75,
@@ -326,8 +320,6 @@ export default function RumCWV() {
           ttfb: i.ttfb_p75,
         })
       );
-
-    console.log(esData);
 
     setEs(computeExperienceScore(esData));
   }, [activeData, selectedDevice]);

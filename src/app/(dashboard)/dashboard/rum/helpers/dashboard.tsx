@@ -11,7 +11,7 @@ import { CircleGauge, Smile, TrendingUpDown } from "lucide-react";
 import CitationStatsCard, { DevicePerformanceData } from "./ai_citation";
 import AnalyticsOverview, { AggregatedMetrics } from "./analyticsOverview";
 import ExperienceBar, { ExperienceData } from "./ExperienceBar";
-import SingleMetricChart, { Mixed_metric } from "./multiMetricChart";
+import { Mixed_metric } from "./multiMetricChart";
 
 export interface WebVitalsMetric {
   domain_name: string;
@@ -45,8 +45,8 @@ export default function RumDashboard({
   experienceBarData,
   citationData,
   analyticsData,
-  mixed_metric,
-}: RumDashboardProps) {
+}: // mixed_metric,
+RumDashboardProps) {
   const { rumDistribution, selectedDevice } = useSiteContext();
 
   function formatMetricValue(metric: WebVitalsMetric): string {
