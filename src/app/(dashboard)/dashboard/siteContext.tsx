@@ -36,6 +36,32 @@ type SiteContextType = {
   setExperienceType: (experienceType: "p75" | "Distribution") => void;
   rumDistribution: "p50" | "p75" | "p90" | "p95" | "p99";
   setRumDistribution: (rumDist: "p50" | "p75" | "p90" | "p95" | "p99") => void;
+  selectedGeoType: "Visitors" | "By Countries" | "User Happiness";
+  setSelectedGeoType: (
+    selectedGeoType: "Visitors" | "By Countries" | "User Happiness"
+  ) => void;
+  selectedAnalyticsDate:
+    | "yesterday"
+    | "last7days"
+    | "30days"
+    | "thisMonth"
+    | "lastMonth"
+    | "last6Months"
+    | "year"
+    | "today"
+    | "thisYear";
+  setSelectedAnalyticsDate: (
+    selectedAnalyticsDate:
+      | "yesterday"
+      | "last7days"
+      | "30days"
+      | "thisMonth"
+      | "lastMonth"
+      | "last6Months"
+      | "year"
+      | "today"
+      | "thisYear"
+  ) => void;
 };
 
 export const SiteContext = createContext<SiteContextType>({
@@ -60,6 +86,10 @@ export const SiteContext = createContext<SiteContextType>({
   setRumDistribution: () => {},
   rumDateRange: "7days",
   setRumDateRange: () => {},
+  selectedAnalyticsDate: "30days",
+  setSelectedAnalyticsDate: () => {},
+  selectedGeoType: "Visitors",
+  setSelectedGeoType: () => {},
 });
 
 export default function SiteContextProvider({
@@ -79,13 +109,26 @@ export default function SiteContextProvider({
   const [experienceType, setExperienceType] = useState<"p75" | "Distribution">(
     "p75"
   );
-
   const [rumDistribution, setRumDistribution] = useState<
     "p50" | "p75" | "p90" | "p95" | "p99"
   >("p75");
   const [rumDateRange, setRumDateRange] = useState<
     "24hours" | "7days" | "30days" | "90days"
   >("30days");
+  const [selectedAnalyticsDate, setSelectedAnalyticsDate] = useState<
+    | "yesterday"
+    | "last7days"
+    | "30days"
+    | "thisMonth"
+    | "lastMonth"
+    | "last6Months"
+    | "year"
+    | "today"
+    | "thisYear"
+  >("30days");
+  const [selectedGeoType, setSelectedGeoType] = useState<
+    "Visitors" | "By Countries" | "User Happiness"
+  >("Visitors");
 
   const user = useSupabaseUser();
 
@@ -209,6 +252,10 @@ export default function SiteContextProvider({
         setRumDistribution,
         rumDateRange,
         setRumDateRange,
+        selectedAnalyticsDate,
+        setSelectedAnalyticsDate,
+        selectedGeoType,
+        setSelectedGeoType,
       }}
     >
       {children}

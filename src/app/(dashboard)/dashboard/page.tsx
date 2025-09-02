@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useSiteContext } from "./siteContext";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
-// import { PlanValidation } from "@/components/utils/activePlanValidation";
+// import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import WebsitePage from "./helpers/main";
+import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 
 export default function Dashboard() {
   const { selectedSite } = useSiteContext();
   const [showPrompt, setShowPrompt] = useState(false);
-
-  // PlanValidation(); // redirect to billing if no active plan
 
   // Wait for 8 seconds before showing "Select a website" message
   useEffect(() => {

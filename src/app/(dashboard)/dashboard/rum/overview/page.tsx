@@ -29,7 +29,7 @@ export default function RUM() {
   const [happinessData, setHappinessData] = useState<ExperienceData[]>([]);
   const [citationData, setCitationData] = useState<DevicePerformanceData[]>([]);
   const [analyticsData, setAnalyticsData] = useState<RawData[]>([]);
-  const [mixedMetric, setMixedMetric] = useState<Mixed_metric[]>([]);
+  // const [mixedMetric, setMixedMetric] = useState<Mixed_metric[]>([]);
 
   const controlledDateRange = "7days";
   const intDate = rumDateRange === "7days" ? 7 : 7; // default 7 days for mixed_metric
@@ -39,7 +39,7 @@ export default function RUM() {
 
     async function fetchAllData() {
       try {
-        const [liveRes, mixedRes] = await Promise.all([
+        const [liveRes] = await Promise.all([
           fetch("/api/rum/dashboard", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -48,34 +48,33 @@ export default function RUM() {
               date_range: controlledDateRange,
             }),
           }),
-          fetch("/api/rum/dashboard/mixed-metric", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              domain_name: selectedSite,
-              date_range: intDate,
-            }),
-          }),
+          // fetch("/api/rum/dashboard/mixed-metric", {
+          //   method: "POST",
+          //   headers: { "Content-Type": "application/json" },
+          //   body: JSON.stringify({
+          //     domain_name: selectedSite,
+          //     date_range: intDate,
+          //   }),
+          // }),
         ]);
 
-        if (!liveRes.ok || !mixedRes.ok)
-          throw new Error("Failed to fetch RUM data");
+        if (!liveRes.ok) throw new Error("Failed to fetch RUM data");
 
         const live: any = await liveRes.json();
-        const mixed: any = await mixedRes.json();
+        // const mixed: any = await mixedRes.json();
 
         setDistData(live?.metrics?.webVitals || []);
         setHappinessData(live?.metrics?.userHappiness || []);
         setCitationData(live?.metrics?.ai_citation || []);
         setAnalyticsData(live?.metrics?.analytics || []);
-        setMixedMetric(mixed?.metrics || []);
+        // setMixedMetric(mixed?.metrics || []);
       } catch (error) {
         console.error("Error loading RUM data:", error);
         setDistData([]);
         setHappinessData([]);
         setCitationData([]);
         setAnalyticsData([]);
-        setMixedMetric([]);
+        // setMixedMetric([]);
       }
     }
 
@@ -166,7 +165,7 @@ export default function RUM() {
           experienceBarData={happinessData}
           citationData={selectedCitation}
           analyticsData={selectedAnalytics}
-          mixed_metric={mixedMetric}
+          // mixed_metric={mixedMetric}
         />
       </div>
     </>

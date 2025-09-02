@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSiteContext } from "../../../siteContext";
-import { useAnalyticsContext } from "./analytics.context";
 import CountryTrafficMap from "./chart";
 import { countryDistribution, overviewApi } from "../cf-apis/calls";
 import GeoDistBars from "./geoDistBars";
@@ -61,9 +60,13 @@ const dateRangeOptions = [
 ];
 
 export default function AnalyticsDashboard() {
-  const { selectedSite } = useSiteContext();
-  const { selectedGeoType, setSelectedGeoType, selectedDate, setSelectedDate } =
-    useAnalyticsContext();
+  const {
+    selectedSite,
+    selectedGeoType,
+    setSelectedGeoType,
+    selectedAnalyticsDate,
+    setSelectedAnalyticsDate,
+  } = useSiteContext();
 
   const [overvewMetrics, setOverviewMetrics] = useState<overvewMetrics[]>([]);
   const [happinessData, setHappinessData] = useState<any>([]);
@@ -77,7 +80,7 @@ export default function AnalyticsDashboard() {
   useEffect(() => {
     fetchOverview();
     fetchCountryDistribution();
-  }, [selectedSite, selectedDate]);
+  }, [selectedSite, selectedAnalyticsDate]);
 
   useEffect(() => {
     if (overvewMetrics.length) {
@@ -112,234 +115,255 @@ export default function AnalyticsDashboard() {
     return () => clearTimeout(timer);
   }, [selectedSite]);
 
-  console.log(happinessData);
-
-  if (totalMetricsOverview.length === 0 || overvewMetrics.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
-        <LoadingAnimation />
-      </div>
-    );
-  }
+  // if (totalMetricsOverview.length === 0 || overvewMetrics.length === 0) {
+  //   return (
+  //     <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+  //       <LoadingAnimation />
+  //     </div>
+  //   );
+  // }
 
   return (
-    <div className="min-h-screen p-5">
-      {/* Header */}
-      <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center md:gap-6">
-          <div className="flex gap-2 items-center text-xl font-semibold text-primary italic border px-4 py-1 rounded-lg border-amber-300/20">
-            <ChartColumn className="fill-amber-300 text-primary dark:text-primary/50" />
-            <h1>Analytics</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <GalleryThumbnails className="text-primary/70 font-semibold" />
-            <Select
-              value={selectedDevice}
-              onValueChange={(value) => setSelectedDevice(value)}
-            >
-              <SelectTrigger className="w-[180px] ring-0 border-[1px] border-primary/10 focus-visible:ring-0 focus-visible:border-primary/10">
-                <SelectValue placeholder="Select a device" />
-              </SelectTrigger>
-              <SelectContent className="dark:bg-secondary-background">
-                <SelectGroup>
-                  {deviceOptions.map((device) => (
-                    <SelectItem key={device} value={device}>
-                      {device}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+    <>
+      {totalMetricsOverview.length === 0 || overvewMetrics.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+          <LoadingAnimation />
         </div>
+      ) : (
+        <div className="min-h-screen p-5">
+          {/* Header */}
+          <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center md:gap-6">
+              <div className="flex gap-2 items-center text-xl font-semibold text-primary italic border px-4 py-1 rounded-lg border-amber-300/20">
+                <ChartColumn className="fill-amber-300 text-primary dark:text-primary/50" />
+                <h1>Analytics</h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <GalleryThumbnails className="text-primary/70 font-semibold" />
+                <Select
+                  value={selectedDevice}
+                  onValueChange={(value) => setSelectedDevice(value)}
+                >
+                  <SelectTrigger className="w-[180px] ring-0 border-[1px] border-primary/10 focus-visible:ring-0 focus-visible:border-primary/10">
+                    <SelectValue placeholder="Select a device" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-secondary-background">
+                    <SelectGroup>
+                      {deviceOptions.map((device) => (
+                        <SelectItem key={device} value={device}>
+                          {device}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-        <div className="flex items-center gap-2">
-          <Calendar className="text-primary/70 font-semibold" size={20} />
-          <Select
-            value={selectedDate}
-            onValueChange={(value) =>
-              setSelectedDate(value as typeof selectedDate)
-            }
-          >
-            <SelectTrigger className="w-[180px] ring-0 border-[1px] border-primary/10 focus-visible:ring-0 focus-visible:border-primary/10">
-              <SelectValue placeholder="Select date range" />
-            </SelectTrigger>
-            <SelectContent className="dark:bg-secondary-background">
-              <SelectGroup>
-                {dateRangeOptions.map(({ label, value }) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {totalMetricsOverview.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-white dark:bg-secondary-background rounded-lg shadow hover:shadow-lg px-6 py-5 flex flex-col items-center text-center"
-          >
-            <span className="uppercase font-bold text-xs tracking-wider mb-1 text-primary/80">
-              {stat.label}
-            </span>
-            <span className="text-3xl font-extrabold text-primary mb-1">
-              {stat.value}
-            </span>
-            <span
-              className={`text-sm ${
-                stat.change.startsWith("+") ? "text-green-600" : "text-rose-600"
-              } font-semibold`}
-            >
-              {stat.change}
-            </span>
-          </div>
-        ))}
-      </section>
-
-      {/* Top Referals & regions */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-5 my-10">
-        <div className="col-span-1 bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
-          Traffic Sources
-        </div>
-        <div className="col-span-1 bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-primary/80 flex gap-2 items-center">
-              <span>
-                <Globe className="fill-blue-300 text-primary dark:text-primary-foreground" />
-              </span>
-              Geo Distribution
-            </h3>
-            <div className="flex gap-4 items-center">
-              {["Visitors", "By Countries", "User Happiness"].map(
-                (x, index) => (
-                  <button
-                    key={index}
-                    className={`bg-transparent hover:underline decoration-primary/30 underline-offset-4 cursor-pointer ${
-                      selectedGeoType === x ? "underline" : ""
-                    }`}
-                    onClick={() => handleGeoType(x)}
-                  >
-                    {x}
-                  </button>
-                )
-              )}
+            <div className="flex items-center gap-2">
+              <Calendar className="text-primary/70 font-semibold" size={20} />
+              <Select
+                value={selectedAnalyticsDate}
+                onValueChange={(value) =>
+                  setSelectedAnalyticsDate(
+                    value as typeof selectedAnalyticsDate
+                  )
+                }
+              >
+                <SelectTrigger className="w-[180px] ring-0 border-[1px] border-primary/10 focus-visible:ring-0 focus-visible:border-primary/10">
+                  <SelectValue placeholder="Select date range" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-secondary-background">
+                  <SelectGroup>
+                    {dateRangeOptions.map(({ label, value }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <div className="py-8 h-[380px]">
-            {selectedGeoType === "Visitors" ? (
-              <CountryTrafficMap
-                trafficData={combinedData}
-                deviceType={
-                  selectedDevice === "Desktop"
-                    ? "desktop"
-                    : selectedDevice === "Mobile"
-                    ? "mobile"
-                    : selectedDevice === "Tablet"
-                    ? "tablet"
-                    : "all"
-                }
-              />
-            ) : selectedGeoType === "By Countries" ? (
-              <GeoDistBars
-                trafficData={combinedData}
-                deviceType={
-                  selectedDevice === "Desktop"
-                    ? "desktop"
-                    : selectedDevice === "Mobile"
-                    ? "mobile"
-                    : selectedDevice === "Tablet"
-                    ? "tablet"
-                    : "all"
-                }
-              />
-            ) : (
-              <HappinessMap
-                deviceType={
-                  selectedDevice.toLowerCase() as unknown as
-                    | "desktop"
-                    | "mobile"
-                    | "tablet"
-                    | "all"
-                }
-                trafficData={happinessData.length > 0 ? happinessData : []}
-              />
-            )}
-          </div>
-        </div>
-      </section>
 
-      {/* LLM Platform Table */}
-      <section
-        className={"bg-white rounded-2xl shadow p-6 mb-8 flex flex-col gap-4"}
-      >
-        <h2 className="text-xl font-semibold mb-3 text-gray-800">
-          🤖 LLM Referral Breakdown
-        </h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-500">
-              <th className="py-2 px-2 font-medium">Platform</th>
-              <th className="py-2 px-2 font-medium">Visitors</th>
-              <th className="py-2 px-2 font-medium">Avg Session</th>
-              <th className="py-2 px-2 font-medium">Bounce Rate</th>
-            </tr>
-          </thead>
-          <tbody>
-            {llmPlatforms.map((row, idx) => (
-              <tr
-                key={row.platform}
-                className={idx % 2 ? "bg-gray-50" : undefined}
+          {/* Stats Cards */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {totalMetricsOverview.map((stat) => (
+              <div
+                key={stat.label}
+                className="bg-white dark:bg-secondary-background rounded-lg shadow hover:shadow-lg px-6 py-5 flex flex-col items-center text-center"
               >
-                <td className="py-2 px-2">{row.platform}</td>
-                <td className="py-2 px-2">{row.visitors.toLocaleString()}</td>
-                <td className="py-2 px-2">{row.avgSession}</td>
-                <td className="py-2 px-2">{row.br}%</td>
-              </tr>
+                <span className="uppercase font-bold text-xs tracking-wider mb-1 text-primary/80">
+                  {stat.label}
+                </span>
+                <span className="text-3xl font-extrabold text-primary mb-1">
+                  {stat.value}
+                </span>
+                <span
+                  className={`text-sm ${
+                    stat.change.startsWith("+")
+                      ? "text-green-600"
+                      : "text-rose-600"
+                  } font-semibold`}
+                >
+                  {stat.change}
+                </span>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </section>
+          </section>
 
-      {/* Top pages for LLM */}
-      <section
-        className={"bg-white rounded-2xl shadow p-6 mb-8 flex flex-col gap-4"}
-      >
-        <h2 className="text-xl font-semibold mb-3 text-gray-800">
-          📄 Top LLM Landing Pages
-        </h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-500">
-              <th className="py-2 px-2 font-medium">Page</th>
-              <th className="py-2 px-2 font-medium">Visitors</th>
-              <th className="py-2 px-2 font-medium">Bounce Rate</th>
-              <th className="py-2 px-2 font-medium">Conversions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {llmTopPages.map((row, idx) => (
-              <tr key={row.page} className={idx % 2 ? "bg-gray-50" : undefined}>
-                <td className="py-2 px-2">{row.page}</td>
-                <td className="py-2 px-2">{row.visitors.toLocaleString()}</td>
-                <td className="py-2 px-2">{row.bounce}</td>
-                <td className="py-2 px-2">{row.conv}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    </div>
+          {/* Top Referals & regions */}
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-5 my-10">
+            <div className="col-span-1 bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
+              Traffic Sources
+            </div>
+            <div className="col-span-1 bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-primary/80 flex gap-2 items-center">
+                  <span>
+                    <Globe className="fill-blue-300 text-primary dark:text-primary-foreground" />
+                  </span>
+                  Geo Distribution
+                </h3>
+                <div className="flex gap-4 items-center">
+                  {["Visitors", "By Countries", "User Happiness"].map(
+                    (x, index) => (
+                      <button
+                        key={index}
+                        className={`bg-transparent hover:underline decoration-primary/30 underline-offset-4 cursor-pointer ${
+                          selectedGeoType === x ? "underline" : ""
+                        }`}
+                        onClick={() => handleGeoType(x)}
+                      >
+                        {x}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+              <div className="py-8 h-[380px]">
+                {selectedGeoType === "Visitors" ? (
+                  <CountryTrafficMap
+                    trafficData={combinedData}
+                    deviceType={
+                      selectedDevice === "Desktop"
+                        ? "desktop"
+                        : selectedDevice === "Mobile"
+                        ? "mobile"
+                        : selectedDevice === "Tablet"
+                        ? "tablet"
+                        : "all"
+                    }
+                  />
+                ) : selectedGeoType === "By Countries" ? (
+                  <GeoDistBars
+                    trafficData={combinedData}
+                    deviceType={
+                      selectedDevice === "Desktop"
+                        ? "desktop"
+                        : selectedDevice === "Mobile"
+                        ? "mobile"
+                        : selectedDevice === "Tablet"
+                        ? "tablet"
+                        : "all"
+                    }
+                  />
+                ) : (
+                  <HappinessMap
+                    deviceType={
+                      selectedDevice.toLowerCase() as unknown as
+                        | "desktop"
+                        | "mobile"
+                        | "tablet"
+                        | "all"
+                    }
+                    trafficData={happinessData.length > 0 ? happinessData : []}
+                  />
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* LLM Platform Table */}
+          <section
+            className={
+              "bg-white rounded-2xl shadow p-6 mb-8 flex flex-col gap-4"
+            }
+          >
+            <h2 className="text-xl font-semibold mb-3 text-gray-800">
+              🤖 LLM Referral Breakdown
+            </h2>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500">
+                  <th className="py-2 px-2 font-medium">Platform</th>
+                  <th className="py-2 px-2 font-medium">Visitors</th>
+                  <th className="py-2 px-2 font-medium">Avg Session</th>
+                  <th className="py-2 px-2 font-medium">Bounce Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {llmPlatforms.map((row, idx) => (
+                  <tr
+                    key={row.platform}
+                    className={idx % 2 ? "bg-gray-50" : undefined}
+                  >
+                    <td className="py-2 px-2">{row.platform}</td>
+                    <td className="py-2 px-2">
+                      {row.visitors.toLocaleString()}
+                    </td>
+                    <td className="py-2 px-2">{row.avgSession}</td>
+                    <td className="py-2 px-2">{row.br}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          {/* Top pages for LLM */}
+          <section
+            className={
+              "bg-white rounded-2xl shadow p-6 mb-8 flex flex-col gap-4"
+            }
+          >
+            <h2 className="text-xl font-semibold mb-3 text-gray-800">
+              📄 Top LLM Landing Pages
+            </h2>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500">
+                  <th className="py-2 px-2 font-medium">Page</th>
+                  <th className="py-2 px-2 font-medium">Visitors</th>
+                  <th className="py-2 px-2 font-medium">Bounce Rate</th>
+                  <th className="py-2 px-2 font-medium">Conversions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {llmTopPages.map((row, idx) => (
+                  <tr
+                    key={row.page}
+                    className={idx % 2 ? "bg-gray-50" : undefined}
+                  >
+                    <td className="py-2 px-2">{row.page}</td>
+                    <td className="py-2 px-2">
+                      {row.visitors.toLocaleString()}
+                    </td>
+                    <td className="py-2 px-2">{row.bounce}</td>
+                    <td className="py-2 px-2">{row.conv}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </div>
+      )}
+    </>
   );
 
   async function fetchOverview() {
     try {
       const res = await overviewApi({
-        time_range: selectedDate,
+        time_range: selectedAnalyticsDate,
         domain: selectedSite,
       });
 
@@ -355,7 +379,7 @@ export default function AnalyticsDashboard() {
   async function fetchCountryDistribution() {
     try {
       const res = await countryDistribution({
-        time_range: selectedDate,
+        time_range: selectedAnalyticsDate,
         domain: selectedSite,
       });
 

@@ -37,7 +37,7 @@ interface RumDashboardProps {
   experienceBarData: ExperienceData[] | undefined;
   citationData: DevicePerformanceData | undefined;
   analyticsData: AggregatedMetrics | undefined;
-  mixed_metric: Mixed_metric[] | undefined;
+  // mixed_metric: Mixed_metric[] | undefined;
 }
 
 export default function RumDashboard({

@@ -34,7 +34,11 @@ export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
 
   // Convert traffic data to Alpha-3 keyed record
   const trafficByCountry: Record<string, number> = React.useMemo(() => {
-    const found = trafficData.find((entry) => entry.device_type === deviceType);
+    let found;
+
+    if (Array.isArray(trafficData)) {
+      found = trafficData?.find((entry) => entry.device_type === deviceType);
+    }
     if (!found?.country_distribution) return {};
 
     try {
