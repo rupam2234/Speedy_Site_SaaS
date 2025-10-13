@@ -111,10 +111,10 @@ export default function AppSidebar({
             title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
-          {
-            title: "Third Party",
-            url: `/dashboard/rum/third-party?site=${selectedSite}`,
-          },
+          // {
+          //   title: "Third Party",
+          //   url: `/dashboard/rum/third-party?site=${selectedSite}`,
+          // },
           {
             title: "LCP (Images)",
             url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
