@@ -15,6 +15,7 @@ import { CanvasRenderer } from "echarts/renderers";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { Info } from "lucide-react";
 import TooltipIcon from "@/components/utils/customTooltip";
+import { DomainData } from "./data";
 echarts.use([
   TitleComponent,
   TooltipComponent,
@@ -29,14 +30,6 @@ type ECOption = echarts.ComposeOption<
   | TooltipComponentOption
   | LegendComponentOption
 >;
-
-export interface DomainData {
-  domain: string;
-  category: string;
-  cached: boolean;
-  overridden?: boolean;
-  frequency: number;
-}
 
 interface ThirdPartyCategoryPieChartProps {
   data: DomainData[];

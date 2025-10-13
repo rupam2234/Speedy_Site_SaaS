@@ -213,7 +213,7 @@ const ChartComponent = ({ metric_key }: ChartProps) => {
         },
         splitNumber: 5,
       },
-      grid: { top: 40, bottom: 30, left: 50, right: 20, height: 315 },
+      grid: { top: 40, bottom: 30, left: 40, right: 0, height: 315 },
       series: [
         {
           type: "line",

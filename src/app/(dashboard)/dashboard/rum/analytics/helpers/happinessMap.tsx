@@ -1,20 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import React from "react";
+import React, { ReactNode } from "react";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import styles from "../helpers/tooltip.module.css";
 import type { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
 import { alpha2ToAlpha3, alpha3ToAlpha2 } from "./countryCodes";
-
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const GeoJSON = dynamic(
-  () => import("react-leaflet").then((mod) => mod.GeoJSON),
-  { ssr: false }
-);
+import ReactDOMServer from "react-dom/server";
+import { MapContainer, GeoJSON } from "react-leaflet";
+// import TooltipIcon from "@/components/utils/customTooltip";
+// import { Lightbulb } from "lucide-react";
 
 export type HappinessData = {
   collection_date: string;
@@ -48,8 +41,6 @@ export default function HappinessMap({ deviceType, trafficData }: Props) {
   const [geoJsonData, setGeoJsonData] =
     React.useState<FeatureCollection<Geometry> | null>(null);
   const { theme } = useTheme();
-
-  console.log(trafficData);
 
   // Calculate user happiness and aggregate data by country
   const trafficByCountry: Record<
@@ -227,7 +218,7 @@ export default function HappinessMap({ deviceType, trafficData }: Props) {
   };
 
   const onEachFeature = (feature: any, layer: any) => {
-    const countryCodeAlpha3 = feature.id?.toUpperCase(); // Alpha-3 code
+    const countryCodeAlpha3 = feature.id?.toUpperCase();
     const countryName = feature.properties.name || "Unknown";
     const data = trafficByCountry[countryCodeAlpha3] || {
       happiness: 0,
@@ -240,63 +231,53 @@ export default function HappinessMap({ deviceType, trafficData }: Props) {
 
     const countryCodeAlpha2 = alpha3ToAlpha2[countryCodeAlpha3] || null;
 
-    const flagImg = countryCodeAlpha2
-      ? `<img
-          src="https://flagcdn.com/w20/${countryCodeAlpha2}.png"
-          alt="${countryName} flag"
-          style="width:20px; height:14px; margin-right:8px; vertical-align:middle;"
-          onerror="this.style.display='none'"
-        />`
-      : "";
-
-    const tooltipContent = `
-      <div class="${styles.tooltipContainer} z-50">
-        <div style="display: flex; align-items: center; margin-bottom: 4px;">
-          ${flagImg}
-          <strong class="${styles.tooltipCountryName}">${countryName}</strong>
+    const tooltipDesign: ReactNode = (
+      <div className="z-50 overflow-visible min-w-[180px] text-primary dark:text-black">
+        <div className="flex items-center gap-2">
+          <img
+            fetchPriority="auto"
+            src={`https://flagcdn.com/w20/${countryCodeAlpha2}.png`}
+            alt={"country_name"}
+            width={20}
+            height={14}
+          />
+          <span className="font-semibold">{countryName}</span>
         </div>
-        <div class="${styles.tooltipVisitors}">
-          User Happiness: <span class="${
-            styles.tooltipVisitorsStrong
-          }">${data.happiness.toFixed(1)}%</span>
-        </div>
-        <div class="${styles.tooltipVisitors}">
-          <strong>LCP:</strong> Good: ${data.lcp.good.toFixed(
-            1
-          )}%, Avg: ${data.lcp.average.toFixed(
-      1
-    )}%, Poor: ${data.lcp.poor.toFixed(1)}%
-        </div>
-        <div class="${styles.tooltipVisitors}">
-          <strong>INP:</strong> Good: ${data.inp.good.toFixed(
-            1
-          )}%, Avg: ${data.inp.average.toFixed(
-      1
-    )}%, Poor: ${data.inp.poor.toFixed(1)}%
-        </div>
-        <div class="${styles.tooltipVisitors}">
-          <strong>CLS:</strong> Good: ${data.cls.good.toFixed(
-            1
-          )}%, Avg: ${data.cls.average.toFixed(
-      1
-    )}%, Poor: ${data.cls.poor.toFixed(1)}%
-        </div>
-        <div class="${styles.tooltipVisitors}">
-          <strong>TTFB:</strong> Good: ${data.ttfb.good.toFixed(
-            1
-          )}%, Avg: ${data.ttfb.average.toFixed(
-      1
-    )}%, Poor: ${data.ttfb.poor.toFixed(1)}%
-        </div>
-        <div class="${styles.tooltipVisitors}">
-          Total Measurements: <span class="${styles.tooltipVisitorsStrong}">${
-      data.total_measurements
-    }</span>
+        <div className="text-[13px] text-primary/80 dark:text-black">
+          <div className="flex items-center gap-1">
+            Experience Quality Score: <span>{Math.round(data.happiness)}</span>
+          </div>
+          <div className="mt-3.5">
+            <VitalsBar
+              label="LCP"
+              good={data.lcp.good}
+              average={data.lcp.average}
+              poor={data.lcp.poor}
+            />
+            <VitalsBar
+              label="INP"
+              good={data.inp.good}
+              average={data.inp.average}
+              poor={data.inp.poor}
+            />
+            <VitalsBar
+              label="CLS"
+              good={data.cls.good}
+              average={data.cls.average}
+              poor={data.cls.poor}
+            />
+            <VitalsBar
+              label="TTFB"
+              good={data.ttfb.good}
+              average={data.ttfb.average}
+              poor={data.ttfb.poor}
+            />
+          </div>
         </div>
       </div>
-    `;
+    );
 
-    layer.bindTooltip(tooltipContent, {
+    layer.bindTooltip(ReactDOMServer.renderToString(tooltipDesign), {
       sticky: true,
       direction: "auto",
       opacity: 0.95,
@@ -304,7 +285,7 @@ export default function HappinessMap({ deviceType, trafficData }: Props) {
   };
 
   return (
-    <div className="w-full h-[350px] bg-transparent relative z-0">
+    <div className="w-full h-[350px] bg-transparent relative z-0 overflow-visible">
       <style>{`.leaflet-control-attribution { display: none !important; }`}</style>
       <MapContainer
         key={theme + deviceType}
@@ -331,6 +312,36 @@ export default function HappinessMap({ deviceType, trafficData }: Props) {
           />
         )}
       </MapContainer>
+    </div>
+  );
+}
+
+function VitalsBar({ label, good, average, poor }: any) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 font-semibold text-primary/80 dark:text-black/80">
+        <span>{label}:</span>
+        <span>Good: {Math.round(good)}%</span>
+        <span>Avg: {Math.round(average)}%</span>
+        <span>Poor: {Math.round(poor)}%</span>
+      </div>
+      <div className="w-[220px] h-2.5 rounded bg-gray-300 overflow-hidden flex border border-gray-300">
+        <div
+          style={{ width: `${good}%` }}
+          className="bg-green-500"
+          title={`Good: ${good.toFixed(1)}%`}
+        />
+        <div
+          style={{ width: `${average}%` }}
+          className="bg-yellow-400"
+          title={`Average: ${average.toFixed(1)}%`}
+        />
+        <div
+          style={{ width: `${poor}%` }}
+          className="bg-red-500"
+          title={`Poor: ${poor.toFixed(1)}%`}
+        />
+      </div>
     </div>
   );
 }

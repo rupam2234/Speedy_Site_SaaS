@@ -8,11 +8,10 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
-import { ReactNode, Suspense, useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
 
 interface DashboardLayoutProps {
@@ -70,9 +69,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <SidebarProvider>
       <AuthProvider>
         <SiteContextProvider>
-          <Suspense fallback={<LoadingAnimation />}>
-            <LayoutContent>{children}</LayoutContent>
-          </Suspense>
+          {/* <Suspense fallback={<LoadingAnimation />}> */}
+          <LayoutContent>{children}</LayoutContent>
+          {/* </Suspense> */}
         </SiteContextProvider>
       </AuthProvider>
     </SidebarProvider>

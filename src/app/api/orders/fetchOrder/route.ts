@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       user_email: order.user_email,
     }));
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: typeOrderData.length
           ? "Order data fetched successfully"
@@ -47,6 +47,13 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
+
+    response.headers.set(
+      "Cache-Control",
+      "public, max-age=300, stale-while-revalidate=60"
+    );
+
+    return response;
   } catch (error) {
     console.error("Unable to fetch website data: ", error);
     return NextResponse.json(

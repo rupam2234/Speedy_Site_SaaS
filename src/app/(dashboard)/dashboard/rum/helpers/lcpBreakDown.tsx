@@ -1,15 +1,20 @@
 "use client";
 
-import React, { useState, useMemo, ReactNode } from "react";
+import React, { useState, useMemo } from "react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import BeatLoader from "react-spinners/BeatLoader";
 import Image from "next/image";
+import {
+  Target,
+  Zap,
+  Image as ImageIcon,
+  Download,
+  Monitor,
+  BarChart3,
+  TrendingUp,
+  Type,
+} from "lucide-react";
 
 interface LCPElementData {
   element_target: string;
@@ -30,9 +35,6 @@ interface Props {
   data: LCPElementData[];
 }
 
-const loading = true;
-const color = "green";
-
 const SORT_OPTIONS = [
   { label: "LCP", value: "avg_lcp_value" },
   { label: "Load Delay", value: "avg_resource_load_delay" },
@@ -40,69 +42,25 @@ const SORT_OPTIONS = [
   { label: "Render Delay", value: "avg_element_render_delay" },
 ];
 
-export const getSuggestions = (
-  elementTarget: string,
-  totalLCP: number,
-  resourceLoadDelay: number,
-  resourceLoadDuration: number,
-  elementRenderDelay: number
-): ReactNode[] => {
-  const lower = elementTarget?.toLowerCase();
-  const suggestions: ReactNode[] = [];
+// Define an optimization action interface
+interface OptimizationAction {
+  id: string;
+  title: string;
+  impact: "high" | "medium" | "low";
+  effort: "low" | "medium" | "high";
+  description: string;
+  implementation: string;
+  code?: string;
+}
 
-  const loadSum = resourceLoadDelay + resourceLoadDuration + elementRenderDelay;
-
-  const isImage =
-    lower.includes("img") ||
-    lower.includes(".jpg") ||
-    lower.includes(".png") ||
-    lower.includes(".webp") ||
-    lower.includes(".avif");
-
-  if (isImage) {
-    suggestions.push(
-      'Do not lazy-load above-the-fold LCP images. Use `loading="eager"` or omit the attribute.',
-      'Add `fetchpriority="high"` to the LCP image to signal early loading.',
-      'Use `<link rel="preload" as="image">` to preload the LCP image.',
-      "Compress the image with AVIF or WebP to reduce transfer and decode time.",
-      "Set explicit `width` and `height` to reduce layout shifts."
-    );
-  }
-
-  // 🧠 Heuristic if image was small but LCP still high
-  if (isImage && totalLCP > 3000 && loadSum < 1500) {
-    suggestions.push(
-      "The image loads fast, but LCP is still high — this could indicate JS blocking or style recalculations. Audit thread activity.",
-      "Consider inlining this image as a base64 string if it’s very small and critical."
-    );
-  }
-
-  // 🧼 Fallback suggestions
-  if (suggestions.length < 5) {
-    suggestions.push(
-      "Copy the element class and use browser DevTool to confirm the LCP element.",
-      "Use lightweight fonts for above-the-fold content to speed up LCP.",
-      "Try to limit how many fonts you load—fewer fonts mean faster pages",
-      "Use <link rel='preload'> for critical fonts, but limit the number to avoid blocking resources.",
-      "Defer or async-load non-critical JavaScript.",
-      "Minimize render-blocking styles.",
-      <span key="more-info">
-        Learn more at{" "}
-        <a
-          href="https://web.dev/lcp/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-500 underline"
-        >
-          web.dev/lcp
-        </a>
-        .
-      </span>
-    );
-  }
-
-  return suggestions;
-};
+// Define a timing phase interface
+interface TimingPhase {
+  name: string;
+  value: number;
+  percentage: number;
+  color: string;
+  icon: React.ReactNode;
+}
 
 // find LCP component type
 const getComponentType = (target: string): string => {
@@ -160,19 +118,237 @@ const getComponentType = (target: string): string => {
   return "Unknown Element";
 };
 
+// Function to get specific optimization actions based on LCP data and element type
+const getOptimizationActions = (
+  elementTarget: string,
+  totalLCP: number,
+  resourceLoadDelay: number,
+  resourceLoadDuration: number,
+  elementRenderDelay: number,
+  componentType: string
+): OptimizationAction[] => {
+  const actions: OptimizationAction[] = [];
+
+  // Calculate percentages
+  const loadDelayPercentage = (resourceLoadDelay / totalLCP) * 100;
+  const loadDurationPercentage = (resourceLoadDuration / totalLCP) * 100;
+  const renderDelayPercentage = (elementRenderDelay / totalLCP) * 100;
+
+  // Common actions for all element types
+  if (loadDelayPercentage > 30) {
+    actions.push({
+      id: "preload",
+      title: "Preload Critical Resource",
+      impact: "high",
+      effort: "low",
+      description: "Add preload hint to prioritize LCP resource loading",
+      implementation: "Add <link rel='preload'> to document head",
+    });
+  }
+
+  if (renderDelayPercentage > 30) {
+    actions.push({
+      id: "render-blocking",
+      title: "Eliminate Render-Blocking Resources",
+      impact: "high",
+      effort: "medium",
+      description: "Remove or defer render-blocking CSS and JavaScript",
+      implementation:
+        "Defer non-critical CSS and JavaScript, inline critical CSS",
+    });
+  }
+
+  // Type-specific actions
+  if (componentType === "Image") {
+    // Image-specific actions
+    if (loadDurationPercentage > 30) {
+      actions.push({
+        id: "image-compress",
+        title: "Optimize Image Format",
+        impact: "high",
+        effort: "medium",
+        description: "Convert to modern format and compress",
+        implementation:
+          "Convert images to WebP/AVIF and compress at 75-85% quality",
+        code: `<picture>
+  <source srcset="image.webp" type="image/webp">
+  <img src="image.jpg" alt="...">
+</picture>`,
+      });
+
+      actions.push({
+        id: "responsive-images",
+        title: "Implement Responsive Images",
+        impact: "medium",
+        effort: "medium",
+        description: "Serve appropriately sized images for different viewports",
+        implementation: "Use srcset and sizes attributes for responsive images",
+        code: `<img srcset="image-400.jpg 400w,
+             image-800.jpg 800w"
+     sizes="(max-width: 600px) 400px, 800px"
+     src="image-default.jpg" alt="...">`,
+      });
+    }
+
+    actions.push({
+      id: "fetchpriority",
+      title: "Set Fetch Priority",
+      impact: "high",
+      effort: "low",
+      description: "Signal to browser that LCP image is high priority",
+      implementation: "Add fetchpriority='high' to LCP image element",
+      code: `<img src="/path/to/lcp-image.jpg" fetchpriority="high" alt="...">`,
+    });
+
+    actions.push({
+      id: "image-dimensions",
+      title: "Set Explicit Dimensions",
+      impact: "medium",
+      effort: "low",
+      description: "Set width and height attributes to prevent layout shifts",
+      implementation: "Add width and height attributes to LCP image",
+      code: `<img src="image.jpg" width="800" height="600" alt="...">`,
+    });
+  } else if (componentType === "Heading or Font") {
+    // Font-specific actions
+    actions.push({
+      id: "font-preload",
+      title: "Preload Critical Fonts",
+      impact: "high",
+      effort: "low",
+      description: "Preload web fonts to prevent FOIT/FOUT",
+      implementation: "Add preload links for critical fonts in document head",
+      code: `<link rel="preload" href="/fonts/critical-font.woff2" as="font" type="font/woff2" crossorigin>`,
+    });
+
+    actions.push({
+      id: "font-display",
+      title: "Optimize Font Display Strategy",
+      impact: "high",
+      effort: "low",
+      description: "Use font-display to control how fonts are displayed",
+      implementation: "Add font-display: swap to @font-face declaration",
+      code: `@font-face {
+  font-family: 'My Font';
+  src: url('/fonts/my-font.woff2') format('woff2');
+  font-display: swap;
+}`,
+    });
+
+    actions.push({
+      id: "font-subsetting",
+      title: "Subset Fonts",
+      impact: "medium",
+      effort: "medium",
+      description: "Create font subsets to reduce file size",
+      implementation:
+        "Use tools to subset fonts to only include required characters",
+    });
+
+    actions.push({
+      id: "system-font-stack",
+      title: "Use System Fonts",
+      impact: "medium",
+      effort: "low",
+      description: "Consider using system fonts for faster rendering",
+      implementation:
+        "Use system font stack in CSS: font-family: system-ui, sans-serif",
+    });
+  } else if (componentType === "Text Block") {
+    // Text-specific actions
+    actions.push({
+      id: "critical-css",
+      title: "Inline Critical CSS",
+      impact: "high",
+      effort: "high",
+      description: "Inline CSS required for above-the-fold text",
+      implementation: "Extract and inline critical CSS in HTML head",
+    });
+
+    actions.push({
+      id: "text-rendering",
+      title: "Optimize Text Rendering",
+      impact: "medium",
+      effort: "low",
+      description: "Improve text rendering performance",
+      implementation: "Add text-rendering: optimizeLegibility to CSS",
+    });
+  } else {
+    // Generic actions for other element types
+    actions.push({
+      id: "critical-path",
+      title: "Optimize Critical Rendering Path",
+      impact: "high",
+      effort: "high",
+      description: "Streamline the critical rendering path for faster paint",
+      implementation: "Analyze and optimize all resources that block rendering",
+    });
+
+    actions.push({
+      id: "resource-hints",
+      title: "Add Resource Hints",
+      impact: "medium",
+      effort: "low",
+      description: "Use resource hints to optimize loading",
+      implementation: "Add preconnect, prefetch, or preload hints as needed",
+    });
+  }
+
+  // General high-impact actions
+  if (totalLCP > 2500) {
+    actions.push({
+      id: "reduce-chunk-size",
+      title: "Reduce JavaScript Bundle Size",
+      impact: "high",
+      effort: "medium",
+      description: "Minimize and split JavaScript bundles",
+      implementation:
+        "Use code splitting and tree shaking to reduce bundle size",
+    });
+  }
+
+  return actions;
+};
+
+// Function to get timing phases with proper icons
+const getTimingPhases = (
+  resourceLoadDelay: number,
+  resourceLoadDuration: number,
+  elementRenderDelay: number
+): TimingPhase[] => {
+  const total = resourceLoadDelay + resourceLoadDuration + elementRenderDelay;
+
+  return [
+    {
+      name: "Discovery",
+      value: resourceLoadDelay,
+      percentage: (resourceLoadDelay / total) * 100,
+      color: "bg-indigo-400",
+      icon: <Target className="w-4 h-4" />,
+    },
+    {
+      name: "Loading",
+      value: resourceLoadDuration,
+      percentage: (resourceLoadDuration / total) * 100,
+      color: "bg-indigo-600",
+      icon: <Download className="w-4 h-4" />,
+    },
+    {
+      name: "Rendering",
+      value: elementRenderDelay,
+      percentage: (elementRenderDelay / total) * 100,
+      color: "bg-indigo-800",
+      icon: <Monitor className="w-4 h-4" />,
+    },
+  ];
+};
+
 const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
   const { selectedDevice } = useSiteContext();
-  const [sortKey, setSortKey] = useState("avg_lcp_value");
   const [selectedElement, setSelectedElement] = useState<LCPElementData | null>(
     null
   );
-
-  const validSortKeys = new Set([
-    "avg_lcp_value",
-    "avg_resource_load_delay",
-    "avg_resource_load_duration",
-    "avg_element_render_delay",
-  ]);
+  const [sortKey, setSortKey] = useState<keyof LCPElementData>("avg_lcp_value"); // Added this line
 
   const filteredData = useMemo(() => {
     const dedupedMap = new Map<string, LCPElementData>();
@@ -194,244 +370,355 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
         }
       });
 
-    const sorted = Array.from(dedupedMap.values());
+    const sorted = Array.from(dedupedMap.values()).sort((a, b) => {
+      const valA = a[sortKey] as number;
+      const valB = b[sortKey] as number;
+      return (valB || 0) - (valA || 0);
+    });
 
-    if (validSortKeys.has(sortKey)) {
-      sorted.sort((a, b) => {
-        const valA = a[sortKey as keyof LCPElementData] as number;
-        const valB = b[sortKey as keyof LCPElementData] as number;
-        return (valB || 0) - (valA || 0);
-      });
+    return sorted.slice(0, 8); // Limit to top 8 elements
+  }, [data, selectedDevice, sortKey]); // Added sortKey to dependency array
+
+  // Set default selected element
+  React.useEffect(() => {
+    if (filteredData.length > 0 && !selectedElement) {
+      setSelectedElement(filteredData[0]);
+    } else if (filteredData.length === 0) {
+      setSelectedElement(null);
     }
-
-    return sorted;
-  }, [data, selectedDevice, sortKey]);
+  }, [filteredData, selectedElement]);
 
   if (!filteredData || filteredData.length === 0) {
     return (
-      <div className="sweet-loading">
-        <BeatLoader
-          color={color}
-          loading={loading}
-          data-testid="loader"
-          size={10}
-        />
+      <div className="flex flex-col items-center justify-center h-64">
+        <BeatLoader color="#6366f1" loading={true} size={8} />
+        <p className="mt-2 text-gray-500 text-xs">Loading LCP data...</p>
       </div>
     );
   }
 
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left: LCP items with text and bar */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm text-primary/80 font-medium">
-                What&apos;s causing LCP?
-              </h3>
-            </div>
+      <div className="flex flex-col md:flex-row gap-4">
+        {/* Left: LCP elements list */}
+        <div className="w-full md:w-1/3">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              LCP Elements
+            </h3>
             <select
-              className="text-xs bg-gray-500/20 px-2 py-1 rounded border border-muted-foreground/10"
+              className="text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               value={sortKey}
-              onChange={(e) => setSortKey(e.target.value)}
+              onChange={(e) =>
+                setSortKey(e.target.value as keyof LCPElementData)
+              }
             >
               {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  Sort by {opt.label}
+                <option
+                  key={opt.value}
+                  value={opt.value}
+                  className="border-gray-200"
+                >
+                  {opt.label}
                 </option>
               ))}
             </select>
           </div>
 
-          {filteredData.map((item, i) => {
-            const { element_target, avg_lcp_value, occurrence_count } = item;
+          <div className="space-y-1">
+            {filteredData.map((item, i) => {
+              const { element_target, avg_lcp_value, occurrence_count } = item;
+              const isSelected =
+                selectedElement?.element_target === element_target;
+              const componentType = getComponentType(element_target);
 
-            return (
-              <div
-                key={i}
-                className={`space-y-1 cursor-pointer p-2 rounded-sm border ${
-                  selectedElement?.element_target === element_target
-                    ? "bg-gray-100 dark:bg-gray-800 border-gray-400"
-                    : "bg-muted/5 dark:border-gray-200/10 border-gray-200/80"
-                }`}
-                onClick={() => setSelectedElement(item)}
-              >
-                <div className="flex justify-between items-center text-xs font-medium">
-                  <span className="truncate max-w-[60%]">{element_target}</span>
-                  <span className="flex items-center gap-1 text-primary/40">
-                    <span
-                      className={` ${
-                        avg_lcp_value <= 2500
-                          ? "text-green-500"
-                          : avg_lcp_value <= 4000
-                          ? "text-orange-400"
-                          : "text-red-500"
-                      }`}
-                    >
-                      {Math.round(avg_lcp_value)}ms
-                    </span>
-                    | {occurrence_count}x
-                  </span>
+              // Determine the primary bottleneck
+              // const loadDelayPercentage =
+              //   (item.avg_resource_load_delay / avg_lcp_value) * 100;
+              // const loadDurationPercentage =
+              //   (item.avg_resource_load_duration / avg_lcp_value) * 100;
+              // const renderDelayPercentage =
+              //   (item.avg_element_render_delay / avg_lcp_value) * 100;
+
+              let bottleneckColor = "bg-green-500";
+              if (avg_lcp_value > 4000) {
+                bottleneckColor = "bg-red-500";
+              } else if (avg_lcp_value > 2500) {
+                bottleneckColor = "bg-amber-500";
+              }
+
+              // let bottleneckIcon = <Target className="w-3.5 h-3.5" />;
+              // if (loadDelayPercentage > 40) {
+              //   bottleneckIcon = bottleneckIcon;
+              // } else if (loadDurationPercentage > 40) {
+              //   bottleneckIcon = <Download className="w-3.5 h-3.5" />;
+              // } else if (renderDelayPercentage > 40) {
+              //   bottleneckIcon = <Monitor className="w-3.5 h-3.5" />;
+              // }
+
+              return (
+                <div
+                  key={i}
+                  className={`p-2 rounded cursor-pointer transition-all ${
+                    isSelected
+                      ? "bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                  }`}
+                  onClick={() => setSelectedElement(item)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs font-medium truncate">
+                        {element_target}
+                      </h4>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                          {componentType}
+                        </span>
+                        <span
+                          className={`inline-block w-1.5 h-1.5 rounded-full ${bottleneckColor}`}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 ml-2">
+                      <span
+                        className={`text-xs font-medium ${
+                          avg_lcp_value <= 2500
+                            ? "text-green-600 dark:text-green-400"
+                            : avg_lcp_value <= 4000
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        {Math.round(avg_lcp_value)}ms
+                      </span>
+                      <span className="text-[10px] text-gray-500 bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                        {occurrence_count}x
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
-        {/* Right: Suggestions Panel */}
-        <div className="space-y-4 md:sticky md:top-20 md:self-start">
-          <h3 className="text-sm text-primary/80 font-medium">Suggestions</h3>
+        {/* Right: Optimization Actions */}
+        <div className="w-full md:w-2/3">
+          <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+            Optimization Actions
+          </h3>
+
           {selectedElement ? (
-            <div className="p-5 border rounded-md bg-muted/10 space-y-5">
-              {/* Element Identifier */}
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-primary">
-                  {selectedElement.element_target}
-                </p>
-                <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-primary/10 text-sm text-primary/80 rounded-full w-fit">
-                  <span className="inline-block w-2 h-2 rounded-full bg-primary" />
-                  {getComponentType(selectedElement.element_target)}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-4">
+              {/* Element Header */}
+              <div className="pb-2 border-b border-gray-100 dark:border-gray-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="text-sm font-medium">
+                      {selectedElement.element_target}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span
+                        className={`inline-block w-2 h-2 rounded-full ${
+                          selectedElement.avg_lcp_value > 4000
+                            ? "bg-red-500"
+                            : selectedElement.avg_lcp_value > 2500
+                            ? "bg-amber-500"
+                            : "bg-green-500"
+                        }`}
+                      />
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {getComponentType(selectedElement.element_target)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Total LCP
+                    </div>
+                    <div className="text-sm font-medium">
+                      {Math.round(selectedElement.avg_lcp_value)}ms
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Visual DevTools-style bar */}
+              {/* Timing Phases */}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-primary/90">
+                <h5 className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                  <BarChart3 className="h-3.5 w-3.5" />
                   Timing Breakdown
-                </h4>
-                <div className="flex w-full h-3 rounded overflow-hidden bg-muted">
-                  {/* Load Delay */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="bg-blue-300"
-                        style={{
-                          width: `${
-                            (selectedElement.avg_resource_load_delay /
-                              (selectedElement.avg_resource_load_delay +
-                                selectedElement.avg_resource_load_duration +
-                                selectedElement.avg_element_render_delay)) *
-                            100
-                          }%`,
-                        }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      Load Delay:{" "}
-                      {Math.round(selectedElement.avg_resource_load_delay)}ms
-                    </TooltipContent>
-                  </Tooltip>
+                </h5>
 
-                  {/* Load Duration */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="bg-blue-500"
-                        style={{
-                          width: `${
-                            (selectedElement.avg_resource_load_duration /
-                              (selectedElement.avg_resource_load_delay +
-                                selectedElement.avg_resource_load_duration +
-                                selectedElement.avg_element_render_delay)) *
-                            100
-                          }%`,
-                        }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      Load Duration:{" "}
-                      {Math.round(selectedElement.avg_resource_load_duration)}ms
-                    </TooltipContent>
-                  </Tooltip>
-
-                  {/* Render Delay */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="bg-blue-700"
-                        style={{
-                          width: `${
-                            (selectedElement.avg_element_render_delay /
-                              (selectedElement.avg_resource_load_delay +
-                                selectedElement.avg_resource_load_duration +
-                                selectedElement.avg_element_render_delay)) *
-                            100
-                          }%`,
-                        }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      Render Delay:{" "}
-                      {Math.round(selectedElement.avg_element_render_delay)}ms
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-
-                <div className="flex justify-between text-xs text-primary/60 mt-1">
-                  <span>
-                    Load Delay:{" "}
-                    {Math.round(selectedElement.avg_resource_load_delay)}ms
-                  </span>
-                  <span>
-                    Duration:{" "}
-                    {Math.round(selectedElement.avg_resource_load_duration)}ms
-                  </span>
-                  <span>
-                    Render:{" "}
-                    {Math.round(selectedElement.avg_element_render_delay)}ms
-                  </span>
+                <div className="flex flex-col gap-2">
+                  {getTimingPhases(
+                    selectedElement.avg_resource_load_delay,
+                    selectedElement.avg_resource_load_duration,
+                    selectedElement.avg_element_render_delay
+                  ).map((phase, i) => (
+                    <div key={i} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5">
+                          {phase.icon}
+                          <span>{phase.name}</span>
+                        </div>
+                        <span>
+                          {Math.round(phase.value)}ms (
+                          {Math.round(phase.percentage)}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${phase.color}`}
+                          style={{ width: `${phase.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Suggestions List */}
-              <div className="border-t pt-4 mt-2">
-                <h4 className="text-sm font-medium text-primary/90 mb-2">
-                  Tips to improve:
-                </h4>
-                <ul className="list-none space-y-2 text-[12px] text-primary/90">
-                  {getSuggestions(
+              {/* Optimization Actions */}
+              <div className="space-y-3">
+                <h5 className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Recommended Actions
+                </h5>
+
+                <div className="space-y-2">
+                  {getOptimizationActions(
                     selectedElement.element_target,
                     selectedElement.avg_lcp_value,
                     selectedElement.avg_resource_load_delay,
                     selectedElement.avg_resource_load_duration,
-                    selectedElement.avg_element_render_delay
-                  ).map((s, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="mt-1.5 inline-block w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-                      <span className="leading-snug">{s}</span>
-                    </li>
+                    selectedElement.avg_element_render_delay,
+                    getComponentType(selectedElement.element_target)
+                  ).map((action) => (
+                    <div
+                      key={action.id}
+                      className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h6 className="text-xs font-medium">
+                              {action.title}
+                            </h6>
+                            <div className="flex gap-1">
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                  action.impact === "high"
+                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                                    : action.impact === "medium"
+                                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+                                    : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                                }`}
+                              >
+                                {action.impact}
+                              </span>
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                  action.effort === "low"
+                                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                                    : action.effort === "medium"
+                                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+                                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                                }`}
+                              >
+                                {action.effort} effort
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                            {action.description}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <Zap
+                            className={`h-4 w-4 ${
+                              action.impact === "high"
+                                ? "text-red-500"
+                                : action.impact === "medium"
+                                ? "text-amber-500"
+                                : "text-green-500"
+                            }`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                        <p className="text-xs font-medium mb-1">
+                          Implementation:
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                          {action.implementation}
+                        </p>
+
+                        {action.code && (
+                          <div className="relative">
+                            <pre className="text-xs bg-gray-900 text-gray-100 p-2 rounded overflow-x-auto">
+                              {action.code}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
 
-              {/* image if available */}
-              <div className="md:block hidden md:space-y-3">
-                {selectedElement?.image_url ? (
-                  <Image
-                    src={selectedElement.image_url}
-                    width={200}
-                    height={150}
-                    alt={
-                      selectedElement.image_url.split("/")[
-                        selectedElement.image_url.split("/").length - 1
-                      ]
-                    }
-                  />
-                ) : null}
-                <div className="text-[12px] text-primary/70">
-                  Page:{" "}
-                  {selectedElement?.page_url.includes("?")
-                    ? selectedElement.page_url.split("?")[0]
-                    : selectedElement.page_url}
+              {/* Element Preview */}
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                <h5 className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Element Preview
+                </h5>
+                <div className="mt-2">
+                  {selectedElement?.image_url ? (
+                    <div className="flex justify-center">
+                      <Image
+                        src={selectedElement.image_url}
+                        width={200}
+                        height={120}
+                        alt={selectedElement.element_target}
+                        className="rounded border border-gray-100 dark:border-gray-700"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-20 bg-gray-50 dark:bg-gray-800/50 rounded border border-gray-100 dark:border-gray-700">
+                      {getComponentType(selectedElement.element_target) ===
+                      "Image" ? (
+                        <ImageIcon className="h-6 w-6 text-gray-400" />
+                      ) : (
+                        <Type className="h-6 w-6 text-gray-400" />
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-2">
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                      Page URL
+                    </p>
+                    <p className="text-xs truncate">
+                      {selectedElement?.page_url.includes("?")
+                        ? selectedElement.page_url.split("?")[0]
+                        : selectedElement.page_url}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-primary/40">
-              Select an element on the left to view actionable optimization
-              tips.
-            </p>
+            <div className="flex flex-col items-center justify-center h-64 bg-gray-50 dark:bg-gray-800/20 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <TrendingUp className="h-8 w-8 text-indigo-500 mb-2" />
+              <h4 className="text-xs font-medium">
+                Select an element to view actions
+              </h4>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 text-center max-w-xs">
+                Choose an LCP element to see specific optimization actions with
+                implementation details.
+              </p>
+            </div>
           )}
         </div>
       </div>

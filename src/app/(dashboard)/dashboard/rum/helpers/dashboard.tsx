@@ -11,7 +11,7 @@ import { CircleGauge, Smile, TrendingUpDown } from "lucide-react";
 import CitationStatsCard, { DevicePerformanceData } from "./ai_citation";
 import AnalyticsOverview, { AggregatedMetrics } from "./analyticsOverview";
 import ExperienceBar, { ExperienceData } from "./ExperienceBar";
-import { Mixed_metric } from "./multiMetricChart";
+import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 
 export interface WebVitalsMetric {
   domain_name: string;
@@ -37,7 +37,6 @@ interface RumDashboardProps {
   experienceBarData: ExperienceData[] | undefined;
   citationData: DevicePerformanceData | undefined;
   analyticsData: AggregatedMetrics | undefined;
-  // mixed_metric: Mixed_metric[] | undefined;
 }
 
 export default function RumDashboard({
@@ -45,8 +44,7 @@ export default function RumDashboard({
   experienceBarData,
   citationData,
   analyticsData,
-}: // mixed_metric,
-RumDashboardProps) {
+}: RumDashboardProps) {
   const { rumDistribution, selectedDevice } = useSiteContext();
 
   function formatMetricValue(metric: WebVitalsMetric): string {
@@ -99,11 +97,32 @@ RumDashboardProps) {
     }
   }
 
+  const isWebVitalsEmpty =
+    !distData ||
+    distData.filter(
+      (metric) =>
+        metric.device_type.toLowerCase() === selectedDevice.toLowerCase()
+    ).length === 0;
+
+  const isExperienceEmpty =
+    !experienceBarData || experienceBarData.length === 0;
+
+  const isCitationEmpty = !citationData;
+
+  const isAnalyticsEmpty = !analyticsData;
+
   return (
     <div className="space-y-15">
+      {/* Analytics Overview */}
       <div className="mt-6">
-        {analyticsData && <AnalyticsOverview data={analyticsData} />}
+        {isAnalyticsEmpty ? (
+          <SkeletonCard title="Analytics Overview" />
+        ) : (
+          <AnalyticsOverview data={analyticsData} />
+        )}
       </div>
+
+      {/* Web Vitals */}
       <div>
         <span className="flex items-center gap-2">
           <CircleGauge
@@ -111,12 +130,15 @@ RumDashboardProps) {
             className="fill-pink-600/30 dark:fill-pink-600/60 text-primary/70 dark:text-primary/70"
           />
           <h2 className="text-md md:text-xl font-bold text-primary/90">
-            Web Vitals
+            Web Vitals (RUM)
           </h2>
         </span>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6">
-          {distData &&
-            distData
+
+        {isWebVitalsEmpty ? (
+          <SkeletonCard title="Web Vitals" />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6">
+            {distData
               .filter(
                 (metric) =>
                   metric.device_type.toLowerCase() ===
@@ -127,7 +149,6 @@ RumDashboardProps) {
                 const unit = metric.metric_name === "CLS" ? "" : "ms";
                 const value = formatMetricValue(metric);
                 const colorClass = getColorClass(metric);
-
                 const rawPercentile =
                   typeof metric[rumDistribution] === "number"
                     ? (metric[rumDistribution] as number)
@@ -162,7 +183,6 @@ RumDashboardProps) {
                         </Tooltip>
                       </div>
                     </div>
-
                     <WebVitalsBar
                       metricName={label}
                       goodPercent={metric.good_percent}
@@ -176,9 +196,11 @@ RumDashboardProps) {
                   </div>
                 );
               })}
-        </div>
+          </div>
+        )}
       </div>
 
+      {/* Experience Bar */}
       <div className="space-y-5">
         <span className="flex gap-2 items-center ">
           <span className="flex items-center gap-2">
@@ -187,17 +209,22 @@ RumDashboardProps) {
               className="fill-green-200 text-primary/70 dark:text-accent/70"
             />
             <h2 className="text-md md:text-xl font-bold text-primary/90">
-              Pageviews Experience Distribution
+              Page Experience Group
             </h2>
           </span>
         </span>
-        <div className="border rounded-sm  py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
-          <ExperienceBar
-            data={experienceBarData ?? []}
-            deviceType={selectedDevice}
-          />
+        <div className="border rounded-sm py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
+          {isExperienceEmpty ? (
+            <SkeletonCard title="Experience Distribution" />
+          ) : (
+            <ExperienceBar
+              data={experienceBarData ?? []}
+              deviceType={selectedDevice}
+            />
+          )}
         </div>
 
+        {/* AI Citation */}
         <span className="flex gap-2 mt-15 items-center ">
           <span className="flex items-center gap-2">
             <TrendingUpDown
@@ -210,25 +237,42 @@ RumDashboardProps) {
           </span>
         </span>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 md:gap-4">
-          <div className="col-span-1">
-            <CitationStatsCard
-              avg_citation_score={citationData?.avg_citation_score ?? 0}
-              min_citation_score={citationData?.min_citation_score ?? 0}
-              max_citation_score={citationData?.max_citation_score ?? 0}
-              std_dev_citation_score={citationData?.std_dev_citation_score ?? 0}
-              avg_ttfb={citationData?.avg_ttfb ?? 0}
-              avg_dom_content_loaded={citationData?.avg_dom_content_loaded ?? 0}
-              ai_citation_possibility={
-                citationData?.ai_citation_possibility ?? "Low"
-              }
-            />
+        {isCitationEmpty ? (
+          <SkeletonCard title="AI Citation & KPIs" />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 md:gap-4">
+            <div className="col-span-1">
+              <CitationStatsCard
+                avg_citation_score={citationData?.avg_citation_score ?? 0}
+                min_citation_score={citationData?.min_citation_score ?? 0}
+                max_citation_score={citationData?.max_citation_score ?? 0}
+                std_dev_citation_score={
+                  citationData?.std_dev_citation_score ?? 0
+                }
+                avg_ttfb={citationData?.avg_ttfb ?? 0}
+                avg_dom_content_loaded={
+                  citationData?.avg_dom_content_loaded ?? 0
+                }
+                ai_citation_possibility={
+                  citationData?.ai_citation_possibility ?? "Low"
+                }
+              />
+            </div>
+            <div className="col-span-2 bg-white border border-accent-foreground/20 dark:bg-secondary-background max-w-full p-4 rounded-sm">
+              {/* Reserved for future chart or fallback */}
+            </div>
           </div>
-          <div className="col-span-2 bg-white border border-accent-foreground/20 dark:bg-secondary-background max-w-full p-4 rounded-sm">
-            {/* <SingleMetricChart data={mixed_metric ?? []} /> */}
-          </div>
-        </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// Simple fallback skeleton component
+function SkeletonCard({}: { title: string }) {
+  return (
+    <div className="flex flex-col gap-2 items-center justify-center text-center my-3 py-12 px-4 border rounded bg-muted/40 dark:bg-muted/20">
+      <LoadingAnimation />
     </div>
   );
 }

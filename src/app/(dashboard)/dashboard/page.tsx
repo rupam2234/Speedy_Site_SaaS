@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useSiteContext } from "./siteContext";
-// import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import WebsitePage from "./helpers/main";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 
@@ -10,7 +9,6 @@ export default function Dashboard() {
   const { selectedSite } = useSiteContext();
   const [showPrompt, setShowPrompt] = useState(false);
 
-  // Wait for 8 seconds before showing "Select a website" message
   useEffect(() => {
     if (!selectedSite) {
       const timeout = setTimeout(() => {
@@ -21,7 +19,6 @@ export default function Dashboard() {
     }
   }, [selectedSite]);
 
-  // Render logic
   if (!selectedSite && !showPrompt) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">

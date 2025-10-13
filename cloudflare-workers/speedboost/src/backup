@@ -1,0 +1,98 @@
+// // Ultra-minimal with PSI optimizations
+// interface Env {
+// 	'SITES-SPEED_BOOST': KVNamespace;
+// }
+// export default {
+// 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+// 		if (request.method !== 'GET') return fetch(request);
+// 		const url = new URL(request.url);
+// 		const host = url.hostname;
+// 		// Parallel checks
+// 		const [isAdmin, isLoggedIn] = await Promise.all([
+// 			Promise.resolve(url.pathname.startsWith('/wp-admin') || url.pathname.startsWith('/wp-login.php') || url.searchParams.has('preview')),
+// 			Promise.resolve(request.headers.get('cookie')?.includes('wordpress_logged_in_') || false),
+// 		]);
+// 		if (isAdmin || isLoggedIn) return fetch(request);
+// 		// Get origin with timeout
+// 		const originPromise = env['SITES-SPEED_BOOST'].get(host);
+// 		const timeoutPromise = new Promise<string | null>((_, reject) => setTimeout(() => reject(new Error('KV timeout')), 100));
+// 		let origin: string | null = null;
+// 		try {
+// 			origin = await Promise.race([originPromise, timeoutPromise]);
+// 		} catch (e) {
+// 			return fetch(request);
+// 		}
+// 		if (!origin) return fetch(request);
+// 		// Fetch from origin with optimizations
+// 		const targetUrl = new URL(url.pathname + url.search, origin);
+// 		const response = await fetch(targetUrl.toString(), {
+// 			cf: {
+// 				cacheEverything: true,
+// 				cacheTtl: 3600,
+// 				// Enable automatic optimizations
+// 				autoMinify: {
+// 					html: true,
+// 					css: true,
+// 					js: true,
+// 				},
+// 				// Enable Brotli compression
+// 				brotli: true,
+// 			},
+// 		});
+// 		// Only process HTML responses for PSI improvements
+// 		const contentType = response.headers.get('Content-Type') || '';
+// 		if (contentType.includes('text/html') && response.status === 200) {
+// 			// Create optimized headers
+// 			const headers = new Headers(response.headers);
+// 			// Remove problematic headers
+// 			headers.delete('Set-Cookie');
+// 			// Set critical PSI headers - less restrictive cache policy
+// 			headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=1800');
+
+// 			// Less restrictive CSP that allows common third-party resources
+// 			headers.set(
+// 				'Content-Security-Policy',
+// 				"default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; " +
+// 					"script-src * 'unsafe-inline' 'unsafe-eval'; " +
+// 					"style-src * 'unsafe-inline'; " +
+// 					'img-src * data: blob:; ' +
+// 					'font-src * data:; ' +
+// 					"connect-src * 'unsafe-inline'; " +
+// 					'frame-src *; ' +
+// 					'media-src *;'
+// 			);
+
+// 			// Add performance headers
+// 			headers.set('X-Content-Type-Options', 'nosniff');
+// 			headers.set('X-Frame-Options', 'SAMEORIGIN');
+// 			headers.set('X-XSS-Protection', '1; mode=block');
+
+// 			// Return optimized response
+// 			return new Response(response.body, {
+// 				status: response.status,
+// 				statusText: response.statusText,
+// 				headers,
+// 			});
+// 		}
+// 		// For non-HTML responses, just set cache headers
+// 		if (response.status === 200) {
+// 			const headers = new Headers(response.headers);
+// 			headers.delete('Set-Cookie');
+// 			// Set cache by content type
+// 			if (contentType.includes('text/css') || contentType.includes('application/javascript')) {
+// 				headers.set('Cache-Control', 'public, max-age=86400, s-maxage=604800');
+// 			} else if (contentType.startsWith('image/')) {
+// 				headers.set('Cache-Control', 'public, max-age=604800, s-maxage=2592000');
+// 			} else {
+// 				headers.set('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+// 			}
+// 			return new Response(response.body, {
+// 				status: response.status,
+// 				statusText: response.statusText,
+// 				headers,
+// 			});
+// 		}
+// 		// Return original response for all other cases
+// 		return response;
+// 	},
+// };

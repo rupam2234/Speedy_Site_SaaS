@@ -9,7 +9,6 @@ import { useSiteContext } from "../../siteContext";
 import RumDashboard, { WebVitalsMetric } from "../helpers/dashboard";
 import { ExperienceData } from "../helpers/ExperienceBar";
 import DashboardToolbar from "@/components/utils/toolbar";
-import { Mixed_metric } from "../helpers/multiMetricChart";
 
 type RawData = {
   device_type: "desktop" | "mobile" | "tablet" | "all";
@@ -29,10 +28,8 @@ export default function RUM() {
   const [happinessData, setHappinessData] = useState<ExperienceData[]>([]);
   const [citationData, setCitationData] = useState<DevicePerformanceData[]>([]);
   const [analyticsData, setAnalyticsData] = useState<RawData[]>([]);
-  // const [mixedMetric, setMixedMetric] = useState<Mixed_metric[]>([]);
 
   const controlledDateRange = "7days";
-  const intDate = rumDateRange === "7days" ? 7 : 7; // default 7 days for mixed_metric
 
   useEffect(() => {
     if (!selectedSite) return;
@@ -81,6 +78,50 @@ export default function RUM() {
     fetchAllData();
   }, [selectedSite, rumDateRange]);
 
+  const metrics = aggregateByDeviceType(analyticsData);
+
+  const selectedCitation = citationData.find(
+    (x) => x.device_type === selectedDevice.toLowerCase()
+  );
+  const selectedAnalytics = metrics.find(
+    (x) => x.device_type === selectedDevice.toLowerCase()
+  );
+
+  // Show loading until all required data is ready
+  if (distdata.length === 0 || happinessData.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+        <LoadingAnimation />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <DashboardToolbar />
+      <div className="m-5">
+        <div className="flex flex-col items-start md:flex-row gap-2 md:items-center md:justify-between">
+          <span className="flex gap-2 items-center">
+            <ChartNoAxesGantt
+              size={30}
+              className="fill-pink-600/30 text-primary/70 dark:text-primary/70"
+            />
+            <h2 className="text-md md:text-2xl font-bold text-primary/90">
+              Weekly Overview
+            </h2>
+          </span>
+        </div>
+
+        <RumDashboard
+          distData={distdata}
+          experienceBarData={happinessData}
+          citationData={selectedCitation}
+          analyticsData={selectedAnalytics}
+        />
+      </div>
+    </>
+  );
+
   function aggregateByDeviceType(data: RawData[]): AggregatedMetrics[] {
     const grouped: Record<string, AggregatedMetrics> = {};
 
@@ -120,54 +161,4 @@ export default function RUM() {
 
     return Object.values(grouped);
   }
-
-  const metrics = aggregateByDeviceType(analyticsData);
-
-  const selectedCitation = citationData.find(
-    (x) => x.device_type === selectedDevice.toLowerCase()
-  );
-  const selectedAnalytics = metrics.find(
-    (x) => x.device_type === selectedDevice.toLowerCase()
-  );
-
-  // Show loading until all required data is ready
-  if (
-    distdata.length === 0 ||
-    happinessData.length === 0
-    // citationData.length === 0
-    // mixedMetric.length === 0
-  ) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
-        <LoadingAnimation />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <DashboardToolbar />
-      <div className="m-5">
-        <div className="flex flex-col items-start md:flex-row gap-2 md:items-center md:justify-between">
-          <span className="flex gap-2 items-center">
-            <ChartNoAxesGantt
-              size={30}
-              className="fill-pink-600/30 text-primary/70 dark:text-primary/70"
-            />
-            <h2 className="text-md md:text-2xl font-bold text-primary/90">
-              Weekly Overview
-            </h2>
-          </span>
-        </div>
-
-        <RumDashboard
-          distData={distdata}
-          experienceBarData={happinessData}
-          citationData={selectedCitation}
-          analyticsData={selectedAnalytics}
-          // mixed_metric={mixedMetric}
-        />
-      </div>
-    </>
-  );
 }

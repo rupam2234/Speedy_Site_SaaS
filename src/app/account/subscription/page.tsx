@@ -233,9 +233,9 @@ function PlanCard({
 }) {
   // stripe price ids
   const priceMap = {
-    Basic: "price_1RxTppD13SZtfFxHtwq6H1kT",
-    Pro: "price_1RxU3yD13SZtfFxHje15nRsQ",
-    Agency: "price_1RxU5gD13SZtfFxHwfIWyvea",
+    Basic: "price_1SHfk8FudyIXBfXkozoK2jmm",
+    Pro: "price_1SHfnpFudyIXBfXkLekhIkoM",
+    Agency: "price_1SHfpXFudyIXBfXkVPU9bgrP",
   };
 
   async function handleSubscribe(priceId: string) {

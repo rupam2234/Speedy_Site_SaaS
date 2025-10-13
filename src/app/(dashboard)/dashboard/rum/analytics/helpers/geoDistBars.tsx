@@ -79,12 +79,14 @@ export default function GeoDistBars({
         return (
           <div
             key={countryCode}
-            className="flex items-center gap-1 mt-1.5"
+            className="flex items-center gap-3 mt-1.5"
             style={{ fontFamily: "sans-serif" }}
           >
-            <div className="w-15 text-sm font-medium flex items-center space-x-2">
-              <span>{flagEmoji}</span>
-              <span>{normalizedCode}</span>
+            <div className=" text-sm font-medium flex items-center space-x-2">
+              <span className="bg-primary/10 py-[3px] rounded px-3">
+                {flagEmoji}
+              </span>
+              {/* <span>{normalizedCode}</span> */}
             </div>
 
             <div className="flex-1 bg-gray-200 dark:bg-black/20 rounded h-[26px] relative overflow-hidden">

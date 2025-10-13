@@ -1,8 +1,8 @@
-import { Helpers } from "@/app/(dashboard)/dashboard/cwv/helper/helperFunc";
+import { Helpers } from "@/app/(dashboard)/dashboard/helpers/helper/helperFunc";
 import { getColor } from "./getColor";
 import { Metric } from "@/data/cruxData";
 
-export type CWVStatus = "passed" | "needs-improvement" | "failed";
+export type CWVStatus = "pass" | "needs-improvement" | "fail";
 
 export interface CWVCheck {
   metricKey: string;
@@ -25,9 +25,9 @@ const METRIC_KEYS: { key: string; label: string }[] = [
 ];
 
 const STATUS_LABELS: Record<CWVStatus, string> = {
-  passed: "Passed",
+  pass: "Pass",
   "needs-improvement": "Needs Improvement",
-  failed: "Failed",
+  fail: "Fail",
 };
 export function getCWVStatus(
   metrics: Record<string, Metric | undefined>
@@ -49,7 +49,7 @@ export function getCWVStatus(
 
   if (allValuesMissing) {
     return {
-      status: "passed", // status stays the same unless you want to add a new one
+      status: "pass", // status stays the same unless you want to add a new one
       label: "N/A", // This is where label changes
       colorClass: "text-muted-foreground",
       checks,
@@ -61,14 +61,14 @@ export function getCWVStatus(
     check.colorClass.includes("yellow")
   );
 
-  let status: CWVStatus = "passed";
-  if (failed) status = "failed";
+  let status: CWVStatus = "pass";
+  if (failed) status = "fail";
   else if (needsImprovement) status = "needs-improvement";
 
   const colorClass =
     checks.find((check) =>
       check.colorClass.includes(
-        status === "failed"
+        status === "fail"
           ? "red"
           : status === "needs-improvement"
           ? "yellow"

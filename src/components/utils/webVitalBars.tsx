@@ -25,10 +25,8 @@ const SegmentedBar: React.FC<SegmentedBarProps> = ({ good, okay, bad }) => {
     { label: "poor", value: bad, width: normalized.bad, color: "#FF9898" },
   ];
 
-  // const isValidP75 = typeof p75 === "number" && p75 >= 0 && p75 <= 100;
-
   return (
-    <div className="w-full mt-7 h-9 relative flex overflow-visible bg-transparent">
+    <div className="w-full mt-4 h-9 relative flex overflow-visible bg-transparent">
       {/* Bar Sections */}
       {sections.map((section, index) => (
         <Tooltip key={index}>

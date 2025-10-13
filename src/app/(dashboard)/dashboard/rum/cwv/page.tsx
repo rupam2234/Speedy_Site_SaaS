@@ -1,17 +1,17 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState, useRef } from "react";
 import DashboardToolbar from "@/components/utils/toolbar";
 import { useSiteContext } from "../../siteContext";
 import Link from "next/link";
 import RumCwvChart from "../helpers/webvitalscharts";
-import { ArrowLeftSquare, ArrowRightSquare } from "lucide-react";
+// import { ArrowLeftSquare, ArrowRightSquare } from "lucide-react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import LCPBreakdownChart from "../helpers/lcpBreakDown";
 import CLSBreakdownChart from "../helpers/clsBreakDown";
 import TTFBBreakdownChart from "../helpers/ttfbBreakDown";
-import INPBreakdownChart from "../helpers/inpBreakdown";
 import FCPBreakdownChart from "../helpers/fcpBreakDown";
+import INPBreakdownChart from "../helpers/inpBreakdown";
 
 interface MetricKey {
   name: string;
@@ -196,8 +196,8 @@ const baseMetrics: MetricKey[] = [
             to abandon unresponsive sites.
           </li>
           <li>
-            Supports higher engagement and retention by reducing the “blank
-            screen” delay during navigation.
+            Supports higher engagement and retention by reducing the &quot;blank
+            screen&quot; delay during navigation.
           </li>
         </ul>
       </div>
@@ -242,6 +242,7 @@ const baseMetrics: MetricKey[] = [
   },
 ];
 
+// Add the missing cwv_ranges constant
 const cwv_ranges = {
   lcp: [2500, 4000],
   fcp: [1800, 3000],
@@ -256,13 +257,24 @@ export default function RumCWV() {
 
   const [activeData, setActiveData] = useState<any[]>([]);
   const [activeMetric, setActiveMetric] = useState<MetricKey>(baseMetrics[1]);
-  const [descTrigger, setDescTrigger] = useState<boolean>(true);
+  const [descTrigger] = useState<boolean>(true);
   const [lcp_analysis, set_lcp_analysis] = useState<any>();
   const [cls_analysis, set_cls_analysis] = useState<any>();
   const [ttfb_analysis, set_ttfb_analysis] = useState<any>();
   const [inp_analysis, set_inp_analysis] = useState<any>();
   const [fcp_analysis, set_fcp_analysis] = useState<any>();
   const [es, setEs] = useState<number | null>(null);
+
+  const cacheRef = useRef<Record<string, { data: any; timestamp: number }>>({});
+  const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+
+  const isCacheValid = (timestamp: number) => {
+    return Date.now() - timestamp < CACHE_EXPIRY;
+  };
+
+  const getCacheKey = (url: string, body: any) => {
+    return `${url}-${JSON.stringify(body)}`;
+  };
 
   useEffect(() => {
     if (selectedSite) {
@@ -359,7 +371,9 @@ export default function RumCWV() {
                     : "bg-primary/5"
                 }`}
               >
-                <p className="text-sm font-medium text-primary/80">{x.name}</p>
+                <p className="text-sm font-medium text-primary dark:text-primary/80">
+                  {x.name}
+                </p>
 
                 <div className="flex items-center gap-4">
                   {x.name === "User Experience Score" && es !== null && (
@@ -367,29 +381,11 @@ export default function RumCWV() {
                   )}
 
                   {x.name !== "User Experience Score" && (
-                    <div className="flex space-y-1 flex-col text-xs text-gray-600 dark:text-primary w-full">
+                    <div className="flex space-y-1 flex-col text-xs dark:text-primary w-full">
                       <span className="font-medium">
                         Value: {x.value?.toFixed(2) ?? "—"}
                         {x.abbreviation === "CLS" ? "" : " ms"}
                       </span>
-
-                      {typeof x.CruX === "number" && (
-                        <span className="flex items-center gap-1">
-                          CrUX: {x.CruX} ms
-                          <span
-                            className={
-                              x.value! < x.CruX
-                                ? "text-green-500"
-                                : x.value! > x.CruX
-                                ? "text-red-500"
-                                : "text-gray-400"
-                            }
-                          >
-                            ({x.value! < x.CruX ? "▲" : "▼"}{" "}
-                            {Math.abs((x.value ?? 0) - (x.CruX ?? 0))} ms)
-                          </span>
-                        </span>
-                      )}
                     </div>
                   )}
                 </div>
@@ -410,9 +406,9 @@ export default function RumCWV() {
                     const position = Math.min((value / poor) * 100, 100);
 
                     // Determine color segment
-                    let color = "bg-red-500";
-                    if (value < good) color = "bg-green-500";
-                    else if (value < poor) color = "bg-yellow-500";
+                    let color = "bg-[#FF9898]";
+                    if (value < good) color = "bg-[#66cc8f]";
+                    else if (value < poor) color = "bg-yellow-500/80";
 
                     return (
                       <div className="relative w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -432,16 +428,16 @@ export default function RumCWV() {
         {/* Main Content */}
         <div className="md:col-span-10 border border-primary/10 rounded-sm bg-primary-foreground dark:bg-secondary-background md:ml-1 p-4">
           <div className="relative flex gap-2 min-w-0 max-h-fit">
-            {!descTrigger && (
+            {/* {!descTrigger && (
               <ArrowRightSquare
                 size={22}
                 className="absolute left-68 top-1 z-10 text-primary/70 dark:text-primary/90 p-[2px] hover:bg-primary/5 cursor-pointer"
                 onClick={toggleDescTrigger}
               />
-            )}
+            )} */}
 
             {/* Description Panel */}
-            <div
+            {/* <div
               className={`transition-all hidden md:block duration-0 ease-in-out overflow-hidden ${
                 descTrigger
                   ? "w-full md:w-[32%] opacity-100"
@@ -488,12 +484,12 @@ export default function RumCWV() {
                 <p className="text-sm underline">Business Impact:</p>
                 <>{activeMetric.impact}</>
               </div>
-            </div>
+            </div> */}
 
             {/* Main Chart Area */}
             <div
               className={`transition-all duration-300 ease-in-out ${
-                descTrigger ? "w-full md:w-[68%]" : "w-full"
+                descTrigger ? "w-full" : "w-full"
               } space-y-2`}
             >
               {["LCP", "FCP", "CLS", "INP", "TTFB"].includes(
@@ -538,21 +534,37 @@ export default function RumCWV() {
     </>
   );
 
-  // Fetch RUM vitals
+  // Fetch RUM vitals with caching
   async function get_rum_vitals() {
     try {
-      const res = await fetch("/api/rum/rum-web-vitals", {
+      const url = "/api/rum/rum-web-vitals";
+      const body = {
+        domain_name: selectedSite,
+        date_range: rumDateRange,
+      };
+
+      const cacheKey = getCacheKey(url, body);
+      const cachedItem = cacheRef.current[cacheKey];
+
+      // Return cached data if valid
+      if (cachedItem && isCacheValid(cachedItem.timestamp)) {
+        setActiveData(cachedItem.data.metrics || []);
+        return;
+      }
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: rumDateRange,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (res.ok) {
         const data: any = await res.json();
-        // Expect: [{ key: 'lcp', latest: 1234, previous: 1250 }, ...]
+        // Cache the response
+        cacheRef.current[cacheKey] = {
+          data,
+          timestamp: Date.now(),
+        };
         setActiveData(data.metrics || []);
       } else {
         setActiveData([]);
@@ -563,9 +575,9 @@ export default function RumCWV() {
     }
   }
 
-  function toggleDescTrigger() {
-    setDescTrigger((prev) => !prev);
-  }
+  // function toggleDescTrigger() {
+  //   setDescTrigger((prev) => !prev);
+  // }
 
   function getUpdatedMetrics(): MetricKey[] {
     if (!activeData || activeData.length === 0) return baseMetrics;
@@ -596,19 +608,37 @@ export default function RumCWV() {
     });
   }
 
+  // Fetch LCP analysis with caching
   async function get_lcp_analysis() {
     try {
-      const res = await fetch("/api/rum/lcp", {
+      const url = "/api/rum/lcp";
+      const body = {
+        domain_name: selectedSite,
+        date_range: "24hours",
+      };
+
+      const cacheKey = getCacheKey(url, body);
+      const cachedItem = cacheRef.current[cacheKey];
+
+      // Return cached data if valid
+      if (cachedItem && isCacheValid(cachedItem.timestamp)) {
+        set_lcp_analysis(cachedItem.data.metrics || []);
+        return;
+      }
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: "24hours",
-        }),
+        body: JSON.stringify(body),
       });
 
       if (res.ok) {
         const data: any = await res.json();
+        // Cache the response
+        cacheRef.current[cacheKey] = {
+          data,
+          timestamp: Date.now(),
+        };
         set_lcp_analysis(data.metrics || []);
       } else {
         set_lcp_analysis([]);
@@ -619,19 +649,37 @@ export default function RumCWV() {
     }
   }
 
+  // Fetch CLS analysis with caching
   async function get_cls_analysis() {
     try {
-      const res = await fetch("/api/rum/cls", {
+      const url = "/api/rum/cls";
+      const body = {
+        domain_name: selectedSite,
+        date_range: "24hours",
+      };
+
+      const cacheKey = getCacheKey(url, body);
+      const cachedItem = cacheRef.current[cacheKey];
+
+      // Return cached data if valid
+      if (cachedItem && isCacheValid(cachedItem.timestamp)) {
+        set_cls_analysis(cachedItem.data.metrics || []);
+        return;
+      }
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: "24hours",
-        }),
+        body: JSON.stringify(body),
       });
 
       if (res.ok) {
         const data: any = await res.json();
+        // Cache the response
+        cacheRef.current[cacheKey] = {
+          data,
+          timestamp: Date.now(),
+        };
         set_cls_analysis(data.metrics || []);
       } else {
         set_cls_analysis([]);
@@ -642,19 +690,37 @@ export default function RumCWV() {
     }
   }
 
+  // Fetch TTFB analysis with caching
   async function get_ttfb_analysis() {
     try {
-      const res = await fetch("/api/rum/ttfb", {
+      const url = "/api/rum/ttfb";
+      const body = {
+        domain_name: selectedSite,
+        date_range: "24hours",
+      };
+
+      const cacheKey = getCacheKey(url, body);
+      const cachedItem = cacheRef.current[cacheKey];
+
+      // Return cached data if valid
+      if (cachedItem && isCacheValid(cachedItem.timestamp)) {
+        set_ttfb_analysis(cachedItem.data.metrics || []);
+        return;
+      }
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: "24hours",
-        }),
+        body: JSON.stringify(body),
       });
 
       if (res.ok) {
         const data: any = await res.json();
+        // Cache the response
+        cacheRef.current[cacheKey] = {
+          data,
+          timestamp: Date.now(),
+        };
         set_ttfb_analysis(data.metrics || []);
       } else {
         set_ttfb_analysis([]);
@@ -665,19 +731,37 @@ export default function RumCWV() {
     }
   }
 
+  // Fetch INP analysis with caching
   async function get_inp_analysis() {
     try {
-      const res = await fetch("/api/rum/inp", {
+      const url = "/api/rum/inp";
+      const body = {
+        domain_name: selectedSite,
+        date_range: "7days",
+      };
+
+      const cacheKey = getCacheKey(url, body);
+      const cachedItem = cacheRef.current[cacheKey];
+
+      // Return cached data if valid
+      if (cachedItem && isCacheValid(cachedItem.timestamp)) {
+        set_inp_analysis(cachedItem.data.metrics || []);
+        return;
+      }
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: "7days",
-        }),
+        body: JSON.stringify(body),
       });
 
       if (res.ok) {
         const data: any = await res.json();
+        // Cache the response
+        cacheRef.current[cacheKey] = {
+          data,
+          timestamp: Date.now(),
+        };
         set_inp_analysis(data.metrics || []);
       } else {
         set_inp_analysis([]);
@@ -688,19 +772,37 @@ export default function RumCWV() {
     }
   }
 
+  // Fetch FCP analysis with caching
   async function get_fcp_analysis() {
     try {
-      const res = await fetch("/api/rum/fcp", {
+      const url = "/api/rum/fcp";
+      const body = {
+        domain_name: selectedSite,
+        date_range: "24hours",
+      };
+
+      const cacheKey = getCacheKey(url, body);
+      const cachedItem = cacheRef.current[cacheKey];
+
+      // Return cached data if valid
+      if (cachedItem && isCacheValid(cachedItem.timestamp)) {
+        set_fcp_analysis(cachedItem.data.metrics || []);
+        return;
+      }
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: "24hours",
-        }),
+        body: JSON.stringify(body),
       });
 
       if (res.ok) {
         const data: any = await res.json();
+        // Cache the response
+        cacheRef.current[cacheKey] = {
+          data,
+          timestamp: Date.now(),
+        };
         set_fcp_analysis(data.metrics || []);
       } else {
         set_fcp_analysis([]);
@@ -799,7 +901,7 @@ function ScoreCircle({ score }: { score: number }) {
   const offset = circumference - (score / 100) * circumference;
 
   return (
-    <div className="relative w-13 h-13">
+    <div className="relative top-[-5px] w-13 h-13">
       <svg
         className="w-full h-full transform -rotate-90"
         viewBox="0 0 36 36"

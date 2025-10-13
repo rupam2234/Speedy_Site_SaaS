@@ -4,7 +4,8 @@ import DashboardToolbar from "@/components/utils/toolbar";
 import React, { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
-import ThirdPartyCategoryPieChart, { DomainData } from "./helpers/chart";
+import ThirdPartyCategoryPieChart from "./helpers/chart";
+import { DomainData } from "./helpers/data";
 
 interface ThirdPartyDomainData {
   site_domain: string;
@@ -23,8 +24,7 @@ export default function ThirdParty() {
   const [classifyData, setClassifyData] = useState<DomainData[] | []>([]);
 
   const lastFetchKey = useRef<string | null>(null);
-  const lastClassifyKey = useRef<string | null>(null); // ✅ To prevent repeated classification
-
+  const lastClassifyKey = useRef<string | null>(null);
   useEffect(() => {
     if (!selectedSite) return;
 
@@ -54,6 +54,29 @@ export default function ThirdParty() {
     return "7days"; // Default fallback
   }
 
+  const activeDomains = ThirdPartyData?.filter(
+    (x) => x.device_type === selectedDevice.toLowerCase()
+  );
+
+  if (ThirdPartyData === null) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+        <LoadingAnimation />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <DashboardToolbar />
+      <div className="min-h-screen p-5">
+        {classifyData.length > 0 && (
+          <ThirdPartyCategoryPieChart data={classifyData} />
+        )}
+      </div>
+    </>
+  );
+
   async function GetThirdPartyData() {
     try {
       const res = await fetch("/api/rum/third-party", {
@@ -70,6 +93,8 @@ export default function ThirdParty() {
 
       const data: any = await res.json();
 
+      console.log(data);
+
       if (selectedSite === data.domain_name) {
         setThirdPartyData(data.metrics);
       } else {
@@ -80,10 +105,6 @@ export default function ThirdParty() {
       setThirdPartyData([]);
     }
   }
-
-  const activeDomains = ThirdPartyData?.filter(
-    (x) => x.device_type === selectedDevice.toLowerCase()
-  );
 
   async function classifyDomains() {
     const filteredDomains =
@@ -122,23 +143,4 @@ export default function ThirdParty() {
       setClassifyData([]);
     }
   }
-
-  if (ThirdPartyData === null) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
-        <LoadingAnimation />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <DashboardToolbar />
-      <div className="min-h-screen p-5">
-        {classifyData.length > 0 && (
-          <ThirdPartyCategoryPieChart data={classifyData} />
-        )}
-      </div>
-    </>
-  );
 }

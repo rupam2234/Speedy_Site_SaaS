@@ -12,7 +12,18 @@ import {
   MousePointerClick,
   Layout,
   Clock,
+  TrendingUp,
+  Target,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  Image as ImageIcon,
+  Type,
+  Monitor,
+  GroupIcon,
+  InfoIcon,
 } from "lucide-react";
+import TooltipIcon from "@/components/utils/customTooltip";
 
 type PerformanceGroup = "good" | "average" | "poor";
 
@@ -39,30 +50,25 @@ interface PageData {
   lcp_targets: Target[];
 }
 
-const performanceTabs: { key: PerformanceGroup; label: ReactNode }[] = [
+const performanceTabs: {
+  key: PerformanceGroup;
+  label: string;
+  icon: ReactNode;
+}[] = [
   {
     key: "good",
-    label: (
-      <span className="flex justify-center items-center gap-2">
-        <Smile size={20} className="fill-green-500/30" /> Good
-      </span>
-    ),
+    label: "Good",
+    icon: <Smile size={16} className="text-green-500" />,
   },
   {
     key: "average",
-    label: (
-      <span className="flex justify-center items-center gap-2">
-        <Meh size={20} className="fill-yellow-500/30" /> Average
-      </span>
-    ),
+    label: "Average",
+    icon: <Meh size={16} className="text-yellow-500" />,
   },
   {
     key: "poor",
-    label: (
-      <span className="flex justify-center items-center gap-2">
-        <Frown size={20} className="fill-red-500/30" /> Poor
-      </span>
-    ),
+    label: "Poor",
+    icon: <Frown size={16} className="text-red-500" />,
   },
 ];
 
@@ -186,7 +192,10 @@ export default function RUMpages() {
     currentPage * itemsPerPage
   );
 
-  const getColor = (metric: number | null, type: "lcp" | "inp" | "cls") => {
+  const getMetricColor = (
+    metric: number | null,
+    type: "lcp" | "inp" | "cls"
+  ) => {
     if (metric == null) return "text-gray-400";
     if (type === "lcp") {
       if (metric <= 2500) return "text-green-600";
@@ -205,6 +214,127 @@ export default function RUMpages() {
     }
   };
 
+  const getMetricStatus = (
+    metric: number | null,
+    type: "lcp" | "inp" | "cls"
+  ) => {
+    if (metric == null)
+      return {
+        status: "Unknown",
+        color: "bg-gray-400",
+        icon: <Info className="w-4 h-4" />,
+      };
+
+    if (type === "lcp") {
+      if (metric <= 2500)
+        return {
+          status: "Good",
+          color: "bg-green-500",
+          icon: <CheckCircle className="w-4 h-4" />,
+        };
+      if (metric <= 4000)
+        return {
+          status: "Average",
+          color: "bg-yellow-500",
+          icon: <TrendingUp className="w-4 h-4" />,
+        };
+      return {
+        status: "Poor",
+        color: "bg-red-500",
+        icon: <AlertTriangle className="w-4 h-4" />,
+      };
+    }
+    if (type === "inp") {
+      if (metric <= 200)
+        return {
+          status: "Good",
+          color: "bg-green-500",
+          icon: <CheckCircle className="w-4 h-4" />,
+        };
+      if (metric <= 500)
+        return {
+          status: "Average",
+          color: "bg-yellow-500",
+          icon: <TrendingUp className="w-4 h-4" />,
+        };
+      return {
+        status: "Poor",
+        color: "bg-red-500",
+        icon: <AlertTriangle className="w-4 h-4" />,
+      };
+    }
+    if (type === "cls") {
+      if (metric <= 0.1)
+        return {
+          status: "Good",
+          color: "bg-green-500",
+          icon: <CheckCircle className="w-4 h-4" />,
+        };
+      if (metric <= 0.25)
+        return {
+          status: "Average",
+          color: "bg-yellow-500",
+          icon: <TrendingUp className="w-4 h-4" />,
+        };
+      return {
+        status: "Poor",
+        color: "bg-red-500",
+        icon: <AlertTriangle className="w-4 h-4" />,
+      };
+    }
+    return {
+      status: "Unknown",
+      color: "bg-gray-400",
+      icon: <Info className="w-4 h-4" />,
+    };
+  };
+
+  const getMetricIcon = (type: "LCP" | "INP" | "CLS") => {
+    switch (type) {
+      case "LCP":
+        return <Clock className="w-5 h-5" />;
+      case "INP":
+        return <MousePointerClick className="w-5 h-5" />;
+      case "CLS":
+        return <Layout className="w-5 h-5" />;
+    }
+  };
+
+  const getTargetIcon = (target: string) => {
+    const lower = target.toLowerCase();
+    if (
+      lower.includes("img") ||
+      lower.includes("jpg") ||
+      lower.includes("png") ||
+      lower.includes("webp")
+    ) {
+      return <ImageIcon className="w-4 h-4" />;
+    }
+    if (
+      lower.includes("button") ||
+      lower.includes("click") ||
+      lower.includes("cta")
+    ) {
+      return <Target className="w-4 h-4" />;
+    }
+    if (
+      lower.includes("font") ||
+      lower.includes("h1") ||
+      lower.includes("h2") ||
+      lower.includes("title")
+    ) {
+      return <Type className="w-4 h-4" />;
+    }
+    if (
+      lower.includes("header") ||
+      lower.includes("nav") ||
+      lower.includes("footer")
+    ) {
+      return <Layout className="w-4 h-4" />;
+    }
+    return <Monitor className="w-4 h-4" />;
+  };
+
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -218,280 +348,432 @@ export default function RUMpages() {
     setExpandedRow((prev) => (prev === index ? null : index));
   };
 
+  const getMetricSuggestions = (
+    type: "LCP" | "INP" | "CLS",
+    targets: Target[]
+  ) => {
+    if (targets.length === 0) {
+      return "No specific targets identified. Focus on general performance improvements.";
+    }
+
+    if (type === "LCP") {
+      return "Optimize image loading, set explicit dimensions, and use modern formats (WebP/AVIF) for better LCP.";
+    }
+    if (type === "INP") {
+      return "Reduce JavaScript execution time, break up long tasks, and optimize event handlers for better INP.";
+    }
+    if (type === "CLS") {
+      return "Reserve space for dynamic content, set explicit dimensions, and avoid layout shifts for better CLS.";
+    }
+    return "Review performance metrics and implement targeted optimizations.";
+  };
+
   return (
     <>
       <DashboardToolbar />
+
+      <div className="px-5 font-semibold text-lg flex gap-2 text-primary/80 items-center">
+        <GroupIcon size={20} />
+        <h2>Page Groups</h2>
+        <TooltipIcon
+          content="Page groups helps you identify pages with specific elements causing performance bottlenecks"
+          trigger={<InfoIcon size={16} className="text-primary/80" />}
+          delay={300}
+          side="right"
+        />
+      </div>
+
       <div className="min-h-screen p-5">
         <div className="w-auto">
-          <div className="flex gap-2 mb-4">
-            {performanceTabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => {
-                  setActiveTab(tab.key);
-                  setCurrentPage(1);
-                  setExpandedRow(null);
-                }}
-                className={`py-2 px-4 rounded-sm font-medium transition-all duration-300 flex-1 text-center ${
-                  activeTab === tab.key
-                    ? "bg-primary/50 dark:bg-secondary-background/50 text-white"
-                    : "bg-primary/30 dark:bg-secondary-background text-primary/60 "
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          {/* Tabs with page counts */}
+          <div className="flex gap-2 mb-6">
+            {performanceTabs.map((tab) => {
+              const count = grouped[tab.key].length;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => {
+                    setActiveTab(tab.key);
+                    setCurrentPage(1);
+                    setExpandedRow(null);
+                  }}
+                  className={`py-2 px-4 rounded-md font-medium transition-colors duration-200 flex-1 text-center ${
+                    activeTab === tab.key
+                      ? "bg-white dark:bg-secondary-background text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  <div className="flex gap-2 justify-center items-center">
+                    <div className="flex items-center justify-center">
+                      {tab.icon}
+                      <span className="ml-2 font-medium">{tab.label}</span>
+                    </div>
+                    <div className="text-lg font-bold">{count}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      page{count !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           {/* Table */}
-          <div className="dark:bg-secondary-background bg-gray-200/10 text-primary overflow-x-auto transition-all duration-300">
-            <table className="min-w-full table-fixed divide-y divide-gray-50">
-              <thead className="dark:bg-secondary-background/30 bg-gray-500/10 border-b-primary">
-                <tr>
-                  <th className="w-1/12 px-6 py-3 text-left text-xs font-semibold uppercase">
-                    S.No
-                  </th>
-                  <th className="w-4/12 px-6 py-3 text-left text-xs font-semibold uppercase">
-                    URL
-                  </th>
-                  <th className="w-2/12 px-6 py-3 text-left text-xs font-semibold uppercase">
-                    Visits
-                  </th>
-                  <th
-                    onClick={() => handleSort("avg_lcp_ms")}
-                    className="w-2/12 px-6 py-3 text-left text-xs font-semibold uppercase cursor-pointer"
-                  >
-                    LCP{" "}
-                    {sortKey === "avg_lcp_ms" &&
-                      (sortDirection === "asc" ? "↑" : "↓")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("avg_inp_ms")}
-                    className="w-2/12 px-6 py-3 text-left text-xs font-semibold uppercase cursor-pointer"
-                  >
-                    INP{" "}
-                    {sortKey === "avg_inp_ms" &&
-                      (sortDirection === "asc" ? "↑" : "↓")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("avg_cls")}
-                    className="w-1/12 px-6 py-3 text-left text-xs font-semibold uppercase cursor-pointer"
-                  >
-                    CLS{" "}
-                    {sortKey === "avg_cls" &&
-                      (sortDirection === "asc" ? "↑" : "↓")}
-                  </th>
-                  <th className="w-1/12 px-6 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {paginatedData.map((page, idx) => {
-                  const rowIndex = (currentPage - 1) * itemsPerPage + idx;
-                  const isExpanded = expandedRow === rowIndex;
-                  return (
-                    <React.Fragment key={idx}>
-                      <tr
-                        className="dark:hover:bg-secondary-background/30 bg-gray-200/10 hover:bg-gray-300/20 cursor-pointer"
-                        onClick={() => toggleRow(rowIndex)}
-                      >
-                        <td className="px-6 py-4 text-sm text-primary">
-                          {rowIndex + 1}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-primary font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[250px]">
-                          {page.current_page}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-primary">
-                          {page.visit_count}
-                        </td>
-                        <td
-                          className={`px-6 py-4 text-sm font-medium ${getColor(
-                            page.avg_lcp_ms,
-                            "lcp"
-                          )}`}
+          <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700/50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      S.No
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      URL
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Visits
+                    </th>
+                    <th
+                      onClick={() => handleSort("avg_lcp_ms")}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                    >
+                      <div className="flex items-center">
+                        LCP{" "}
+                        {sortKey === "avg_lcp_ms" &&
+                          (sortDirection === "asc" ? "↑" : "↓")}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("avg_inp_ms")}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                    >
+                      <div className="flex items-center">
+                        INP{" "}
+                        {sortKey === "avg_inp_ms" &&
+                          (sortDirection === "asc" ? "↑" : "↓")}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("avg_cls")}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                    >
+                      <div className="flex items-center">
+                        CLS{" "}
+                        {sortKey === "avg_cls" &&
+                          (sortDirection === "asc" ? "↑" : "↓")}
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-secondary-background divide-y divide-gray-200 dark:divide-gray-700">
+                  {paginatedData.map((page, idx) => {
+                    const rowIndex = (currentPage - 1) * itemsPerPage + idx;
+                    const isExpanded = expandedRow === rowIndex;
+                    return (
+                      <React.Fragment key={idx}>
+                        <tr
+                          className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors duration-150 ${
+                            isExpanded ? "bg-gray-50 dark:bg-gray-700/30" : ""
+                          }`}
+                          onClick={() => toggleRow(rowIndex)}
                         >
-                          {page.avg_lcp_ms
-                            ? `${(page.avg_lcp_ms / 1000).toFixed(2)} s`
-                            : "N/A"}
-                        </td>
-                        <td
-                          className={`px-6 py-4 text-sm font-medium ${getColor(
-                            page.avg_inp_ms,
-                            "inp"
-                          )}`}
-                        >
-                          {page.avg_inp_ms
-                            ? `${page.avg_inp_ms.toFixed(0)} ms`
-                            : "N/A"}
-                        </td>
-                        <td
-                          className={`px-6 py-4 text-sm font-medium ${getColor(
-                            page.avg_cls,
-                            "cls"
-                          )}`}
-                        >
-                          {page.avg_cls?.toFixed(2) ?? "N/A"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-primary">
-                          {isExpanded ? (
-                            <ChevronUp size={18} />
-                          ) : (
-                            <ChevronDown size={18} />
-                          )}
-                        </td>
-                      </tr>
-                      {isExpanded && (
-                        <tr className="dark:bg-secondary-background/10 bg-gray-100/10 transition-all duration-300">
-                          <td colSpan={7} className="px-8 py-6">
-                            <div className="max-w-4xl mx-auto bg-primary-foreground dark:bg-secondary-background/20 rounded-sm border border-primary/10 dark:border-gray-700 p-6">
-                              {/* Tabs for Metrics */}
-                              <div className="flex gap-3 mb-6 border-b border-gray-200 dark:border-gray-700">
-                                {[
-                                  {
-                                    key: "LCP",
-                                    label: "LCP",
-                                    icon: (
-                                      <Clock
-                                        size={16}
-                                        className="inline mr-2"
-                                      />
-                                    ),
-                                  },
-                                  {
-                                    key: "INP",
-                                    label: "INP",
-                                    icon: (
-                                      <MousePointerClick
-                                        size={16}
-                                        className="inline mr-2"
-                                      />
-                                    ),
-                                  },
-                                  {
-                                    key: "CLS",
-                                    label: "CLS",
-                                    icon: (
-                                      <Layout
-                                        size={16}
-                                        className="inline mr-2"
-                                      />
-                                    ),
-                                  },
-                                ].map((metric) => (
-                                  <button
-                                    key={metric.key}
-                                    onClick={() =>
-                                      setActiveMetric(
-                                        metric.key as unknown as
-                                          | "LCP"
-                                          | "INP"
-                                          | "CLS"
-                                      )
-                                    }
-                                    className={`flex items-center px-4 py-2 rounded-t-md text-sm font-medium transition-all duration-200 ${
-                                      activeMetric === metric.key
-                                        ? "bg-primary/10 text-primary border-b-2 border-primary"
-                                        : "text-primary/60 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary"
-                                    }`}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                            {rowIndex + 1}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate">
+                            {page.current_page}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {page.visit_count}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex items-center">
+                              {page.avg_lcp_ms ? (
+                                <>
+                                  <span
+                                    className={`mr-2 ${getMetricColor(
+                                      page.avg_lcp_ms,
+                                      "lcp"
+                                    )}`}
                                   >
-                                    {metric.icon}
-                                    {metric.label} Components
-                                  </button>
-                                ))}
-                              </div>
+                                    {(page.avg_lcp_ms / 1000).toFixed(2)}s
+                                  </span>
+                                  <div
+                                    className={`w-2 h-2 rounded-full ${
+                                      getMetricStatus(page.avg_lcp_ms, "lcp")
+                                        .color
+                                    }`}
+                                  />
+                                </>
+                              ) : (
+                                <span className="text-gray-400">N/A</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex items-center">
+                              {page.avg_inp_ms ? (
+                                <>
+                                  <span
+                                    className={`mr-2 ${getMetricColor(
+                                      page.avg_inp_ms,
+                                      "inp"
+                                    )}`}
+                                  >
+                                    {page.avg_inp_ms.toFixed(0)}ms
+                                  </span>
+                                  <div
+                                    className={`w-2 h-2 rounded-full ${
+                                      getMetricStatus(page.avg_inp_ms, "inp")
+                                        .color
+                                    }`}
+                                  />
+                                </>
+                              ) : (
+                                <span className="text-gray-400">N/A</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex items-center">
+                              {page.avg_cls ? (
+                                <>
+                                  <span
+                                    className={`mr-2 ${getMetricColor(
+                                      page.avg_cls,
+                                      "cls"
+                                    )}`}
+                                  >
+                                    {page.avg_cls.toFixed(3)}
+                                  </span>
+                                  <div
+                                    className={`w-2 h-2 rounded-full ${
+                                      getMetricStatus(page.avg_cls, "cls").color
+                                    }`}
+                                  />
+                                </>
+                              ) : (
+                                <span className="text-gray-400">N/A</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                              {isExpanded ? (
+                                <ChevronUp size={18} />
+                              ) : (
+                                <ChevronDown size={18} />
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr className="bg-gray-50 dark:bg-gray-700/20">
+                            <td colSpan={7} className="px-6 py-4">
+                              <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                                {/* Tabs for Metrics */}
+                                <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                                  {[
+                                    {
+                                      key: "LCP",
+                                      label: "LCP Components",
+                                      icon: <Clock className="w-4 h-4" />,
+                                    },
+                                    {
+                                      key: "INP",
+                                      label: "INP Components",
+                                      icon: (
+                                        <MousePointerClick className="w-4 h-4" />
+                                      ),
+                                    },
+                                    {
+                                      key: "CLS",
+                                      label: "CLS Components",
+                                      icon: <Layout className="w-4 h-4" />,
+                                    },
+                                  ].map((metric) => (
+                                    <button
+                                      key={metric.key}
+                                      onClick={() =>
+                                        setActiveMetric(
+                                          metric.key as unknown as
+                                            | "LCP"
+                                            | "INP"
+                                            | "CLS"
+                                        )
+                                      }
+                                      className={`flex items-center px-4 py-2 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                                        activeMetric === metric.key
+                                          ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                                          : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                      }`}
+                                    >
+                                      {metric.icon}
+                                      <span className="ml-2">
+                                        {metric.label}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
 
-                              {/* Metric Content */}
-                              <div className="mt-4 animate-fade-in">
-                                <ul className="list-disc pl-6 text-base text-primary/80 space-y-3">
+                                {/* Metric Summary */}
+                                <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                                  <div className="flex items-start">
+                                    {getMetricIcon(activeMetric)}
+                                    <div className="ml-3">
+                                      <h4 className="text-sm font-medium text-indigo-800 dark:text-indigo-200">
+                                        {activeMetric} Analysis
+                                      </h4>
+                                      <p className="mt-1 text-sm text-indigo-700 dark:text-indigo-300">
+                                        {getMetricSuggestions(
+                                          activeMetric,
+                                          activeMetric === "LCP"
+                                            ? page.lcp_targets
+                                            : activeMetric === "INP"
+                                            ? page.inp_targets
+                                            : page.cls_targets
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Targets List */}
+                                <div className="space-y-3">
+                                  <h5 className="text-sm font-medium text-gray-900 dark:text-white">
+                                    Key {activeMetric} Elements
+                                  </h5>
                                   {activeMetric === "LCP" &&
                                     (page.lcp_targets.length > 0 ? (
                                       page.lcp_targets.map((target, i) => (
-                                        <li
+                                        <div
                                           key={i}
-                                          className="transition-opacity duration-200"
+                                          className="flex overflow-hidden items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
                                         >
-                                          {target.target}
-                                        </li>
+                                          <div className="flex-shrink-0">
+                                            {getTargetIcon(target.target)}
+                                          </div>
+                                          <div className="ml-3 flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                              {target.target}
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                              {target.count} occurrence
+                                              {target.count !== 1 ? "s" : ""}
+                                            </p>
+                                          </div>
+                                        </div>
                                       ))
                                     ) : (
-                                      <li className="text-primary/60">
-                                        No LCP key components identified
-                                      </li>
+                                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                                        No LCP elements identified
+                                      </div>
                                     ))}
                                   {activeMetric === "INP" &&
                                     (page.inp_targets.length > 0 ? (
                                       page.inp_targets.map((target, i) => (
-                                        <li
+                                        <div
                                           key={i}
-                                          className="transition-opacity duration-200"
+                                          className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
                                         >
-                                          {target.target}
-                                        </li>
+                                          <div className="flex-shrink-0">
+                                            {getTargetIcon(target.target)}
+                                          </div>
+                                          <div className="ml-3 flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                              {target.target}
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                              {target.count} occurrence
+                                              {target.count !== 1 ? "s" : ""}
+                                            </p>
+                                          </div>
+                                        </div>
                                       ))
                                     ) : (
-                                      <li className="text-primary/60">
-                                        No INP key components identified
-                                      </li>
+                                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                                        No INP elements identified
+                                      </div>
                                     ))}
                                   {activeMetric === "CLS" &&
                                     (page.cls_targets.length > 0 ? (
                                       page.cls_targets.map((target, i) => (
-                                        <li
+                                        <div
                                           key={i}
-                                          className="transition-opacity duration-200"
+                                          className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
                                         >
-                                          {target.target}
-                                        </li>
+                                          <div className="flex-shrink-0">
+                                            {getTargetIcon(target.target)}
+                                          </div>
+                                          <div className="ml-3 flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                              {target.target}
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                              {target.count} occurrence
+                                              {target.count !== 1 ? "s" : ""}
+                                            </p>
+                                          </div>
+                                        </div>
                                       ))
                                     ) : (
-                                      <li className="text-primary/60">
-                                        No CLS key components identified
-                                      </li>
+                                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                                        No CLS elements identified
+                                      </div>
                                     ))}
-                                </ul>
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-                {paginatedData.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-8 text-center text-primary/70"
-                    >
-                      No data available for this performance group.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center mt-6 space-x-2 text-sm">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 rounded bg-gray-100 text-primary hover:bg-gray-200 disabled:opacity-50"
-              >
-                Prev
-              </button>
-              <span className="text-primary">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                }
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 rounded bg-gray-100 text-primary hover:bg-gray-200 disabled:opacity-50"
-              >
-                Next
-              </button>
+            <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white dark:bg-secondary-background border border-gray-200 dark:border-gray-700 rounded-lg">
+              <div className="text-sm text-gray-700 dark:text-gray-300">
+                Showing{" "}
+                <span className="font-medium">
+                  {(currentPage - 1) * itemsPerPage + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-medium">
+                  {Math.min(currentPage * itemsPerPage, sortedData.length)}
+                </span>{" "}
+                of <span className="font-medium">{sortedData.length}</span>{" "}
+                results
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-secondary-background border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-secondary-background border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </div>

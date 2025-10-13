@@ -192,7 +192,6 @@ function initializeWebVitals() {
 
 document.addEventListener("DOMContentLoaded", () => {
   aiCitationMetrics.domContentLoaded = performance.now();
-  // Retry unsent data from previous sessions
   const unsent = localStorage.getItem("unsentMetrics");
   if (unsent) {
     navigator.sendBeacon(CONFIG.API_URL, unsent);
@@ -443,7 +442,7 @@ const thirdPartyDomainTimings = {};
 
 function isProblematicDomain(data) {
   return (
-    data.count >= 1 &&
+    data.count > 0 &&
     (data.averageDuration > 3000 ||
       data.maxDuration > 5000 ||
       data.averageTTFB > 800 ||
@@ -452,52 +451,89 @@ function isProblematicDomain(data) {
   );
 }
 
+function safeTTFB(entry) {
+  if (
+    typeof entry.responseStart === "number" &&
+    typeof entry.fetchStart === "number"
+  ) {
+    const ttfb = entry.responseStart - entry.fetchStart;
+    return ttfb >= 0 && isFinite(ttfb) ? ttfb : null;
+  }
+  return null;
+}
+
 new PerformanceObserver((list) => {
   for (const entry of list.getEntries()) {
+    const { name, initiatorType } = entry;
+
     if (
-      entry.name.includes("://") &&
-      !entry.name.includes(location.hostname) &&
+      name.includes("://") &&
+      !name.includes(location.hostname) &&
       ["script", "img", "link", "iframe", "font", "video", "audio"].includes(
-        entry.initiatorType
+        initiatorType
       )
     ) {
       try {
-        const url = new URL(entry.name);
-        if (url.hostname) {
-          thirdPartyAssetDomains.add(url.hostname);
-          thirdPartyAssetTypes.add(entry.initiatorType);
+        const url = new URL(name);
+        const domain = url.hostname;
+        if (!domain) continue;
 
-          if (!thirdPartyDomainTimings[url.hostname]) {
-            thirdPartyDomainTimings[url.hostname] = {
-              count: 0,
-              totalDuration: 0,
-              maxDuration: 0,
-              totalTransferSize: 0,
-              totalEncodedBodySize: 0,
-              totalTTFB: 0,
-              maxTTFB: 0,
-              countTTFB: 0,
-            };
-          }
+        // Initialize if first time
+        if (!thirdPartyDomainTimings[domain]) {
+          thirdPartyDomainTimings[domain] = {
+            count: 0,
+            totalDuration: 0,
+            maxDuration: 0,
+            totalTransferSize: 0,
+            totalEncodedBodySize: 0,
+            totalTTFB: 0,
+            maxTTFB: 0,
+            countTTFB: 0,
+          };
+        }
 
-          const domainData = thirdPartyDomainTimings[url.hostname];
-          domainData.count += 1;
-          domainData.totalDuration += entry.duration || 0;
-          domainData.maxDuration = Math.max(
-            domainData.maxDuration,
-            entry.duration || 0
-          );
-          domainData.totalTransferSize += entry.transferSize || 0;
-          domainData.totalEncodedBodySize += entry.encodedBodySize || 0;
+        const ttfb = safeTTFB(entry);
+        const duration = entry.duration || 0;
+        const transferSize = entry.transferSize || 0;
+        const encodedSize = entry.encodedBodySize || 0;
 
-          const resourceTTFB =
-            entry.responseStart && entry.fetchStart
-              ? entry.responseStart - entry.fetchStart
-              : 0;
+        const domainData = thirdPartyDomainTimings[domain];
+        domainData.count += 1;
+        domainData.totalDuration += duration;
+        domainData.maxDuration = Math.max(domainData.maxDuration, duration);
+        domainData.totalTransferSize += transferSize;
+        domainData.totalEncodedBodySize += encodedSize;
 
-          domainData.totalTTFB += resourceTTFB;
-          domainData.maxTTFB = Math.max(domainData.maxTTFB, resourceTTFB);
+        if (ttfb !== null) {
+          domainData.totalTTFB += ttfb;
+          domainData.maxTTFB = Math.max(domainData.maxTTFB, ttfb);
           domainData.countTTFB += 1;
+        }
+
+        // Calculate averages for filtering
+        const averageDuration = domainData.totalDuration / domainData.count;
+        const averageTTFB = domainData.countTTFB
+          ? domainData.totalTTFB / domainData.countTTFB
+          : 0;
+
+        // Create a temporary data object to check if domain is problematic
+        const checkData = {
+          count: domainData.count,
+          averageDuration,
+          maxDuration: domainData.maxDuration,
+          totalTransferSize: domainData.totalTransferSize,
+          averageTTFB,
+          maxTTFB: domainData.maxTTFB,
+        };
+
+        if (isProblematicDomain(checkData)) {
+          thirdPartyAssetDomains.add(domain);
+          thirdPartyAssetTypes.add(initiatorType);
+        } else {
+          // Remove domain if no longer problematic
+          thirdPartyAssetDomains.delete(domain);
+          // Optionally remove types if no domains left for that type (optional)
+          // You could add logic here if needed
         }
       } catch (error) {
         console.warn(`Invalid URL in resource entry: ${entry.name}`, error);
@@ -505,6 +541,7 @@ new PerformanceObserver((list) => {
     }
   }
 }).observe({ type: "resource", buffered: true });
+
 
 function getDeviceType() {
   const w = window.innerWidth;
@@ -605,13 +642,15 @@ function flushMetrics() {
     if (latestMetrics.INP || maxCustomEntry) {
       let inpAttribution = {};
       if (maxCustomEntry && maxCustomEntry.target) {
-        const inputDelay = maxCustomEntry.processingStart - maxCustomEntry.startTime;
+        const inputDelay =
+          maxCustomEntry.processingStart - maxCustomEntry.startTime;
         const processingTime = maxCustomEntry.duration - inputDelay;
         inpAttribution = {
           target: summarizeElement(maxCustomEntry.target),
           eventType: maxCustomEntry.name,
           inputDelay: isNaN(inputDelay) || inputDelay < 0 ? 0 : inputDelay,
-          processingTime: isNaN(processingTime) || processingTime < 0 ? 0 : processingTime,
+          processingTime:
+            isNaN(processingTime) || processingTime < 0 ? 0 : processingTime,
           presentationDelay: 0,
         };
       } else if (webVitalsINP && webVitalsINP.attribution) {

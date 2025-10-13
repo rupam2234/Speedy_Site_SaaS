@@ -1,4 +1,4 @@
-import { ChevronRight, HeartPulse, LucideIcon, Settings2 } from "lucide-react";
+import { ChevronRight, LucideIcon, Settings2 } from "lucide-react";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -19,7 +19,7 @@ import { LayoutDashboardIcon } from "lucide-react";
 export default function MainNav({
   NavItems,
   DashboardItems,
-  WebVitals,
+  // WebVitals,
   Settings,
 }: {
   NavItems: {
@@ -40,12 +40,12 @@ export default function MainNav({
     isActive: false;
   };
 
-  WebVitals: {
-    title: "Core Web Vitals";
-    url: string;
-    icon: typeof HeartPulse;
-    isActive: false;
-  };
+  // WebVitals: {
+  //   title: "Core Web Vitals";
+  //   url: string;
+  //   icon: typeof HeartPulse;
+  //   isActive: false;
+  // };
 
   Settings: {
     title: "Settings";
@@ -69,7 +69,7 @@ export default function MainNav({
               </a>
             </CollapsibleTrigger>
           </SidebarMenuItem>
-          <SidebarMenuItem>
+          {/* <SidebarMenuItem>
             <CollapsibleTrigger asChild>
               <a href={WebVitals.url} title={WebVitals.title}>
                 <SidebarMenuButton tooltip={WebVitals.title}>
@@ -78,7 +78,7 @@ export default function MainNav({
                 </SidebarMenuButton>
               </a>
             </CollapsibleTrigger>
-          </SidebarMenuItem>
+          </SidebarMenuItem> */}
         </Collapsible>
       </SidebarMenu>
 

@@ -4,7 +4,6 @@ import {
   Activity,
   CreditCard,
   FlaskConical,
-  HeartPulse,
   LayoutDashboardIcon,
   Settings2,
   User2Icon,
@@ -201,12 +200,12 @@ export default function AppSidebar({
             icon: LayoutDashboardIcon,
             isActive: false,
           }}
-          WebVitals={{
-            title: "Core Web Vitals",
-            url: `/dashboard/cwv?site=${selectedSite}`,
-            icon: HeartPulse,
-            isActive: false,
-          }}
+          // WebVitals={{
+          //   title: "Core Web Vitals",
+          //   url: `/dashboard/cwv?site=${selectedSite}`,
+          //   icon: HeartPulse,
+          //   isActive: false,
+          // }}
           Settings={{
             title: "Settings",
             url: `/dashboard/settings?site=${selectedSite}`,

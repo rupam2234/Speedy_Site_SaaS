@@ -36,9 +36,9 @@ type SiteContextType = {
   setExperienceType: (experienceType: "p75" | "Distribution") => void;
   rumDistribution: "p50" | "p75" | "p90" | "p95" | "p99";
   setRumDistribution: (rumDist: "p50" | "p75" | "p90" | "p95" | "p99") => void;
-  selectedGeoType: "Visitors" | "By Countries" | "User Happiness";
+  selectedGeoType: "Visitors" | "Share" | "User Happiness";
   setSelectedGeoType: (
-    selectedGeoType: "Visitors" | "By Countries" | "User Happiness"
+    selectedGeoType: "Visitors" | "Share" | "User Happiness"
   ) => void;
   selectedAnalyticsDate:
     | "yesterday"
@@ -127,7 +127,7 @@ export default function SiteContextProvider({
     | "thisYear"
   >("30days");
   const [selectedGeoType, setSelectedGeoType] = useState<
-    "Visitors" | "By Countries" | "User Happiness"
+    "Visitors" | "Share" | "User Happiness"
   >("Visitors");
 
   const user = useSupabaseUser();

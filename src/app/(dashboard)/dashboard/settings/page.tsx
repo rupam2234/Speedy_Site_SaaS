@@ -25,6 +25,11 @@ export default function SettingsPage() {
     fetchDomainData(selectedSite);
   }, [selectedSite]);
 
+  const handleRefetch = () => {
+    sessionStorage.removeItem("orders");
+    fetchOrders();
+  };
+
   const formattedDate = new Date(siteData?.order_date ?? "").toLocaleString(
     "en-GB",
     {
@@ -38,66 +43,6 @@ export default function SettingsPage() {
       timeZone: "UTC",
     }
   );
-
-  async function handleCopy(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(text);
-      setTimeout(() => setCopied(""), 1500);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async function fetchDomainData(selectedSite: string) {
-    if (!selectedSite) return;
-
-    try {
-      const response = await fetch("/api/orders/get-single-site", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: selectedSite }),
-      });
-
-      if (!response.ok) {
-        console.error("Error fetching site data:", response.statusText);
-        setSiteData(undefined);
-        return;
-      }
-
-      const data: any = await response.json();
-      setSiteData(data.data[0]);
-    } catch (error) {
-      console.error("Network or server error:", error);
-    }
-  }
-
-  const handleRefetch = () => {
-    sessionStorage.removeItem("orders");
-    fetchOrders();
-  };
-
-  async function handleDelete() {
-    if (!selectedSite) return;
-
-    const res = await fetch("/api/orders/delete-site", {
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-      body: JSON.stringify({ domain: selectedSite }),
-    });
-
-    if (!res.ok) {
-      toast.error("Unexpected error in deleting website", {
-        style: { backgroundColor: "#FF9898", color: "white" },
-      });
-      return;
-    }
-
-    toast.success("Website deleted", {
-      style: { backgroundColor: "#66cc8f", color: "white" },
-    });
-    handleRefetch();
-  }
 
   if (!selectedSite) {
     return (
@@ -204,4 +149,59 @@ export default function SettingsPage() {
       </div>
     </div>
   );
+
+  async function handleCopy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(text);
+      setTimeout(() => setCopied(""), 1500);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function fetchDomainData(selectedSite: string) {
+    if (!selectedSite) return;
+
+    try {
+      const response = await fetch("/api/orders/get-single-site", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain: selectedSite }),
+      });
+
+      if (!response.ok) {
+        console.error("Error fetching site data:", response.statusText);
+        setSiteData(undefined);
+        return;
+      }
+
+      const data: any = await response.json();
+      setSiteData(data.data[0]);
+    } catch (error) {
+      console.error("Network or server error:", error);
+    }
+  }
+
+  async function handleDelete() {
+    if (!selectedSite) return;
+
+    const res = await fetch("/api/orders/delete-site", {
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      body: JSON.stringify({ domain: selectedSite }),
+    });
+
+    if (!res.ok) {
+      toast.error("Unexpected error in deleting website", {
+        style: { backgroundColor: "#FF9898", color: "white" },
+      });
+      return;
+    }
+
+    toast.success("Website deleted", {
+      style: { backgroundColor: "#66cc8f", color: "white" },
+    });
+    handleRefetch();
+  }
 }
