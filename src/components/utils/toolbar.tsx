@@ -30,17 +30,18 @@ export default function DashboardToolbar() {
     setRumDateRange,
   } = useSiteContext();
 
+  const overView = pathname === "/dashboard";
   const rumOverview = pathname === `/dashboard/rum/overview`;
-  const isLab =
-    pathname.includes("/dashboard/pages") ||
-    pathname.includes("/dashboard/cwv");
+  // const isLab =
+  //   pathname.includes("/dashboard/pages") ||
+  //   pathname.includes("/dashboard/cwv");
   const isOnRum =
     pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv`;
   const pageGroupsRum =
     pathname === "/dashboard/rum/pages" ||
     pathname === "/dashboard/rum/third-party";
   const isRumPath = pathname.includes("rum");
-  const isJourney = pathname === "/dashboard/funnels";
+  // const isJourney = pathname === "/dashboard/funnels";
 
   const DateRangeData: DateRangeProps[] = isRumPath
     ? [
@@ -185,7 +186,7 @@ export default function DashboardToolbar() {
   return (
     <div className="flex flex-col md:flex-row p-5 w-full items-start gap-3 md:justify-between bg-transparent">
       <div className="flex gap-3 md:items-center items-start flex-col md:flex-row">
-        {rumOverview && !isLab && (
+        {rumOverview && (
           <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
@@ -206,7 +207,7 @@ export default function DashboardToolbar() {
           </div>
         )}
 
-        {!rumOverview && !isLab && !isJourney && (
+        {!rumOverview && !overView && (
           <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
@@ -227,7 +228,7 @@ export default function DashboardToolbar() {
           </div>
         )}
 
-        {isLab && !rumOverview && (
+        {overView && (
           <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
@@ -248,7 +249,28 @@ export default function DashboardToolbar() {
           </div>
         )}
 
-        {isJourney && (
+        {/* {isLab && !rumOverview && (
+          <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
+            <div className="flex gap-2 w-full items-center px-2">
+              <MonitorSmartphone size={18} className="mr-2" />
+              {["Desktop", "Mobile"].map((device) => (
+                <button
+                  key={device}
+                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                    selectedDevice === device
+                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                      : ``
+                  }`}
+                  onClick={() => selectDevice(device as any)}
+                >
+                  {device}
+                </button>
+              ))}
+            </div>
+          </div>
+        )} */}
+
+        {/* {isJourney && (
           <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
             <div className="flex gap-2 w-full items-center px-2">
               <MonitorSmartphone size={18} className="mr-2" />
@@ -267,9 +289,9 @@ export default function DashboardToolbar() {
               ))}
             </div>
           </div>
-        )}
+        )} */}
 
-        {isOnRum && (
+        {isOnRum && !overView && (
           <div className="flex items-center gap-2">
             <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
               <div className="flex justify-between items-center pl-2 py-[2px] w-full">
@@ -316,7 +338,7 @@ export default function DashboardToolbar() {
         )}
       </div>
 
-      {!rumOverview && !isJourney && (
+      {!rumOverview && !overView && (
         <div className="p-[2px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
           <Select value={selectedRangeId} onValueChange={setSelectedRangeId}>
             <SelectTrigger className="px-4 py-0 text-end text-sm ring-0 text-primary focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background font-medium rounded-sm bg-transparent border-none focus:ring-0 focus:outline-none">

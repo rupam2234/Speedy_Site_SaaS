@@ -1,7 +1,13 @@
 "use client";
 
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import { Bookmark, CircleCheck, HeartPulse, InfoIcon } from "lucide-react";
+import {
+  Bookmark,
+  CircleCheck,
+  HeartPulse,
+  History,
+  InfoIcon,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { getColor } from "@/lib/cwv_helper/getColor";
 import { getCWVStatus } from "@/lib/cwv_helper/checkCwvStatus";
@@ -13,7 +19,7 @@ import { cwv_metrics } from "./helper/cwvMetrics";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import DashboardToolbar from "@/components/utils/toolbar";
 import TooltipIcon from "@/components/utils/customTooltip";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { fetchCrUXData } from "@/app/api/external/fetch_crux";
 import ChartComponent from "./helper/cwvChart";
 import DistributionChart from "./helper/distributionChart";
@@ -64,7 +70,7 @@ export default function WebsitePage() {
   const [unit, setUnit] = useState<string>("");
   const [latestMetric, setlatestMetric] = useState<number | string>(); // state for managing the latest metric data for daily card
   const [CruxChange, setCruxChange] = useState<number>(0);
-  const router = useRouter();
+  // const router = useRouter();
 
   const helper = new Helpers();
 
@@ -266,9 +272,12 @@ export default function WebsitePage() {
           </div>
         </section>
       </div>
-      <div className="flex flex-1 flex-col gap-3 px-5">
+      <div className="flex flex-1 flex-col gap-3 pb-11 px-5 max-h-screen">
         {/* Origin Web Vital Section */}
-        <h2 className="font-semibold text-primary/80 text-[18px]">History</h2>
+        <span className="flex gap-2 items-center text-primary/80">
+          <History size={22} />
+          <h2 className="font-semibold text-[18px]">History</h2>
+        </span>
         {/* Render charts and controls */}
         <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
           <div className="relative pt-7 col-span-1 order-2 md:order-1 overflow-hidden overflow-x-clip md:col-span-7 w-full border-gray-500/20 dark:bg-secondary-background bg-primary-foreground border rounded-sm px-4">
@@ -436,25 +445,6 @@ export default function WebsitePage() {
             </div>
           </div>
         </div>
-        {/* Link to page groups */}
-        <div
-          className="relative group w-fit cursor-pointer inline-block border dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 px-4 py-2"
-          onClick={handleClick}
-        >
-          <p className="z-10 relative text-sm font-medium">
-            Explore Page Groups
-          </p>
-
-          {/* Sliding text on hover */}
-          <p
-            className="absolute top-1/2 -translate-y-1/2 left-full whitespace-nowrap 
-               translate-x-0 opacity-0 group-hover:translate-x-2 group-hover:opacity-100 
-               transition-all duration-500 ease-in-out"
-          >
-            → Discover core web vitals for individual pages grouped as Good,
-            Okay and Poor so you know where to focus.
-          </p>
-        </div>
       </div>
     </>
   );
@@ -476,13 +466,13 @@ export default function WebsitePage() {
     return classString.replace(/(\b(?:dark:)?)(text)(-)/g, "$1border$3");
   }
 
-  function handleClick() {
-    if (router) {
-      router.push(`/dashboard/rum/pages?site=${selectedSite}`, {
-        scroll: true,
-      });
-    }
-  }
+  // function handleClick() {
+  //   if (router) {
+  //     router.push(`/dashboard/rum/pages?site=${selectedSite}`, {
+  //       scroll: true,
+  //     });
+  //   }
+  // }
 
   function handleExperience(type: string) {
     setExperienceType(type === "p75" ? "p75" : "Distribution");

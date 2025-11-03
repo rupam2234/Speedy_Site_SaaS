@@ -5,6 +5,7 @@ import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import {
   Calendar,
   ChartColumn,
+  ChartPie,
   GalleryThumbnails,
   Globe,
   Lightbulb,
@@ -23,15 +24,7 @@ import GeoDistBars from "./helpers/geoDistBars";
 import HappinessMap from "./helpers/happinessMap";
 import { countryDistribution, overviewApi } from "./cf-apis/calls";
 import TooltipIcon from "@/components/utils/customTooltip";
-
-// LLM traffic breakdown by platform/tool
-const llmPlatforms = [
-  { platform: "ChatGPT", visitors: 278, avgSession: "4:05", br: 71 },
-  { platform: "Perplexity", visitors: 125, avgSession: "3:12", br: 81 },
-  { platform: "Gemini", visitors: 91, avgSession: "5:01", br: 86 },
-  { platform: "Copilot", visitors: 67, avgSession: "2:30", br: 83 },
-  { platform: "Other", visitors: 40, avgSession: "2:55", br: 89 },
-];
+import TrafficSource from "./helpers/trafficSource";
 
 // Top pages from LLM traffic
 const llmTopPages = [
@@ -83,6 +76,9 @@ export default function AnalyticsDashboard() {
   >([]);
   const [combinedData, setCombinedData] = useState<any>({});
   const [selectedDevice, setSelectedDevice] = useState("All");
+  const [activeSource, setActiveSource] = useState<
+    "All Traffic" | "LLM Traffic"
+  >("All Traffic");
 
   useEffect(() => {
     fetchOverview();
@@ -209,11 +205,39 @@ export default function AnalyticsDashboard() {
         ))}
       </section>
 
-      {/* Top Referals & regions */}
+      {/* Top Referrals & regions */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-5 my-10">
-        <div className="col-span-1 bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
-          Traffic Sources
+        <div className="col-span-1 relative bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
+          {/* Traffic Source */}
+          <div className="flex gap-2 mb-[30px]">
+            <span>
+              <ChartPie className="text-primary dark:text-primary" />
+            </span>
+            <div className="flex items-center text-primary dark:text-primary font-semibold gap-2">
+              <span>Traffic Sources</span>
+            </div>
+          </div>
+          <div className="absolute top-5 right-5">
+            {["All Traffic", "LLM Traffic"].map((x: string) => (
+              <button
+                className={`mx-2 cursor-pointer hover:underline hover:underline-offset-4 hover:[text-decoration-color:#bdbdbe] ${
+                  activeSource === x &&
+                  `underline underline-offset-4 [text-decoration-color:#bdbdbe]`
+                }`}
+                onClick={() => handleActiveSource(x)}
+                key={x}
+              >
+                {x}
+              </button>
+            ))}
+          </div>
+          {activeSource === "All Traffic" ? (
+            <TrafficSource activeDevice={selectedDevice} />
+          ) : (
+            <></>
+          )}
         </div>
+        {/* Geo Distribution */}
         <div className="col-span-1 bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-primary/80 flex gap-2 items-center">
@@ -298,7 +322,7 @@ export default function AnalyticsDashboard() {
       </section>
 
       {/* LLM Platform Table */}
-      <section
+      {/* <section
         className={"bg-white rounded-2xl shadow p-6 mb-8 flex flex-col gap-4"}
       >
         <h2 className="text-xl font-semibold mb-3 text-gray-800">
@@ -327,14 +351,14 @@ export default function AnalyticsDashboard() {
             ))}
           </tbody>
         </table>
-      </section>
+      </section> */}
 
       {/* Top pages for LLM */}
       <section
         className={"bg-white rounded-2xl shadow p-6 mb-8 flex flex-col gap-4"}
       >
         <h2 className="text-xl font-semibold mb-3 text-gray-800">
-          📄 Top LLM Landing Pages
+          📄 Top Landing Pages
         </h2>
         <table className="w-full text-sm">
           <thead>
@@ -526,5 +550,9 @@ export default function AnalyticsDashboard() {
 
   function handleGeoType(active: string) {
     setSelectedGeoType(active as "Visitors" | "Share" | "User Happiness");
+  }
+
+  function handleActiveSource(source: string) {
+    setActiveSource(source as "All Traffic" | "LLM Traffic");
   }
 }

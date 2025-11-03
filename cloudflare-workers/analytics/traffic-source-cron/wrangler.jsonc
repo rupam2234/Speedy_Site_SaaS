@@ -1,0 +1,29 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "traffic-source-cron",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-10-24",
+	"observability": {
+		"enabled": true
+	},
+
+	"vars": {
+		"SUPABASE_URL": "https://tmpvygehhshrgsqxzaty.supabase.co",
+		"SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcHZ5Z2VoaHNocmdzcXh6YXR5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNTg5MzA0NSwiZXhwIjoyMDUxNDY5MDQ1fQ.JhZfXtfo1Q1KhPDz-I4cbkAJo8ElHYEceb5stZLxfh8",
+		"API_SECRET": "secret_for_speedy_site"
+	},
+
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "speedy_site_rum",
+			"database_id": "be29cfc0-1133-4b53-bb42-02c1639d23ab"
+		}
+	],
+
+	"placement": { "mode": "smart" },
+
+	"triggers": {
+		"crons": ["0 * * * *"]
+	}
+}
