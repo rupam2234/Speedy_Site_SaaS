@@ -1,3 +1,5 @@
+"use client";
+
 import { ModelMessage, streamText } from "ai";
 import * as readline from "node:readline/promises";
 import { LcpImageMetric } from "../lcp-images/page";

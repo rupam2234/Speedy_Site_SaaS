@@ -10,6 +10,7 @@ import React, {
   useCallback,
   useEffect,
   useRef,
+  Suspense,
 } from "react";
 
 type SiteContextType = {
@@ -213,7 +214,7 @@ export default function SiteContextProvider({
   useEffect(() => {
     if (!user?.id) return;
 
-    const siteFromUrl = new URLSearchParams(window.location.search).get("site");
+    const siteFromUrl = new URL(window.location.href).searchParams.get("site");
 
     // Check if this userId + siteFromUrl combination has already triggered fetchOrders
     if (
@@ -229,37 +230,39 @@ export default function SiteContextProvider({
   }, [user?.id, fetchOrders]);
 
   return (
-    <SiteContext.Provider
-      value={{
-        orders,
-        setOrders,
-        selectedSite,
-        setSelectedSite,
-        fetchOrders,
-        dailyCrux,
-        setDailyCrux,
-        selectedDevice,
-        setSelectedDevice,
-        cruxData,
-        setCruxData,
-        dateRange,
-        setDateRange: updateDateRange,
-        collapsed,
-        setCollapsed,
-        experienceType,
-        setExperienceType,
-        rumDistribution,
-        setRumDistribution,
-        rumDateRange,
-        setRumDateRange,
-        selectedAnalyticsDate,
-        setSelectedAnalyticsDate,
-        selectedGeoType,
-        setSelectedGeoType,
-      }}
-    >
-      {children}
-    </SiteContext.Provider>
+    <Suspense>
+      <SiteContext.Provider
+        value={{
+          orders,
+          setOrders,
+          selectedSite,
+          setSelectedSite,
+          fetchOrders,
+          dailyCrux,
+          setDailyCrux,
+          selectedDevice,
+          setSelectedDevice,
+          cruxData,
+          setCruxData,
+          dateRange,
+          setDateRange: updateDateRange,
+          collapsed,
+          setCollapsed,
+          experienceType,
+          setExperienceType,
+          rumDistribution,
+          setRumDistribution,
+          rumDateRange,
+          setRumDateRange,
+          selectedAnalyticsDate,
+          setSelectedAnalyticsDate,
+          selectedGeoType,
+          setSelectedGeoType,
+        }}
+      >
+        {children}
+      </SiteContext.Provider>
+    </Suspense>
   );
 }
 

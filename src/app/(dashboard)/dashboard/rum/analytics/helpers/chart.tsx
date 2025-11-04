@@ -1,21 +1,12 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import React from "react";
+import { MapContainer, GeoJSON } from "react-leaflet";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import styles from "../helpers/tooltip.module.css";
 import "leaflet/dist/leaflet.css";
 import type { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
 import { alpha2ToAlpha3, alpha3ToAlpha2 } from "./countryCodes";
-
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const GeoJSON = dynamic(
-  () => import("react-leaflet").then((mod) => mod.GeoJSON),
-  { ssr: false }
-);
 
 type TrafficEntry = {
   device_type: "desktop" | "mobile" | "tablet" | "all";
@@ -31,6 +22,12 @@ export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
   const [geoJsonData, setGeoJsonData] =
     React.useState<FeatureCollection<Geometry> | null>(null);
   const { theme } = useTheme();
+  const [isClient, setIsClient] = React.useState(false);
+
+  // 🧩 Make sure we're in the browser before rendering the map
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Convert traffic data to Alpha-3 keyed record
   const trafficByCountry: Record<string, number> = React.useMemo(() => {
@@ -149,11 +146,16 @@ export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
     });
   };
 
+  // ⛔️ Prevent rendering on server to avoid window/document issues
+  if (!isClient) {
+    return <div className="w-full h-[350px] bg-transparent" />;
+  }
+
   return (
     <div className="w-full h-[350px] bg-transparent relative z-0">
       <style>{`.leaflet-control-attribution { display: none !important; }`}</style>
       <MapContainer
-        key={theme + deviceType}
+        // key={theme + deviceType}
         center={[40, 0]}
         zoom={1}
         dragging

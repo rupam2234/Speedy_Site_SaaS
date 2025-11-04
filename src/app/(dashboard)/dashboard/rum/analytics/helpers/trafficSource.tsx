@@ -9,7 +9,6 @@ interface TrafficSourceProps {
 }
 
 export default function TrafficSource({ activeDevice }: TrafficSourceProps) {
-  const activeSite = new URL(window.location.href).searchParams.get("site");
   const { selectedSite, selectedAnalyticsDate } = useSiteContext();
   const [originalTrafficData, setOriginalTrafficData] = useState<any[]>([]);
   const [trafficData, setTrafficData] = useState<any[]>([]);
@@ -41,10 +40,10 @@ export default function TrafficSource({ activeDevice }: TrafficSourceProps) {
     const filteredData =
       deviceType !== "all"
         ? originalTrafficData
-            .filter((x: any) => x.referral_domain !== activeSite)
+            .filter((x: any) => x.referral_domain !== selectedSite)
             .filter((x: any) => x.device_type.toLowerCase() === deviceType)
         : originalTrafficData.filter(
-            (x: any) => x.referral_domain !== activeSite
+            (x: any) => x.referral_domain !== selectedSite
           );
 
     // add the repeated domain count

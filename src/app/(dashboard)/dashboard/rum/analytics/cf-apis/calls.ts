@@ -1,3 +1,5 @@
+"use client";
+
 interface ApiProps {
   time_range:
     | "yesterday"

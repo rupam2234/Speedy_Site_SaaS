@@ -1,3 +1,5 @@
+"use client";
+
 import TooltipIcon from "@/components/utils/customTooltip";
 import React from "react";
 
