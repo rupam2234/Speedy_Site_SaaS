@@ -26,25 +26,23 @@ export async function POST(request: Request) {
         p_domain: domain_name,
         p_date_range: date_range,
       }),
-      supabase.rpc("get_analytics_by_device_and_country", {
-        p_time_range: date_range,
-        p_domain_name: domain_name,
-      }),
-      supabase.rpc("get_ai_citation", {
-        p_domain_name: domain_name,
-      }),
+      // supabase.rpc("get_analytics_by_device_and_country", {
+      //   p_time_range: date_range,
+      //   p_domain_name: domain_name,
+      // }),
+      // supabase.rpc("get_ai_citation", {
+      //   p_domain_name: domain_name,
+      // }),
     ]);
 
-    const [happiness, vitals, analytics, citation] = results;
+    const [happiness, vitals] = results;
 
     // Handle errors
     const failed = results
       .map((res, idx) =>
         res.status === "rejected" || res.value?.error
           ? {
-              rpc: ["user_happiness", "web_vitals", "analytics", "ai_citation"][
-                idx
-              ],
+              rpc: ["user_happiness", "web_vitals"][idx],
               reason:
                 res.status === "rejected"
                   ? res.reason?.message || res.reason
@@ -72,8 +70,8 @@ export async function POST(request: Request) {
         metrics: {
           userHappiness: (happiness as PromiseFulfilledResult<any>).value.data,
           webVitals: (vitals as PromiseFulfilledResult<any>).value.data,
-          analytics: (analytics as PromiseFulfilledResult<any>).value.data,
-          ai_citation: (citation as PromiseFulfilledResult<any>).value.data,
+          // analytics: (analytics as PromiseFulfilledResult<any>).value.data,
+          // ai_citation: (citation as PromiseFulfilledResult<any>).value.data,
         },
       },
       {

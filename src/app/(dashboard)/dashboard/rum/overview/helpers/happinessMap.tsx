@@ -6,8 +6,6 @@ import type { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
 import { alpha2ToAlpha3, alpha3ToAlpha2 } from "./countryCodes";
 import ReactDOMServer from "react-dom/server";
 import { MapContainer, GeoJSON } from "react-leaflet";
-// import TooltipIcon from "@/components/utils/customTooltip";
-// import { Lightbulb } from "lucide-react";
 
 export type HappinessData = {
   collection_date: string;

@@ -1,94 +1,432 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
-import { ChartNoAxesGantt } from "lucide-react";
-import { AggregatedMetrics } from "../helpers/analyticsOverview";
-import { DevicePerformanceData } from "../helpers/ai_citation";
+import {
+  Calendar,
+  ChartColumn,
+  ChartPie,
+  ChartScatter,
+  GalleryThumbnails,
+  Globe,
+  Heart,
+  InfoIcon,
+  Lightbulb,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useSiteContext } from "../../siteContext";
-import RumDashboard, { WebVitalsMetric } from "../helpers/dashboard";
-import { ExperienceData } from "../helpers/ExperienceBar";
-import DashboardToolbar from "@/components/utils/toolbar";
+import GeoDistBars from "./helpers/geoDistBars";
+import { countryDistribution, overviewApi } from "./cf-apis/calls";
+import TooltipIcon from "@/components/utils/customTooltip";
+import TrafficSource from "./helpers/trafficSource";
+import dynamic from "next/dynamic";
+import WebVitalsOverview from "./helpers/webVitals";
 
-type RawData = {
-  device_type: "desktop" | "mobile" | "tablet" | "all";
-  country: string;
-  total_page_views: number;
+const CountryTrafficMap = dynamic(
+  () => import("./helpers/trafficMapContainer"),
+  {
+    ssr: false,
+  }
+);
+
+const HappinessMap = dynamic(() => import("./helpers/happinessMap"), {
+  ssr: false,
+});
+
+// Top pages from LLM traffic
+const llmTopPages = [
+  { page: "/blog/ai-analytics", visitors: 201, bounce: "40%", conv: 12 },
+  { page: "/features", visitors: 98, bounce: "28%", conv: 7 },
+  { page: "/docs/api", visitors: 65, bounce: "34%", conv: 5 },
+  { page: "/pricing", visitors: 38, bounce: "23%", conv: 2 },
+];
+
+type overviewMetrics = {
+  date_collected: string;
+  domain_name: string;
+  device_type: string;
+  total_pageviews: number;
   total_sessions: number;
-  unique_visitors: number;
-  unique_languages: number;
-  bounce_rate_percentage: number;
   avg_pages_per_session: number;
+  bounce_rate: number;
+  llm_traffic: number;
+  llm_traffic_percentage: number;
 };
 
-export default function RUM() {
-  const { selectedSite, selectedDevice, rumDateRange } = useSiteContext();
+const deviceOptions = ["All", "Desktop", "Mobile", "Tablet"];
 
-  const [distdata, setDistData] = useState<WebVitalsMetric[]>([]);
-  const [happinessData, setHappinessData] = useState<ExperienceData[]>([]);
-  const [citationData, setCitationData] = useState<DevicePerformanceData[]>([]);
-  const [analyticsData, setAnalyticsData] = useState<RawData[]>([]);
+const dateRangeOptions = [
+  { label: "Today", value: "today" },
+  { label: "Yesterday", value: "yesterday" },
+  { label: "Last 7 Days", value: "last7days" },
+  { label: "30 Days", value: "30days" },
+  { label: "This Month", value: "thisMonth" },
+  { label: "Last Month", value: "lastMonth" },
+  { label: "Last 6 Months", value: "last6Months" },
+  { label: "This Year", value: "year" },
+];
 
-  const controlledDateRange = "7days";
+export default function AnalyticsDashboard() {
+  const {
+    selectedSite,
+    selectedGeoType,
+    setSelectedGeoType,
+    selectedAnalyticsDate,
+    setSelectedAnalyticsDate,
+    selectedDevice,
+    setSelectedDevice,
+    rumDistribution,
+    setRumDistribution,
+  } = useSiteContext();
+  const [overvewMetrics, setOverviewMetrics] = useState<overviewMetrics[]>([]);
+  const [happinessData, setHappinessData] = useState<any>([]);
+  const [countryDist, setCountryDist] = useState<any>([]);
+  const [totalMetricsOverview, setTotalMetricOverview] = useState<
+    { label: string; value: string; change: string }[]
+  >([]);
+  const [combinedData, setCombinedData] = useState<any>({});
+  // const [selectedDevice, setSelectedDevice] = useState("All");
+  const [activeSource, setActiveSource] = useState<
+    "All Traffic" | "LLM Traffic"
+  >("All Traffic");
+
+  useEffect(() => {
+    fetchOverview();
+    fetchCountryDistribution();
+  }, [selectedSite, selectedAnalyticsDate]);
+
+  useEffect(() => {
+    if (overvewMetrics.length) {
+      const filteredMetrics =
+        selectedDevice === "All"
+          ? overvewMetrics
+          : overvewMetrics.filter(
+              (metric) =>
+                metric.device_type.toLowerCase() ===
+                selectedDevice.toLowerCase()
+            );
+      calculateOverviewStats(filteredMetrics);
+    }
+  }, [overvewMetrics, selectedDevice]);
+
+  useEffect(() => {
+    if (countryDist) {
+      const newCombinedData = CountryDistributions(countryDist);
+      setCombinedData(newCombinedData);
+    }
+  }, [countryDist, selectedDevice]);
 
   useEffect(() => {
     if (!selectedSite) return;
+    const delay = 3000; // 3 sec
+    const timer = setTimeout(() => {
+      fetchUserHappinesGeo();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [selectedSite]);
 
-    async function fetchAllData() {
-      try {
-        const [liveRes] = await Promise.all([
-          fetch("/api/rum/dashboard", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              domain_name: selectedSite,
-              date_range: controlledDateRange,
-            }),
-          }),
-          // fetch("/api/rum/dashboard/mixed-metric", {
-          //   method: "POST",
-          //   headers: { "Content-Type": "application/json" },
-          //   body: JSON.stringify({
-          //     domain_name: selectedSite,
-          //     date_range: intDate,
-          //   }),
-          // }),
-        ]);
-
-        if (!liveRes.ok) throw new Error("Failed to fetch RUM data");
-
-        const live: any = await liveRes.json();
-        // const mixed: any = await mixedRes.json();
-
-        setDistData(live?.metrics?.webVitals || []);
-        setHappinessData(live?.metrics?.userHappiness || []);
-        setCitationData(live?.metrics?.ai_citation || []);
-        setAnalyticsData(live?.metrics?.analytics || []);
-        // setMixedMetric(mixed?.metrics || []);
-      } catch (error) {
-        console.error("Error loading RUM data:", error);
-        setDistData([]);
-        setHappinessData([]);
-        setCitationData([]);
-        setAnalyticsData([]);
-        // setMixedMetric([]);
-      }
-    }
-
-    fetchAllData();
-  }, [selectedSite, rumDateRange]);
-
-  const metrics = aggregateByDeviceType(analyticsData);
-
-  const selectedCitation = citationData.find(
-    (x) => x.device_type === selectedDevice.toLowerCase()
-  );
-  const selectedAnalytics = metrics.find(
-    (x) => x.device_type === selectedDevice.toLowerCase()
-  );
-
-  // Show loading until all required data is ready
-  if (distdata.length === 0 || happinessData.length === 0) {
+  if (totalMetricsOverview.length !== 0 || overvewMetrics.length !== 0) {
+    return (
+      <div className="min-h-screen p-5">
+        {/* Header */}
+        <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center md:gap-6">
+            {/* Title */}
+            <div className="flex gap-2 items-center text-xl font-semibold text-primary border px-4 py-1 rounded-lg border-amber-500/20">
+              <ChartColumn className="fill-amber-300 text-primary dark:text-primary/50" />
+              <h2>Overview</h2>
+            </div>
+            {/* Device selection */}
+            <div className="flex items-center gap-2">
+              <GalleryThumbnails className="text-primary/70 font-semibold" />
+              <Select
+                value={selectedDevice}
+                onValueChange={(
+                  value: "Desktop" | "Mobile" | "Tablet" | "All"
+                ) => setSelectedDevice(value)}
+              >
+                <SelectTrigger className="w-[180px] cursor-pointer ring-0 border-[1px] border-primary/10 focus-visible:ring-0 focus-visible:border-primary/10">
+                  <SelectValue placeholder="Select a device" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-secondary-background">
+                  <SelectGroup>
+                    {deviceOptions.map((device) => (
+                      <SelectItem key={device} value={device}>
+                        {device}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Distribution selection */}
+            <div className="flex gap-2 items-center">
+              <Select
+                value={rumDistribution}
+                onValueChange={setRumDistribution}
+              >
+                <SelectTrigger className="py-0 cursor-pointer border-[1px] border-primary/10 rounded-md shadow-2xs dark:bg-secondary-background hover:dark:bg-secondary-background">
+                  <span className="text-primary flex gap-2 items-center font-medium text-[14px]">
+                    <ChartScatter size={16} className="text-primary/80" />
+                    {rumDistribution}
+                  </span>
+                </SelectTrigger>
+                <SelectContent
+                  className="min-w-[--radix-select-trigger-width] p-0 dark:bg-secondary-background"
+                  side="bottom"
+                  align="center"
+                >
+                  <SelectGroup>
+                    {["p50", "p75", "p90", "p95", "p99"].map((x, index) => (
+                      <SelectItem key={index} value={x}>
+                        {x}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <TooltipIcon
+                content={
+                  "Percentiles help normalize performance by showing real user experiences. P50 shows the median (typical) experience, P75 is used in Core Web Vitals to represent the majority of users, and higher percentiles like P90 or P99 highlight slower experiences at the tail end. These help uncover issues that averages or medians might miss."
+                }
+                maxWidth="16rem"
+                side="bottom"
+                trigger={
+                  <InfoIcon
+                    className="bg-transparent hover:bg-primary/5 text-primary/50 p-[2px] rounded-full"
+                    size={22}
+                  />
+                }
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="text-primary/70 font-semibold" size={20} />
+            <Select
+              value={selectedAnalyticsDate}
+              onValueChange={(value) =>
+                setSelectedAnalyticsDate(value as typeof selectedAnalyticsDate)
+              }
+            >
+              <SelectTrigger className="w-[180px] ring-0 border-[1px] border-primary/10 focus-visible:ring-0 focus-visible:border-primary/10">
+                <SelectValue placeholder="Select date range" />
+              </SelectTrigger>
+              <SelectContent className="dark:bg-secondary-background">
+                <SelectGroup>
+                  {dateRangeOptions.map(({ label, value }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        {/* Stats Cards */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {totalMetricsOverview.map((stat) => (
+            <div
+              key={stat.label}
+              className="bg-white dark:bg-secondary-background rounded-lg shadow hover:shadow-lg px-6 py-5 flex flex-col items-center text-center"
+            >
+              <span className="uppercase font-bold text-xs tracking-wider mb-1 text-primary/80">
+                {stat.label}
+              </span>
+              <span className="text-3xl font-extrabold text-primary mb-1">
+                {stat.value}
+              </span>
+              <span
+                className={`text-sm ${
+                  stat.change.startsWith("+")
+                    ? "text-green-600"
+                    : "text-rose-600"
+                } font-semibold`}
+              >
+                {stat.change}
+              </span>
+            </div>
+          ))}
+        </section>
+        {/* web vital overview section */}
+        <section>
+          <div className="font-semibold text-primary flex gap-2 items-center">
+            <span>
+              <Heart className="fill-pink-500 text-primary dark:text-primary-foreground" />
+            </span>
+            <h3 className="text-[19px]">Web Vitals (RUM)</h3>
+            <TooltipIcon
+              content={
+                "This is not Google's core web vital data but real-time experience analysis of your site's traffic that closely resembles to CWV, to help you take decision and fix issues before they start appearing on Core Web Vital. (The data only includes from the past 7 days only and un-affected by the date setting at the top right)"
+              }
+              delay={300}
+              side="bottom"
+              trigger={<InfoIcon size={16} />}
+            />
+          </div>
+          <WebVitalsOverview
+            selectedSite={selectedSite}
+            selectedDevice={selectedDevice}
+            fixedDateRange={"7days"}
+            rumDistribution={rumDistribution}
+          />
+        </section>
+        {/* Top Referrals & regions */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-5 my-10">
+          <div className="col-span-1 relative bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
+            {/* Traffic Source */}
+            <div className="flex gap-2 mb-[30px]">
+              <span>
+                <ChartPie className="text-primary dark:text-primary" />
+              </span>
+              <div className="flex items-center text-primary dark:text-primary font-semibold gap-2">
+                <span>Traffic Sources</span>
+              </div>
+            </div>
+            <div className="absolute top-5 right-5">
+              {["All Traffic", "LLM Traffic"].map((x: string) => (
+                <button
+                  className={`mx-2 cursor-pointer hover:underline hover:underline-offset-4 hover:[text-decoration-color:#bdbdbe] ${
+                    activeSource === x &&
+                    `underline underline-offset-4 [text-decoration-color:#bdbdbe]`
+                  }`}
+                  onClick={() => handleActiveSource(x)}
+                  key={x}
+                >
+                  {x}
+                </button>
+              ))}
+            </div>
+            {activeSource === "All Traffic" ? (
+              <TrafficSource activeDevice={selectedDevice} />
+            ) : (
+              <></>
+            )}
+          </div>
+          {/* Geo Distribution */}
+          <div className="col-span-1 bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-primary/80 flex gap-2 items-center">
+                <span>
+                  <Globe className="fill-blue-300 text-primary dark:text-primary-foreground" />
+                </span>
+                <div className="flex items-center gap-2">
+                  <span>Geo Distribution</span>
+                </div>
+                {selectedGeoType === "User Happiness" ? (
+                  <div className="">
+                    <TooltipIcon
+                      content={
+                        "If your user happiness scores vary significantly across regions, it's a sign that performance isn't consistent worldwide. To address this, try our Global Performance Booster — a CDN wrapper designed to reduce regional latency and improve metrics like TTFB. You can find it in the left panel under Enhancements > Boost TTFB."
+                      }
+                      trigger={
+                        <Lightbulb size={16} className="fill-yellow-200" />
+                      }
+                      delay={300}
+                      side="bottom"
+                    />
+                  </div>
+                ) : (
+                  <></>
+                )}
+              </h3>
+              <div className="flex gap-4 items-center">
+                {["Visitors", "Share", "User Happiness"].map((x, index) => (
+                  <button
+                    key={index}
+                    className={`bg-transparent hover:underline decoration-primary/30 underline-offset-4 cursor-pointer ${
+                      selectedGeoType === x ? "underline" : ""
+                    }`}
+                    onClick={() => handleGeoType(x)}
+                  >
+                    {x}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="py-8 h-[380px]">
+              {selectedGeoType === "Visitors" ? (
+                <CountryTrafficMap
+                  trafficData={combinedData}
+                  deviceType={
+                    selectedDevice === "Desktop"
+                      ? "desktop"
+                      : selectedDevice === "Mobile"
+                      ? "mobile"
+                      : selectedDevice === "Tablet"
+                      ? "tablet"
+                      : "all"
+                  }
+                />
+              ) : selectedGeoType === "Share" ? (
+                <GeoDistBars
+                  trafficData={combinedData}
+                  deviceType={
+                    selectedDevice === "Desktop"
+                      ? "desktop"
+                      : selectedDevice === "Mobile"
+                      ? "mobile"
+                      : selectedDevice === "Tablet"
+                      ? "tablet"
+                      : "all"
+                  }
+                />
+              ) : (
+                <HappinessMap
+                  deviceType={
+                    selectedDevice.toLowerCase() as unknown as
+                      | "desktop"
+                      | "mobile"
+                      | "tablet"
+                      | "all"
+                  }
+                  trafficData={happinessData.length > 0 ? happinessData : []}
+                />
+              )}
+            </div>
+          </div>
+        </section>
+        {/* Top pages for LLM */}
+        <section
+          className={"bg-white rounded-2xl shadow p-6 mb-8 flex flex-col gap-4"}
+        >
+          <h2 className="text-xl font-semibold mb-3 text-gray-800">
+            📄 Top Landing Pages
+          </h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="py-2 px-2 font-medium">Page</th>
+                <th className="py-2 px-2 font-medium">Visitors</th>
+                <th className="py-2 px-2 font-medium">Bounce Rate</th>
+                <th className="py-2 px-2 font-medium">Conversions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {llmTopPages.map((row, idx) => (
+                <tr
+                  key={row.page}
+                  className={idx % 2 ? "bg-gray-50" : undefined}
+                >
+                  <td className="py-2 px-2">{row.page}</td>
+                  <td className="py-2 px-2">{row.visitors.toLocaleString()}</td>
+                  <td className="py-2 px-2">{row.bounce}</td>
+                  <td className="py-2 px-2">{row.conv}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </div>
+    );
+  } else {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
         <LoadingAnimation />
@@ -96,69 +434,161 @@ export default function RUM() {
     );
   }
 
-  return (
-    <>
-      <DashboardToolbar />
-      <div className="m-5">
-        <div className="flex flex-col items-start md:flex-row gap-2 md:items-center md:justify-between">
-          <span className="flex gap-2 items-center">
-            <ChartNoAxesGantt
-              size={30}
-              className="fill-pink-600/30 text-primary/70 dark:text-primary/70"
-            />
-            <h2 className="text-md md:text-2xl font-bold text-primary/90">
-              Weekly Overview
-            </h2>
-          </span>
-        </div>
-
-        <RumDashboard
-          distData={distdata}
-          experienceBarData={happinessData}
-          citationData={selectedCitation}
-          analyticsData={selectedAnalytics}
-        />
-      </div>
-    </>
-  );
-
-  function aggregateByDeviceType(data: RawData[]): AggregatedMetrics[] {
-    const grouped: Record<string, AggregatedMetrics> = {};
-
-    for (const entry of data) {
-      const device = entry.device_type;
-      if (!grouped[device]) {
-        grouped[device] = {
-          device_type: device,
-          country: [],
-          total_page_views: 0,
-          total_sessions: 0,
-          unique_visitors: 0,
-          unique_languages: 0,
-          bounce_rate_percentage: 0,
-          avg_pages_per_session: 0,
-        };
+  async function fetchOverview() {
+    try {
+      const res = await overviewApi({
+        time_range: selectedAnalyticsDate,
+        domain: selectedSite,
+      });
+      if (res && Array.isArray(res)) {
+        setOverviewMetrics(res);
       }
-
-      grouped[device].total_page_views += entry.total_page_views;
-      grouped[device].total_sessions += entry.total_sessions;
-      grouped[device].unique_visitors += entry.unique_visitors;
-      grouped[device].country.push(entry.country);
-      grouped[device].bounce_rate_percentage +=
-        entry.bounce_rate_percentage * entry.total_sessions;
+    } catch (error: any) {
+      console.error("Failed to fetch overview metrics:", error);
+      setOverviewMetrics([]);
     }
-
-    for (const device in grouped) {
-      const g = grouped[device];
-      g.bounce_rate_percentage = parseFloat(
-        (g.bounce_rate_percentage / g.total_sessions).toFixed(2)
-      );
-      g.avg_pages_per_session = parseFloat(
-        (g.total_page_views / g.total_sessions).toFixed(2)
-      );
-      g.unique_languages = 1; // static fallback
+  }
+  async function fetchCountryDistribution() {
+    try {
+      const res = await countryDistribution({
+        time_range: selectedAnalyticsDate,
+        domain: selectedSite,
+      });
+      if (res && Array.isArray(res)) {
+        setCountryDist(res);
+      }
+    } catch (error) {
+      console.error("Failed to fetch country traffic distribution:", error);
+      setCountryDist([]);
     }
-
-    return Object.values(grouped);
+  }
+  async function fetchUserHappinesGeo() {
+    const start_date = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
+    const res = await fetch("/api/rum/analytics/happiness-geo", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
+      },
+      body: JSON.stringify({
+        domain: selectedSite,
+        start_date: start_date,
+        end_date: today,
+      }),
+    });
+    if (!res.ok) {
+      console.error(res.statusText);
+      setHappinessData([]);
+    }
+    const data: any = await res.json();
+    setHappinessData(data.data);
+  }
+  function calculateOverviewStats(metrics: overviewMetrics[]) {
+    let total_pageviews = 0;
+    let total_sessions = 0;
+    let total_bounce_rate = 0;
+    let total_llm_traffic = 0;
+    for (let i = 0; i < metrics.length; i++) {
+      total_pageviews += metrics[i].total_pageviews;
+      total_sessions += metrics[i].total_sessions;
+      total_bounce_rate += metrics[i].bounce_rate * metrics[i].total_sessions;
+      total_llm_traffic += metrics[i].llm_traffic;
+    }
+    const aggregate_bounce_rate =
+      total_sessions > 0 ? total_bounce_rate / total_sessions : 0;
+    const llm_traffic_percentage =
+      total_pageviews > 0 ? (total_llm_traffic / total_pageviews) * 100 : 0;
+    const avg_pageview_per_session =
+      total_sessions > 0 && total_pageviews > 0
+        ? total_pageviews / total_sessions
+        : 0;
+    const stats = [
+      {
+        label: "Pageviews",
+        value: total_pageviews.toLocaleString(),
+        change: "+4%", // Placeholder
+      },
+      {
+        label: "Sessions",
+        value: total_sessions.toLocaleString(),
+        change: "+1.7%", // Placeholder
+      },
+      {
+        label: "Bounce Rate",
+        value: `${aggregate_bounce_rate.toFixed(0)}%`,
+        change: "−2%", // Placeholder
+      },
+      {
+        label: "LLM Traffic",
+        value: total_llm_traffic.toLocaleString(),
+        change: "+12%", // Placeholder
+      },
+      {
+        label: "LLM Traffic Percentage",
+        value: `${llm_traffic_percentage.toFixed(1)}%`,
+        change: "+1.2%", // Placeholder
+      },
+      {
+        label: "Pageview Per Session",
+        value: `${avg_pageview_per_session.toFixed(2)}%`,
+        change: "+1%", // Placeholder
+      },
+    ];
+    setTotalMetricOverview(stats);
+  }
+  function CountryDistributions(data: any[]) {
+    if (Array.isArray(data)) {
+      const combinedCountryDistribution: { [key: string]: number } = {};
+      const deviceTypeCountryDistributions: {
+        [key: string]: { [key: string]: number };
+      } = {};
+      data.forEach((entry) => {
+        try {
+          const countryDistribution = JSON.parse(entry.country_distribution);
+          deviceTypeCountryDistributions[entry.device_type] =
+            deviceTypeCountryDistributions[entry.device_type] || {};
+          Object.keys(countryDistribution).forEach((country) => {
+            combinedCountryDistribution[country] =
+              (combinedCountryDistribution[country] || 0) +
+              countryDistribution[country];
+            deviceTypeCountryDistributions[entry.device_type][country] =
+              (deviceTypeCountryDistributions[entry.device_type][country] ||
+                0) + countryDistribution[country];
+          });
+        } catch (error) {
+          console.error(
+            "Failed to parse country_distribution for device_type",
+            entry.device_type,
+            error
+          );
+        }
+      });
+      const combinedData = {
+        device_type: "all",
+        country_distribution: JSON.stringify(combinedCountryDistribution),
+      };
+      const newArray = [
+        ...Object.keys(deviceTypeCountryDistributions).map((deviceType) => {
+          return {
+            device_type: deviceType,
+            country_distribution: JSON.stringify(
+              deviceTypeCountryDistributions[deviceType]
+            ),
+          };
+        }),
+        combinedData,
+      ];
+      return newArray;
+    }
+    return data;
+  }
+  function handleGeoType(active: string) {
+    setSelectedGeoType(active as "Visitors" | "Share" | "User Happiness");
+  }
+  function handleActiveSource(source: string) {
+    setActiveSource(source as "All Traffic" | "LLM Traffic");
   }
 }
