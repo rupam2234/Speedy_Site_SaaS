@@ -96,10 +96,22 @@ export default function AnalyticsDashboard() {
   const [activeSource, setActiveSource] = useState<
     "All Traffic" | "LLM Traffic"
   >("All Traffic");
+  const [originalTrafficData, setOriginalTrafficData] = useState<any[]>([]);
 
   useEffect(() => {
     fetchOverview();
     fetchCountryDistribution();
+    async function fetchData() {
+      try {
+        const data: any = await getTrafficSource();
+        setOriginalTrafficData(data);
+      } catch (err) {
+        console.error("Error fetching traffic data:", err);
+        setOriginalTrafficData([]);
+      }
+    }
+
+    fetchData();
   }, [selectedSite, selectedAnalyticsDate]);
 
   useEffect(() => {
@@ -137,7 +149,7 @@ export default function AnalyticsDashboard() {
       <div className="min-h-screen p-5">
         {/* Header */}
         <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center md:gap-6">
+          <div className="flex md:items-center md:flex-row md:gap-6 gap-2 flex-col">
             {/* Title */}
             <div className="flex gap-2 items-center text-xl font-semibold text-primary border px-4 py-1 rounded-lg border-amber-500/20">
               <ChartColumn className="fill-amber-300 text-primary dark:text-primary/50" />
@@ -279,7 +291,7 @@ export default function AnalyticsDashboard() {
           />
         </section>
         {/* Top Referrals & regions */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-5 my-10">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4 mb-10">
           <div className="col-span-1 relative bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
             {/* Traffic Source */}
             <div className="flex gap-2 mb-[30px]">
@@ -305,7 +317,10 @@ export default function AnalyticsDashboard() {
               ))}
             </div>
             {activeSource === "All Traffic" ? (
-              <TrafficSource activeDevice={selectedDevice} />
+              <TrafficSource
+                activeDevice={selectedDevice}
+                originalTrafficData={originalTrafficData}
+              />
             ) : (
               <></>
             )}
@@ -590,5 +605,22 @@ export default function AnalyticsDashboard() {
   }
   function handleActiveSource(source: string) {
     setActiveSource(source as "All Traffic" | "LLM Traffic");
+  }
+  async function getTrafficSource() {
+    const res = await fetch("/api/rum/analytics/traffic-source", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        range: selectedAnalyticsDate,
+        domain: selectedSite,
+        key: "secret_for_speedy_site",
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch traffic source data");
+    }
+
+    return res.json();
   }
 }

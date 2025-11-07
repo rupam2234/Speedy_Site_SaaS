@@ -6,32 +6,28 @@ import { Loader2Icon } from "lucide-react";
 
 interface TrafficSourceProps {
   activeDevice: string;
+  originalTrafficData: any;
 }
 
-export default function TrafficSource({ activeDevice }: TrafficSourceProps) {
-  const { selectedSite, selectedAnalyticsDate } = useSiteContext();
-  const [originalTrafficData, setOriginalTrafficData] = useState<any[]>([]);
+export default function TrafficSource({
+  activeDevice,
+  originalTrafficData,
+}: TrafficSourceProps) {
+  const { selectedSite } = useSiteContext();
   const [trafficData, setTrafficData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemPerPage = 7;
 
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        const data: any = await getTrafficSource();
-        setOriginalTrafficData(data);
-      } catch (err) {
-        console.error("Error fetching traffic data:", err);
-        setOriginalTrafficData([]);
-      } finally {
-        setLoading(false);
-      }
-    }
+    if (!originalTrafficData) return;
 
-    fetchData();
-  }, [selectedAnalyticsDate, selectedSite]);
+    if (originalTrafficData) {
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+  }, [originalTrafficData]);
 
   useEffect(() => {
     if (!originalTrafficData) return;
@@ -154,22 +150,4 @@ export default function TrafficSource({ activeDevice }: TrafficSourceProps) {
       )}
     </div>
   );
-
-  async function getTrafficSource() {
-    const res = await fetch("/api/rum/analytics/traffic-source", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        range: selectedAnalyticsDate,
-        domain: selectedSite,
-        key: "secret_for_speedy_site",
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to fetch traffic source data");
-    }
-
-    return res.json();
-  }
 }

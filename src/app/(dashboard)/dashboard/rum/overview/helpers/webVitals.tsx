@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import ExperienceBar, { ExperienceData } from "../../helpers/ExperienceBar";
 import {
@@ -32,7 +34,7 @@ export default function WebVitalsOverview({
         metric.device_type.toLowerCase() === selectedDevice.toLowerCase()
     ).length === 0;
 
-  const isExperienceEmpty = !happinessData || happinessData.length === 0;
+  // const isExperienceEmpty = !happinessData || happinessData.length === 0;
 
   useEffect(() => {
     if (!selectedSite) return;
@@ -60,14 +62,15 @@ export default function WebVitalsOverview({
   }, [selectedSite]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 grid md:grid-cols-3 grid-cols-1 gap-6">
       {/* Web Vitals Cards */}
-      <div>
+      <div className="col-span-2">
         {isWebVitalsEmpty ? (
           <SkeletonCard title="Web Vitals" />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 mt-6">
             {distdata
+              .filter((x) => x.metric_name !== "FCP")
               .filter(
                 (metric) =>
                   metric.device_type.toLowerCase() ===
@@ -129,8 +132,47 @@ export default function WebVitalsOverview({
         )}
       </div>
       {/* Experience Bar */}
-      <div className="space-y-5">
-        <span className="flex gap-2 items-center ">
+      <div className="space-y-8 col-span-1">
+        <div className="mt-6 w-full h-auto rounded-lg dark:bg-secondary-background  p-4">
+          <div className="font-semibold text-primary/80 text-lg border-b border-primary/20 pb-2 mb-3">
+            ✨ Insights
+          </div>
+
+          <ol className="list-disc list-inside space-y-1 text-primary/80 leading-relaxed">
+            {happinessData
+              .filter((x) => x.device_type === selectedDevice.toLowerCase())
+              .map((x, i) => (
+                <li
+                  key={i}
+                  className="hover:bg-primary/5 rounded-md transition-colors duration-200"
+                >
+                  <span className="font-medium text-primary/80">
+                    {x.percentage_in_device_type}%
+                  </span>{" "}
+                  <span className="">
+                    ({x.session_count}) {selectedDevice.toLowerCase()}
+                  </span>{" "}
+                  sessions had{" "}
+                  <span
+                    className={`font-medium ${
+                      x.experience_quality === "Good"
+                        ? "text-green-300"
+                        : x.experience_quality === "Okay"
+                        ? "text-orange-300"
+                        : x.experience_quality === "Poor"
+                        ? "text-red-300"
+                        : ""
+                    }`}
+                  >
+                    {x.experience_quality.toLowerCase()}
+                  </span>{" "}
+                  UX.
+                </li>
+              ))}
+          </ol>
+        </div>
+
+        {/* <span className="flex gap-2 items-center ">
           <span className="flex items-center gap-2">
             <Smile
               size={20}
@@ -140,8 +182,8 @@ export default function WebVitalsOverview({
               Page Experience Group
             </h2>
           </span>
-        </span>
-        <div className="border rounded-sm py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
+        </span> */}
+        {/* <div className="border rounded-sm py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
           {isExperienceEmpty ? (
             <SkeletonCard title="Experience Distribution" />
           ) : (
@@ -150,7 +192,7 @@ export default function WebVitalsOverview({
               deviceType={selectedDevice}
             />
           )}
-        </div>
+        </div> */}
       </div>
     </div>
   );
@@ -207,7 +249,7 @@ export default function WebVitalsOverview({
 
   function SkeletonCard({}: { title: string }) {
     return (
-      <div className="flex flex-col gap-2 items-center justify-center text-center my-3 py-12 px-4 border rounded bg-muted/40 dark:bg-muted/20">
+      <div className="flex flex-col gap-2 items-center justify-center text-center my-3 py-12 px-4">
         <LoadingAnimation />
       </div>
     );
