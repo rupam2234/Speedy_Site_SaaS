@@ -12,6 +12,7 @@ import {
   Heart,
   InfoIcon,
   Lightbulb,
+  Loader2Icon,
 } from "lucide-react";
 import {
   Select,
@@ -28,6 +29,7 @@ import TooltipIcon from "@/components/utils/customTooltip";
 import TrafficSource from "./helpers/trafficSource";
 import dynamic from "next/dynamic";
 import WebVitalsOverview from "./helpers/webVitals";
+import LLMTrafficSource from "./helpers/llmTrafficSource";
 
 const CountryTrafficMap = dynamic(
   () => import("./helpers/trafficMapContainer"),
@@ -39,14 +41,6 @@ const CountryTrafficMap = dynamic(
 const HappinessMap = dynamic(() => import("./helpers/happinessMap"), {
   ssr: false,
 });
-
-// Top pages from LLM traffic
-const llmTopPages = [
-  { page: "/blog/ai-analytics", visitors: 201, bounce: "40%", conv: 12 },
-  { page: "/features", visitors: 98, bounce: "28%", conv: 7 },
-  { page: "/docs/api", visitors: 65, bounce: "34%", conv: 5 },
-  { page: "/pricing", visitors: 38, bounce: "23%", conv: 2 },
-];
 
 type overviewMetrics = {
   date_collected: string;
@@ -89,29 +83,23 @@ export default function AnalyticsDashboard() {
   const [happinessData, setHappinessData] = useState<any>([]);
   const [countryDist, setCountryDist] = useState<any>([]);
   const [totalMetricsOverview, setTotalMetricOverview] = useState<
-    { label: string; value: string; change: string }[]
+    { label: string; value: string; note: string }[]
   >([]);
   const [combinedData, setCombinedData] = useState<any>({});
-  // const [selectedDevice, setSelectedDevice] = useState("All");
   const [activeSource, setActiveSource] = useState<
     "All Traffic" | "LLM Traffic"
   >("All Traffic");
   const [originalTrafficData, setOriginalTrafficData] = useState<any[]>([]);
+  const [topLandingPages, setTopLandingPages] = useState<any[]>([]);
+  const [current_page, setCurrentPage] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
+    setLoading(true);
     fetchOverview();
     fetchCountryDistribution();
-    async function fetchData() {
-      try {
-        const data: any = await getTrafficSource();
-        setOriginalTrafficData(data);
-      } catch (err) {
-        console.error("Error fetching traffic data:", err);
-        setOriginalTrafficData([]);
-      }
-    }
-
-    fetchData();
+    fetchTrafficSourceData();
+    setLoading(false);
   }, [selectedSite, selectedAnalyticsDate]);
 
   useEffect(() => {
@@ -143,6 +131,29 @@ export default function AnalyticsDashboard() {
     }, delay);
     return () => clearTimeout(timer);
   }, [selectedSite]);
+
+  const itemPerPage = 7;
+
+  const total_pages =
+    topLandingPages?.length > 0
+      ? Math.ceil(topLandingPages.length / itemPerPage)
+      : 1;
+
+  const paginatedData =
+    topLandingPages.length > itemPerPage
+      ? topLandingPages.slice(
+          (current_page - 1) * itemPerPage,
+          itemPerPage * current_page
+        )
+      : topLandingPages;
+
+  function goToPage(page: number) {
+    if (page <= 1) {
+      page = 1;
+    }
+    if (page > total_pages) page = total_pages;
+    setCurrentPage(page);
+  }
 
   if (totalMetricsOverview.length !== 0 || overvewMetrics.length !== 0) {
     return (
@@ -249,20 +260,21 @@ export default function AnalyticsDashboard() {
               key={stat.label}
               className="bg-white dark:bg-secondary-background rounded-lg shadow hover:shadow-lg px-6 py-5 flex flex-col items-center text-center"
             >
-              <span className="uppercase font-bold text-xs tracking-wider mb-1 text-primary/80">
-                {stat.label}
-              </span>
+              <div className="uppercase flex items-center gap-1 font-bold text-xs tracking-wider mb-1 text-primary/80">
+                {stat.label}{" "}
+                <TooltipIcon
+                  content={stat.note}
+                  trigger={
+                    <InfoIcon
+                      size={22}
+                      className="text-primary/50 hover:bg-primary/10 hover:rounded-full p-1"
+                    />
+                  }
+                  delay={300}
+                />
+              </div>
               <span className="text-3xl font-extrabold text-primary mb-1">
                 {stat.value}
-              </span>
-              <span
-                className={`text-sm ${
-                  stat.change.startsWith("+")
-                    ? "text-green-600"
-                    : "text-rose-600"
-                } font-semibold`}
-              >
-                {stat.change}
               </span>
             </div>
           ))}
@@ -291,7 +303,7 @@ export default function AnalyticsDashboard() {
           />
         </section>
         {/* Top Referrals & regions */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4 mb-10">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4 mb-4">
           <div className="col-span-1 relative bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
             {/* Traffic Source */}
             <div className="flex gap-2 mb-[30px]">
@@ -322,7 +334,10 @@ export default function AnalyticsDashboard() {
                 originalTrafficData={originalTrafficData}
               />
             ) : (
-              <></>
+              <LLMTrafficSource
+                activeDevice={selectedDevice}
+                originalTrafficData={originalTrafficData}
+              />
             )}
           </div>
           {/* Geo Distribution */}
@@ -410,34 +425,79 @@ export default function AnalyticsDashboard() {
         </section>
         {/* Top pages for LLM */}
         <section
-          className={"bg-white rounded-2xl shadow p-6 mb-8 flex flex-col gap-4"}
+          className={
+            "bg-white rounded-sm border border-primary/20 p-6 mb-8 flex flex-col gap-4"
+          }
         >
           <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            📄 Top Landing Pages
+            📄 Top Landing Pages (Weekly)
           </h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500">
-                <th className="py-2 px-2 font-medium">Page</th>
-                <th className="py-2 px-2 font-medium">Visitors</th>
-                <th className="py-2 px-2 font-medium">Bounce Rate</th>
-                <th className="py-2 px-2 font-medium">Conversions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {llmTopPages.map((row, idx) => (
-                <tr
-                  key={row.page}
-                  className={idx % 2 ? "bg-gray-50" : undefined}
-                >
-                  <td className="py-2 px-2">{row.page}</td>
-                  <td className="py-2 px-2">{row.visitors.toLocaleString()}</td>
-                  <td className="py-2 px-2">{row.bounce}</td>
-                  <td className="py-2 px-2">{row.conv}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {loading || topLandingPages.length === 0 ? (
+            <div className="flex items-center justify-center h-auto">
+              <Loader2Icon className="text-primary/50 animate-spin w-5 h-5" />
+            </div>
+          ) : (
+            <>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-500">
+                    <th className="py-2 px-2 font-medium">Page</th>
+                    <th className="py-2 px-2 font-medium">Source</th>
+                    <th className="py-2 px-2 font-medium">Pageviews</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedData.map((row, idx) => (
+                    <tr
+                      key={idx}
+                      className={idx % 2 ? "bg-gray-50" : undefined}
+                    >
+                      <td className="py-2 px-2">
+                        {row.current_page?.replace(/\/$/, "")}
+                      </td>
+                      <td className="py-2 px-2">
+                        {row.previous_page?.replace(/\/$/, "")}
+                      </td>
+                      <td className="py-2 px-2">{row.hits}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {total_pages > 1 && (
+                <div className="flex justify-end mt-4 space-x-2">
+                  <button
+                    className="px-3 py-[2px] border rounded disabled:opacity-50"
+                    onClick={() => goToPage(current_page - 1)}
+                    disabled={current_page === 1}
+                  >
+                    Previous
+                  </button>
+
+                  {Array.from({ length: total_pages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        className={`px-3 py-[2px] border rounded ${
+                          current_page === page ? "bg-blue-500 text-white" : ""
+                        }`}
+                        onClick={() => goToPage(page)}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    className="px-3 py-[2px] border rounded disabled:opacity-50"
+                    onClick={() => goToPage(current_page + 1)}
+                    disabled={current_page === total_pages}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </section>
       </div>
     );
@@ -505,53 +565,65 @@ export default function AnalyticsDashboard() {
     let total_pageviews = 0;
     let total_sessions = 0;
     let total_bounce_rate = 0;
-    let total_llm_traffic = 0;
+
     for (let i = 0; i < metrics.length; i++) {
       total_pageviews += metrics[i].total_pageviews;
       total_sessions += metrics[i].total_sessions;
       total_bounce_rate += metrics[i].bounce_rate * metrics[i].total_sessions;
-      total_llm_traffic += metrics[i].llm_traffic;
     }
+
     const aggregate_bounce_rate =
       total_sessions > 0 ? total_bounce_rate / total_sessions : 0;
-    const llm_traffic_percentage =
-      total_pageviews > 0 ? (total_llm_traffic / total_pageviews) * 100 : 0;
+
     const avg_pageview_per_session =
       total_sessions > 0 && total_pageviews > 0
         ? total_pageviews / total_sessions
         : 0;
+
+    const engagement_score =
+      avg_pageview_per_session > 0
+        ? (avg_pageview_per_session * (100 - aggregate_bounce_rate)) / 100
+        : 0;
+
+    const realistic_recovery_factor = 0.2; // 20% of bounce improvement is achievable
+    const pages_lost_to_bounce =
+      total_pageviews > 0 ? (aggregate_bounce_rate / 100) * total_pageviews : 0;
+
+    const recoverable_pages = pages_lost_to_bounce * realistic_recovery_factor;
+
     const stats = [
       {
         label: "Pageviews",
         value: total_pageviews.toLocaleString(),
-        change: "+4%", // Placeholder
+        note: "A pageview is counted every time a page on your website is loaded or reloaded",
       },
       {
         label: "Sessions",
         value: total_sessions.toLocaleString(),
-        change: "+1.7%", // Placeholder
+        note: "Session gives you a single visit to your site by a user during which they may visit multiple pages and interect with your site",
       },
       {
         label: "Bounce Rate",
         value: `${aggregate_bounce_rate.toFixed(0)}%`,
-        change: "−2%", // Placeholder
+        note: "It's the percentage of visitors who leaves your site after viewing just one page",
       },
       {
-        label: "LLM Traffic",
-        value: total_llm_traffic.toLocaleString(),
-        change: "+12%", // Placeholder
+        label: "Pages per Session",
+        value: avg_pageview_per_session.toFixed(2),
+        note: "Page per session tells you on avearge how many pages a user visits during a single session on your site",
       },
       {
-        label: "LLM Traffic Percentage",
-        value: `${llm_traffic_percentage.toFixed(1)}%`,
-        change: "+1.2%", // Placeholder
+        label: "Engagement Score",
+        value: engagement_score.toFixed(2),
+        note: "The engagement score shows how much visitors actually stick around and explore your site. 0.1–0.3 is typical, and anything above 0.5 is strong engagement.",
       },
       {
-        label: "Pageview Per Session",
-        value: `${avg_pageview_per_session.toFixed(2)}%`,
-        change: "+1%", // Placeholder
+        label: "Recoverable Pages (Bounce)",
+        value: recoverable_pages.toFixed(0),
+        note: "This gives a potential estimation on when engagement is increased and bounce rate is reduced by 20%, the pageviews that could be recovered.",
       },
     ];
+
     setTotalMetricOverview(stats);
   }
   function CountryDistributions(data: any[]) {
@@ -619,6 +691,40 @@ export default function AnalyticsDashboard() {
 
     if (!res.ok) {
       throw new Error("Failed to fetch traffic source data");
+    }
+
+    return res.json();
+  }
+  async function fetchTrafficSourceData() {
+    try {
+      const data: any = await getTrafficSource();
+      setOriginalTrafficData(data);
+      const landingPageData: any = await getTopLandingPage();
+      setTopLandingPages(landingPageData);
+    } catch (err) {
+      console.error("Error fetching traffic or landing page data:", err);
+      setOriginalTrafficData([]);
+      setTopLandingPages([]);
+    }
+  }
+  async function getTopLandingPage() {
+    const date =
+      selectedAnalyticsDate === "today"
+        ? "today"
+        : selectedAnalyticsDate === "yesterday"
+        ? "yesterday"
+        : selectedAnalyticsDate === "last7days"
+        ? "last_7_days"
+        : "last_7_days";
+
+    const res = await fetch("/api/rum/analytics/landing-pages", {
+      method: "POST",
+      body: JSON.stringify({ dateRange: date, domain: selectedSite }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch top landing pages");
     }
 
     return res.json();

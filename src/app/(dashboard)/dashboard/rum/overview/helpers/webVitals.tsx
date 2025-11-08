@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ExperienceBar, { ExperienceData } from "../../helpers/ExperienceBar";
+import { ExperienceData } from "../../helpers/ExperienceBar";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import WebVitalsBar from "../../helpers/distributions";
-import { Smile } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 
 interface WebVitalProps {
   selectedSite: string;
@@ -33,8 +32,6 @@ export default function WebVitalsOverview({
       (metric) =>
         metric.device_type.toLowerCase() === selectedDevice.toLowerCase()
     ).length === 0;
-
-  // const isExperienceEmpty = !happinessData || happinessData.length === 0;
 
   useEffect(() => {
     if (!selectedSite) return;
@@ -171,28 +168,6 @@ export default function WebVitalsOverview({
               ))}
           </ol>
         </div>
-
-        {/* <span className="flex gap-2 items-center ">
-          <span className="flex items-center gap-2">
-            <Smile
-              size={20}
-              className="fill-green-200 text-primary/70 dark:text-accent/70"
-            />
-            <h2 className="text-md md:text-xl font-bold text-primary/90">
-              Page Experience Group
-            </h2>
-          </span>
-        </span> */}
-        {/* <div className="border rounded-sm py-5 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
-          {isExperienceEmpty ? (
-            <SkeletonCard title="Experience Distribution" />
-          ) : (
-            <ExperienceBar
-              data={happinessData ?? []}
-              deviceType={selectedDevice}
-            />
-          )}
-        </div> */}
       </div>
     </div>
   );
@@ -250,7 +225,7 @@ export default function WebVitalsOverview({
   function SkeletonCard({}: { title: string }) {
     return (
       <div className="flex flex-col gap-2 items-center justify-center text-center my-3 py-12 px-4">
-        <LoadingAnimation />
+        <Loader2Icon className="text-primary/50 animate-spin w-5 h-5" />
       </div>
     );
   }

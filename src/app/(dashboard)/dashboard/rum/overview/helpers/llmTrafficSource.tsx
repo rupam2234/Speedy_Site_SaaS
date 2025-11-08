@@ -1,44 +1,70 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
-import { Loader2Icon } from "lucide-react";
 
-interface TrafficSourceProps {
+interface LLMTrafficSourceProps {
   activeDevice: string;
-  originalTrafficData: any;
+  originalTrafficData: any[];
 }
 
-export default function TrafficSource({
+const llm_sources = [
+  "chatgpt",
+  "chat.openai.com",
+  "openai.com",
+  "perplexity.ai",
+  "gemini.google.com",
+  "bard.google.com",
+  "claude.ai",
+  "grok.x.ai",
+  "bing.com/chat",
+  "bing.com/copilotsearch",
+  "copilot.microsoft.com",
+  "kimi.moonshot.cn",
+  "poe.com",
+  "cohere.com",
+  "anthropic.com",
+  "phind.com",
+  "you.com",
+  "neeva.com",
+  "x.ai",
+  "huggingface.co",
+  "mistral.ai",
+  "reka.ai",
+  "ora.sh",
+  "tabnine.com",
+  "deepmind.com",
+  "meta.ai",
+  "llama.meta.com",
+  "ai21.com",
+  "cognition.labs",
+];
+
+export default function LLMTrafficSource({
   activeDevice,
   originalTrafficData,
-}: TrafficSourceProps) {
+}: LLMTrafficSourceProps) {
   const { selectedSite } = useSiteContext();
-  const [trafficData, setTrafficData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [llmTrafficData, setllmTrafficData] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemPerPage = 7;
 
   useEffect(() => {
-    if (!originalTrafficData) {
-      setTrafficData([]);
-      return;
-    }
+    if (!originalTrafficData?.length) return;
 
-    setLoading(true); // start loading when data arrives
+    const filtered =
+      activeDevice.toLowerCase() !== "all"
+        ? originalTrafficData.filter(
+            (x) => x.device_type.toLowerCase() === activeDevice.toLowerCase()
+          )
+        : originalTrafficData;
 
-    const deviceType = activeDevice?.toLowerCase();
-    const filteredData =
-      deviceType !== "all"
-        ? originalTrafficData
-            .filter((x: any) => x.referral_domain !== selectedSite)
-            .filter((x: any) => x.device_type.toLowerCase() === deviceType)
-        : originalTrafficData.filter(
-            (x: any) => x.referral_domain !== selectedSite
-          );
+    const llmFiltered = filtered.filter((item: any) =>
+      llm_sources.some((llm) =>
+        item.referral_domain?.toLowerCase().includes(llm)
+      )
+    );
 
     const aggregatedData = Object.values(
-      filteredData.reduce((acc: any, curr: any) => {
+      llmFiltered.reduce((acc: any, curr: any) => {
         const domain = curr.referral_domain;
         if (!acc[domain]) {
           acc[domain] = { ...curr };
@@ -51,19 +77,18 @@ export default function TrafficSource({
 
     aggregatedData.sort((a: any, b: any) => b.count - a.count);
 
-    setTrafficData(aggregatedData);
-    setLoading(false);
+    setllmTrafficData(aggregatedData);
   }, [activeDevice, originalTrafficData, selectedSite]);
 
-  const totalPage = Math.ceil(trafficData.length / itemPerPage);
+  const totalPage = Math.ceil(llmTrafficData.length / itemPerPage);
 
   const paginatedData =
-    trafficData.length > itemPerPage
-      ? trafficData.slice(
+    llmTrafficData.length > itemPerPage
+      ? llmTrafficData.slice(
           (currentPage - 1) * itemPerPage,
           currentPage * itemPerPage
         )
-      : trafficData;
+      : llmTrafficData;
 
   const goToPage = (page: number) => {
     if (page <= 1) {
@@ -74,18 +99,8 @@ export default function TrafficSource({
   };
 
   return (
-    <div className="relative h-full">
-      {loading || paginatedData.length === 0 ? (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/50 dark:bg-black/30">
-          {loading ? (
-            <Loader2Icon className="text-primary/50 animate-spin w-5 h-5" />
-          ) : (
-            <Loader2Icon className="text-primary/50 animate-spin w-5 h-5" />
-          )}
-        </div>
-      ) : null}
-
-      {!loading && paginatedData.length > 0 && (
+    <div>
+      {paginatedData.length > 0 ? (
         <table className="w-full text-sm min-h-fit">
           <thead>
             <tr className="text-left text-gray-500">
@@ -113,6 +128,8 @@ export default function TrafficSource({
             ))}
           </tbody>
         </table>
+      ) : (
+        <div className="text-gray-500">No traffic from LLMs</div>
       )}
       {totalPage > 1 && (
         <div className="absolute top-5/7 right-1 flex justify-end mt-4 space-x-2">

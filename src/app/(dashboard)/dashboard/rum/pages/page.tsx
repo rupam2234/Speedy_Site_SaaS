@@ -289,16 +289,16 @@ export default function RUMpages() {
     };
   };
 
-  const getMetricIcon = (type: "LCP" | "INP" | "CLS") => {
-    switch (type) {
-      case "LCP":
-        return <Clock className="w-5 h-5" />;
-      case "INP":
-        return <MousePointerClick className="w-5 h-5" />;
-      case "CLS":
-        return <Layout className="w-5 h-5" />;
-    }
-  };
+  // const getMetricIcon = (type: "LCP" | "INP" | "CLS") => {
+  //   switch (type) {
+  //     case "LCP":
+  //       return <Clock className="w-5 h-5" />;
+  //     case "INP":
+  //       return <MousePointerClick className="w-5 h-5" />;
+  //     case "CLS":
+  //       return <Layout className="w-5 h-5" />;
+  //   }
+  // };
 
   const getTargetIcon = (target: string) => {
     const lower = target.toLowerCase();
@@ -348,76 +348,71 @@ export default function RUMpages() {
     setExpandedRow((prev) => (prev === index ? null : index));
   };
 
-  const getMetricSuggestions = (
-    type: "LCP" | "INP" | "CLS",
-    targets: Target[]
-  ) => {
-    if (targets.length === 0) {
-      return "No specific targets identified. Focus on general performance improvements.";
-    }
+  // const getMetricSuggestions = (
+  //   type: "LCP" | "INP" | "CLS",
+  //   targets: Target[]
+  // ) => {
+  //   if (targets.length === 0) {
+  //     return "No specific targets identified. Focus on general performance improvements.";
+  //   }
 
-    if (type === "LCP") {
-      return "Optimize image loading, set explicit dimensions, and use modern formats (WebP/AVIF) for better LCP.";
-    }
-    if (type === "INP") {
-      return "Reduce JavaScript execution time, break up long tasks, and optimize event handlers for better INP.";
-    }
-    if (type === "CLS") {
-      return "Reserve space for dynamic content, set explicit dimensions, and avoid layout shifts for better CLS.";
-    }
-    return "Review performance metrics and implement targeted optimizations.";
-  };
+  //   if (type === "LCP") {
+  //     return "Optimize image loading, set explicit dimensions, and use modern formats (WebP/AVIF) for better LCP.";
+  //   }
+  //   if (type === "INP") {
+  //     return "Reduce JavaScript execution time, break up long tasks, and optimize event handlers for better INP.";
+  //   }
+  //   if (type === "CLS") {
+  //     return "Reserve space for dynamic content, set explicit dimensions, and avoid layout shifts for better CLS.";
+  //   }
+  //   return "Review performance metrics and implement targeted optimizations.";
+  // };
 
   return (
     <>
       <DashboardToolbar />
 
-      <div className="px-5 font-semibold text-lg flex gap-2 text-primary/80 items-center">
-        <GroupIcon size={20} />
-        <h2>Page Groups</h2>
-        <TooltipIcon
-          content="Page groups helps you identify pages with specific elements causing performance bottlenecks"
-          trigger={<InfoIcon size={16} className="text-primary/80" />}
-          delay={300}
-          side="right"
-        />
+      <div className="px-5 mt-5 flex md:flex-row flex-col gap-2 justify-start items-center md:justify-between text-primary/80">
+        <div className="flex items-center gap-2">
+          <GroupIcon size={22} className="fill-green-200" />
+          <h2 className="text-xl font-semibold">Page Groups</h2>
+          <TooltipIcon
+            content="Page groups help you identify pages with specific elements causing performance bottlenecks"
+            trigger={
+              <InfoIcon
+                size={22}
+                className="text-primary/60 hover:bg-primary/20 rounded-full p-[2px]"
+              />
+            }
+            delay={300}
+            side="right"
+          />
+        </div>
+        <div className="flex gap-2 items-center">
+          {performanceTabs.map((tab) => {
+            return (
+              <button
+                key={tab.key}
+                className={`flex items-center gap-1 border px-4 py-1 hover:dark:bg-secondary-background cursor-pointer hover:bg-primary/10 ${
+                  activeTab === tab.label.toLowerCase()
+                    ? "bg-primary/10"
+                    : "dark:bg-secondary-background"
+                }`}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  setCurrentPage(1);
+                  setExpandedRow(null);
+                }}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="min-h-screen p-5">
         <div className="w-auto">
-          {/* Tabs with page counts */}
-          <div className="flex gap-2 mb-6">
-            {performanceTabs.map((tab) => {
-              const count = grouped[tab.key].length;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => {
-                    setActiveTab(tab.key);
-                    setCurrentPage(1);
-                    setExpandedRow(null);
-                  }}
-                  className={`py-2 px-4 rounded-md font-medium transition-colors duration-200 flex-1 text-center ${
-                    activeTab === tab.key
-                      ? "bg-white dark:bg-secondary-background text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  <div className="flex gap-2 justify-center items-center">
-                    <div className="flex items-center justify-center">
-                      {tab.icon}
-                      <span className="ml-2 font-medium">{tab.label}</span>
-                    </div>
-                    <div className="text-lg font-bold">{count}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      page{count !== 1 ? "s" : ""}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
           {/* Table */}
           <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -484,7 +479,7 @@ export default function RUMpages() {
                             {rowIndex + 1}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate">
-                            {page.current_page}
+                            {page.current_page.replace(/\/$/, "")}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -581,19 +576,19 @@ export default function RUMpages() {
                                   {[
                                     {
                                       key: "LCP",
-                                      label: "LCP Components",
+                                      label: "LCP Elements",
                                       icon: <Clock className="w-4 h-4" />,
                                     },
                                     {
                                       key: "INP",
-                                      label: "INP Components",
+                                      label: "INP Elements",
                                       icon: (
                                         <MousePointerClick className="w-4 h-4" />
                                       ),
                                     },
                                     {
                                       key: "CLS",
-                                      label: "CLS Components",
+                                      label: "CLS Elements",
                                       icon: <Layout className="w-4 h-4" />,
                                     },
                                   ].map((metric) => (
@@ -621,44 +616,19 @@ export default function RUMpages() {
                                   ))}
                                 </div>
 
-                                {/* Metric Summary */}
-                                <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-                                  <div className="flex items-start">
-                                    {getMetricIcon(activeMetric)}
-                                    <div className="ml-3">
-                                      <h4 className="text-sm font-medium text-indigo-800 dark:text-indigo-200">
-                                        {activeMetric} Analysis
-                                      </h4>
-                                      <p className="mt-1 text-sm text-indigo-700 dark:text-indigo-300">
-                                        {getMetricSuggestions(
-                                          activeMetric,
-                                          activeMetric === "LCP"
-                                            ? page.lcp_targets
-                                            : activeMetric === "INP"
-                                            ? page.inp_targets
-                                            : page.cls_targets
-                                        )}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-
                                 {/* Targets List */}
                                 <div className="space-y-3">
-                                  <h5 className="text-sm font-medium text-gray-900 dark:text-white">
-                                    Key {activeMetric} Elements
-                                  </h5>
                                   {activeMetric === "LCP" &&
                                     (page.lcp_targets.length > 0 ? (
                                       page.lcp_targets.map((target, i) => (
                                         <div
                                           key={i}
-                                          className="flex overflow-hidden items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
+                                          className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
                                         >
                                           <div className="flex-shrink-0">
                                             {getTargetIcon(target.target)}
                                           </div>
-                                          <div className="ml-3 flex-1 min-w-0">
+                                          <div className="ml-3 flex-1 md:max-w-[1024px]">
                                             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                               {target.target}
                                             </p>
@@ -684,7 +654,7 @@ export default function RUMpages() {
                                           <div className="flex-shrink-0">
                                             {getTargetIcon(target.target)}
                                           </div>
-                                          <div className="ml-3 flex-1 min-w-0">
+                                          <div className="ml-3 flex-1 md:max-w-[1024px]">
                                             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                               {target.target}
                                             </p>
@@ -710,7 +680,7 @@ export default function RUMpages() {
                                           <div className="flex-shrink-0">
                                             {getTargetIcon(target.target)}
                                           </div>
-                                          <div className="ml-3 flex-1 min-w-0">
+                                          <div className="ml-3 flex-1 md:max-w-[1024px]">
                                             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                               {target.target}
                                             </p>
