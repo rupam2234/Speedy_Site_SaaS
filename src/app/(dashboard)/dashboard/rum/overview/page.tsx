@@ -30,6 +30,7 @@ import TrafficSource from "./helpers/trafficSource";
 import dynamic from "next/dynamic";
 import WebVitalsOverview from "./helpers/webVitals";
 import LLMTrafficSource from "./helpers/llmTrafficSource";
+import { redirect } from "next/navigation";
 
 const CountryTrafficMap = dynamic(
   () => import("./helpers/trafficMapContainer"),
@@ -429,9 +430,19 @@ export default function AnalyticsDashboard() {
             "bg-white rounded-sm border border-primary/20 p-6 mb-8 flex flex-col gap-4"
           }
         >
-          <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            📄 Top Landing Pages (Weekly)
-          </h2>
+          <div className="flex md:flex-row justify-between items-center gap-2">
+            <h2 className="text-xl font-semibold mb-3 text-gray-800">
+              📄 Top Landing Pages (Weekly)
+            </h2>
+            <div
+              className="hidden md:block hover:bg-green-500/30 hover:dark:bg-secondary-background rounded-sm shadow-sm px-2 py-1 cursor-pointer border-primary/60"
+              onClick={() =>
+                redirect(`/dashboard/rum/pages?site=${selectedSite}`)
+              }
+            >
+              Group by performance
+            </div>
+          </div>
           {loading || topLandingPages.length === 0 ? (
             <div className="flex items-center justify-center h-auto">
               <Loader2Icon className="text-primary/50 animate-spin w-5 h-5" />

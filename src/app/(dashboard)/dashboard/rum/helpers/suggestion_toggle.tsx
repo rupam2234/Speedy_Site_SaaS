@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import clsx from "clsx";
 import { LcpImageMetric } from "../lcp-images/page";
+import { toast } from "sonner";
 
 type AiTip = {
   recommendation: string;
@@ -17,10 +17,8 @@ type AiSuggestions = {
 
 export default function SuggestionsToggle({
   selectedImage,
-  showHardcoded,
 }: {
   selectedImage: LcpImageMetric | null;
-  showHardcoded: boolean;
 }) {
   const [open, setOpen] = useState<"ai" | "manual" | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<AiSuggestions | null>(
@@ -73,6 +71,7 @@ export default function SuggestionsToggle({
         setAiSuggestions(data);
       } else {
         setAiSuggestions(null);
+        toast.error("Unable to generate tips at the moment. Please try again");
         console.error("Invalid AI response structure", data);
       }
     } catch (err) {
@@ -84,55 +83,6 @@ export default function SuggestionsToggle({
 
   return (
     <div className="space-y-6 mt-6 max-w-xl mx-auto font-sans">
-      {/* Manual Suggestions Toggle */}
-      {showHardcoded && (
-        <div>
-          <button
-            onClick={() => setOpen(open === "manual" ? null : "manual")}
-            className="flex items-center justify-between w-full text-left text-primary text-sm font-medium hover:underline transition"
-            aria-expanded={open === "manual"}
-            aria-controls="manual-suggestions"
-          >
-            <span>Generic Optimization Tips</span>
-            <ChevronDown
-              className={clsx(
-                "w-5 h-5 transition-transform duration-300",
-                open === "manual" && "rotate-180"
-              )}
-            />
-          </button>
-
-          {open === "manual" && (
-            <div
-              id="manual-suggestions"
-              className="mt-3 text-primary/80 text-sm leading-relaxed space-y-2 pl-1"
-            >
-              <ul className="list-disc ml-5 space-y-1">
-                <li>
-                  Convert images to <strong>WebP</strong> or{" "}
-                  <strong>AVIF</strong>
-                </li>
-                <li>
-                  Use <strong>lazy loading</strong> for offscreen images
-                </li>
-                <li>
-                  Resize images properly (avoid large images in small
-                  containers)
-                </li>
-                <li>
-                  Use a CDN like <strong>Cloudflare</strong> or{" "}
-                  <strong>ImageKit</strong>
-                </li>
-                <li>
-                  Try plugins: <strong>ShortPixel, Optimole, or Smush</strong>{" "}
-                  (for WordPress)
-                </li>
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* AI Suggestions */}
       <div>
         <button
@@ -144,9 +94,7 @@ export default function SuggestionsToggle({
             "w-full text-primary-foreground py-2 rounded-md text-sm font-semibold transition bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
           )}
         >
-          {loading
-            ? "Generating suggestions..."
-            : "Ask LCP Sense for Tips (Beta)"}
+          {loading ? "Analyzing..." : "Ask AI for Tips"}
         </button>
 
         {open === "ai" && (
