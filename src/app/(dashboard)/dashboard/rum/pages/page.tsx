@@ -114,7 +114,6 @@ export default function RUMpages() {
           (x: PageData) => x.device_type !== "unknown"
         );
         setPageData(metrics);
-        lastFetched.current = selectedSite;
       } else {
         setPageData([]);
       }
@@ -289,17 +288,6 @@ export default function RUMpages() {
     };
   };
 
-  // const getMetricIcon = (type: "LCP" | "INP" | "CLS") => {
-  //   switch (type) {
-  //     case "LCP":
-  //       return <Clock className="w-5 h-5" />;
-  //     case "INP":
-  //       return <MousePointerClick className="w-5 h-5" />;
-  //     case "CLS":
-  //       return <Layout className="w-5 h-5" />;
-  //   }
-  // };
-
   const getTargetIcon = (target: string) => {
     const lower = target.toLowerCase();
     if (
@@ -347,26 +335,6 @@ export default function RUMpages() {
   const toggleRow = (index: number) => {
     setExpandedRow((prev) => (prev === index ? null : index));
   };
-
-  // const getMetricSuggestions = (
-  //   type: "LCP" | "INP" | "CLS",
-  //   targets: Target[]
-  // ) => {
-  //   if (targets.length === 0) {
-  //     return "No specific targets identified. Focus on general performance improvements.";
-  //   }
-
-  //   if (type === "LCP") {
-  //     return "Optimize image loading, set explicit dimensions, and use modern formats (WebP/AVIF) for better LCP.";
-  //   }
-  //   if (type === "INP") {
-  //     return "Reduce JavaScript execution time, break up long tasks, and optimize event handlers for better INP.";
-  //   }
-  //   if (type === "CLS") {
-  //     return "Reserve space for dynamic content, set explicit dimensions, and avoid layout shifts for better CLS.";
-  //   }
-  //   return "Review performance metrics and implement targeted optimizations.";
-  // };
 
   return (
     <>

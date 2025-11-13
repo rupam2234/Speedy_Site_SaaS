@@ -427,15 +427,15 @@ export default function AnalyticsDashboard() {
         {/* Top pages for LLM */}
         <section
           className={
-            "bg-white rounded-sm border border-primary/20 p-6 mb-8 flex flex-col gap-4"
+            "bg-white dark:bg-secondary-background rounded-sm border border-primary/20 p-6 mb-8 flex flex-col gap-4"
           }
         >
           <div className="flex md:flex-row justify-between items-center gap-2">
-            <h2 className="text-xl font-semibold mb-3 text-gray-800">
+            <h2 className="text-xl font-semibold mb-3 text-primary">
               📄 Top Landing Pages (Weekly)
             </h2>
             <div
-              className="hidden md:block hover:bg-green-500/30 hover:dark:bg-secondary-background rounded-sm shadow-sm px-2 py-1 cursor-pointer border-primary/60"
+              className="hidden md:block bg-green-100 hover:bg-green-500/30 hover:dark:bg-secondary-background rounded-sm shadow-sm px-2 py-1 cursor-pointer border-primary/60"
               onClick={() =>
                 redirect(`/dashboard/rum/pages?site=${selectedSite}`)
               }
@@ -461,7 +461,11 @@ export default function AnalyticsDashboard() {
                   {paginatedData.map((row, idx) => (
                     <tr
                       key={idx}
-                      className={idx % 2 ? "bg-gray-50" : undefined}
+                      className={
+                        idx % 2
+                          ? "bg-primary-foreground dark:bg-secondary/20"
+                          : undefined
+                      }
                     >
                       <td className="py-2 px-2">
                         {row.current_page?.replace(/\/$/, "")}

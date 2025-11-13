@@ -132,45 +132,39 @@ export default function SiteContextProvider({
   >("Visitors");
 
   const user = useSupabaseUser();
-
   const fetchCalledRef = useRef<{
     userId: string;
     siteFromUrl: string | null;
   } | null>(null);
 
   const updateDateRange = (startDate: string, endDate: string) => {
-    setDateRange((prev) => {
-      if (prev[0] === startDate && prev[1] === endDate) return prev;
-      return [startDate, endDate];
-    });
+    setDateRange((prev) =>
+      prev[0] === startDate && prev[1] === endDate ? prev : [startDate, endDate]
+    );
   };
 
-  // Fetch fresh data from server
   const fetchOrders = useCallback(
     async (siteFromUrl?: string, userId?: string) => {
-      if (!userId) {
-        console.warn("User ID not available, skipping fetchOrders");
-        return;
-      }
+      if (!userId) return;
 
-      // Show cached orders immediately if available
-      const storedOrders = sessionStorage.getItem("orders");
+      const now = Date.now();
+      const cachedOrders = sessionStorage.getItem("orders");
+      const cachedTime = sessionStorage.getItem("orders-ts");
 
-      if (storedOrders) {
-        const parsedOrders = JSON.parse(storedOrders);
-        if (parsedOrders?.length > 0) {
-          setOrders(parsedOrders);
-
-          if (
-            siteFromUrl &&
-            parsedOrders.some((o: OrderData) => o.website_name === siteFromUrl)
-          ) {
-            setSelectedSite(siteFromUrl);
-          } else {
-            setSelectedSite("");
-          }
-          // Continue to fetch fresh data
-        }
+      if (
+        cachedOrders &&
+        cachedTime &&
+        now - parseInt(cachedTime) < 5 * 60 * 1000
+      ) {
+        const parsedOrders = JSON.parse(cachedOrders);
+        setOrders(parsedOrders);
+        const defaultSite =
+          siteFromUrl &&
+          parsedOrders.some((o: OrderData) => o.website_name === siteFromUrl)
+            ? siteFromUrl
+            : parsedOrders[0].website_name;
+        setSelectedSite(defaultSite);
+        return; // skip network call
       }
 
       try {
@@ -186,92 +180,81 @@ export default function SiteContextProvider({
 
         if (data?.length > 0) {
           sessionStorage.setItem("orders", JSON.stringify(data));
+          sessionStorage.setItem("orders-ts", Date.now().toString());
           setOrders(data);
 
-          if (
+          const defaultSite =
             siteFromUrl &&
             data.some((o: OrderData) => o.website_name === siteFromUrl)
-          ) {
-            setSelectedSite(siteFromUrl);
-          } else {
-            setSelectedSite("");
-          }
+              ? siteFromUrl
+              : data[0].website_name;
+          setSelectedSite(defaultSite);
         } else {
           setOrders(null);
           setSelectedSite("");
           sessionStorage.removeItem("orders");
+          sessionStorage.removeItem("orders-ts");
         }
       } catch (error) {
         console.error("Error fetching orders:", error);
         setOrders(null);
         setSelectedSite("");
         sessionStorage.removeItem("orders");
+        sessionStorage.removeItem("orders-ts");
       }
     },
     []
   );
 
   useEffect(() => {
-    if (!orders?.length) return;
-    if (selectedSite) return;
-
-    const siteFromUrl = new URL(window.location.href).searchParams.get("site");
-    const match = orders.find((o) => o.website_name === siteFromUrl);
-    setSelectedSite(match?.website_name || orders[0].website_name);
-  }, [orders, selectedSite]);
-
-  useEffect(() => {
     if (!user?.id) return;
 
+    console.log(selectedSite);
+
     const siteFromUrl = new URL(window.location.href).searchParams.get("site");
 
-    // Check if this userId + siteFromUrl combination has already triggered fetchOrders
     if (
       fetchCalledRef.current?.userId === user.id &&
       fetchCalledRef.current?.siteFromUrl === siteFromUrl
-    ) {
-      // Already fetched for this combination, skip
-      return;
-    }
+    )
+      return; // already fetched
 
     fetchCalledRef.current = { userId: user.id, siteFromUrl };
     fetchOrders(siteFromUrl ?? "", user.id);
   }, [user?.id, fetchOrders]);
 
   return (
-    <Suspense>
-      <SiteContext.Provider
-        value={{
-          orders,
-          setOrders,
-          selectedSite,
-          setSelectedSite,
-          fetchOrders,
-          dailyCrux,
-          setDailyCrux,
-          selectedDevice,
-          setSelectedDevice,
-          cruxData,
-          setCruxData,
-          dateRange,
-          setDateRange: updateDateRange,
-          collapsed,
-          setCollapsed,
-          experienceType,
-          setExperienceType,
-          rumDistribution,
-          setRumDistribution,
-          rumDateRange,
-          setRumDateRange,
-          selectedAnalyticsDate,
-          setSelectedAnalyticsDate,
-          selectedGeoType,
-          setSelectedGeoType,
-        }}
-      >
-        {children}
-      </SiteContext.Provider>
-    </Suspense>
+    <SiteContext.Provider
+      value={{
+        orders,
+        setOrders,
+        selectedSite,
+        setSelectedSite,
+        fetchOrders,
+        dailyCrux,
+        setDailyCrux,
+        selectedDevice,
+        setSelectedDevice,
+        cruxData,
+        setCruxData,
+        dateRange,
+        setDateRange: updateDateRange,
+        collapsed,
+        setCollapsed,
+        experienceType,
+        setExperienceType,
+        rumDistribution,
+        setRumDistribution,
+        rumDateRange,
+        setRumDateRange,
+        selectedAnalyticsDate,
+        setSelectedAnalyticsDate,
+        selectedGeoType,
+        setSelectedGeoType,
+      }}
+    >
+      <Suspense>{children}</Suspense>
+    </SiteContext.Provider>
   );
 }
 

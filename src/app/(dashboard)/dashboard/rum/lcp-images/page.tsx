@@ -106,7 +106,7 @@ export default function LcpImageDebugger() {
   };
 
   useEffect(() => {
-    if (selectedSite.length > 0) {
+    if (selectedSite && selectedSite.length > 0 && rumDateRange) {
       fetchLcpImages();
     }
   }, [selectedSite, rumDateRange]);

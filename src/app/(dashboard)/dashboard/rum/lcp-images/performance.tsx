@@ -1,3 +1,5 @@
+"use client";
+
 interface imageMetric {
   avg_transfer_size: number | null;
   avg_decoded_body_size: number | null;
