@@ -212,6 +212,15 @@ export default function SiteContextProvider({
   );
 
   useEffect(() => {
+    if (!orders?.length) return;
+    if (selectedSite) return;
+
+    const siteFromUrl = new URL(window.location.href).searchParams.get("site");
+    const match = orders.find((o) => o.website_name === siteFromUrl);
+    setSelectedSite(match?.website_name || orders[0].website_name);
+  }, [orders, selectedSite]);
+
+  useEffect(() => {
     if (!user?.id) return;
 
     const siteFromUrl = new URL(window.location.href).searchParams.get("site");

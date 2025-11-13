@@ -11,28 +11,33 @@ export default function AuthCallbackClient() {
   useEffect(() => {
     const handleAuthFlow = async () => {
       const code = searchParams.get("code");
-
       if (!code) {
-        console.error("No code found in URL");
         router.replace("/sign-in?error=missing-code");
         return;
       }
 
-      console.log(await supabase_client.auth.exchangeCodeForSession(code));
-
-      // Get session to pull access_token
-      const { data: sessionData, error: sessionError } =
-        await supabase_client.auth.getSession();
-
-      if (sessionError || !sessionData.session) {
-        console.error("Session retrieval failed:", sessionError);
-        router.replace("/sign-in?error=session-missing");
-        return;
-      }
-
-      const access_token = sessionData.session.access_token;
-
       try {
+        // Exchange code for session
+        const { data: exchangeData, error: exchangeError } =
+          await supabase_client.auth.exchangeCodeForSession(code);
+
+        if (exchangeError || !exchangeData.session) {
+          console.error("Session exchange failed:", exchangeError);
+          router.replace("/sign-in?error=session-missing");
+          return;
+        }
+
+        const access_token = exchangeData.session.access_token;
+
+        // Check if we already have subscription info cached
+        const cached = sessionStorage.getItem("subscriptionData");
+        if (cached) {
+          console.log("Using cached subscription:", cached);
+          router.replace("/dashboard");
+          return;
+        }
+
+        // Call the worker only if no cache
         const response = await fetch(
           "https://app-auth.thespeedysite.workers.dev",
           {
@@ -55,9 +60,12 @@ export default function AuthCallbackClient() {
           return;
         }
 
+        // Cache subscription info for this session
+        sessionStorage.setItem("subscriptionData", JSON.stringify(result));
+
         router.replace("/dashboard");
       } catch (err) {
-        console.error("Error calling auth worker:", err);
+        console.error("Error during auth flow:", err);
         router.replace("/sign-in?error=worker-failed");
       }
     };
