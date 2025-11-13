@@ -448,7 +448,7 @@ function ActivePlanCard({
           <p className="font-medium">Usage</p>
           <p className="text-muted-foreground">
             {usage.current_usage} / {usage.computed_usage_limit} (
-            {quotaUsagePercentage}%)
+            {quotaUsagePercentage.toFixed(2)}%)
           </p>
         </div>
 

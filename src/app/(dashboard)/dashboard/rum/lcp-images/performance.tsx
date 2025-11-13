@@ -150,7 +150,7 @@ export default function Performancetab({
     );
   if (renderDelay > 2500)
     observations.push(
-      "The image appears late — try reducing page scripts or layout shifts."
+      "The image appears late — try reducing page scripts and look for possible render blocking reasons."
     );
   if (observations.length === 0)
     observations.push("Image performance looks healthy.");

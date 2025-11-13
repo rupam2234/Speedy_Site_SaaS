@@ -237,7 +237,7 @@ export default function LcpImageDebugger() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-2">
               <Images className="fill-orange-300/50" />
-              <h1 className="text-xl font-bold">LCP Image Debugger</h1>
+              <h1 className="text-xl font-bold">LCP Images</h1>
               {isLoading && <BeatLoader color="#888888" size={8} />}
             </div>
 
@@ -411,7 +411,7 @@ export default function LcpImageDebugger() {
                       </div>
 
                       <Tabs defaultValue="metrics" className="w-full ">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full bg-primary/5 grid-cols-2">
                           <TabsTrigger value="metrics">Metrics</TabsTrigger>
                           <TabsTrigger value="performance">
                             Performance

@@ -2,32 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
 import { OrderData } from "../../dataTypes";
 
-const worker = setupDB();
+const db = setupDB();
+
+interface FetchOrderBody {
+  user_id: string;
+}
 
 export async function POST(req: NextRequest) {
+  const body = (await req.json()) as FetchOrderBody;
+  const { user_id } = body;
+
+  if (!user_id) {
+    return NextResponse.json(
+      { message: "Unauthorized: No user ID provided" },
+      { status: 401 }
+    );
+  }
+
   try {
-    const { user_id }: any = await req.json();
-
-    if (!user_id) {
-      return NextResponse.json(
-        { message: "Unauthorized: No user ID provided" },
-        { status: 401 }
-      );
-    }
-
-    const { data: orderData, error } = await worker
+    const { data, error } = await db
       .from("orders")
       .select("*")
       .eq("user_id", user_id);
 
     if (error) {
+      console.error("DB error:", error);
       return NextResponse.json(
-        { message: "Failed to fetch orders", error: error.message },
+        { message: "Failed to fetch orders" },
         { status: 500 }
       );
     }
 
-    const typeOrderData: OrderData[] = (orderData || []).map((order: any) => ({
+    const orders: OrderData[] = (data || []).map((order: any) => ({
       orderId: order.order_id,
       orderDate: order.order_date,
       gsc_token: order.gsc_token,
@@ -38,24 +44,17 @@ export async function POST(req: NextRequest) {
       user_email: order.user_email,
     }));
 
-    const response = NextResponse.json(
+    return NextResponse.json(
       {
-        message: typeOrderData.length
+        message: orders.length
           ? "Order data fetched successfully"
           : "No orders found for this user",
-        data: typeOrderData,
+        data: orders,
       },
       { status: 200 }
     );
-
-    response.headers.set(
-      "Cache-Control",
-      "public, max-age=300, stale-while-revalidate=60"
-    );
-
-    return response;
-  } catch (error) {
-    console.error("Unable to fetch website data: ", error);
+  } catch (err) {
+    console.error("Unexpected error fetching orders:", err);
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }

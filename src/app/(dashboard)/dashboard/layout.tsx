@@ -40,7 +40,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
       if (!selectedSite) {
         router.push("/dashboard");
       }
-    }, 500);
+    }, 4000);
     return () => clearTimeout(timeout);
   }, [selectedSite, router]);
 

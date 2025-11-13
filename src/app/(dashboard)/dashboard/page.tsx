@@ -13,7 +13,7 @@ export default function Dashboard() {
     if (!selectedSite) {
       const timeout = setTimeout(() => {
         setShowPrompt(true);
-      }, 4000);
+      }, 5000);
 
       return () => clearTimeout(timeout);
     }
