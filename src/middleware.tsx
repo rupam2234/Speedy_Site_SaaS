@@ -1,25 +1,33 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { serverClient } from "./lib/db/server_client";
 
 export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+
+  const supabase = serverClient(req, res);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const pathname = req.nextUrl.pathname;
+
+  const isAuthCallback =
+    pathname === "/sign-in/auth/callback" ||
+    pathname.startsWith("/sign-in/auth/callback");
 
   const isDashboard = pathname.startsWith("/dashboard");
   const isSignIn = pathname.startsWith("/sign-in");
-  const isAuthCallback = pathname.startsWith("/sign-in/auth/callback");
 
-  const token = req.cookies.get("sb-access-token")?.value;
-
-  // If no token and trying to access dashboard, redirect to sign-in
-  if (!token && isDashboard && !isAuthCallback) {
+  if (!user && isDashboard && !isAuthCallback) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
 
-  // If token exists and trying to access sign-in, redirect to dashboard
-  if (token && isSignIn && !isAuthCallback) {
+  if (user && isSignIn && !isAuthCallback) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  return NextResponse.next();
+  return res;
 }
 
 export const config = {
