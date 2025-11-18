@@ -435,7 +435,7 @@ export default function AnalyticsDashboard() {
               📄 Top Landing Pages (Weekly)
             </h2>
             <div
-              className="hidden md:block bg-green-100 hover:bg-green-500/30 hover:dark:bg-secondary-background rounded-sm shadow-sm px-2 py-1 cursor-pointer border-primary/60"
+              className="hidden md:block bg-green-100 dark:bg-green-700 hover:text-black text-primary hover:bg-green-500/30 hover:dark:bg-green-100 rounded-sm dark:shadow-md shadow-sm px-2 py-1 cursor-pointer border-primary/60"
               onClick={() =>
                 redirect(`/dashboard/rum/pages?site=${selectedSite}`)
               }

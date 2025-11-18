@@ -492,13 +492,6 @@ function ActivePlanCard({
           </ul>
         </div>
       )}
-
-      {/* <button
-        onClick={() => (window.location.href = "/account/billing")}
-        className="mt-6 w-full text-sm bg-blue-600 text-white hover:bg-blue-700 py-2 rounded-md transition"
-      >
-        Manage Billing
-      </button> */}
     </div>
   );
 }
