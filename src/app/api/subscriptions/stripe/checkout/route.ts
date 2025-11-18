@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     // update on database!!
     await worker
       .from("subscriptions")
-      .update({ stripe_subscription_id: session?.id })
+      .update({ stripe_session_id: session?.id })
       .eq("user_id", user?.id);
 
     return NextResponse.json({ url: session.url });
