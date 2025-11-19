@@ -33,8 +33,6 @@ export async function POST(req: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        console.log("Checkout completed.", session?.id);
-
         await worker
           .from("subscriptions")
           .update({
@@ -60,6 +58,17 @@ export async function POST(req: Request) {
             period_starts_at: new Date(subscription.start_date).toISOString(),
             period_ends_at: new Date(subscription.cancel_at!).toISOString(),
             status: "active",
+            plan:
+              subscription.items.data[0].price.id ===
+              "price_1SHfk8FudyIXBfXkozoK2jmm"
+                ? "Basic"
+                : subscription.items.data[0].price.id ===
+                  "price_1SHfnpFudyIXBfXkLekhIkoM"
+                ? "Pro"
+                : subscription.items.data[0].price.id ===
+                  "price_1SHfpXFudyIXBfXkVPU9bgrP"
+                ? "Agency"
+                : "Free",
           })
           .eq("stripe_customer_id", subscription.customer as string);
 
