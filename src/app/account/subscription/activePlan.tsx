@@ -51,18 +51,6 @@ export default function ActivePlanCard({
       })
     : "N/A";
 
-  const lastInvoiceDate =
-    userPlan !== "Free"
-      ? new Date(usage.lastInvoiceDate as unknown as string).toLocaleDateString(
-          "en-US",
-          {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }
-        )
-      : "N/A";
-
   const quotaUsagePercentage =
     usage.current_usage !== undefined &&
     usage.computed_usage_limit !== undefined
