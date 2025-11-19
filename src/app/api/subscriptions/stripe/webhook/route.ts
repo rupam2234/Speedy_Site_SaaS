@@ -111,8 +111,8 @@ export async function POST(req: Request) {
     }
   } catch (error: any) {
     console.error("Webhook DB error:", error);
-    return new Response("Error", { status: 500 });
+    return new Response(error, { status: 500 });
   }
 
-  return new Response("OK", { status: 200 });
+  return new Response("subscription process complete", { status: 200 });
 }
