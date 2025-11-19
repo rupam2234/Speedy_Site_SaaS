@@ -75,8 +75,8 @@ export async function POST(request: Request) {
           },
         },
       ],
-      success_url: `${BASE_URL}/success`,
-      cancel_url: `${BASE_URL}/cancel`,
+      success_url: `${BASE_URL}/account/subscription/success`,
+      cancel_url: `${BASE_URL}/account/subscription/cancel`,
     });
 
     // update on database!!

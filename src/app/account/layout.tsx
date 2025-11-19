@@ -43,11 +43,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
       <AuthProvider>
-        {/* <SiteContextProvider> */}
         <Suspense fallback={<LoadingAnimation />}>
           <AccountLayout>{children}</AccountLayout>
         </Suspense>
-        {/* </SiteContextProvider> */}
       </AuthProvider>
     </SidebarProvider>
   );
