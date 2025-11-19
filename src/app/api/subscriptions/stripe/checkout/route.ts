@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { setupDB } from "@/lib/db";
+import { getServerSupabase } from "@/lib/db/serverSupabase";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-07-30.basil",
@@ -11,28 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const worker = setupDB();
 
 export async function POST(request: Request) {
-  const cookieStore = cookies();
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        async get(name) {
-          return (await cookieStore).get(name)?.value;
-        },
-        async set(name, value, options) {
-          (await cookieStore).set({ name, value, ...options });
-        },
-        async remove(name, options) {
-          (await cookieStore).delete({ name, ...options });
-        },
-      },
-    }
-  );
-
-  const { data: authData } = await supabase.auth.getUser();
-  const user = authData.user;
+  const { user } = await getServerSupabase();
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -68,11 +46,11 @@ export async function POST(request: Request) {
         {
           price: priceId,
           quantity: 1,
-          adjustable_quantity: {
-            enabled: true,
-            minimum: 1,
-            maximum: 10,
-          },
+          // adjustable_quantity: {
+          //   enabled: false,
+          //   minimum: 1,
+          //   maximum: 1,
+          // },
         },
       ],
       success_url: `${BASE_URL}/account/subscription/success`,

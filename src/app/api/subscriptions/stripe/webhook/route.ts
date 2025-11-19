@@ -58,8 +58,8 @@ export async function POST(req: Request) {
             period_starts_at: new Date(
               subscription.start_date * 1000
             ).toISOString(),
-            period_ends_at: subscription.cancel_at
-              ? new Date(subscription.cancel_at * 1000).toISOString()
+            period_ends_at: subscription.billing_cycle_anchor
+              ? new Date(subscription.billing_cycle_anchor * 1000).toISOString()
               : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             status: "active",
             plan:

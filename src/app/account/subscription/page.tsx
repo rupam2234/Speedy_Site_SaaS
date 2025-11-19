@@ -6,19 +6,19 @@ import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { BadgeCheck, CheckCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import ActivePlanCard from "./activePlan";
 
-type PlanType = "Basic" | "Pro" | "Agency" | "Free";
+export type PlanType = "Basic" | "Pro" | "Agency" | "Free";
 
 interface PlanCardProps {
   name: PlanType;
-  price: number; // Monthly base price
+  price: number;
   description: string;
   features: string[];
   current: boolean;
 }
 
 export default function Subscription() {
-  // const [userPlan, setUserPlan] = useState<PlanType>("Pro");
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly"
   );
@@ -58,14 +58,9 @@ export default function Subscription() {
     siteSlotsUsed: planData?.active_sites,
     siteSlotsTotal: "∞",
     nextBillingDate: planData?.period_ends_at,
-    lastInvoiceAmount: planData?.plan === "Free" ? 0 : 49,
     lastInvoiceDate: planData?.period_starts_at,
     computed_usage_limit: planData?.computed_usage_limit,
     current_usage: planData?.current_usage,
-    billingHistory: [
-      { date: "Aug 12, 2025", amount: "$49.00", status: "Paid" },
-      { date: "Jul 12, 2025", amount: "$49.00", status: "Paid" },
-    ],
   };
 
   const planCards: PlanCardProps[] = [
@@ -204,6 +199,7 @@ export default function Subscription() {
                 current={plan.current}
                 highlight={plan.name === planData.plan}
                 displayPrice={calculatePrice(plan.price)}
+                billingCycle={billingCycle}
               />
             ))}
           </div>
@@ -222,20 +218,32 @@ function PlanCard({
   current,
   highlight = false,
   displayPrice,
+  billingCycle,
 }: {
-  name: "Free" | "Basic" | "Pro" | "Agency";
+  name:
+    | "Free"
+    | "Basic"
+    | "Pro"
+    | "Agency"
+    | "Basic (Yearly)"
+    | "Pro (Yearly)"
+    | "Agency (Yearly)";
   price: number;
   description: string;
   features: string[];
   current: boolean;
   highlight?: boolean;
   displayPrice: string;
+  billingCycle: "monthly" | "yearly";
 }) {
   // stripe price ids
   const priceMap = {
     Basic: "price_1SHfk8FudyIXBfXkozoK2jmm",
     Pro: "price_1SHfnpFudyIXBfXkLekhIkoM",
     Agency: "price_1SHfpXFudyIXBfXkVPU9bgrP",
+    Basic_yearly: "price_1SV7F9FudyIXBfXk8dez9wT1",
+    Pro_yearly: "price_1SV7N3FudyIXBfXkngR9eZRh",
+    Agency_yearly: "price_1SV7OMFudyIXBfXkEeO7i2TS",
   };
 
   async function handleSubscribe(priceId: string) {
@@ -343,11 +351,9 @@ function PlanCard({
         disabled={current}
         onClick={() => {
           const priceId =
-            name === "Basic"
-              ? priceMap.Basic
-              : name === "Pro"
-              ? priceMap.Pro
-              : priceMap.Agency;
+            billingCycle === "monthly"
+              ? priceMap[name as keyof typeof priceMap]
+              : priceMap[`${name}_yearly` as keyof typeof priceMap];
 
           if (!current) handleSubscribe(priceId);
         }}
@@ -361,137 +367,6 @@ function PlanCard({
       >
         {current ? "✓ Current Plan" : `Upgrade to ${name}`}
       </button>
-    </div>
-  );
-}
-
-function ActivePlanCard({
-  userPlan,
-  usage,
-}: {
-  userPlan: PlanType;
-  usage: {
-    siteSlotsUsed: number | undefined;
-    siteSlotsTotal: string;
-    nextBillingDate: string | null | undefined;
-    lastInvoiceAmount: number;
-    lastInvoiceDate: string | undefined;
-    computed_usage_limit: number | undefined;
-    current_usage: number | undefined;
-    billingHistory: { date: string; amount: string; status: string }[];
-  };
-}) {
-  const [expanded, setExpanded] = useState(true);
-
-  const nextBillingDateText = usage.nextBillingDate
-    ? new Date(usage.nextBillingDate).toLocaleString("en-US", {
-        timeZone: "UTC",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      })
-    : "N/A";
-
-  const lastInvoiceDate =
-    userPlan !== "Free"
-      ? new Date(usage.lastInvoiceDate as unknown as string).toLocaleDateString(
-          "en-US",
-          {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }
-        )
-      : "N/A";
-
-  const quotaUsagePercentage =
-    usage.current_usage !== undefined &&
-    usage.computed_usage_limit !== undefined
-      ? (usage.current_usage / usage.computed_usage_limit) * 100
-      : 0;
-
-  return (
-    <div className="bg-primary-foreground dark:bg-secondary-background border border-primary/20 rounded-sm p-6">
-      <h2 className="text-[16px] font-medium text-primary/90 mb-4">
-        Current plan info:
-      </h2>
-
-      <div className="text-sm text-primary/90 space-y-2 mb-5 pb-2 border-b-2 border-dashed">
-        <p>
-          Plan: <strong>{userPlan}</strong>
-        </p>
-        <p>
-          Active Sites: <strong>{usage.siteSlotsUsed}</strong>
-        </p>
-        <p>
-          Next Billing Date: <strong>{nextBillingDateText}</strong>
-        </p>
-        <p>
-          Last Invoice:{" "}
-          <strong>
-            {lastInvoiceDate === "N/A" ? (
-              <>${usage.lastInvoiceAmount}</>
-            ) : (
-              <>
-                ${usage.lastInvoiceAmount} on {lastInvoiceDate}
-              </>
-            )}
-          </strong>
-        </p>
-      </div>
-
-      <div className="text-sm mb-5 text-primary/80 space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="font-medium">Usage</p>
-          <p className="text-muted-foreground">
-            {usage.current_usage} / {usage.computed_usage_limit} (
-            {quotaUsagePercentage.toFixed(2)}%)
-          </p>
-        </div>
-
-        <div className="w-full h-2 bg-primary/10 rounded-full relative overflow-hidden">
-          <div
-            className="h-full bg-green-500 rounded-full transition-all duration-300"
-            style={{ width: `${quotaUsagePercentage}%` }}
-          />
-        </div>
-      </div>
-
-      <button
-        className="w-full text-sm bg-primary text-primary-foreground py-2 rounded-md transition"
-        onClick={() => setExpanded(!expanded)}
-      >
-        {expanded ? "Hide Billing History" : "View Billing History"}
-      </button>
-
-      {expanded && (
-        <div className="mt-4">
-          <h3 className="text-sm font-medium text-primary/90 mb-2">
-            Billing History
-          </h3>
-          <ul className="text-sm text-primary/80 space-y-1">
-            {usage.billingHistory.map((entry, index) => (
-              <li
-                key={index}
-                className="flex justify-between border-b border-gray-100 py-1"
-              >
-                <span>{entry.date}</span>
-                <span>{entry.amount}</span>
-                <span
-                  className={`ml-2 ${
-                    entry.status === "Paid" ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {entry.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
