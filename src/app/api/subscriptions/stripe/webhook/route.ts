@@ -48,6 +48,8 @@ export async function POST(req: Request) {
       case "customer.subscription.created": {
         const subscription = event.data.object as Stripe.Subscription;
 
+        const priceId = subscription.items.data[0].price.id;
+
         const { error } = await worker
           .from("subscriptions")
           .update({
@@ -58,23 +60,20 @@ export async function POST(req: Request) {
             ).toISOString(),
             period_ends_at: subscription.cancel_at
               ? new Date(subscription.cancel_at * 1000).toISOString()
-              : "default",
+              : new Date(Date.now() * 24 * 60 * 60 * 1000).toISOString(),
             status: "active",
             plan:
-              subscription.items.data[0].price.id ===
-              "price_1SHfk8FudyIXBfXkozoK2jmm"
+              priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
                 ? "Basic"
-                : subscription.items.data[0].price.id ===
-                  "price_1SHfnpFudyIXBfXkLekhIkoM"
+                : priceId === "price_1SHfnpFudyIXBfXkLekhIkoM"
                 ? "Pro"
-                : subscription.items.data[0].price.id ===
-                  "price_1SHfpXFudyIXBfXkVPU9bgrP"
+                : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
                 ? "Agency"
                 : "Free",
           })
           .eq("stripe_customer_id", subscription.customer as string);
 
-        console.log("SUBSCRIPTION CREATE UPDATE RESULT:", error ?? "success");
+        console.log("SUBSCRIPTION CREATED UPDATE:", error ?? "success");
         break;
       }
 
