@@ -39,7 +39,7 @@ export async function POST(req: Request) {
             stripe_subscription_status: "session completed",
             stripe_customer_id: session.customer as string,
           })
-          .eq("stripe_subscription_status", session.id);
+          .eq("stripe_session_id", session.id);
 
         break;
       }
@@ -108,5 +108,5 @@ export async function POST(req: Request) {
     return new Response("Error", { status: 500 });
   }
 
-  return new Response("OK", { status: 200 });
+  return new Response("subscription update successful", { status: 200 });
 }
