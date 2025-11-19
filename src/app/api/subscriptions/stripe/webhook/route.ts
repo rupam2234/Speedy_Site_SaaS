@@ -60,7 +60,7 @@ export async function POST(req: Request) {
             ).toISOString(),
             period_ends_at: subscription.cancel_at
               ? new Date(subscription.cancel_at * 1000).toISOString()
-              : new Date(Date.now() * 24 * 60 * 60 * 1000).toISOString(),
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             status: "active",
             plan:
               priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
