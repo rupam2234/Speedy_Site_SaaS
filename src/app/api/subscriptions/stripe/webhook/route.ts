@@ -48,8 +48,6 @@ export async function POST(req: Request) {
       case "customer.subscription.created": {
         const subscription = event.data.object as Stripe.Subscription;
 
-        const priceId = subscription.items.data[0].price.id;
-
         const { error } = await worker
           .from("subscriptions")
           .update({
@@ -60,20 +58,23 @@ export async function POST(req: Request) {
             ).toISOString(),
             period_ends_at: subscription.cancel_at
               ? new Date(subscription.cancel_at * 1000).toISOString()
-              : null,
+              : "default",
             status: "active",
             plan:
-              priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
+              subscription.items.data[0].price.id ===
+              "price_1SHfk8FudyIXBfXkozoK2jmm"
                 ? "Basic"
-                : priceId === "price_1SHfnpFudyIXBfXkLekhIkoM"
+                : subscription.items.data[0].price.id ===
+                  "price_1SHfnpFudyIXBfXkLekhIkoM"
                 ? "Pro"
-                : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
+                : subscription.items.data[0].price.id ===
+                  "price_1SHfpXFudyIXBfXkVPU9bgrP"
                 ? "Agency"
                 : "Free",
           })
-          .eq("stripe_customer_id", subscription.customer as string); // only works if session step worked
+          .eq("stripe_customer_id", subscription.customer as string);
 
-        console.log("SUBSCRIPTION CREATED UPDATE:", error ?? "success");
+        console.log("SUBSCRIPTION CREATE UPDATE RESULT:", error ?? "success");
         break;
       }
 
