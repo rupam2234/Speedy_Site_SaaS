@@ -30,16 +30,17 @@ export async function POST(req: Request) {
       /*** CHECKOUT SESSION COMPLETED ***/
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+        const userId = session.metadata?.user_id;
 
-        const { error } = await worker
+        await worker
           .from("subscriptions")
           .update({
             stripe_subscription_status: "session completed",
             stripe_customer_id: session.customer as string,
+            stripe_session_id: session.id,
           })
-          .eq("stripe_session_id", session.id); // FIXED
+          .eq("user_id", userId as string);
 
-        console.log("CHECKOUT UPDATE RESULT:", error ?? "success");
         break;
       }
 

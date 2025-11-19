@@ -60,6 +60,10 @@ export async function POST(request: Request) {
       allow_promotion_codes: true,
       saved_payment_method_options: { payment_method_save: "enabled" },
 
+      metadata: {
+        user_id: user.id,
+      },
+
       line_items: [
         {
           price: priceId,
