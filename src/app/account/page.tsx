@@ -9,6 +9,10 @@ export default function Account() {
   const [phone, setPhone] = useState<string>();
   const [email, setEmail] = useState<string>();
   const [name, setName] = useState<string>();
+  const [password, setPassword] = useState<string>("");
+  const [conf_pass, setConfPass] = useState<string>("");
+  const [passMatch, setPassMatch] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
     async function getUser() {
@@ -38,7 +42,7 @@ export default function Account() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-6 m-5">
+    <div className="grid grid-cols-1 h-full md:grid-cols-6 m-5">
       {/* Main Content */}
       <div className="col-span-1 md:border-r md:col-span-4 p-6 w-full min-h-full bg-white dark:bg-secondary-background rounded-l-sm space-y-10">
         {/* Header */}
@@ -97,7 +101,7 @@ export default function Account() {
 
             <button
               onClick={() => handleUserUpdate()}
-              className="mt-7 hover:bg-blue-400 cursor-pointer btn-primary bg-blue-500 text-primary-foreground rounded-sm px-2 py-1"
+              className="mt-7 hover:bg-blue-400 cursor-pointer btn-primary bg-blue-500 dark:bg-blue-500/80 dark:text-primary text-primary-foreground rounded-sm px-2 py-1"
             >
               Save Changes
             </button>
@@ -105,57 +109,51 @@ export default function Account() {
         </section>
 
         {/* Security Section */}
-        <section id="security" className="space-y-4 pt-8">
-          <h2 className="text-xl font-medium">Security</h2>
+        <section id="security space-y-4" className="">
+          <h2 className="text-lg font-semibold mb-6">Security</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="password"
-              placeholder="Current Password"
-              className="input"
-            />
-            <input
-              type="password"
-              placeholder="New Password"
-              className="input"
-            />
-            <input
-              type="password"
-              placeholder="Confirm New Password"
-              className="input"
-            />
+            <div className="flex gap-2 items-center">
+              <input
+                type="password"
+                placeholder="New Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input px-2 py-1 w-[300px] dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
+              />
+            </div>
+            <div className="flex gap-2 items-center">
+              <input
+                type="password"
+                placeholder="Confirm New Password"
+                value={conf_pass}
+                onChange={(e) => setConfPass(e.target.value)}
+                className="input px-2 py-1 w-[300px] dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
+              />
+            </div>
           </div>
-          <button className="btn-primary">Update Password</button>
-
-          <div className="pt-4">
-            <h3 className="font-medium">Two-Factor Authentication</h3>
-            <button className="mt-2 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded">
-              Enable 2FA
+          <div className="flex md:flex-row flex-col items-start md:items-center gap-5">
+            <button
+              onClick={() => handlePasswordUpdate()}
+              className="mt-7 hover:bg-blue-400 cursor-pointer btn-primary bg-blue-500 dark:bg-blue-500/80 dark:text-primary text-primary-foreground rounded-sm px-2 py-1"
+            >
+              Update Password
             </button>
+            {passMatch === false ? (
+              <p className="md:mt-7 text-sm text-red-500">
+                Password didn&apos;t match!
+              </p>
+            ) : errorMessage.length > 0 ? (
+              <p className="md:mt-7 text-sm text-red-500">{errorMessage}</p>
+            ) : (
+              <></>
+            )}
           </div>
-        </section>
-
-        {/* Activity Log */}
-        <section id="activity" className="space-y-4 pt-8">
-          <h2 className="text-xl font-medium">Activity Log</h2>
-          <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <p>• Logged in from Chrome (Today)</p>
-            <p>• Password updated (3 days ago)</p>
-            <p>• Email verified (2 weeks ago)</p>
-          </div>
-        </section>
-
-        {/* Danger Zone */}
-        <section id="danger" className="pt-8">
-          <h2 className="text-xl font-medium text-red-600">Danger Zone</h2>
-          <button className="mt-4 px-4 py-2 bg-red-600 text-white rounded">
-            Delete Account
-          </button>
         </section>
       </div>
 
       {/* Sidebar */}
-      <div className="col-span-1 md:col-span-2 p-6 w-full min-h-full bg-white dark:bg-secondary-background rounded-r-sm">
+      <div className="col-span-1 space-y-4 md:col-span-2 p-6 w-full min-h-full bg-white dark:bg-secondary-background rounded-r-sm">
         <h2 className="font-semibold mb-3">Account Details:</h2>
         <div className="text-[14px] font-mono">
           {activeUser === undefined ? (
@@ -220,10 +218,27 @@ export default function Account() {
           )}
         </div>
 
+        <div className="text-[14px] font-mono">
+          {activeUser === undefined ? (
+            <div className="space-y-3 animate-pulse">
+              <div className="h-5 w-40 bg-primary/10 rounded"></div>
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-2 items-center">
+                <span className="font-semibold">Last log-in:</span>
+                <span className="text-primary/80">
+                  {new Date(activeUser.user.last_sign_in_at).toLocaleString()}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+
         <div className="p-4 mt-10 rounded bg-gray-50 dark:bg-gray-800">
           <p className="text-sm font-medium">Need help?</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Contact support if you’re having issues with your account.
+            Contact support if you&apos;re having issues with your account.
           </p>
         </div>
       </div>
@@ -270,6 +285,46 @@ export default function Account() {
       });
     } catch (err) {
       console.error("Network or server error:", err);
+    }
+  }
+
+  async function handlePasswordUpdate() {
+    if (password !== conf_pass) {
+      setPassMatch(false);
+
+      setTimeout(() => {
+        setPassMatch(true);
+      }, 5000);
+
+      return;
+    } else if (password.length < 6) {
+      setErrorMessage("Password must contain atleast 6 characters");
+
+      setTimeout(() => {
+        setErrorMessage("");
+      }, 5000);
+    } else {
+      const res = await fetch("/api/account/password-update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password: conf_pass }),
+      });
+
+      const body: any = await res.json();
+
+      if (!res.ok) {
+        console.error("Password update failed", body.error);
+        toast.error("Password update failed", {
+          style: { backgroundColor: "red", color: "white" },
+        });
+        return;
+      }
+
+      toast.success("Password updated", {
+        style: { backgroundColor: "green", color: "white" },
+      });
     }
   }
 }
