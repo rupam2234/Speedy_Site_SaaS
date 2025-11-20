@@ -365,7 +365,7 @@ function PlanCard({
             : "bg-gray-100 text-gray-800 hover:bg-blue-500/30 hover:text-primary"
         }`}
       >
-        {current ? "✓ Current Plan" : `Upgrade to ${name}`}
+        {current ? "✓ Current Plan" : `Change to ${name}`}
       </button>
     </div>
   );

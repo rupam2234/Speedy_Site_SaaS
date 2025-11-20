@@ -66,7 +66,7 @@ export default function AppSidebar({
       items: [
         {
           title: "Account",
-          url: "#",
+          url: "/account",
           icon: User2Icon,
         },
         {
