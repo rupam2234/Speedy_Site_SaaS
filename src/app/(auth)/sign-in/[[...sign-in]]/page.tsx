@@ -134,7 +134,7 @@ function SignInForm() {
         )}
 
         <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-          <Link href="#" className="hover:underline">
+          <Link href="/forgot-password" className="hover:underline">
             Forgot Password?
           </Link>
           <span>

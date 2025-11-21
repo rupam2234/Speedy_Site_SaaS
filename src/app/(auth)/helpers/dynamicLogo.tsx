@@ -5,7 +5,7 @@ export function DynamicLogo({ isDark }: { isDark: boolean }) {
   return (
     <>
       {isDark ? (
-        <Link href="#" className="cursor-pointer ring-0 focus:ring-0">
+        <Link href="/" className="cursor-pointer ring-0 focus:ring-0">
           <Image
             src="/images/SpeedySite-logo-dark.png"
             alt="SpeedySite-logo-dark"
@@ -14,7 +14,7 @@ export function DynamicLogo({ isDark }: { isDark: boolean }) {
           />
         </Link>
       ) : (
-        <Link href="#" className="cursor-pointer ring-0 focus:ring-0">
+        <Link href="/" className="cursor-pointer ring-0 focus:ring-0">
           <Image
             src="/images/SpeedySite_logo_trasnparent.png"
             alt="SpeedySite-logo-light"

@@ -37,10 +37,6 @@ export default function Account() {
     getUser();
   }, []);
 
-  if (activeUser !== undefined || null) {
-    console.log(activeUser);
-  }
-
   return (
     <div className="grid grid-cols-1 h-full md:grid-cols-6 m-5">
       {/* Main Content */}
