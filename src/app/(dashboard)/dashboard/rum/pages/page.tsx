@@ -22,6 +22,7 @@ import {
   Monitor,
   GroupIcon,
   InfoIcon,
+  Bug,
 } from "lucide-react";
 import TooltipIcon from "@/components/utils/customTooltip";
 
@@ -345,7 +346,7 @@ export default function RUMpages() {
           <GroupIcon size={22} className="fill-green-200" />
           <h2 className="text-xl font-semibold">Page Groups</h2>
           <TooltipIcon
-            content="Page groups help you identify pages with specific elements causing performance bottlenecks"
+            content="You can expand the pages to identify page-specific issues. Use the debug option to navigate directly to the exact page and pinpoint the elements affecting your web vitals. From there, finding a solution becomes much easier."
             trigger={
               <InfoIcon
                 size={22}
@@ -435,6 +436,8 @@ export default function RUMpages() {
                   {paginatedData.map((page, idx) => {
                     const rowIndex = (currentPage - 1) * itemsPerPage + idx;
                     const isExpanded = expandedRow === rowIndex;
+                    const current_page = page.current_page.replace(/\/$/, "");
+
                     return (
                       <React.Fragment key={idx}>
                         <tr
@@ -447,7 +450,7 @@ export default function RUMpages() {
                             {rowIndex + 1}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate">
-                            {page.current_page.replace(/\/$/, "")}
+                            {current_page}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -605,6 +608,26 @@ export default function RUMpages() {
                                               {target.count !== 1 ? "s" : ""}
                                             </p>
                                           </div>
+                                          <div className="flex gap-4 items-center">
+                                            <TooltipIcon
+                                              content={
+                                                "Debug the element on live page"
+                                              }
+                                              delay={300}
+                                              trigger={
+                                                <Bug
+                                                  size={19}
+                                                  className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
+                                                  onClick={() =>
+                                                    redirectToUrl(
+                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`
+                                                    )
+                                                  }
+                                                />
+                                              }
+                                              side="left"
+                                            />
+                                          </div>
                                         </div>
                                       ))
                                     ) : (
@@ -631,6 +654,26 @@ export default function RUMpages() {
                                               {target.count !== 1 ? "s" : ""}
                                             </p>
                                           </div>
+                                          <div className="flex gap-4 items-center">
+                                            <TooltipIcon
+                                              content={
+                                                "Debug the element on live page"
+                                              }
+                                              delay={300}
+                                              trigger={
+                                                <Bug
+                                                  size={19}
+                                                  className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
+                                                  onClick={() =>
+                                                    redirectToUrl(
+                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`
+                                                    )
+                                                  }
+                                                />
+                                              }
+                                              side="left"
+                                            />
+                                          </div>
                                         </div>
                                       ))
                                     ) : (
@@ -656,6 +699,26 @@ export default function RUMpages() {
                                               {target.count} occurrence
                                               {target.count !== 1 ? "s" : ""}
                                             </p>
+                                          </div>
+                                          <div className="flex gap-4 items-center">
+                                            <TooltipIcon
+                                              content={
+                                                "Debug the element on live page"
+                                              }
+                                              delay={300}
+                                              trigger={
+                                                <Bug
+                                                  size={19}
+                                                  className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
+                                                  onClick={() =>
+                                                    redirectToUrl(
+                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`
+                                                    )
+                                                  }
+                                                />
+                                              }
+                                              side="left"
+                                            />
                                           </div>
                                         </div>
                                       ))
@@ -718,4 +781,10 @@ export default function RUMpages() {
       </div>
     </>
   );
+
+  function redirectToUrl(url: string) {
+    if (url) {
+      window.open(`https://${url}`, "_blank", "noopener,noreferrer");
+    }
+  }
 }

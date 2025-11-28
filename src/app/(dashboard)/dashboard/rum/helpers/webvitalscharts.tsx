@@ -80,27 +80,9 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
         entry[`${metric_key}_${rumDistribution}`] ?? 0,
       ]) || [];
 
-  // const latestDate = chartData.length
-  //   ? chartData[chartData.length - 1][0]
-  //   : null;
-
-  // const latestValues = chartData
-  //   .filter(([date]) => date === latestDate)
-  //   .map(([, y]) => y as number);
-
-  // const min = Math.min(...latestValues);
-  // const max = Math.max(...latestValues);
-  // const avg =
-  //   latestValues.reduce((sum, val) => sum + val, 0) / latestValues.length || 0;
+  const maxValue = Math.max(...chartData?.map((x) => x[1] ?? [])); // this give me the max value of the active matric
 
   const isMs = ["lcp", "fcp", "inp", "ttfb"].includes(metric_key);
-
-  // const formatValue = (val: number) =>
-  //   isMs
-  //     ? val >= 1000
-  //       ? `${(val / 1000).toFixed(2)}s`
-  //       : `${Math.round(val)}ms`
-  //     : val.toFixed(3);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -141,7 +123,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
       return;
     }
 
-    // If there is data, proceed with your full chart options:
+    // If there is data, proceed with full chart options
     const styledData = chartData.map(([x, y]) => {
       const isHigh = (y as number) >= metricRange.c;
       const isMed =
@@ -214,6 +196,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
         },
         boundaryGap: false,
       },
+
       yAxis: {
         type: "value",
         max:
@@ -221,9 +204,9 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
             ? metric_key === "lcp" ||
               metric_key === "fcp" ||
               metric_key === "ttfb"
-              ? metricRange.d + 1000
+              ? maxValue + 1000 // this rises the chart height to ensure max value does not cross the top border
               : metric_key === "inp"
-              ? metricRange.d + 100
+              ? maxValue + 1000
               : metric_key === "cls"
               ? metricRange.d
               : metricRange.d
@@ -243,31 +226,31 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
           symbolSize: 8,
           data: styledData,
           lineStyle: {
-            color: theme === "dark" ? "#4ea6f4" : "#007BFF",
+            color: theme === "dark" ? "#4ea6f4" : "",
             width: 1,
           },
-          // areaStyle: {
-          //   color: {
-          //     type: "linear",
-          //     x: 0,
-          //     y: 0,
-          //     x2: 0,
-          //     y2: 1,
-          //     colorStops: [
-          //       {
-          //         offset: 0,
-          //         color:
-          //           theme === "dark"
-          //             ? "rgba(78, 166, 244, 0.3)"
-          //             : "rgba(0, 123, 255, 0.4)",
-          //       },
-          //       {
-          //         offset: 1,
-          //         color: "rgba(0, 123, 255, 0)",
-          //       },
-          //     ],
-          //   },
-          // },
+          areaStyle: {
+            color: {
+              type: "linear",
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                {
+                  offset: 0,
+                  color:
+                    theme === "dark"
+                      ? "rgba(78, 166, 244, 0.3)"
+                      : "rgba(0, 123, 205, 0.4)",
+                },
+                {
+                  offset: 1,
+                  color: "rgba(0, 123, 255, 0)",
+                },
+              ],
+            },
+          },
           encode: { x: 0, y: 1, tooltip: [1] },
           animationDurationUpdate: 300,
           animationEasingUpdate: "cubicOut",

@@ -428,64 +428,6 @@ export default function RumCWV() {
         {/* Main Content */}
         <div className="md:col-span-10 border border-primary/10 rounded-sm bg-primary-foreground dark:bg-secondary-background md:ml-1 p-4">
           <div className="relative flex gap-2 min-w-0 max-h-fit">
-            {/* {!descTrigger && (
-              <ArrowRightSquare
-                size={22}
-                className="absolute left-68 top-1 z-10 text-primary/70 dark:text-primary/90 p-[2px] hover:bg-primary/5 cursor-pointer"
-                onClick={toggleDescTrigger}
-              />
-            )} */}
-
-            {/* Description Panel */}
-            {/* <div
-              className={`transition-all hidden md:block duration-0 ease-in-out overflow-hidden ${
-                descTrigger
-                  ? "w-full md:w-[32%] opacity-100"
-                  : "md:hidden w-0 opacity-0"
-              }`}
-            >
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-primary/70">
-                  {activeMetric.name}
-                </h2>
-                <ArrowLeftSquare
-                  className="text-primary/70 md:block hidden dark:text-primary/90 p-[2px] cursor-pointer hover:bg-primary/5"
-                  size={22}
-                  onClick={toggleDescTrigger}
-                />
-              </div>
-
-              <p className="font-semibold pb-3 mb-6 border-b border-primary/10">
-                <span className="font-normal text-primary/70">Aggregate: </span>
-                <span
-                  className={(() => {
-                    const key =
-                      activeMetric.abbreviation?.toLowerCase() as keyof typeof cwv_ranges;
-                    const range = cwv_ranges[key];
-                    if (!range || activeMetric.value == null) return "";
-                    if (activeMetric.value < range[0]) return "text-green-500";
-                    if (activeMetric.value < range[1]) return "text-yellow-500";
-                    return "text-red-500";
-                  })()}
-                >
-                  {activeMetric.value?.toFixed(2) ?? "—"}
-                </span>{" "}
-                <span className="text-primary/40">
-                  {activeMetric.abbreviation !== "CLS" &&
-                  activeMetric.name !== "Experience Score"
-                    ? " ms"
-                    : ""}
-                </span>
-              </p>
-
-              <div className="text-sm text-primary/80">{activeMetric.desc}</div>
-
-              <div className="text-primary/70 mt-4 space-y-3">
-                <p className="text-sm underline">Business Impact:</p>
-                <>{activeMetric.impact}</>
-              </div>
-            </div> */}
-
             {/* Main Chart Area */}
             <div
               className={`transition-all duration-300 ease-in-out ${

@@ -432,29 +432,12 @@ const LCPBreakdownChart: React.FC<Props> = ({ data }) => {
                 selectedElement?.element_target === element_target;
               const componentType = getComponentType(element_target);
 
-              // Determine the primary bottleneck
-              // const loadDelayPercentage =
-              //   (item.avg_resource_load_delay / avg_lcp_value) * 100;
-              // const loadDurationPercentage =
-              //   (item.avg_resource_load_duration / avg_lcp_value) * 100;
-              // const renderDelayPercentage =
-              //   (item.avg_element_render_delay / avg_lcp_value) * 100;
-
               let bottleneckColor = "bg-green-500";
               if (avg_lcp_value > 4000) {
                 bottleneckColor = "bg-red-500";
               } else if (avg_lcp_value > 2500) {
                 bottleneckColor = "bg-amber-500";
               }
-
-              // let bottleneckIcon = <Target className="w-3.5 h-3.5" />;
-              // if (loadDelayPercentage > 40) {
-              //   bottleneckIcon = bottleneckIcon;
-              // } else if (loadDurationPercentage > 40) {
-              //   bottleneckIcon = <Download className="w-3.5 h-3.5" />;
-              // } else if (renderDelayPercentage > 40) {
-              //   bottleneckIcon = <Monitor className="w-3.5 h-3.5" />;
-              // }
 
               return (
                 <div
