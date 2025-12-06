@@ -8,7 +8,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useRef, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -18,31 +18,46 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-function LayoutContent({ children }: { children: ReactNode }) {
+function useUpdateSiteQuery() {
   const { selectedSite } = useSiteContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const ranRef = useRef(false);
 
-  // Update the `site` query param in the URL
   useEffect(() => {
-    if (selectedSite) {
-      const currentPath = pathname;
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("site", selectedSite);
-      router.replace(`${currentPath}?${params.toString()}`);
-    }
-  }, [selectedSite, pathname, router, searchParams]);
+    if (!selectedSite) return;
+    if (ranRef.current) return; // prevent double-run in dev
+    ranRef.current = true;
 
-  // Redirect back to dashboard if no site is selected
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("site", selectedSite);
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [selectedSite, pathname, searchParams, router]);
+}
+
+// Redirect back to dashboard if no site selected
+function useRedirectIfNoSite() {
+  const { selectedSite } = useSiteContext();
+  const router = useRouter();
+  const ranRef = useRef(false);
+
   useEffect(() => {
+    if (selectedSite) return;
+    if (ranRef.current) return;
+    ranRef.current = true;
+
     const timeout = setTimeout(() => {
-      if (!selectedSite) {
-        router.push("/dashboard");
-      }
+      router.push("/dashboard");
     }, 4000);
+
     return () => clearTimeout(timeout);
   }, [selectedSite, router]);
+}
+
+function LayoutContent({ children }: { children: ReactNode }) {
+  useUpdateSiteQuery();
+  useRedirectIfNoSite();
 
   return (
     <>
@@ -63,6 +78,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
     </>
   );
 }
+
+// -------------------- Dashboard Layout --------------------
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
