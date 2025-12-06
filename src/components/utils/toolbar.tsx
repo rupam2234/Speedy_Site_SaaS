@@ -32,38 +32,35 @@ export default function DashboardToolbar() {
 
   const overView = pathname === "/dashboard";
   const rumOverview = pathname === `/dashboard/rum/overview`;
-  // const isLab =
-  //   pathname.includes("/dashboard/pages") ||
-  //   pathname.includes("/dashboard/cwv");
+
   const isOnRum =
-    pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv`;
+    pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv` || pathname === `/dashboard/rum/web-vitals`;
   const pageGroupsRum =
     pathname === "/dashboard/rum/pages" ||
     pathname === "/dashboard/rum/third-party";
   const isRumPath = pathname.includes("rum");
-  // const isJourney = pathname === "/dashboard/funnels";
 
   const DateRangeData: DateRangeProps[] = isRumPath
     ? [
-        { id: "last7", range: "Last 7 Days" },
-        { id: "last24Hours", range: "Last 24 Hours" },
-        { id: "last30", range: "Last 30 Days" },
-        { id: "last90", range: "Last 90 Days" },
-      ]
+      { id: "last7", range: "Last 7 Days" },
+      { id: "last24Hours", range: "Last 24 Hours" },
+      { id: "last30", range: "Last 30 Days" },
+      { id: "last90", range: "Last 90 Days" },
+    ]
     : [
-        { id: "last7", range: "Last 7 Days" },
-        { id: "thisMonth", range: "This Month" },
-        { id: "lastMonth", range: "Last Month" },
-        { id: "last6Months", range: "Last 6 Months" },
-        { id: "last12Months", range: "Last 12 Months" },
-        { id: "thisYear", range: "This Year" },
-      ];
+      { id: "last7", range: "Last 7 Days" },
+      { id: "thisMonth", range: "This Month" },
+      { id: "lastMonth", range: "Last Month" },
+      { id: "last6Months", range: "Last 6 Months" },
+      { id: "last12Months", range: "Last 12 Months" },
+      { id: "thisYear", range: "This Year" },
+    ];
 
   const MaxSevenDays: DateRangeProps[] = pageGroupsRum
     ? [
-        { id: "last7", range: "Last 7 Days" },
-        { id: "last24Hours", range: "Last 24 Hours" },
-      ]
+      { id: "last7", range: "Last 7 Days" },
+      { id: "last24Hours", range: "Last 24 Hours" },
+    ]
     : [];
 
   const [selectedRangeId, setSelectedRangeId] = useState<string>(
@@ -114,6 +111,7 @@ export default function DashboardToolbar() {
   const allowedPaths = [
     `/dashboard/cwv`,
     `/dashboard/pages`,
+    `/dashboard/rum/web-vitals`,
     `/dashboard/rum/overview`,
     `/dashboard/rum/cwv`,
     `/dashboard`,
@@ -193,11 +191,10 @@ export default function DashboardToolbar() {
               {["Desktop", "Mobile", "Tablet", "All"].map((device) => (
                 <button
                   key={device}
-                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                    selectedDevice === device
-                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                      : ``
-                  }`}
+                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${selectedDevice === device
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                    }`}
                   onClick={() => selectDevice(device as any)}
                 >
                   {device}
@@ -214,11 +211,10 @@ export default function DashboardToolbar() {
               {["Desktop", "Mobile", "Tablet"].map((device) => (
                 <button
                   key={device}
-                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                    selectedDevice === device
-                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                      : ``
-                  }`}
+                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${selectedDevice === device
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                    }`}
                   onClick={() => selectDevice(device as any)}
                 >
                   {device}
@@ -235,11 +231,10 @@ export default function DashboardToolbar() {
               {["Desktop", "Mobile"].map((device) => (
                 <button
                   key={device}
-                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                    selectedDevice === device
-                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                      : ``
-                  }`}
+                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${selectedDevice === device
+                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                    : ``
+                    }`}
                   onClick={() => selectDevice(device as any)}
                 >
                   {device}

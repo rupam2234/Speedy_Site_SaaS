@@ -20,7 +20,6 @@ export async function POST(req: Request) {
     });
 
   if (PasswordError) {
-    console.log(PasswordError.cause);
     return Response.json({ error: PasswordError.message }, { status: 500 });
   }
 

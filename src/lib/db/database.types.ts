@@ -611,6 +611,39 @@ export type Database = {
         }
         Relationships: []
       }
+      rum_history_new: {
+        Row: {
+          cls: Json
+          created_at: string
+          day: string
+          domain_name: string
+          fcp: Json
+          inp: Json
+          lcp: Json
+          ttfb: Json
+        }
+        Insert: {
+          cls?: Json
+          created_at?: string
+          day: string
+          domain_name: string
+          fcp?: Json
+          inp?: Json
+          lcp?: Json
+          ttfb?: Json
+        }
+        Update: {
+          cls?: Json
+          created_at?: string
+          day?: string
+          domain_name?: string
+          fcp?: Json
+          inp?: Json
+          lcp?: Json
+          ttfb?: Json
+        }
+        Relationships: []
+      }
       rum_metrics: {
         Row: {
           created_at: string | null
@@ -1102,6 +1135,25 @@ export type Database = {
           period: string
         }[]
       }
+      get_rum_history: {
+        Args: { p_domain: string; p_from: string; p_to: string }
+        Returns: {
+          cls: Json
+          created_at: string
+          day: string
+          domain_name: string
+          fcp: Json
+          inp: Json
+          lcp: Json
+          ttfb: Json
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "rum_history_new"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_rum_web_vitals_metrics: {
         Args: { p_date_range?: string; p_domain_name: string }
         Returns: {
@@ -1328,6 +1380,34 @@ export type Database = {
       http_set_curlopt: {
         Args: { curlopt: string; value: string }
         Returns: boolean
+      }
+      lcp_attribution_by_device: {
+        Args: {
+          p_domain?: string
+          p_from?: string
+          p_min_lcp?: number
+          p_path_like?: string
+          p_to?: string
+        }
+        Returns: {
+          avg_lcp: number
+          decodedbodysize: number
+          device_type: string
+          elementrenderdelay: number
+          height: number
+          islazy: boolean
+          lcp_type: string
+          max_lcp: number
+          occurrences: number
+          resourceloaddelay: number
+          resourceloadduration: number
+          target: string
+          target_url: string
+          transfersize: number
+          ttfb: number
+          url: string
+          width: number
+        }[]
       }
       page_performance_analysis: {
         Args: { p_domain?: string; p_hours?: number }

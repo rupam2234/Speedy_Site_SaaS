@@ -66,23 +66,9 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
 
   const metricRange = getRanges(metric_key);
 
-  const chartData =
-    data
-      ?.filter(
-        (entry) => entry.device_category === selectedDevice.toLowerCase()
-      )
-      .sort(
-        (a, b) =>
-          new Date(a.report_date).getTime() - new Date(b.report_date).getTime()
-      )
-      .map((entry) => [
-        entry.report_date,
-        entry[`${metric_key}_${rumDistribution}`] ?? 0,
-      ]) || [];
+  const maxValue = data && Math.max(...data?.map((x) => x[1] ?? [])); // this give me the max value of the active matric
 
-  const maxValue = Math.max(...chartData?.map((x) => x[1] ?? [])); // this give me the max value of the active matric
-
-  const isMs = ["lcp", "fcp", "inp", "ttfb"].includes(metric_key);
+  const isMs = ["lcp", "fcp", "inp", "ttfb"].includes(metric_key.toLowerCase());
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -94,7 +80,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
     const chart = chartInstanceRef.current;
     const gridLineColor = theme === "dark" ? "#393E46" : "#B3C8CF";
 
-    if (chartData.length === 0) {
+    if (data.length === 0) {
       const option = {
         xAxis: {
           type: "category",
@@ -124,7 +110,7 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
     }
 
     // If there is data, proceed with full chart options
-    const styledData = chartData.map(([x, y]) => {
+    const styledData = data.map(([x, y]) => {
       const isHigh = (y as number) >= metricRange.c;
       const isMed =
         (y as number) < metricRange.c && (y as number) > metricRange.b;
@@ -134,12 +120,12 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
       const pointColor = isHigh
         ? "#FF3B30"
         : isMed
-        ? "#FF9500"
-        : isGood
-        ? "#00E676"
-        : theme === "dark"
-        ? "#555"
-        : "#ccc";
+          ? "#FF9500"
+          : isGood
+            ? "#00E676"
+            : theme === "dark"
+              ? "#555"
+              : "#ccc";
 
       return {
         value: [x, y],
@@ -176,8 +162,8 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
             value >= metricRange?.c
               ? "text-[#FF3B30] dark:text-[#ff5c54]"
               : value > metricRange?.b
-              ? "text-[#ffa11c] dark:text-[#ffb54d]"
-              : "text-[#00E676] dark:text-[#2ae387]";
+                ? "text-[#ffa11c] dark:text-[#ffb54d]"
+                : "text-[#00E676] dark:text-[#2ae387]";
 
           return `
           <div class="p-3 bg-[#333446] dark:bg-accent-foreground w-auto rounded-sm text-primary-foreground">
@@ -192,11 +178,10 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
         axisLabel: {
           rotate: 0,
           fontSize: 10,
-          interval: Math.floor(chartData.length / 5),
+          interval: Math.floor(data.length / 5),
         },
         boundaryGap: false,
       },
-
       yAxis: {
         type: "value",
         max:
@@ -204,12 +189,12 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
             ? metric_key === "lcp" ||
               metric_key === "fcp" ||
               metric_key === "ttfb"
-              ? maxValue + 1000 // this rises the chart height to ensure max value does not cross the top border
+              ? Number(maxValue.toFixed(0)) + 1000 // this rises the chart height to ensure max value does not cross the top border
               : metric_key === "inp"
-              ? maxValue + 1000
-              : metric_key === "cls"
-              ? metricRange.d
-              : metricRange.d
+                ? Number(maxValue.toFixed(0)) + 1000
+                : metric_key === "cls"
+                  ? metricRange.d
+                  : metricRange.d
             : {},
         splitLine: {
           show: false,
@@ -307,10 +292,20 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
 
   return (
     <div ref={containerRef} className="w-full">
-      <div className="flex items-center justify-between px-4 mb-2 text-xs">
-        <div className="text-lg font-semibold text-primary/80">
-          {metric_key.toUpperCase()} Timeline
+      <div className="flex items-center justify-between px-2 mb-2 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-medium px-2 py-1 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">
+            {metric_key.toUpperCase()} Timeline
+          </span>
+          <span>
+            {["lcp", "cls", "inp", "fcp"].includes(metric_key) ? (
+              <p>Important for a good user experience</p>
+            ) : (
+              <p>Crucial for crawler and AI indexing</p>
+            )}
+          </span>
         </div>
+
         <span className="font-medium px-2 py-1 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">
           Active Distribution:
           <strong className="ml-1 uppercase">

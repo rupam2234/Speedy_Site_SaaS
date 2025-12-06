@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     if (!domain_name) {
       return NextResponse.json(
         { error: "domain_name is required in the request body" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
           error: "Invalid date_range parameter",
           message: `date_range must be one of: ${validDateRanges.join(", ")}`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (!supabaseUrl || !supabaseKey) {
       return NextResponse.json(
         { error: "Server configuration error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       console.error("Database query error:", error);
       return NextResponse.json(
         { error: "Database query failed", details: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -92,15 +92,15 @@ export async function POST(request: NextRequest) {
       },
       {
         status: 200,
-        headers: {
-          "Cache-Control": "max-age=300", // Cache for 5 minutes
-        },
-      }
+        // headers: {
+        //   "Cache-Control": "max-age=300", // Cache for 5 minutes
+        // },
+      },
     );
   } catch (err: any) {
     return NextResponse.json(
       { error: "Internal server error", details: err.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

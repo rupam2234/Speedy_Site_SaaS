@@ -12,10 +12,8 @@ import {
   Tablet,
   MonitorSmartphone,
 } from "lucide-react";
-import BeatLoader from "react-spinners/BeatLoader";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import DashboardToolbar from "@/components/utils/toolbar";
-import SuggestionsToggle from "../helpers/suggestion_toggle";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -28,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import TooltipIcon from "@/components/utils/customTooltip";
 import Performancetab from "./performance";
+import SuggestionsToggle from "./suggestion_toggle";
 
 // Custom Badge component
 const Badge = ({
@@ -92,7 +91,7 @@ export interface LcpImageMetric {
 export default function LcpImageDebugger() {
   const [rawLcpImageData, setRawLcpImageData] = useState<LcpImageMetric[]>([]);
   const [selectedImage, setSelectedImage] = useState<LcpImageMetric | null>(
-    null
+    null,
   );
   const [sortBy, setSortBy] = useState<"avg_lcp" | "occurrence">("avg_lcp");
   const [filterText, setFilterText] = useState<string>("");
@@ -127,7 +126,7 @@ export default function LcpImageDebugger() {
       filtered = filtered.filter(
         (item) =>
           item.image_url.toLowerCase().includes(lowerFilter) ||
-          (item.avg_lcp_ms && item.avg_lcp_ms.toString().includes(lowerFilter))
+          (item.avg_lcp_ms && item.avg_lcp_ms.toString().includes(lowerFilter)),
       );
     }
 
@@ -238,7 +237,13 @@ export default function LcpImageDebugger() {
             <div className="flex items-center gap-2">
               <Images className="fill-orange-300/50" />
               <h1 className="text-xl font-bold">LCP Images</h1>
-              {isLoading && <BeatLoader color="#888888" size={8} />}
+              {isLoading && (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.2s]" />
+                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.1s]" />
+                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
+                </div>
+              )}
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -306,7 +311,7 @@ export default function LcpImageDebugger() {
                 ) : (
                   lcpImageData.map((metric, index) => {
                     const lcpValue = parseFloat(
-                      metric.avg_lcp_ms as unknown as string
+                      metric.avg_lcp_ms as unknown as string,
                     );
                     const barWidth = Math.min(lcpValue / 50, 100); // Adjusted for better visualization
                     // const status = getLcpStatus(lcpValue);
@@ -427,8 +432,8 @@ export default function LcpImageDebugger() {
                               <div
                                 className={`font-semibold ${getLcpStatusColor(
                                   parseFloat(
-                                    selectedImage.avg_lcp_ms as unknown as string
-                                  )
+                                    selectedImage.avg_lcp_ms as unknown as string,
+                                  ),
                                 )}`}
                               >
                                 {(
@@ -490,7 +495,7 @@ export default function LcpImageDebugger() {
                               <div
                                 className={`font-medium ${
                                   parseFloat(
-                                    selectedImage.pct_exceeding_cwv as unknown as string
+                                    selectedImage.pct_exceeding_cwv as unknown as string,
                                   ) > 0
                                     ? "text-red-600"
                                     : "text-green-600"
@@ -585,7 +590,11 @@ export default function LcpImageDebugger() {
               ) : (
                 <div className="border rounded-sm p-4 flex flex-col items-center justify-center h-64">
                   {isLoading ? (
-                    <BeatLoader color="#888888" />
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.2s]" />
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.1s]" />
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
+                    </div>
                   ) : (
                     <div className="text-center text-muted-foreground">
                       <Images className="h-12 w-12 mx-auto mb-2 opacity-50" />

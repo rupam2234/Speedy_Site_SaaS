@@ -36,7 +36,7 @@ const CountryTrafficMap = dynamic(
   () => import("./helpers/trafficMapContainer"),
   {
     ssr: false,
-  }
+  },
 );
 
 const HappinessMap = dynamic(() => import("./helpers/happinessMap"), {
@@ -111,7 +111,7 @@ export default function AnalyticsDashboard() {
           : overvewMetrics.filter(
               (metric) =>
                 metric.device_type.toLowerCase() ===
-                selectedDevice.toLowerCase()
+                selectedDevice.toLowerCase(),
             );
       calculateOverviewStats(filteredMetrics);
     }
@@ -144,7 +144,7 @@ export default function AnalyticsDashboard() {
     topLandingPages.length > itemPerPage
       ? topLandingPages.slice(
           (current_page - 1) * itemPerPage,
-          itemPerPage * current_page
+          itemPerPage * current_page,
         )
       : topLandingPages;
 
@@ -159,21 +159,18 @@ export default function AnalyticsDashboard() {
   if (totalMetricsOverview.length !== 0 || overvewMetrics.length !== 0) {
     return (
       <div className="min-h-screen p-5">
-        {/* Header */}
         <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex md:items-center md:flex-row md:gap-6 gap-2 flex-col">
-            {/* Title */}
             <div className="flex gap-2 items-center text-xl font-semibold text-primary border px-4 py-1 rounded-lg border-amber-500/20">
               <ChartColumn className="fill-amber-300 text-primary dark:text-primary/50" />
               <h2>Overview</h2>
             </div>
-            {/* Device selection */}
             <div className="flex items-center gap-2">
               <GalleryThumbnails className="text-primary/70 font-semibold" />
               <Select
                 value={selectedDevice}
                 onValueChange={(
-                  value: "Desktop" | "Mobile" | "Tablet" | "All"
+                  value: "Desktop" | "Mobile" | "Tablet" | "All",
                 ) => setSelectedDevice(value)}
               >
                 <SelectTrigger className="w-[180px] cursor-pointer ring-0 border-[1px] border-primary/10 focus-visible:ring-0 focus-visible:border-primary/10">
@@ -190,7 +187,6 @@ export default function AnalyticsDashboard() {
                 </SelectContent>
               </Select>
             </div>
-            {/* Distribution selection */}
             <div className="flex gap-2 items-center">
               <Select
                 value={rumDistribution}
@@ -390,10 +386,10 @@ export default function AnalyticsDashboard() {
                     selectedDevice === "Desktop"
                       ? "desktop"
                       : selectedDevice === "Mobile"
-                      ? "mobile"
-                      : selectedDevice === "Tablet"
-                      ? "tablet"
-                      : "all"
+                        ? "mobile"
+                        : selectedDevice === "Tablet"
+                          ? "tablet"
+                          : "all"
                   }
                 />
               ) : selectedGeoType === "Share" ? (
@@ -403,10 +399,10 @@ export default function AnalyticsDashboard() {
                     selectedDevice === "Desktop"
                       ? "desktop"
                       : selectedDevice === "Mobile"
-                      ? "mobile"
-                      : selectedDevice === "Tablet"
-                      ? "tablet"
-                      : "all"
+                        ? "mobile"
+                        : selectedDevice === "Tablet"
+                          ? "tablet"
+                          : "all"
                   }
                 />
               ) : (
@@ -499,7 +495,7 @@ export default function AnalyticsDashboard() {
                       >
                         {page}
                       </button>
-                    )
+                    ),
                   )}
 
                   <button
@@ -664,7 +660,7 @@ export default function AnalyticsDashboard() {
           console.error(
             "Failed to parse country_distribution for device_type",
             entry.device_type,
-            error
+            error,
           );
         }
       });
@@ -677,7 +673,7 @@ export default function AnalyticsDashboard() {
           return {
             device_type: deviceType,
             country_distribution: JSON.stringify(
-              deviceTypeCountryDistributions[deviceType]
+              deviceTypeCountryDistributions[deviceType],
             ),
           };
         }),
@@ -727,10 +723,10 @@ export default function AnalyticsDashboard() {
       selectedAnalyticsDate === "today"
         ? "today"
         : selectedAnalyticsDate === "yesterday"
-        ? "yesterday"
-        : selectedAnalyticsDate === "last7days"
-        ? "last_7_days"
-        : "last_7_days";
+          ? "yesterday"
+          : selectedAnalyticsDate === "last7days"
+            ? "last_7_days"
+            : "last_7_days";
 
     const res = await fetch("/api/rum/analytics/landing-pages", {
       method: "POST",

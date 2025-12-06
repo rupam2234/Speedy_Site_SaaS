@@ -10,3 +10,5 @@ export type PlanMetadata =
 
 export type HappinessByGeo =
   Database["public"]["Tables"]["user_happiness_by_geo"]["Insert"];
+
+export type Rum_history = Database["public"]["Tables"]["rum_history_new"]["Insert"];

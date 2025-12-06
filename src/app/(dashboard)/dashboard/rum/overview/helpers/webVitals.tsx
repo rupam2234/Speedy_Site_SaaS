@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ExperienceData } from "../../helpers/ExperienceBar";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import WebVitalsBar from "../../helpers/distributions";
 import { Loader2Icon } from "lucide-react";
+import { ExperienceData } from "./ExperienceBar";
+import WebVitalsBar from "./distributions";
 
 interface WebVitalProps {
   selectedSite: string;
@@ -30,7 +30,7 @@ export default function WebVitalsOverview({
     !distdata ||
     distdata.filter(
       (metric) =>
-        metric.device_type.toLowerCase() === selectedDevice.toLowerCase()
+        metric.device_type.toLowerCase() === selectedDevice.toLowerCase(),
     ).length === 0;
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function WebVitalsOverview({
               .filter(
                 (metric) =>
                   metric.device_type.toLowerCase() ===
-                  selectedDevice.toLowerCase()
+                  selectedDevice.toLowerCase(),
               )
               .map((metric) => {
                 const label = metric.metric_name;
@@ -155,10 +155,10 @@ export default function WebVitalsOverview({
                       x.experience_quality === "Good"
                         ? "text-green-300"
                         : x.experience_quality === "Okay"
-                        ? "text-orange-300"
-                        : x.experience_quality === "Poor"
-                        ? "text-red-300"
-                        : ""
+                          ? "text-orange-300"
+                          : x.experience_quality === "Poor"
+                            ? "text-red-300"
+                            : ""
                     }`}
                   >
                     {x.experience_quality.toLowerCase()}
@@ -191,32 +191,32 @@ export default function WebVitalsOverview({
         return value <= 0.1
           ? "text-green-600"
           : value <= 0.25
-          ? "text-yellow-600"
-          : "text-red-600";
+            ? "text-yellow-600"
+            : "text-red-600";
       case "FCP":
         return value <= 1800
           ? "text-green-600"
           : value <= 3000
-          ? "text-yellow-600"
-          : "text-red-600";
+            ? "text-yellow-600"
+            : "text-red-600";
       case "LCP":
         return value <= 2500
           ? "text-green-600"
           : value <= 4000
-          ? "text-yellow-600"
-          : "text-red-600";
+            ? "text-yellow-600"
+            : "text-red-600";
       case "INP":
         return value <= 200
           ? "text-green-600"
           : value <= 500
-          ? "text-yellow-600"
-          : "text-red-600";
+            ? "text-yellow-600"
+            : "text-red-600";
       case "TTFB":
         return value <= 800
           ? "text-green-600"
           : value <= 1800
-          ? "text-yellow-600"
-          : "text-red-600";
+            ? "text-yellow-600"
+            : "text-red-600";
       default:
         return "text-gray-600";
     }

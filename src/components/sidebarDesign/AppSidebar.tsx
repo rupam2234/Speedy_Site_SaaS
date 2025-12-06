@@ -20,26 +20,10 @@ import FooterNav from "./Footer-Nav";
 import { SelectSite } from "../utils/SiteSelect";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
 import { useTheme } from "../theme/ThemeProvider";
 import { DynamicLogo } from "@/app/(auth)/helpers/dynamicLogo";
-
-// Hook to detect if the screen is mobile
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  return isMobile;
-}
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function AppSidebar({
   ...props
@@ -55,7 +39,7 @@ export default function AppSidebar({
   const sidebarOpen =
     state === "expanded" ? false : state === "collapsed" ? true : null;
 
-  const selectSiteCollapsed = isMobile ? false : sidebarOpen ?? false;
+  const selectSiteCollapsed = isMobile ? false : (sidebarOpen ?? false);
   const selectSiteDisabled = pathname.includes("/account");
 
   const data = {
@@ -77,18 +61,6 @@ export default function AppSidebar({
       ],
     },
     navMain: [
-      // {
-      //   title: "Lab Reports",
-      //   url: "#",
-      //   icon: FlaskConical,
-      //   isActive: true,
-      //   items: [
-      //     {
-      //       title: "Page",
-      //       url: `/dashboard/pages?site=${selectedSite}`,
-      //     },
-      //   ],
-      // },
       {
         title: "Real User Monitoring",
         url: "#",
@@ -101,56 +73,24 @@ export default function AppSidebar({
           },
           {
             title: "Web Vitals",
-            url: `/dashboard/rum/cwv?site=${selectedSite}`,
+            url: `/dashboard/rum/web-vitals?site=${selectedSite}`,
           },
           {
             title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
-          // {
-          //   title: "Third Party",
-          //   url: `/dashboard/rum/third-party?site=${selectedSite}`,
-          // },
-          {
-            title: "LCP (Images)",
-            url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
-          },
         ],
       },
-      // {
-      //   title: "Optimized Image Delivery",
-      //   url: "#",
-      //   icon: FlaskConical,
-      //   isActive: true,
-      //   items: [
-      //     {
-      //       title: "How it works?",
-      //       url: `/dashboard#?site=${selectedSite}`,
-      //     },
-      //     {
-      //       title: "Optimize on fly",
-      //       url: `/dashboard#?site=${selectedSite}`,
-      //     },
-      //   ],
-      // },
-      // {
-      //   title: "AI Citation",
-      //   url: "#",
-      //   icon: Brain,
-      //   isActive: false,
-      //   items: [
-      //     {
-      //       title: "Report",
-      //       url: `#`,
-      //     },
-      //   ],
-      // },
       {
         title: "Enhancements",
         url: "#",
         icon: FlaskConical,
         isActive: true,
         items: [
+          {
+            title: "Flagged Images",
+            url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
+          },
           {
             title: "Boost TTFB",
             url: `#`,
