@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartScatter, InfoIcon, MonitorSmartphone } from "lucide-react";
+import { MonitorSmartphone } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -12,7 +12,6 @@ import {
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import TooltipIcon from "./customTooltip";
 
 interface DateRangeProps {
   id: string;
@@ -21,20 +20,12 @@ interface DateRangeProps {
 
 export default function DashboardToolbar() {
   const pathname = usePathname();
-  const {
-    selectedDevice,
-    setSelectedDevice,
-    setDateRange,
-    rumDistribution,
-    setRumDistribution,
-    setRumDateRange,
-  } = useSiteContext();
+  const { selectedDevice, setSelectedDevice, setDateRange, setRumDateRange } =
+    useSiteContext();
 
   const overView = pathname === "/dashboard";
   const rumOverview = pathname === `/dashboard/rum/overview`;
 
-  const isOnRum =
-    pathname === `/dashboard/rum/overview` || pathname === `/dashboard/rum/cwv` || pathname === `/dashboard/rum/web-vitals`;
   const pageGroupsRum =
     pathname === "/dashboard/rum/pages" ||
     pathname === "/dashboard/rum/third-party";
@@ -42,29 +33,29 @@ export default function DashboardToolbar() {
 
   const DateRangeData: DateRangeProps[] = isRumPath
     ? [
-      { id: "last7", range: "Last 7 Days" },
-      { id: "last24Hours", range: "Last 24 Hours" },
-      { id: "last30", range: "Last 30 Days" },
-      { id: "last90", range: "Last 90 Days" },
-    ]
+        { id: "last7", range: "Last 7 Days" },
+        { id: "last24Hours", range: "Last 24 Hours" },
+        { id: "last30", range: "Last 30 Days" },
+        { id: "last90", range: "Last 90 Days" },
+      ]
     : [
-      { id: "last7", range: "Last 7 Days" },
-      { id: "thisMonth", range: "This Month" },
-      { id: "lastMonth", range: "Last Month" },
-      { id: "last6Months", range: "Last 6 Months" },
-      { id: "last12Months", range: "Last 12 Months" },
-      { id: "thisYear", range: "This Year" },
-    ];
+        { id: "last7", range: "Last 7 Days" },
+        { id: "thisMonth", range: "This Month" },
+        { id: "lastMonth", range: "Last Month" },
+        { id: "last6Months", range: "Last 6 Months" },
+        { id: "last12Months", range: "Last 12 Months" },
+        { id: "thisYear", range: "This Year" },
+      ];
 
   const MaxSevenDays: DateRangeProps[] = pageGroupsRum
     ? [
-      { id: "last7", range: "Last 7 Days" },
-      { id: "last24Hours", range: "Last 24 Hours" },
-    ]
+        { id: "last7", range: "Last 7 Days" },
+        { id: "last24Hours", range: "Last 24 Hours" },
+      ]
     : [];
 
   const [selectedRangeId, setSelectedRangeId] = useState<string>(
-    pageGroupsRum ? "last7" : DateRangeData[3]?.id || "last7"
+    pageGroupsRum ? "last7" : DateRangeData[3]?.id || "last7",
   );
 
   useEffect(() => {
@@ -80,7 +71,7 @@ export default function DashboardToolbar() {
 
       setDateRange(startDate, today.toISOString().split("T")[0]);
       setRumDateRange(
-        selectedRangeId as unknown as "7days" | "24hours" | "30days" | "90days"
+        selectedRangeId as unknown as "7days" | "24hours" | "30days" | "90days",
       );
       return;
     }
@@ -128,7 +119,7 @@ export default function DashboardToolbar() {
   }
 
   const selectedRange = (pageGroupsRum ? MaxSevenDays : DateRangeData).find(
-    (item) => item.id === selectedRangeId
+    (item) => item.id === selectedRangeId,
   );
 
   function GetDateRange(rangeKey: string): [string, string] {
@@ -191,10 +182,11 @@ export default function DashboardToolbar() {
               {["Desktop", "Mobile", "Tablet", "All"].map((device) => (
                 <button
                   key={device}
-                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${selectedDevice === device
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                    }`}
+                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                    selectedDevice === device
+                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                      : ``
+                  }`}
                   onClick={() => selectDevice(device as any)}
                 >
                   {device}
@@ -211,10 +203,11 @@ export default function DashboardToolbar() {
               {["Desktop", "Mobile", "Tablet"].map((device) => (
                 <button
                   key={device}
-                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${selectedDevice === device
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                    }`}
+                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                    selectedDevice === device
+                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                      : ``
+                  }`}
                   onClick={() => selectDevice(device as any)}
                 >
                   {device}
@@ -231,26 +224,6 @@ export default function DashboardToolbar() {
               {["Desktop", "Mobile"].map((device) => (
                 <button
                   key={device}
-                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${selectedDevice === device
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                    }`}
-                  onClick={() => selectDevice(device as any)}
-                >
-                  {device}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* {isLab && !rumOverview && (
-          <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
-            <div className="flex gap-2 w-full items-center px-2">
-              <MonitorSmartphone size={18} className="mr-2" />
-              {["Desktop", "Mobile"].map((device) => (
-                <button
-                  key={device}
                   className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
                     selectedDevice === device
                       ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
@@ -262,73 +235,6 @@ export default function DashboardToolbar() {
                 </button>
               ))}
             </div>
-          </div>
-        )} */}
-
-        {/* {isJourney && (
-          <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
-            <div className="flex gap-2 w-full items-center px-2">
-              <MonitorSmartphone size={18} className="mr-2" />
-              {["Desktop", "Mobile", "Tablet"].map((device) => (
-                <button
-                  key={device}
-                  className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                    selectedDevice === device
-                      ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                      : ``
-                  }`}
-                  onClick={() => selectDevice(device as any)}
-                >
-                  {device}
-                </button>
-              ))}
-            </div>
-          </div>
-        )} */}
-
-        {isOnRum && !overView && (
-          <div className="flex items-center gap-2">
-            <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
-              <div className="flex justify-between items-center pl-2 py-[2px] w-full">
-                <ChartScatter size={18} />
-                <Select
-                  value={rumDistribution}
-                  onValueChange={setRumDistribution}
-                >
-                  <SelectTrigger className="py-0 cursor-pointer border-0 ring-0 shadow-none focus-visible:ring-0 dark:bg-secondary-background hover:dark:bg-secondary-background rounded-sm border-none focus:ring-0 focus:outline-none">
-                    <span className="text-primary font-medium">
-                      {rumDistribution}
-                    </span>
-                  </SelectTrigger>
-                  <SelectContent
-                    className="min-w-[--radix-select-trigger-width] p-0 dark:bg-secondary-background"
-                    side="bottom"
-                    align="center"
-                  >
-                    <SelectGroup>
-                      {["p50", "p75", "p90", "p95", "p99"].map((x, index) => (
-                        <SelectItem key={index} value={x}>
-                          {x}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <TooltipIcon
-              content={
-                "Percentiles help normalize performance by showing real user experiences. P50 shows the median (typical) experience, P75 is used in Core Web Vitals to represent the majority of users, and higher percentiles like P90 or P99 highlight slower experiences at the tail end. These help uncover issues that averages or medians might miss."
-              }
-              maxWidth="16rem"
-              side="bottom"
-              trigger={
-                <InfoIcon
-                  className="bg-transparent hover:bg-primary/5 text-primary/50 p-[2px] rounded-full"
-                  size={22}
-                />
-              }
-            />
           </div>
         )}
       </div>
@@ -348,7 +254,7 @@ export default function DashboardToolbar() {
                     <SelectItem value={item.id} key={index}>
                       {item.range}
                     </SelectItem>
-                  )
+                  ),
                 )}
               </SelectGroup>
             </SelectContent>

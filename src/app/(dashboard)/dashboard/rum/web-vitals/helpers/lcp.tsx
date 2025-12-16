@@ -9,12 +9,10 @@ interface LCPelementProps {
 }
 
 export default function LCPelements({ contributors }: LCPelementProps) {
-  console.log(contributors);
-
   return (
     <div className="divide-y divide-gray-200 dark:divide-primary/5">
       <p className="font-semibold text-sm">Major Contributors</p>
-      {contributors.map((x: any, i: number) => {
+      {contributors?.map((x: any, i: number) => {
         const type = classifyElement(x);
 
         return (
@@ -40,7 +38,13 @@ export default function LCPelements({ contributors }: LCPelementProps) {
                   {x.element_target}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {x.page_url.replace(/\/$/, "") ?? "—"}
+                  {x.page_url.includes("fbclid") ? (
+                    <span className="truncate block md:w-2/5 w-56">
+                      {x.page_url}
+                    </span>
+                  ) : (
+                    (x.page_url.replace(/\/$/, "") ?? "—")
+                  )}
                 </p>
                 {type === "image" || type === "background-image" ? (
                   <p className="text-[12px] text-primary/60">
@@ -59,10 +63,12 @@ export default function LCPelements({ contributors }: LCPelementProps) {
                 ) : (
                   <></>
                 )}
-                {x.poor_count && (
+                {x.poor_count ? (
                   <p className="text-primary/60 text-[12px]">
                     Captured {x.poor_count} times
                   </p>
+                ) : (
+                  <p></p>
                 )}
               </div>
             </div>
@@ -75,7 +81,9 @@ export default function LCPelements({ contributors }: LCPelementProps) {
                     content={`Element load delay: ${s.label}`}
                     side="left"
                     trigger={
-                      <div className="flex items-center gap-1 px-2 py-[3px] rounded-md border border-blue-300/40 bg-blue-100/40 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                      <div
+                        className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
+                      >
                         ⏳
                         {x.avg_resource_load_delay
                           ? `${(x.avg_resource_load_delay / 1000).toFixed(2)}s`
@@ -93,7 +101,9 @@ export default function LCPelements({ contributors }: LCPelementProps) {
                     content={`Resource load duration: ${s.label}`}
                     side="left"
                     trigger={
-                      <div className="flex items-center gap-1 px-2 py-[3px] rounded-md border border-purple-300/40 bg-purple-100/40 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300">
+                      <div
+                        className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
+                      >
                         ⚡
                         {x.avg_resource_load_duration
                           ? `${(x.avg_resource_load_duration / 1000).toFixed(2)}s`
@@ -111,7 +121,9 @@ export default function LCPelements({ contributors }: LCPelementProps) {
                     content={`Element render delay: ${s.label}`}
                     side="left"
                     trigger={
-                      <div className="flex items-center gap-1 px-2 py-[3px] rounded-md border border-orange-300/40 bg-orange-100/40 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300">
+                      <div
+                        className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
+                      >
                         🎨
                         {x.avg_element_render_delay
                           ? `${(x.avg_element_render_delay / 1000).toFixed(2)}s`
@@ -168,5 +180,16 @@ export default function LCPelements({ contributors }: LCPelementProps) {
     if (v < 200) return { label: "Good", status: "good" };
     if (v < 600) return { label: "Needs improvement", status: "ni" };
     return { label: "Poor", status: "poor" };
+  }
+
+  function getPillDesign(status: string) {
+    if (status === "none")
+      return "border-gray-300/40 bg-gray-100/40 dark:bg-gray-500/20 text-gray-700 dark:text-gray-300";
+    else if (status === "good")
+      return "border-green-300/40 bg-green-100/40 dark:bg-green-500/20 text-green-700 dark:text-green-300";
+    else if (status === "ni")
+      return "border-yellow-300/40 bg-yellow-100/40 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300";
+    else if (status === "poor")
+      return "border-red-300/40 bg-red-100/40 dark:bg-red-500/20 text-red-700 dark:text-red-300";
   }
 }

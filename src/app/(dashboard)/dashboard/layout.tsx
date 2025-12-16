@@ -8,7 +8,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
-import { ReactNode, useRef, useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -18,34 +18,25 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-function useUpdateSiteQuery() {
+function LayoutContent({ children }: { children: ReactNode }) {
   const { selectedSite } = useSiteContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const ranRef = useRef(false);
 
   useEffect(() => {
     if (!selectedSite) return;
-    if (ranRef.current) return; // prevent double-run in dev
-    ranRef.current = true;
-
     const params = new URLSearchParams(searchParams.toString());
     params.set("site", selectedSite);
-    router.replace(`${pathname}?${params.toString()}`);
+    const currentUrl = `${pathname}?${params.toString()}`;
+    if (currentUrl !== window.location.pathname + window.location.search) {
+      router.replace(currentUrl);
+    }
   }, [selectedSite, pathname, searchParams, router]);
-}
 
-// Redirect back to dashboard if no site selected
-function useRedirectIfNoSite() {
-  const { selectedSite } = useSiteContext();
-  const router = useRouter();
-  const ranRef = useRef(false);
-
+  // Redirect back to dashboard if no site is selected
   useEffect(() => {
     if (selectedSite) return;
-    if (ranRef.current) return;
-    ranRef.current = true;
 
     const timeout = setTimeout(() => {
       router.push("/dashboard");
@@ -53,11 +44,6 @@ function useRedirectIfNoSite() {
 
     return () => clearTimeout(timeout);
   }, [selectedSite, router]);
-}
-
-function LayoutContent({ children }: { children: ReactNode }) {
-  useUpdateSiteQuery();
-  useRedirectIfNoSite();
 
   return (
     <>
@@ -78,8 +64,6 @@ function LayoutContent({ children }: { children: ReactNode }) {
     </>
   );
 }
-
-// -------------------- Dashboard Layout --------------------
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (

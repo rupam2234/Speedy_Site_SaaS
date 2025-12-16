@@ -2,19 +2,17 @@
 
 import TooltipIcon from "@/components/utils/customTooltip";
 
-interface TTFBelementProps {
+interface INPelementProps {
   contributors: any;
 }
 
-export default function TTFBelements({ contributors }: TTFBelementProps) {
-  console.log(contributors);
-
+export default function INPelements({ contributors }: INPelementProps) {
   return (
     <div className="divide-y divide-gray-200 dark:divide-primary/5">
       <div className="flex items-center justify-between">
         <p>Elements</p>
       </div>
-      {contributors.map((x: any, i: number) => (
+      {contributors?.map((x: any, i: number) => (
         <div key={i} className="flex items-center justify-between py-3">
           <div className="w-3/4">
             <p className="text-sm font-medium text-primary/80">

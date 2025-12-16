@@ -193,8 +193,8 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
               : metric_key === "inp"
                 ? Number(maxValue.toFixed(0)) + 1000
                 : metric_key === "cls"
-                  ? metricRange.d
-                  : metricRange.d
+                  ? maxValue + 0.1
+                  : maxValue + 0.1
             : {},
         splitLine: {
           show: false,

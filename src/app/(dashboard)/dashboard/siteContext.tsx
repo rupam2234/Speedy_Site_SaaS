@@ -29,7 +29,7 @@ type SiteContextType = {
   setDateRange: (startDate: string, endDate: string) => void | [string, string];
   rumDateRange: "24hours" | "7days" | "30days" | "90days";
   setRumDateRange: (
-    dateRange: "24hours" | "7days" | "30days" | "90days"
+    dateRange: "24hours" | "7days" | "30days" | "90days",
   ) => void;
   collapsed: boolean;
   setCollapsed: (isCollapsed: boolean) => void;
@@ -39,7 +39,7 @@ type SiteContextType = {
   setRumDistribution: (rumDist: "p50" | "p75" | "p90" | "p95" | "p99") => void;
   selectedGeoType: "Visitors" | "Share" | "User Happiness";
   setSelectedGeoType: (
-    selectedGeoType: "Visitors" | "Share" | "User Happiness"
+    selectedGeoType: "Visitors" | "Share" | "User Happiness",
   ) => void;
   selectedAnalyticsDate:
     | "yesterday"
@@ -61,7 +61,7 @@ type SiteContextType = {
       | "last6Months"
       | "year"
       | "today"
-      | "thisYear"
+      | "thisYear",
   ) => void;
 };
 
@@ -108,7 +108,7 @@ export default function SiteContextProvider({
   const [dateRange, setDateRange] = useState<[string, string]>(["", ""]);
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [experienceType, setExperienceType] = useState<"p75" | "Distribution">(
-    "p75"
+    "p75",
   );
   const [rumDistribution, setRumDistribution] = useState<
     "p50" | "p75" | "p90" | "p95" | "p99"
@@ -139,7 +139,9 @@ export default function SiteContextProvider({
 
   const updateDateRange = (startDate: string, endDate: string) => {
     setDateRange((prev) =>
-      prev[0] === startDate && prev[1] === endDate ? prev : [startDate, endDate]
+      prev[0] === startDate && prev[1] === endDate
+        ? prev
+        : [startDate, endDate],
     );
   };
 
@@ -203,13 +205,11 @@ export default function SiteContextProvider({
         sessionStorage.removeItem("orders-ts");
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
     if (!user?.id) return;
-
-    console.log(selectedSite);
 
     const siteFromUrl = new URL(window.location.href).searchParams.get("site");
 
