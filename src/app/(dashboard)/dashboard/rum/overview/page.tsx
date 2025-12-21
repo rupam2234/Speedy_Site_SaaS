@@ -31,6 +31,7 @@ import dynamic from "next/dynamic";
 import WebVitalsOverview from "./helpers/webVitals";
 import LLMTrafficSource from "./helpers/llmTrafficSource";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 const CountryTrafficMap = dynamic(
   () => import("./helpers/trafficMapContainer"),
@@ -282,10 +283,15 @@ export default function AnalyticsDashboard() {
             <span>
               <Heart className="fill-pink-500 text-primary dark:text-primary-foreground" />
             </span>
-            <h3 className="text-[19px]">Web Vitals (RUM)</h3>
+            <Link href={`/dashboard/rum/web-vitals?site=${selectedSite}`}>
+              <h3 className="text-[19px] hover:underline">
+                Real User Experience
+              </h3>
+            </Link>
+
             <TooltipIcon
               content={
-                "This is not Google's core web vital data but real-time experience analysis of your site's traffic that closely resembles to CWV, to help you take decision and fix issues before they start appearing on Core Web Vital. (The data only includes from the past 7 days only and un-affected by the date setting at the top right)"
+                "This is Real User Monitoring (RUM) based, real-time experience analysis of your site’s traffic. It closely aligns with Core Web Vitals, enabling you to proactively identify and resolve performance issues before they impact your Core Web Vitals scores."
               }
               delay={300}
               side="bottom"

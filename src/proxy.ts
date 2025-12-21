@@ -40,7 +40,7 @@ export async function proxy(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (supabaseUser) {
-      user = { id: supabaseUser.id, email: supabaseUser.email }; // minimal info
+      user = { id: supabaseUser.id, email: supabaseUser.email };
 
       // Sign JWT and set as cookie
       const token = await new SignJWT(user)
@@ -51,13 +51,12 @@ export async function proxy(req: NextRequest) {
       res.cookies.set(USER_COOKIE_NAME, token, {
         httpOnly: true,
         path: "/",
-        maxAge: 60 * 60, // 1 hour
+        maxAge: 60 * 60,
         sameSite: "lax",
       });
     }
   }
 
-  // Handle redirects
   if (!user && isDashboard && !isAuthCallback) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }

@@ -88,19 +88,11 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "Flagged Images",
+            title: "LCP Images",
             url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
           },
           {
-            title: "Boost TTFB",
-            url: `#`,
-          },
-          {
-            title: "Auto Optimize Images",
-            url: `#`,
-          },
-          {
-            title: "WP Optimization",
+            title: "Resource load",
             url: `https://speedy.site/`,
           },
         ],
