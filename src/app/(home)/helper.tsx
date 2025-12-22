@@ -12,7 +12,7 @@ interface Props {
 export default function FeatureBlock({ feature, reversed = false }: Props) {
   const ref = useRef(null);
   const isInView = useInView(ref, {
-    margin: "-20% 0px -20% 0px",
+    margin: "-20% 0px -5% 0px",
     once: false,
   });
 

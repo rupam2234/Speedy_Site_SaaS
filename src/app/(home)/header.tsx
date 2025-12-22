@@ -26,9 +26,9 @@ export default function SiteHeader() {
           <a href="#testimonials" className="hover:text-indigo-600">
             Testimonials
           </a>
-          <a href="#pricing" className="hover:text-indigo-600">
+          {/* <a href="#pricing" className="hover:text-indigo-600">
             Pricing
-          </a>
+          </a> */}
         </nav>
         {user ? (
           <Link

@@ -8,13 +8,14 @@ export function DesktopSideContent() {
       <div className="absolute top-10 right-10 w-48 h-48 bg-purple-300 rounded-full opacity-20 blur-2xl" />
       <div className="absolute bottom-10 left-10 w-24 h-24 bg-indigo-200 rounded-full opacity-20 blur-xl" />
       <div className="backdrop-blur-md space-y-7 bg-white/10 dark:bg-black/20 p-10 rounded-md max-w-xl text-white z-10">
-        <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
-          Speed That Wins Rankings, Retains Visitors.
+        <h1 className="text-2xl font-extrabold leading-tight tracking-tight">
+          Page Experience that Retains Visitors - Builds Loyalty and Wins
+          Business.
         </h1>
         <p className="mt-4 text-lg text-indigo-100 dark:text-gray-200 max-w-lg">
-          We fix what’s slowing your site down and show you exactly how real
-          users experience it. Faster load times, better SEO, and happy visitors
-          — no guesswork.
+          We help you identify and fix what&apos;s slowing your site down and
+          show you exactly how real users experience it. Faster load times,
+          better UX, better SEO, and happy visitors — no guesswork.
         </p>
       </div>
       <div className="w-full py-8 z-0 mt-6">

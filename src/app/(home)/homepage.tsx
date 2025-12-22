@@ -3,9 +3,10 @@
 import { motion } from "framer-motion";
 import { ReactNode } from "react";
 import SiteHeader from "./header";
-import { Link2Icon } from "lucide-react";
 import Link from "next/link";
 import FeatureBlock from "./helper";
+import ComparisonTable from "./compairsion-table";
+import Testimonials from "./testimonials";
 
 export interface FeatureCore {
   title: string;
@@ -19,73 +20,67 @@ const features: FeatureCore[] = [
     desc: (
       <div className="space-y-4">
         <p className="text-lg text-gray-600">
-          Understand not just the average performance, but how it varies across
-          your user base. See what percentage of users fall into fast, average,
-          or poor experience tiers, enabling precise optimization strategies by
-          device type and user share.
+          Gain a comprehensive view of user experience across devices, users,
+          and geographic locations to quickly identify opportunities to improve.
         </p>
         <p className="text-lg text-gray-600">
-          You can analyze user experience across the full spectrum, not just
-          averages.{" "}
-          <span className="bg-amber-300">
-            This is not just about how fast the site is
-          </span>
-          ,{" "}
-          <span className="bg-green-300">
-            you need to know how many users are impacted
-          </span>{" "}
-          so you can prioritize improvements that affect the largest segments of
-          your audience
+          Streamlined traffic data featuring{" "}
+          <span className="bg-amber-300">LLM-based traffic sources</span> and
+          user happiness insights classified by geographic location.
+        </p>
+        <p>
+          Monitor your top landing pages&apos; performance and traffic sources,
+          and ensure they stay optimized using a single, unified script
+          configuration.
         </p>
       </div>
     ),
-    image: "/images/RUM-dashboard-screenshot.png",
+    image: "/images/overview.png",
   },
   {
-    title: "Never Let Poor Page UX Go Unnoticed",
+    title: "Catch Poor Page Experiences Early",
     desc: (
       <div className="space-y-4">
         <p className="text-lg text-gray-600">
-          Google Search Console highlights pages with the most serious
-          experience issues. It&apos;s a helpful starting point to fix core
-          problems. But that&apos;s not the whole story. What about the rest of
-          your?
+          Google Search Console highlights sample pages with serious experience
+          issues. It&apos;s a helpful starting point but not the whole story.
         </p>
         <p className="text-lg text-gray-600">
           A healthy website delivers great content and a great experience across
-          all pages, not just the popular ones.{" "}
+          all popular pages, not just few.
           <span className="bg-blue-200">
             Page Group can classify page experience across all traffic-driving
             pages
           </span>{" "}
           — whether they&apos;re new, niche, or top-performers — so you can
-          monitor and improve UX site-wide, not just where GSC shines a light.
+          monitor and improve UX site-wide.
         </p>
       </div>
     ),
-    image: "/images/page_groups_by_experience.png",
+    image: "/images/page-groups.png",
   },
   {
-    title: "Have Issues Flagged Before Frustrating Users",
+    title: "Monitor Web Vitals & Major Contributors",
     desc: (
       <>
         <div className="space-y-4">
           <p className="text-lg text-gray-600">
-            slow load times, layout shifts, or interactivity delays can silently
-            impact your audience&apos;s experience. Instead of waiting for user
-            leaving early with frustration or in worst case, SEO penalties you
-            need to fix these problems.
+            When fixing your website performance, waiting for web vitals reports
+            can slow you down. Track them daily instead to{" "}
+            <span className="bg-green-300">
+              gain deeper insights into your page&apos;s web vitals
+            </span>{" "}
+            and easily identify the root causes of performance issues.
           </p>
           <p className="text-lg text-gray-600">
-            RUM understands when a user experience something unstable. Combined
-            with SpeedySite&apos;s interactive debugging utilities you can spot
-            problems and get dedicated suggestions + AI reviews to fix what
-            could possibly hurt your site.
+            Understand precisely what&apos;s causing page experience issues
+            accross all devices and user segment, without the overhead of
+            building or maintaining your own system.
           </p>
         </div>
       </>
     ),
-    image: "/images/CLS_debugging.png",
+    image: "/images/web-vitals.png",
   },
   {
     title: "Centralized Insights into Unoptimized Images",
@@ -105,7 +100,7 @@ const features: FeatureCore[] = [
         </p>
       </div>
     ),
-    image: "/images/image-detection.png",
+    image: "/images/lcp-images.png",
   },
 ];
 
@@ -115,42 +110,9 @@ const extraFeatures: FeatureCore[] = [
     desc: (
       <>
         <p>
-          You can submit your performance and UX bottlenecks to the legacy
-          Speedy Site service for expert optimization support.
-        </p>
-      </>
-    ),
-  },
-  {
-    title: "Pre-optimized / On The Fly Image Optimization",
-    desc: (
-      <>
-        <p>
-          Only tools you will need to optimize your worst performing images
-          based on real-time data or scale on the fly
-        </p>
-      </>
-    ),
-  },
-  {
-    title: "TTFB Boost On Your Current Setup",
-    desc: (
-      <>
-        <p>
-          Enjoy faster load times and a smoother experience — Get a TTFB boost
-          that works seamlessly with your current setup
-        </p>
-      </>
-    ),
-  },
-  {
-    title: "Debug User Journey Experience",
-    desc: (
-      <>
-        <p>
-          Gain insights into user sessions as they move through your
-          website&apos;s pages, helping you identify friction points and improve
-          the overall browsing experience.
+          From your dashboard, you can send us your performance and UX
+          bottleneck report, and our Speedy Site WordPress Optimization service
+          (for WP sites only) will provide expert assistance.
         </p>
       </>
     ),
@@ -168,13 +130,13 @@ const extraFeatures: FeatureCore[] = [
     ),
   },
   {
-    title: "Daily Core Web Vitals Update For Your Domain",
+    title: "Privacy-First Real User Monitoring",
     desc: (
       <>
         <p>
-          Speedy Site automatically monitors your Core Web Vitals, maintains
-          historical data, and provides actionable insights—so you can focus on
-          improving, not tracking.
+          Real User Monitoring shouldn&apos;t come at the cost of user privacy.
+          Our RUM tracks only performance attributes, no cookies, no profiling,
+          just the metrics you need to fix performance issues with confidence.
         </p>
       </>
     ),
@@ -191,24 +153,15 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
-        <div className="mx-auto max-w-7xl px-6 py-32 text-center">
-          <h1 className="text-5xl sm:text-[50px] font-extrabold leading-tight">
-            Delight Users with Effortless Browsing
+        <div className="mx-auto max-w-6xl px-6 py-30 text-center">
+          <h1 className="max-w-7xl text-4xl sm:text-[45px] font-extrabold font-serif leading-tight">
+            Monitor, Diagnose & Improve User Experience
           </h1>
           <p className="mt-6 max-w-4xl mx-auto text-lg text-indigo-100">
-            User experience plays a crucial role, not only in engaging visitors
-            but{" "}
-            <span className="underline-offset-4 underline">
-              also as a search engine ranking signal
-            </span>
-            . Even great contents may struggle to keep visitors coming back when
-            page experience isn&apos;s good enough.
-          </p>
-          <p className="mt-6 max-w-3xl mx-auto text-lg text-indigo-100">
-            Who doesn&apos;t love a fast, smooth-loading page? Instead of
-            guessing, why not know exactly how your users experience your site
-            in real time? Speedy Site gives you all the UX and Web Vitals info
-            Google Search Console does, and does a whole lot more.
+            Great content can&apos;t win without a great experience that shapes
+            engagement and SEO. At Speedy Site you can keep track of UX and Web
+            Vitals insights similar to Google Search Console — and a whole lot
+            more insights on your website&apos;s performance.
           </p>
           <div className="mt-10 flex justify-center gap-4">
             <a
@@ -239,13 +192,14 @@ export default function Home() {
       {/* Additional Features */}
       <section id="additional-features" className="py-16 bg-primary/5">
         <div className="max-w-5xl mx-auto px-6 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h2 className="text-2xl font-serif sm:text-3xl font-bold text-primary/80">
             There&apos;s More
           </h2>
           <p className="mt-6 text-gray-600 max-w-4xl mx-auto">
-            Finding what&apos;s causing bottlenecks is only half the story —
-            optimizing them is what truly improves performance and creates a
-            smoother, frustration-free experience for your users.
+            Finding what&apos;s causing bottlenecks is only half the story,
+            optimizing them is what truly improves performance and UX. We help
+            you identify issues and offer additional guidance and tools to make
+            improving your page performance easier.
           </p>
 
           {/* Cards Container */}
@@ -282,7 +236,7 @@ export default function Home() {
             </span>{" "}
             → To Smart Performance Assistance
           </h2>
-          <p className="mt-6 text-gray-600 max-w-2xl mx-auto">
+          <p className="mt-6 text-gray-600 max-w-4xl mx-auto">
             Our journey began with a dedicated solution for WordPress
             optimization. Rooted in the mission to improve site speed and user
             experience, we helped many websites enhance their Core Web Vitals
@@ -291,7 +245,7 @@ export default function Home() {
             data, empowering you to optimize your site&apos;s performance and
             deliver a seamless user experience.
           </p>
-          <p className="mt-6 text-gray-600 max-w-2xl mx-auto">
+          <p className="mt-6 text-gray-600 max-w-3xl mx-auto">
             <span className="font-semibold">Looking for legacy services?</span>{" "}
             They can be accessed at{" "}
             <span className="text-blue-700 hover:bg-blue-300 hover:text-white cursor-pointer">
@@ -307,186 +261,35 @@ export default function Home() {
 
       {/* Testimonials */}
       <section id="testimonials" className="bg-gray-50 pb-24">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-lg sm:text-2xl font-bold text-primary/70">
-            Previous Experience Highlights
-          </h2>
-
-          {/* Trustpilot branding */}
-          <div className="mt-4 flex justify-center items-center gap-2 text-sm text-gray-600">
-            {/* <img src="/trustpilot-logo.svg" alt="Trustpilot" className="h-5" /> */}
-            <div className="flex items-center gap-1"></div>
-            <span>Rated 4.3/5 on Trustpilot</span>
-          </div>
-
-          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                name: "Xtra BaSe HitZ",
-                role: "Site Owner",
-                link: "https://www.trustpilot.com/reviews/6785659cd27865a5a711213c",
-                feedback:
-                  "They could have abandoned or given up on my site so many times, but they stuck with me and are dedicated to getting it to pass on mobile and desktop. For a while, desktop was passing but mobile was not. They were diligent in seeing it through and rectifying issues until it passed.",
-              },
-              {
-                name: "Anastasia",
-                role: "Site Owner",
-                link: "https://www.trustpilot.com/reviews/61017e78f9f48709d4c18766",
-                feedback:
-                  "Speedy.Site's service was a great experience as a customer - they replied to my emails quickly and suggested several fixes on my site which I never thought about that they could be slowing down my site. They did everything to get the best results possible for my site.",
-              },
-              {
-                name: "Robert Selby",
-                role: "Site Owner",
-                link: "https://www.trustpilot.com/reviews/60c8d908f9f4870a44d56e91",
-                feedback:
-                  "Live up to their name, super fast! Speedy tuned up my aged WordPress site and now has it running lightning fast. Quickness extends to their customer support who are very responsive and timely. Overall, a great value.",
-              },
-            ].map((t, idx) => (
-              <div
-                key={idx}
-                className="relative bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-start text-left"
-              >
-                <div className="flex items-center mb-4">
-                  {Array(5)
-                    .fill(0)
-                    .map((_, i) => (
-                      <svg
-                        key={i}
-                        className="w-4 h-4 text-green-500 mr-0.5"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M10 15l-5.878 3.09 1.122-6.545L.488 6.91l6.561-.955L10 0l2.951 5.955 6.561.955-4.756 4.635 1.122 6.545z" />
-                      </svg>
-                    ))}
-                </div>
-                <div className="absolute top-5 right-5">
-                  <Link2Icon
-                    size={18}
-                    className="text-primary/60 hover:text-primary cursor-pointer"
-                    onClick={() => {
-                      window.open(t.link, "_blank");
-                    }}
-                  />
-                </div>
-
-                <p className="text-gray-700 italic">“{t.feedback}”</p>
-                <div className="mt-4">
-                  <p className="font-semibold text-gray-900">{t.name}</p>
-                  <p className="text-sm text-gray-500">{t.role}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Optional CTA */}
-          <div className="mt-12">
-            <a
-              href="/reviews"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-green-500 text-white px-6 py-3 rounded-full font-semibold shadow hover:bg-green-600 transition"
-            >
-              Read More Reviews
-            </a>
-          </div>
-        </div>
+        <Testimonials />
       </section>
 
-      {/* Pricing Comparison */}
+      {/* Feature Comparison */}
       <section
         id="pricing"
         className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
       >
         <div className="w-full px-6 text-center bg-primary/70 p-10">
-          <div className="mx-auto max-w-5xl py-16">
-            <h2 className="text-2xl text-primary-foreground font-bold">
-              What Speedy Site Brings
+          <div className="mx-auto max-w-6xl py-5">
+            <h2 className="text-3xl text-primary-foreground font-serif font-bold">
+              What you get?
             </h2>
-            <p className="mt-4 text-indigo-200">
-              A quick look at how Speedy Site enhances what tools like Google
-              Search Console offer — with real-time data, deeper insights, and
-              performance assistance built for action.
+            <p className="mt-4 mx-auto max-w-3xl text-indigo-200">
+              Our goal is to provide deeper, continuously collected performance
+              insights and highlight potential bottlenecks so you can optimize
+              user experience proactively. Explore the tools and resources we
+              offer beyond what Google Search Console provides to help you keep
+              your site performance optimized.
             </p>
 
-            <div className="mt-12 overflow-x-auto">
-              <table className="w-full text-left border-collapse rounded-lg overflow-hidden">
-                <thead>
-                  <tr className="bg-indigo-800 text-white text-sm">
-                    <th className="py-4 px-6 font-semibold bg-indigo-900 text-left"></th>
-                    <th className="py-4 px-6 font-semibold">
-                      Google Search Console
-                    </th>
-                    <th className="py-4 px-6 font-semibold bg-indigo-700">
-                      Speedy Site Before
-                    </th>
-                    <th className="py-4 px-6 font-semibold bg-green-600">
-                      Speedy Site Smart Assistance
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {[
-                    ["Real-time UX data", "✖️", "✖️", "✔️"],
-                    [
-                      "Performance debugging",
-                      "✖️",
-                      "✔️ Internal",
-                      "✔️ Full Access",
-                    ],
-                    [
-                      "Image optimization",
-                      "✖️",
-                      "✔️ WP only",
-                      "✔️ On The Fly / Suggestions",
-                    ],
-                    ["Daily Core Web Vitals", "✖️", "✖️", "✔️ Free Access"],
-                    [
-                      "Before / After Comparison",
-                      "✖️",
-                      "✔️ Score Comparison",
-                      "✔️ Weekly / Monthly",
-                    ],
-                    ["User journey analytics", "✖️", "✖️", "✔️ Full Access"],
-                    ["Free plan", "✔️ Free", "✖️", "✔️ 7 days free access"],
-                  ].map((row, idx) => (
-                    <tr
-                      key={idx}
-                      className={`${
-                        idx % 2 === 0 ? "bg-primary/60" : "bg-primary/40"
-                      } border-b border-white/10 hover:bg-primary/70 transition`}
-                    >
-                      {row.map((cell, ci) => (
-                        <td
-                          key={ci}
-                          className={`py-3 px-6 ${
-                            ci === 3 ? "bg-green-500/20" : ""
-                          }`}
-                        >
-                          <span
-                            className={`${
-                              cell.includes("✔️")
-                                ? "text-green-400 font-semibold"
-                                : cell.includes("✖️")
-                                ? "text-red-400 font-semibold"
-                                : "text-white"
-                            }`}
-                          >
-                            {cell}
-                          </span>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="mt-12">
+              <ComparisonTable />
             </div>
           </div>
 
           <p className="mt-10 text-indigo-100">
-            👉 Start free today. No credit card needed. Upgrade later in your
-            dashboard when ready.
+            👉 Start free. No credit card needed. Upgrade later in your account
+            when ready.
           </p>
           <Link
             href="/sign-up"
@@ -505,13 +308,13 @@ export default function Home() {
           </p>
           <nav className="flex gap-6 text-sm">
             <a href="#features" className="hover:text-white">
-              Features
+              WordPress Optimization Service
             </a>
             <a href="#pricing" className="hover:text-white">
-              Comparison
+              Contact us
             </a>
             <a href="#testimonials" className="hover:text-white">
-              Testimonials
+              T&C
             </a>
           </nav>
         </div>
