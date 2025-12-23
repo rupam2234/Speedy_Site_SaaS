@@ -6,7 +6,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Copy, Edit, Trash } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OrderData } from "@/app/api/dataTypes";
@@ -41,7 +41,7 @@ export default function SettingsPage() {
       second: "2-digit",
       hour12: false,
       timeZone: "UTC",
-    }
+    },
   );
 
   if (!selectedSite) {

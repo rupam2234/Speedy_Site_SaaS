@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     event = stripe.webhooks.constructEvent(
       body,
       signature!,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET!,
     );
   } catch (error: any) {
     console.error("Signature validation failed:", error.message);
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
             stripe_subscription_status: subscription.status,
             stripe_subscription_id: subscription.id,
             period_starts_at: new Date(
-              subscription.start_date * 1000
+              subscription.start_date * 1000,
             ).toISOString(),
             period_ends_at: subscription.billing_cycle_anchor
               ? new Date(subscription.billing_cycle_anchor * 1000).toISOString()
@@ -66,10 +66,10 @@ export async function POST(req: Request) {
               priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
                 ? "Basic"
                 : priceId === "price_1SHfnpFudyIXBfXkLekhIkoM"
-                ? "Pro"
-                : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
-                ? "Agency"
-                : "Free",
+                  ? "Pro"
+                  : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
+                    ? "Agency"
+                    : "Free",
           })
           .eq("stripe_customer_id", subscription.customer as string);
 
@@ -105,8 +105,54 @@ export async function POST(req: Request) {
           })
           .eq("stripe_customer_id", invoice.customer as string);
 
-        console.log("PAYMENT FAILED UPDATE:", error ?? "success");
+        console.log("PAYMENT UPDATE FAILED:", error ?? "success");
         break;
+      }
+
+      /** AUTOMATIC RENEWALS */
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+
+        if (!invoice.period_start || !invoice.period_end) {
+          break;
+        }
+
+        const periodStart = new Date(invoice.period_start * 1000).toISOString();
+        const periodEnd = new Date(invoice.period_end * 1000).toISOString();
+
+        const { error } = await worker
+          .from("subscriptions")
+          .update({
+            status: "active",
+            stripe_subscription_status: "active",
+            updated_at: new Date().toISOString(),
+            period_starts_at: periodStart,
+            period_ends_at: periodEnd,
+          })
+          .eq("stripe_customer_id", invoice.customer as string);
+
+        if (error) {
+          console.log("Subscription update failed: ", error);
+        }
+        break;
+      }
+
+      /** CUSTOMER UPDATE */
+      case "customer.subscription.updated": {
+        const subcription = event.data.object as Stripe.Subscription;
+
+        const { error } = await worker
+          .from("subscriptions")
+          .update({
+            status: "active",
+            stripe_subscription_status: subcription.status,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_customer_id", subcription.customer as string);
+
+        if (error) {
+          console.log("Subscription update failed", error);
+        }
       }
     }
   } catch (error: any) {

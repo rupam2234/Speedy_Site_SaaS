@@ -101,7 +101,7 @@ export default function TrackingIntegration() {
             >
               <p className="mb-4 text-sm text-primary">
                 For WordPress sites, you can add the tracking script directly in
-                your theme’s{" "}
+                your theme&apos;s{" "}
                 <code className="font-mono bg-gray-100 dark:bg-secondary-background px-1 rounded">
                   header.php
                 </code>{" "}
