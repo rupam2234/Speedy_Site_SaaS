@@ -12,8 +12,8 @@ import { Label } from "@/components/ui/label";
 import { OrderData } from "@/app/api/dataTypes";
 import { useSiteContext } from "../siteContext";
 import { toast } from "sonner";
-import TrackingIntegration from "./trackingIntegration";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import Integrations from "./integrations";
 
 export default function SettingsPage() {
   const [copied, setCopied] = useState("");
@@ -75,13 +75,13 @@ export default function SettingsPage() {
             {confirmingDelete ? (
               <div className="flex gap-1 items-center">
                 <button
-                  className="text-red-500 px-2 py-0 text-xs hover:font-semibold cursor-pointer"
+                  className="text-red-500 px-2 py-0 text-xs hover:text-red-600 cursor-pointer"
                   onClick={handleDelete}
                 >
                   Confirm
                 </button>
                 <button
-                  className="text-muted-foreground px-2 py-0 cursor-pointer hover:font-semibold text-xs"
+                  className="text-muted-foreground px-2 py-0 cursor-pointer hover:text-primary/80 text-xs"
                   onClick={() => setConfirmingDelete(false)}
                 >
                   Cancel
@@ -101,50 +101,38 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="space-y-4">
-            <div>
+          <div className="flex flex-col space-y-3 text-sm">
+            {/* Website */}
+            <div className="flex justify-between items-center">
               <Label className="text-muted-foreground">Website</Label>
-              <Input
-                value={siteData?.website_name ?? ""}
-                readOnly
-                className="mt-1 bg-gray-100 dark:bg-gray-800 border-0 text-primary text-sm"
-              />
+              <p className="text-primary font-medium">
+                {siteData?.website_name}
+              </p>
             </div>
 
-            <div className="grid gap-2">
-              <div className="flex justify-between">
-                <Label className="text-muted-foreground">Site ID</Label>
-                <div className="flex items-center gap-2 text-primary">
-                  <span>{siteData?.order_id?.split("-")[0]}</span>
-                  <Copy
-                    size={14}
-                    onClick={() => handleCopy(siteData?.order_id ?? "")}
-                    className="cursor-pointer hover:text-blue-500"
-                  />
-                  {copied && (
-                    <span className="text-green-500 text-xs">Copied!</span>
-                  )}
-                </div>
-              </div>
+            {/* Created */}
+            <div className="flex justify-between items-center">
+              <Label className="text-muted-foreground">Created</Label>
+              <span className="text-primary font-medium">{formattedDate}</span>
+            </div>
 
-              <div className="flex justify-between">
-                <Label className="text-muted-foreground">Created</Label>
-                <span className="text-primary">{formattedDate}</span>
-              </div>
-
-              <div className="flex justify-between">
-                <Label className="text-muted-foreground">Status</Label>
-                <span className="text-primary">
-                  {siteData?.order_status === true ? "Running" : "Stopped"}
-                </span>
-              </div>
+            {/* Status */}
+            <div className="flex justify-between items-center">
+              <Label className="text-muted-foreground">Status</Label>
+              <span
+                className={`font-medium ${
+                  siteData?.order_status ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {siteData?.order_status ? "Running" : "Stopped"}
+              </span>
             </div>
           </div>
         </div>
 
         {/* RUM Integration - Wider Section */}
         <div className="col-span-1 md:col-span-8">
-          <TrackingIntegration />
+          <Integrations siteId={siteData?.order_id} />
         </div>
       </div>
     </div>
