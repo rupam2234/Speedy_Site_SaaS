@@ -5,24 +5,23 @@ export default {
 		const url = new URL(request.url);
 
 		const cf = request.cf || {};
-			
+
 		const geoInfo = {
-			country: cf.country || "unknown",
-			region: cf.region || "unknown",
-			city: cf.city || "unknown",
-			timezone: cf.timezone || "unknown",
-			org: cf.asOrganization || "unknown",
-			continent: cf.continent || "unknown"
+			country: cf.country || 'unknown',
+			region: cf.region || 'unknown',
+			city: cf.city || 'unknown',
+			timezone: cf.timezone || 'unknown',
+			org: cf.asOrganization || 'unknown',
+			continent: cf.continent || 'unknown',
 		};
 
-	
 		const geoScript = `
 			window.__GEO_INFO__ = ${JSON.stringify(geoInfo)};
 		`;
 
 		const fullScript = geoScript + script;
 
-		if (url.pathname === '/rum.js') {
+		if (url.pathname === '/rum.js' && url.hostname === 'rum.speedy.site') {
 			return new Response(fullScript, {
 				headers: {
 					'Content-Type': 'application/javascript',

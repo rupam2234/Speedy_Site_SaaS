@@ -192,7 +192,7 @@ export default function SiteContextProvider({
               : data[0].website_name;
           setSelectedSite(defaultSite);
         } else {
-          setOrders(null);
+          setOrders([]);
           setSelectedSite("");
           sessionStorage.removeItem("orders");
           sessionStorage.removeItem("orders-ts");

@@ -9,7 +9,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "build:vitals": "npx esbuild scripts/web-vitals-tracker.js --bundle --minify --format=esm --outfile=public/web-vitals.js",
     "build:extended-vitals": "npx esbuild scripts/extended-rum.js --bundle --minify --format=esm --outfile=public/rum.js",
     "build:journey": "npx esbuild scripts/journey.js --bundle --minify --format=iife --outfile=public/journey.min.js"
   },
@@ -47,6 +46,7 @@
     "react-dom": "^19.2.1",
     "react-leaflet": "^5.0.0",
     "react-spinners": "^0.17.0",
+    "resend": "^6.6.0",
     "sonner": "^2.0.6",
     "stripe": "^18.4.0",
     "tailwind-merge": "^3.3.1",

@@ -13,3 +13,6 @@ export type HappinessByGeo =
 
 export type Rum_history =
   Database["public"]["Tables"]["rum_history_new"]["Insert"];
+
+export type CloudflareConfig =
+  Database["public"]["Tables"]["cloudflare_auth"]["Insert"];

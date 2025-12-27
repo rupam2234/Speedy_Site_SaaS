@@ -5,25 +5,35 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Copy, Edit, Trash } from "lucide-react";
+import { Edit, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OrderData } from "@/app/api/dataTypes";
 import { useSiteContext } from "../siteContext";
 import { toast } from "sonner";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import Integrations from "./integrations";
+import { sendRenewalSuccessEmail } from "@/app/api/emails/renewalSuccess";
 
 export default function SettingsPage() {
-  const [copied, setCopied] = useState("");
   const [siteData, setSiteData] = useState<OrderData>();
   const { selectedSite, fetchOrders } = useSiteContext();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [cloudflareStatus, setCloudflareStatus] = useState<boolean | null>(
+    null,
+  );
 
   useEffect(() => {
     fetchDomainData(selectedSite);
   }, [selectedSite]);
+
+  // useEffect(() => {
+  //   getUserData();
+  // }, []);
+
+  // async function getUserData() {
+  //   await fetch("/api/test");
+  // }
 
   const handleRefetch = () => {
     sessionStorage.removeItem("orders");
@@ -105,27 +115,55 @@ export default function SettingsPage() {
             {/* Website */}
             <div className="flex justify-between items-center">
               <Label className="text-muted-foreground">Website</Label>
-              <p className="text-primary font-medium">
-                {siteData?.website_name}
-              </p>
+              {!siteData ? (
+                <div className="h-4 w-28 rounded-md bg-primary/20 animate-pulse" />
+              ) : (
+                <p className="text-primary font-medium">
+                  {siteData?.website_name}
+                </p>
+              )}
             </div>
 
             {/* Created */}
             <div className="flex justify-between items-center">
               <Label className="text-muted-foreground">Created</Label>
-              <span className="text-primary font-medium">{formattedDate}</span>
+
+              {!siteData ? (
+                <div className="h-4 w-28 rounded-md bg-primary/20 animate-pulse" />
+              ) : (
+                <span className="text-primary font-medium">
+                  {formattedDate}
+                </span>
+              )}
             </div>
 
             {/* Status */}
             <div className="flex justify-between items-center">
-              <Label className="text-muted-foreground">Status</Label>
-              <span
-                className={`font-medium ${
-                  siteData?.order_status ? "text-green-500" : "text-red-500"
-                }`}
-              >
-                {siteData?.order_status ? "Running" : "Stopped"}
-              </span>
+              <Label className="text-muted-foreground">RUM Status</Label>
+              {!siteData ? (
+                <div className="h-4 w-28 rounded-md bg-primary/20 animate-pulse" />
+              ) : (
+                <span
+                  className={`font-medium ${
+                    siteData?.order_status ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  {siteData?.order_status ? "Running" : "Stopped"}
+                </span>
+              )}
+            </div>
+
+            {/* cloudflare connection */}
+            <div className="flex justify-between items-center">
+              <Label className="text-muted-foreground">Cloudflare Status</Label>
+
+              {!siteData || cloudflareStatus === null ? (
+                <div className="h-4 w-28 rounded-md bg-primary/20 animate-pulse" />
+              ) : cloudflareStatus ? (
+                <span className="font-medium text-green-500">Connected</span>
+              ) : (
+                <span className="font-medium text-red-500">Not Connected</span>
+              )}
             </div>
           </div>
         </div>
@@ -137,16 +175,6 @@ export default function SettingsPage() {
       </div>
     </div>
   );
-
-  async function handleCopy(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(text);
-      setTimeout(() => setCopied(""), 1500);
-    } catch (error) {
-      console.log(error);
-    }
-  }
 
   async function fetchDomainData(selectedSite: string) {
     if (!selectedSite) return;
@@ -165,7 +193,27 @@ export default function SettingsPage() {
       }
 
       const data: any = await response.json();
-      setSiteData(data.data[0]);
+      const siteData = data.data[0];
+
+      setSiteData(siteData);
+
+      setCloudflareStatus(null);
+
+      const res = await fetch("/api/cloudflare/check-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: siteData.user_id,
+          site_id: siteData.order_id,
+        }),
+      });
+
+      if (!res.ok) {
+        console.log("Failed to retrieve Cloudflare status");
+      }
+
+      const cfData: any = await res.json();
+      setCloudflareStatus(cfData.found);
     } catch (error) {
       console.error("Network or server error:", error);
     }

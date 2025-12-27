@@ -15,16 +15,6 @@ const CONFIG = {
   MAX_EVENTS_PER_SESSION: 100,
   FCP_THRESHOLDS: [1800, 3000],
   TTFB_THRESHOLDS: [800, 1800],
-  AI_CITATION_WEIGHTS: {
-    domContentLoaded: 0.15,
-    ttfb: 0.15,
-    semanticMarkupScore: 0.25,
-    headingScore: 0.15,
-    structuredDataPresent: 0.1,
-    docSizeScore: 0.1,
-    langTagPresent: 0.05,
-    titleDescriptionPresent: 0.05,
-  },
 };
 
 const FCPThresholds = CONFIG.FCP_THRESHOLDS;
@@ -60,18 +50,6 @@ const latestMetrics = {
   LCP: null,
   FCP: null,
   TTFB: null,
-};
-
-const aiCitationMetrics = {
-  domContentLoaded: null,
-  ttfb: null,
-  contentType: null,
-  semanticMarkupScore: null,
-  headingScore: null,
-  structuredDataPresent: null,
-  docSize: null,
-  langTagPresent: null,
-  titleDescriptionPresent: null,
 };
 
 const geo = window.__GEO_INFO__;
@@ -179,7 +157,7 @@ function initializeWebVitals() {
     });
   } else {
     console.warn(
-      "PerformanceObserver or 'event' entry type not supported; INP tracking disabled."
+      "PerformanceObserver or 'event' entry type not supported; INP tracking disabled.",
     );
     queueEvent({
       type: "error",
@@ -191,7 +169,6 @@ function initializeWebVitals() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  aiCitationMetrics.domContentLoaded = performance.now();
   const unsent = localStorage.getItem("unsentMetrics");
   if (unsent) {
     navigator.sendBeacon(CONFIG.API_URL, unsent);
@@ -209,92 +186,6 @@ window.addEventListener("popstate", () => {
   latestMetrics.INP = null;
   console.debug("Reset INP data for SPA navigation");
 });
-
-let cachedSemanticScore = null;
-function computeSemanticMarkupScore() {
-  if (cachedSemanticScore !== null) return cachedSemanticScore;
-  const tags = ["article", "main", "header", "footer", "nav", "section"];
-  cachedSemanticScore =
-    tags.filter((tag) => document.querySelector(tag)).length / tags.length;
-  return cachedSemanticScore;
-}
-
-function getDocSizeScore() {
-  const size = document.documentElement.outerHTML.length;
-  return size < 50000 ? 1 : size < 150000 ? 0.5 : 0.2;
-}
-
-function computeHeadingScore() {
-  const h1 = document.querySelectorAll("h1").length;
-  const h2 = document.querySelectorAll("h2").length;
-  const h3 = document.querySelectorAll("h3").length;
-
-  const score = (h1 > 0 ? 0.4 : 0) + (h2 > 0 ? 0.3 : 0) + (h3 > 0 ? 0.3 : 0);
-  return Math.min(score, 1);
-}
-
-function checkStructuredDataPresent() {
-  return !!document.querySelector('script[type="application/ld+json"]');
-}
-
-function checkLangTagPresent() {
-  return document.documentElement.hasAttribute("lang");
-}
-
-function checkTitleAndDescriptionPresent() {
-  const title = document.querySelector("title");
-  const desc = document.querySelector('meta[name="description"]');
-  return !!title && !!desc;
-}
-
-function computeAICitationScore(m) {
-  const weights = CONFIG.AI_CITATION_WEIGHTS;
-
-  const dom = 1 - Math.min(m.domContentLoaded ?? 10000, 10000) / 10000;
-  const ttfb = 1 - Math.min(m.ttfb ?? 2000, 2000) / 2000;
-  const semantic = computeSemanticMarkupScore();
-  const heading = computeHeadingScore();
-  const structured = checkStructuredDataPresent() ? 1 : 0;
-  const doc = getDocSizeScore();
-  const lang = checkLangTagPresent() ? 1 : 0;
-  const titleDesc = checkTitleAndDescriptionPresent() ? 1 : 0;
-
-  const score =
-    dom * weights.domContentLoaded +
-    ttfb * weights.ttfb +
-    semantic * weights.semanticMarkupScore +
-    heading * weights.headingScore +
-    structured * weights.structuredDataPresent +
-    doc * weights.docSizeScore +
-    lang * weights.langTagPresent +
-    titleDesc * weights.titleDescriptionPresent;
-
-  return Math.round(score * 100);
-}
-
-function runAICitation() {
-  if (aiCitationMetrics.ttfb == null) return;
-  if (aiCitationMetrics.domContentLoaded == null) {
-    aiCitationMetrics.domContentLoaded = performance.now();
-  }
-
-  aiCitationMetrics.semanticMarkupScore = computeSemanticMarkupScore();
-  aiCitationMetrics.docSize = getDocSizeScore();
-  aiCitationMetrics.headingScore = computeHeadingScore();
-  aiCitationMetrics.structuredDataPresent = checkStructuredDataPresent();
-  aiCitationMetrics.langTagPresent = checkLangTagPresent();
-  aiCitationMetrics.titleDescriptionPresent = checkTitleAndDescriptionPresent();
-
-  const score = computeAICitationScore(aiCitationMetrics);
-
-  queueEvent({
-    type: "ai-citation-ready",
-    siteDomain,
-    score,
-    domContentLoaded: aiCitationMetrics.domContentLoaded,
-    timestamp: Date.now(),
-  });
-}
 
 function classifyMetric(value, thresholds) {
   if (value <= thresholds[0]) return "good";
@@ -355,7 +246,7 @@ function handleLCP(metric) {
   const entryByLooseMatch =
     !entryByExactUrl &&
     resourceEntries.find((e) =>
-      e.name.includes(metric.attribution?.url?.split("/").pop())
+      e.name.includes(metric.attribution?.url?.split("/").pop()),
     );
 
   const matchedEntry = entryByExactUrl || entryByLooseMatch;
@@ -432,8 +323,6 @@ function handleTTFB(metric) {
     },
     timestamp: Date.now(),
   });
-  aiCitationMetrics.ttfb = metric.value;
-  runAICitation();
 }
 
 const thirdPartyAssetDomains = new Set();
@@ -470,7 +359,7 @@ new PerformanceObserver((list) => {
       name.includes("://") &&
       !name.includes(location.hostname) &&
       ["script", "img", "link", "iframe", "font", "video", "audio"].includes(
-        initiatorType
+        initiatorType,
       )
     ) {
       try {
@@ -541,7 +430,6 @@ new PerformanceObserver((list) => {
     }
   }
 }).observe({ type: "resource", buffered: true });
-
 
 function getDeviceType() {
   const w = window.innerWidth;

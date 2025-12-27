@@ -2,7 +2,6 @@ export type Json =
   | string
   | number
   | boolean
-  | null
   | { [key: string]: Json | undefined }
   | Json[];
 
@@ -14,6 +13,54 @@ export type Database = {
   };
   public: {
     Tables: {
+      cloudflare_auth: {
+        Row: {
+          config_backup: Json | null;
+          created_at: string;
+          id: number;
+          site_id: string | null;
+          status: string | null;
+          token: string | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          config_backup?: Json | null;
+          created_at?: string;
+          id?: number;
+          site_id?: string | null;
+          status?: string | null;
+          token?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          config_backup?: Json | null;
+          created_at?: string;
+          id?: number;
+          site_id?: string | null;
+          status?: string | null;
+          token?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cloudflare_auth_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "cloudflare_kv_tracking";
+            referencedColumns: ["order_id"];
+          },
+          {
+            foreignKeyName: "cloudflare_auth_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["order_id"];
+          },
+        ];
+      };
       orders: {
         Row: {
           favicon_file: string | null;

@@ -1,3 +1,5 @@
+import { sendRenewalSuccessEmail } from "@/app/api/emails/renewalSuccess";
+import { SubscriptionCreated } from "@/app/api/emails/subscriptionCreated";
 import { setupDB } from "@/lib/db";
 import { headers } from "next/headers";
 import Stripe from "stripe";
@@ -47,8 +49,18 @@ export async function POST(req: Request) {
       /*** SUBSCRIPTION CREATED ***/
       case "customer.subscription.created": {
         const subscription = event.data.object as Stripe.Subscription;
-
         const priceId = subscription.items.data[0].price.id;
+        const activeplan =
+          priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
+            ? "Basic"
+            : priceId === "price_1SHfnpFudyIXBfXkLekhIkoM"
+              ? "Pro"
+              : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
+                ? "Agency"
+                : "Free";
+        const billingCycleEnd = new Date(
+          subscription.billing_cycle_anchor * 1000,
+        ).toISOString();
 
         const { error } = await worker
           .from("subscriptions")
@@ -59,21 +71,21 @@ export async function POST(req: Request) {
               subscription.start_date * 1000,
             ).toISOString(),
             period_ends_at: subscription.billing_cycle_anchor
-              ? new Date(subscription.billing_cycle_anchor * 1000).toISOString()
+              ? billingCycleEnd
               : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             status: "active",
-            plan:
-              priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
-                ? "Basic"
-                : priceId === "price_1SHfnpFudyIXBfXkLekhIkoM"
-                  ? "Pro"
-                  : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
-                    ? "Agency"
-                    : "Free",
+            plan: activeplan,
           })
           .eq("stripe_customer_id", subscription.customer as string);
 
         console.log("SUBSCRIPTION CREATED UPDATE:", error ?? "success");
+
+        await SubscriptionCreated({
+          stripeCustomerId: subscription.customer as string,
+          plan: activeplan,
+          billingCycleEnd: billingCycleEnd,
+        });
+
         break;
       }
 
@@ -134,6 +146,12 @@ export async function POST(req: Request) {
         if (error) {
           console.log("Subscription update failed: ", error);
         }
+
+        // send email
+        await sendRenewalSuccessEmail({
+          stripeCustomerId: invoice.customer as string,
+        });
+
         break;
       }
 

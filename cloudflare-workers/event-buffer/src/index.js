@@ -9,13 +9,13 @@ export default {
 				return new Response('Durable Object not bound', { status: 500 });
 			}
 
-			// for concurrency and load balancing we using round robin DO instances
+			// Round-robin sharding
 			const shardCount = 5;
 			const index = Math.floor(Math.random() * shardCount);
 			const shardId = `metrics-forwarder-${index}`;
 			const id = env.MY_DURABLE_OBJECT.idFromName(shardId);
-
 			const stub = env.MY_DURABLE_OBJECT.get(id);
+
 			return stub.fetch(request);
 		}
 
@@ -31,6 +31,10 @@ export class MyDurableObject extends DurableObject {
 	}
 
 	async fetch(request) {
+		// temporary clear of post data
+		// await this.state.storage.delete('buffer');
+		// await this.state.storage.delete('timestamps');
+
 		if (request.method !== 'POST') {
 			return new Response('Method Not Allowed', { status: 405 });
 		}
@@ -39,16 +43,13 @@ export class MyDurableObject extends DurableObject {
 			const data = await request.json();
 			const domain = data.siteDomain;
 
-			// Validate the domain
+			// Validate domain
 			const { valid, reason } = await this.validateDomain(domain);
-
 			if (!valid) {
-				console.log('domain validation failed');
-				console.log(reason);
 				return new Response(reason, { status: 403 });
 			}
 
-			// Estimate recent traffic to dynamically assign buffers
+			// Track recent request timestamps
 			let timestamps = await this.state.storage.get('timestamps');
 			if (!Array.isArray(timestamps)) timestamps = [];
 			timestamps.push(Date.now());
@@ -59,48 +60,46 @@ export class MyDurableObject extends DurableObject {
 			const requestsLastMinute = timestamps.filter((t) => now - t < 60000).length;
 
 			let bufferThreshold = 3;
-			if (requestsLastMinute > 30) {
-				bufferThreshold = 20;
-			} else if (requestsLastMinute > 15) {
-				bufferThreshold = 10;
-			}
+			if (requestsLastMinute > 30) bufferThreshold = 20;
+			else if (requestsLastMinute > 15) bufferThreshold = 10;
 
 			// Load buffer
 			let buffer = await this.state.storage.get('buffer');
-			if (!Array.isArray(buffer)) {
-				buffer = [];
-			}
+			if (!Array.isArray(buffer)) buffer = [];
 
-			// Build payload
+			// Normalized payload (NO undefined keys)
 			const payload = {
-				session_id: data.sessionId,
-				domain_name: data.siteDomain,
-				current_page: data.currentPage,
-				previous_page: data.previousPage,
-				events: data.data,
+				session_id: data.sessionId ?? null,
+				domain_name: data.siteDomain ?? null,
+				current_page: data.currentPage ?? null,
+				previous_page: data.previousPage ?? null,
+				events: data.data ?? [],
+				created_at: new Date().toISOString(),
 			};
 
 			buffer.push(payload);
 
-			// If batch size reached, flush to Supabase
-			if (buffer.length >= bufferThreshold) {
-				const res = await this.flushToSupabase(buffer);
+			// Decide whether to flush
+			const shouldFlush = buffer.length >= bufferThreshold || JSON.stringify(buffer).length > 400_000;
 
-				if (res.ok) {
-					await this.state.storage.delete('buffer');
-					console.log(`Flushed ${buffer.length} to Supabase`);
-					return new Response('Batch inserted to Supabase', { status: 202 });
-				} else {
-					await this.state.storage.put('buffer', buffer); // rollback
-					return new Response('Supabase insert failed', { status: 500 });
-				}
-			} else {
+			if (!shouldFlush) {
 				await this.state.storage.put('buffer', buffer);
-				console.log(`Loading in buffer: ${buffer.length} with threshold: ${bufferThreshold}`);
 				return new Response('Data buffered', { status: 202 });
 			}
+
+			// Flush ONCE
+			const res = await this.flushToSupabase(buffer);
+
+			if (res.ok) {
+				await this.state.storage.delete('buffer');
+				return new Response('Batch inserted to Supabase', { status: 202 });
+			}
+
+			// Failure → keep buffer
+			await this.state.storage.put('buffer', buffer);
+			return new Response('Supabase insert failed', { status: 500 });
 		} catch (err) {
-			console.error('Invalid JSON or Supabase error:', err);
+			console.error('Handler error:', err);
 			return new Response('Invalid data', { status: 400 });
 		}
 	}
@@ -121,22 +120,19 @@ export class MyDurableObject extends DurableObject {
 			if (!res.ok) {
 				const errorText = await res.text();
 				console.error('Supabase insert failed:', res.status, errorText);
-				return { ok: false, status: res.status, error: errorText };
+				return { ok: false };
 			}
 
 			return res;
-		} catch (error) {
-			console.error('Flush error:', error);
+		} catch (err) {
+			console.error('Supabase flush exception:', err);
 			return { ok: false };
 		}
 	}
 
 	async validateDomain(domain) {
-		const kvData = await this.env.SUBSCRIPTION_METADATA.get(`domain:${domain}`); //SUBSCRIPTION_METADATA
-
-		if (!kvData) {
-			return { valid: false, reason: 'Domain not found' };
-		}
+		const kvData = await this.env.SUBSCRIPTION_METADATA.get(`domain:${domain}`);
+		if (!kvData) return { valid: false, reason: 'Domain not found' };
 
 		let subscription;
 		try {
@@ -158,7 +154,6 @@ export class MyDurableObject extends DurableObject {
 
 		const usage = subscription.current_usage ?? 0;
 		const limit = subscription.usage_limit ?? 0;
-
 		if (subscription.degradation_policy === 'block' && usage >= limit) {
 			return { valid: false, reason: 'Usage limit exceeded' };
 		}

@@ -60,7 +60,7 @@ export function AddWebsiteModal({
   //#region Upload favicon to db
   async function uploadFavicon(
     faviconFile: string,
-    domain: string
+    domain: string,
   ): Promise<string | null> {
     if (!faviconFile) return null;
 
@@ -78,7 +78,7 @@ export function AddWebsiteModal({
         const errorBody: any = await res.json();
         console.error(
           "Favicon upload failed:",
-          errorBody.message || res.statusText
+          errorBody.message || res.statusText,
         );
         return null;
       }
@@ -111,7 +111,7 @@ export function AddWebsiteModal({
         const errorBody: any = await res.json();
         console.error(
           "Favicon fetch failed:",
-          errorBody.message || res.statusText
+          errorBody.message || res.statusText,
         );
         return null;
       }
@@ -127,7 +127,7 @@ export function AddWebsiteModal({
 
   async function addOrder(
     uploadedFavicon: string | null,
-    domain: string
+    domain: string,
   ): Promise<any | null> {
     if (!domain) {
       return;
@@ -150,16 +150,18 @@ export function AddWebsiteModal({
       });
 
       if (res.status === 200) {
+        // clear cached sites from sessionstorage
+        sessionStorage.removeItem("orders");
+        sessionStorage.removeItem("orders-ts");
         return await res.json();
       } else if (res.status === 502) {
         // if max site limit reached
         return { success: false, status: res.status };
       } else {
-        // Log error from backend if available
         const errorBody: any = await res.json();
         console.error(
           "Failed to add order:",
-          errorBody.details || res.statusText
+          errorBody.details || res.statusText,
         );
         return null;
       }

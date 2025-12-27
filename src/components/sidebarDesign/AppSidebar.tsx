@@ -92,8 +92,8 @@ export default function AppSidebar({
             url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
           },
           {
-            title: "Resource load",
-            url: `https://speedy.site/`,
+            title: "Cloudflare Lab",
+            url: `/dashboard/cloudflare?site=${selectedSite}`,
           },
         ],
       },

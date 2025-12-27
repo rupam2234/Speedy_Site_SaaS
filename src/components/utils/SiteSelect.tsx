@@ -56,18 +56,17 @@ export function SelectSite({
         router.push(`/dashboard/${value}`);
       }
     },
-    [setSelectedSite, router]
+    [setSelectedSite, router],
   );
 
   // Memoize derived data to prevent re-renders
   const selectedOrder = React.useMemo(
     () => orders?.find((o) => o.website_name === selectedSite),
-    [orders, selectedSite]
+    [orders, selectedSite],
   );
 
   const selectedFavicon = selectedOrder?.favicon_file;
 
-  // Handle loading or empty state
   if (!orders) {
     return (
       <div className="text-sm text-muted-foreground p-2">
@@ -79,7 +78,7 @@ export function SelectSite({
   if (orders.length === 0) {
     return (
       <div
-        className="text-blue-500 text-sm flex items-center gap-1 cursor-pointer"
+        className="text-blue-500 text-sm flex p-2 items-center gap-1 cursor-pointer"
         onClick={() => setShowAddModal(true)}
       >
         <CirclePlus className="w-4 h-4" /> Add your first website
@@ -156,7 +155,7 @@ export function SelectSite({
         </SelectContent>
       </Select>
 
-      {/* ✅ Move modal outside SelectContent to avoid re-render issues */}
+      {/* Move modal outside SelectContent to avoid re-render issues */}
       <AddWebsiteModal
         open={showAddModal}
         onOpenChange={setShowAddModal}
