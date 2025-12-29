@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSiteContext } from "../siteContext";
+import SetupContainer from "./setup-container";
 
 export default function CloudflareEnhancements() {
   const { selectedSite } = useSiteContext();
@@ -50,9 +51,7 @@ export default function CloudflareEnhancements() {
           </div>
         </div>
       ) : isConfigured ? (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">
-          Cloudflare Enhancements Done Here
-        </div>
+        <SetupContainer />
       ) : (
         <div className="flex items-start gap-4 border bg-primary/5 dark:bg-secondary-background p-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/40">
