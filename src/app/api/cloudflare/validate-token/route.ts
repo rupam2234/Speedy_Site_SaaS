@@ -81,21 +81,56 @@ export async function POST(req: Request) {
     );
   }
 
-  // if the cf-token is valid we store it in db
-  const { error } = await worker.from("cloudflare_auth").upsert({
-    user_id: user.user?.id,
-    token: token,
-    status: "connected",
-    updated_at: new Date().toISOString(),
-    config_backup: "",
-    site_id: SiteIdData[0].order_id,
-  });
+  // check if previous key exist for the site
+  const { data: existing, error: fetchError } = await worker
+    .from("cloudflare_auth")
+    .select("id")
+    .eq("user_id", user.user?.id as unknown as string)
+    .eq("site_id", SiteIdData[0].order_id)
+    .maybeSingle();
 
-  if (error) {
+  if (fetchError) {
     return NextResponse.json(
-      { valid: false, message: "Failed to validate token" },
-      { status: 401 },
+      { valid: false, message: "Previous key exists" },
+      { status: 409 },
     );
+  }
+
+  // if the cf-token is valid we store it in db
+
+  if (existing) {
+    const { error } = await worker
+      .from("cloudflare_auth")
+      .update({
+        token,
+        status: "connected",
+        updated_at: new Date().toISOString(),
+        config_backup: "",
+      })
+      .eq("id", existing.id);
+
+    if (error) {
+      return NextResponse.json(
+        { valid: false, message: "Failed to validate token" },
+        { status: 401 },
+      );
+    }
+  } else {
+    const { error } = await worker.from("cloudflare_auth").insert({
+      user_id: user.user?.id,
+      site_id: SiteIdData[0].order_id,
+      token,
+      status: "connected",
+      updated_at: new Date().toISOString(),
+      config_backup: "",
+    });
+
+    if (error) {
+      return NextResponse.json(
+        { valid: false, message: "Failed to validate token" },
+        { status: 401 },
+      );
+    }
   }
 
   await resend.emails.send({
@@ -121,8 +156,7 @@ export async function POST(req: Request) {
                   target="_blank"
                   style="color: #CC6CE7; text-decoration: underline;"
                 >
-                  Cloudflare Lab
-                </a>.
+                  Cloudflare Lab</a>.
               </p>
 
             </td>
