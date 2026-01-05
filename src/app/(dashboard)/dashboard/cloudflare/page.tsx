@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSiteContext } from "../siteContext";
-import SetupContainer from "./setup-container";
+import CloudflareConfigurations from "./configurations";
+import { PlusIcon } from "lucide-react";
 
 export default function CloudflareEnhancements() {
   const { selectedSite } = useSiteContext();
@@ -36,24 +37,66 @@ export default function CloudflareEnhancements() {
   }, [selectedSite]);
 
   return (
-    <div className="p-5">
+    <div className="p-5 space-y-4">
+      <h2 className="font-bold text-primary/80 text-lg">Cache Rules</h2>
+      <div className="flex items-center gap-2 text-primary/80">
+        Select to view/edit available configurations or create new cloudflare
+        rules
+      </div>
       {isLoading ? (
         // loading skeleton
-        <div className="animate-pulse rounded-lg border bg-gray-100 dark:bg-gray-800 p-6">
-          <div className="flex items-start gap-4">
-            <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-700" />
-            <div className="flex-1 space-y-3">
-              <div className="h-4 w-1/3 rounded bg-gray-300 dark:bg-gray-700" />
-              <div className="h-3 w-full rounded bg-gray-300 dark:bg-gray-700" />
-              <div className="h-3 w-2/3 rounded bg-gray-300 dark:bg-gray-700" />
-              <div className="h-8 w-40 rounded bg-gray-300 dark:bg-gray-700" />
-            </div>
+        <div className="space-y-3">
+          <div className="border border-primary/30 rounded-md overflow-auto">
+            <table className="w-full text-left text-sm [&_th]:px-4 [&_th]:font-medium [&_th]:py-3">
+              <thead className="bg-primary/5 w-full">
+                <tr className="border-b border-primary/20">
+                  <th className="w-10">
+                    <button className="py-1 cursor-pointer">
+                      <PlusIcon size={16} />
+                    </button>
+                  </th>
+                  <th>Rules</th>
+                  <th>Updated on</th>
+                  <th>Edge TTL</th>
+                  <th>Browser TTL</th>
+                  <th>Status</th>
+                  <th className="w-10 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="animate-pulse bg-primary/5">
+                <tr className="border-b last:border-b-0 border-primary/20">
+                  <td className="px-4 py-4">
+                    <div className="h-4 w-4 rounded bg-primary/20" />
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-4 w-28 rounded bg-primary/20" />
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="h-4 w-24 rounded bg-primary/20" />
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="h-5 w-24 rounded bg-primary/20" />
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="h-4 w-12 rounded bg-primary/20" />
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="h-4 w-12 rounded bg-primary/20" />
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <div className="ml-auto h-4 w-4 rounded bg-primary/20" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       ) : isConfigured ? (
-        <SetupContainer />
-      ) : (
-        <div className="flex items-start gap-4 border bg-primary/5 dark:bg-secondary-background p-6">
+        <CloudflareConfigurations site={selectedSite ? selectedSite : ""} />
+      ) : !isLoading && !isConfigured ? (
+        <div className="flex items-start mt-2 gap-4 border bg-primary/5 dark:bg-secondary-background p-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/40">
             ☁️
           </div>
@@ -76,6 +119,8 @@ export default function CloudflareEnhancements() {
             </a>
           </div>
         </div>
+      ) : (
+        <></>
       )}
     </div>
   );

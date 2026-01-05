@@ -2,6 +2,7 @@ export type Json =
   | string
   | number
   | boolean
+  | null
   | { [key: string]: Json | undefined }
   | Json[];
 
@@ -57,6 +58,13 @@ export type Database = {
             columns: ["site_id"];
             isOneToOne: false;
             referencedRelation: "orders";
+            referencedColumns: ["order_id"];
+          },
+          {
+            foreignKeyName: "cloudflare_auth_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "v_cf_zone_per_site";
             referencedColumns: ["order_id"];
           },
         ];
@@ -865,6 +873,13 @@ export type Database = {
             referencedRelation: "orders";
             referencedColumns: ["website_name"];
           },
+          {
+            foreignKeyName: "user_happiness_by_geo_domain_name_fkey";
+            columns: ["domain_name"];
+            isOneToOne: false;
+            referencedRelation: "v_cf_zone_per_site";
+            referencedColumns: ["website_name"];
+          },
         ];
       };
     };
@@ -923,6 +938,41 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "plan_metadata";
             referencedColumns: ["plan"];
+          },
+        ];
+      };
+      v_cf_zone_per_site: {
+        Row: {
+          config_backup: Json | null;
+          order_id: string | null;
+          order_status: boolean | null;
+          site_id: string | null;
+          status: string | null;
+          token: string | null;
+          user_id: string | null;
+          website_name: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cloudflare_auth_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "cloudflare_kv_tracking";
+            referencedColumns: ["order_id"];
+          },
+          {
+            foreignKeyName: "cloudflare_auth_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["order_id"];
+          },
+          {
+            foreignKeyName: "cloudflare_auth_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "v_cf_zone_per_site";
+            referencedColumns: ["order_id"];
           },
         ];
       };

@@ -51,6 +51,16 @@ interface getRumHistoryProps {
   endDate: string | undefined;
 }
 
+type MetricKey = "lcp" | "cls" | "inp" | "fcp" | "ttfb";
+
+const RUM_CAPS: Record<MetricKey, { min: number; max: number }> = {
+  lcp: { min: 0, max: 10000 },
+  inp: { min: 0, max: 2000 },
+  cls: { min: 0, max: 3 },
+  fcp: { min: 0, max: 10000 },
+  ttfb: { min: 0, max: 6000 },
+};
+
 export default function Main() {
   const { selectedSite, selectedDevice, rumDistribution } = useSiteContext();
   const [historyData, setRumHistoryData] = useState<any>();
@@ -64,26 +74,28 @@ export default function Main() {
   const { startDate, endDate } = useWebVitalContext();
 
   //#region Data manipulation
-
   const activeSeries = useMemo(() => {
     if (historyData === undefined) return [];
 
-    return historyData?.rum_history_data?.map((x: any) => [
-      x.day,
-      Number(
-        Number(
-          x?.[activeMetric.toLowerCase()]?.[selectedDevice.toLowerCase()]?.[
-            rumDistribution
-          ],
-        ).toFixed(2),
-      ),
-    ]);
-  }, [historyData, activeMetric, selectedDevice, rumDistribution]);
+    const metricKey = activeMetric.toLowerCase() as MetricKey;
 
+    return historyData.rum_history_data.map((x: any) => {
+      const raw = Number(
+        x?.[metricKey]?.[selectedDevice.toLowerCase()]?.[rumDistribution],
+      );
+
+      const capped = winsorize(
+        raw,
+        RUM_CAPS[metricKey].min,
+        RUM_CAPS[metricKey].max,
+      );
+
+      return [x.day, Number(capped.toFixed(2))];
+    });
+  }, [historyData, activeMetric, selectedDevice, rumDistribution]);
   //#endregion
 
   //#region Effects
-
   useEffect(() => {
     if (activeMetric !== undefined) AnalysisHandler();
   }, [activeMetric, startDate, endDate]);
@@ -126,11 +138,20 @@ export default function Main() {
 
     historyData.rum_history_data.forEach((x: any) => {
       ["cls", "fcp", "inp", "lcp", "ttfb"].forEach((key) => {
-        const val = Number(
+        const metricKey = activeMetric.toLowerCase() as MetricKey;
+
+        const raw = Number(
           x?.[key]?.[selectedDevice.toLowerCase()]?.[rumDistribution],
         );
-        if (!isNaN(val)) {
-          totals[key] += val;
+
+        const capped = winsorize(
+          raw,
+          RUM_CAPS[metricKey].min,
+          RUM_CAPS[metricKey].max,
+        );
+
+        if (!isNaN(capped)) {
+          totals[key] += capped;
           counts[key] += 1;
         }
       });
@@ -216,7 +237,6 @@ export default function Main() {
         return [];
     }
   }, [activeMetric, contributors, selectedDevice]);
-
   //#endregion
 
   if (!historyData) {
@@ -332,7 +352,7 @@ export default function Main() {
           <div className="px-2 md:mt-6 mt-2 py-4">
             {filteredContributors === undefined ||
             filteredContributors.length === 0 ? (
-              <div className="w-full h-7 bg-primary/10 animate-pulse" />
+              <></>
             ) : activeMetric === "LCP" ? (
               <LCPelements contributors={filteredContributors} />
             ) : activeMetric === "CLS" ? (
@@ -455,5 +475,11 @@ export default function Main() {
         console.error("Failed to fetch distribution:", error);
       }
     }
+  }
+
+  function winsorize(value: number, min: number, max: number): number {
+    //handles bad data or unrealstick bumps
+    if (isNaN(value)) return value;
+    return Math.min(Math.max(value, min), max);
   }
 }
