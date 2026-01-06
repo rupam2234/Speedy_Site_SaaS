@@ -117,7 +117,7 @@ export default function EditCacheRule({ data, close }: Props) {
           disabled={loading ? true : false}
           className="px-2 text-sm py-1 bg-blue-300 text-primary dark:text-primary-foreground font-medium hover:text-primary/80 hover:bg-blue-500 rounded-sm cursor-pointer"
         >
-          {loading ? "Closing..." : "Close"}
+          Close
         </button>
       </div>
     </>

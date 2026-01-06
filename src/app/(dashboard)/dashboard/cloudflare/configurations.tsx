@@ -4,6 +4,7 @@ import TooltipIcon from "@/components/utils/customTooltip";
 import { InfoIcon, PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import EditCacheRule from "./cacheHtml";
+import { toast } from "sonner";
 
 interface Props {
   site: string;
@@ -41,14 +42,8 @@ export default function CloudflareConfigurations({ site }: Props) {
   const [editRowId, setEditRowId] = useState<string | null>(null);
   const [selectedData, setSelectedData] = useState<CacheRule[]>([]);
 
-  // handles selected rule row decisions
-  useEffect(() => {
-    if (cf_configs && editRowId) {
-      setSelectedData(cf_configs.filter((x) => x.id === editRowId));
-    } else {
-      setSelectedData([]);
-    }
-  }, [editRowId, cf_configs]);
+  const CACHE_PREXIF = "cf_rules";
+  const cachekey = `${CACHE_PREXIF}:${site}`;
 
   // handles fetching cache rules from cloudflare
   useEffect(() => {
@@ -61,8 +56,6 @@ export default function CloudflareConfigurations({ site }: Props) {
     document.addEventListener("click", handleDottedMenuClick);
     return () => document.removeEventListener("click", handleDottedMenuClick);
   }, [openRowId]);
-
-  console.log(selectedData, editRowId);
 
   return (
     <>
@@ -213,6 +206,7 @@ export default function CloudflareConfigurations({ site }: Props) {
                           onClick={(e) => {
                             e.stopPropagation(); // to prevent immediate closure
                             setOpenRowId(openRowId === x.id ? null : x.id);
+                            selectData(x.id);
                           }}
                         >
                           ⋮
@@ -229,6 +223,12 @@ export default function CloudflareConfigurations({ site }: Props) {
                               >
                                 Edit
                               </li>
+                              <li
+                                className="px-4 py-2 cursor-pointer"
+                                onClick={toggleRule}
+                              >
+                                {cf_configs[0].enabled ? "Disable" : "Enable"}
+                              </li>
                               <li className="px-4 py-2 cursor-pointer">
                                 Delete
                               </li>
@@ -243,7 +243,7 @@ export default function CloudflareConfigurations({ site }: Props) {
             {editRowId !== null && (
               <div className="p-6 text-primary/80 space-y-3 w-4/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 shadow-md md:w-auto md:h-auto bg-primary-foreground dark:bg-secondary-background border border-primary/10 rounded-md">
                 <EditCacheRule
-                  data={cf_configs ? cf_configs : []}
+                  data={selectedData ? selectedData : []}
                   close={handleModalClose}
                 />
               </div>
@@ -257,6 +257,17 @@ export default function CloudflareConfigurations({ site }: Props) {
   async function getRules() {
     if (!site) return;
 
+    const TTL = 10 * 60 * 1000; // 10 min
+    const cached = localStorage.getItem(cachekey);
+
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < TTL) {
+        setCfConfigs(data);
+        return;
+      }
+    }
+
     const rules = await fetch("/api/cloudflare/zones/get-rules", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -265,11 +276,55 @@ export default function CloudflareConfigurations({ site }: Props) {
 
     if (!rules.ok) {
       console.log("Failed to fetch rules: ", rules.statusText);
+      return;
     }
 
     const result: any = await rules.json();
+    const data = result ? result.rulesetData?.result.rules : [];
 
-    setCfConfigs(result ? result.rulesetData?.result.rules : []);
+    localStorage.setItem(
+      cachekey,
+      JSON.stringify({ data, timestamp: Date.now() }),
+    );
+
+    // then we will set the data
+    setCfConfigs(data);
+  }
+
+  // handles selected rule row decisions
+  function selectData(rowId: string) {
+    if (cf_configs && rowId) {
+      setSelectedData(cf_configs.filter((x) => x.id === rowId));
+    } else {
+      setSelectedData([]);
+    }
+  }
+
+  async function toggleRule() {
+    const res = await fetch("/api/cloudflare/zones/toggle-rule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        site: site,
+        rule_id: selectedData[0].id,
+        isEnabled: selectedData[0].enabled,
+      }),
+    });
+
+    if (!res.ok) {
+      toast.error(
+        `Failed to ${selectedData[0].enabled ? "Disable" : "Enable"} cache rule`,
+        {
+          style: { backgroundColor: "red", color: "white" },
+        },
+      );
+      return;
+    }
+
+    // after update we need to clear the cache :D
+    localStorage.removeItem(cachekey);
+
+    toast.success(`Rule ${selectedData[0].enabled ? "Disabled" : "Enabled"}`);
   }
 
   function handleModalClose() {
