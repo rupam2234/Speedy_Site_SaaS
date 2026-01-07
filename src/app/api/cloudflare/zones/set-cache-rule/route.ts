@@ -6,12 +6,14 @@ interface Props {
   site: string;
   edgeTTL: number;
   excludedPaths: string;
+  cacheByDevice: boolean;
 }
 
 const worker = setupDB();
 
 export async function POST(req: NextRequest) {
-  const { site, edgeTTL, excludedPaths }: Props = await req.json();
+  const { site, edgeTTL, excludedPaths, cacheByDevice }: Props =
+    await req.json();
   const user = await getServerSupabase();
 
   if (!site) {
@@ -84,6 +86,11 @@ export async function POST(req: NextRequest) {
       browser_ttl: { mode: "respect_origin" },
       origin_error_page_passthru: false,
       serve_stale: { disable_stale_while_updating: false },
+      cache_key: {
+        ignore_query_strings_order: true,
+        cache_deception_armor: true,
+        cache_by_device_type: cacheByDevice,
+      },
     },
     description: "Cache HTML pages",
     enabled: true,

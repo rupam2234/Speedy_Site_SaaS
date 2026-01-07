@@ -300,6 +300,7 @@ export default function CloudflareConfigurations({ site }: Props) {
     }
   }
 
+  // enables / disbales cache rule
   async function toggleRule() {
     const res = await fetch("/api/cloudflare/zones/toggle-rule", {
       method: "POST",

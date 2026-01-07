@@ -9,6 +9,7 @@ interface CacheConfigs {
   description?: string;
   excluded_paths?: string;
   edgeTTL?: number; // in hours
+  cacheByDevice?: boolean;
 }
 
 interface Props {
@@ -21,6 +22,7 @@ export default function EditCacheRule({ data, close }: Props) {
 
   const { selectedSite } = useSiteContext();
   const siteLabel = selectedSite ? selectedSite.replace(".", " ") : "";
+  const [cacheByDevice, setCacheByDevice] = useState<boolean>(false);
   const [cacheConfig, setCacheConfig] = useState<CacheConfigs>({
     description: isDataAvailable
       ? data[0].description
@@ -34,7 +36,8 @@ export default function EditCacheRule({ data, close }: Props) {
           ?.map((p) => p.replace(/"/g, ""))
           .join("\n") ?? "")
       : "/wp-admin\n/wp-login.php\n/cart\n/checkout",
-  });
+    cacheByDevice: cacheByDevice,
+  }); // default setup
   const [loading, setLoading] = useState<boolean>(false);
 
   return (
@@ -103,8 +106,33 @@ export default function EditCacheRule({ data, close }: Props) {
             />
           </div>
         </div>
+        <div className="text-[12px] text-primary/80 flex items-center gap-2">
+          <span>Cache by Device</span>
+          <label className="flex gap-1 items-center">
+            <input
+              type="radio"
+              value={"on"}
+              checked={cacheByDevice}
+              onChange={() => setCacheByDevice(true)}
+            />{" "}
+            On
+          </label>
+          <label className="flex gap-1 items-center">
+            <input
+              type="radio"
+              value={"off"}
+              checked={!cacheByDevice}
+              onChange={() => setCacheByDevice(false)}
+            />{" "}
+            Off
+          </label>
+          <span className="text-red-500">
+            (Only useful when you serve different theme, content per device
+            type)
+          </span>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex mt-10 items-center gap-2">
         <button
           onClick={() => saveCacheRule()}
           disabled={loading ? true : false}
@@ -133,6 +161,7 @@ export default function EditCacheRule({ data, close }: Props) {
           site: selectedSite,
           edgeTTL: cacheConfig.edgeTTL,
           excludedPaths: cacheConfig.excluded_paths,
+          cacheByDevice: cacheConfig.cacheByDevice,
         }),
       });
 
