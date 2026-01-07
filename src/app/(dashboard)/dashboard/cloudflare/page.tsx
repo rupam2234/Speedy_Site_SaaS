@@ -7,6 +7,8 @@ import { PlusIcon } from "lucide-react";
 
 export default function CloudflareEnhancements() {
   const { selectedSite } = useSiteContext();
+  const CACHE_PREXIF = "cf_rules";
+  const cachekey = `${CACHE_PREXIF}:${selectedSite}`; // will use this to cache cloudflare rules
 
   const [isConfigured, setConfigured] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,7 +96,10 @@ export default function CloudflareEnhancements() {
           </div>
         </div>
       ) : isConfigured ? (
-        <CloudflareConfigurations site={selectedSite ? selectedSite : ""} />
+        <CloudflareConfigurations
+          site={selectedSite ? selectedSite : ""}
+          cachekey={cachekey}
+        />
       ) : !isLoading && !isConfigured ? (
         <div className="flex items-start mt-2 gap-4 border bg-primary/5 dark:bg-secondary-background p-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/40">

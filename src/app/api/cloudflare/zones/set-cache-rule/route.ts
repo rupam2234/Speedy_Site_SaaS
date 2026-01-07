@@ -1,8 +1,11 @@
+import { CacheRuleUpdated } from "@/app/api/emails/cloudflareRules";
 import { setupDB } from "@/lib/db";
 import { getServerSupabase } from "@/lib/db/serverSupabase";
 import { NextRequest, NextResponse } from "next/server";
 
 interface Props {
+  rule_id: string;
+  rule_desc: string;
   site: string;
   edgeTTL: number;
   excludedPaths: string;
@@ -12,8 +15,14 @@ interface Props {
 const worker = setupDB();
 
 export async function POST(req: NextRequest) {
-  const { site, edgeTTL, excludedPaths, cacheByDevice }: Props =
-    await req.json();
+  const {
+    rule_id,
+    rule_desc,
+    site,
+    edgeTTL,
+    excludedPaths,
+    cacheByDevice,
+  }: Props = await req.json();
   const user = await getServerSupabase();
 
   if (!site) {
@@ -72,6 +81,9 @@ export async function POST(req: NextRequest) {
 
   const existingRules = rulesetData.result.rules || [];
 
+  // first exclude the rules we don't want to edit
+  const rulesToNotEdit = existingRules.filter((x: any) => x.id !== rule_id);
+
   // prepare excluded path params
   const pathsArray = excludedPaths.split("\n");
   const exclusionExpression = `(http.request.method eq "GET") and (${pathsArray
@@ -79,6 +91,7 @@ export async function POST(req: NextRequest) {
     .join(" and ")})`;
 
   const newRules = {
+    id: rule_id,
     action: "set_cache_settings",
     action_parameters: {
       cache: true,
@@ -107,7 +120,7 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          rules: [newRules],
+          rules: [...rulesToNotEdit, newRules],
         }),
       },
     );
@@ -143,6 +156,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // send a cache rule update email to user
+    CacheRuleUpdated({
+      site: site,
+      ruleName: rule_desc,
+      userEmail: user.user?.email ? user.user.email : "",
+      userName: user.user?.user_metadata.name.split(" ")[0],
+    });
+
     return NextResponse.json(
       { message: "Cache rule updated" },
       { status: 200 },
@@ -157,7 +178,7 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          rules: [newRules],
+          rules: [...rulesToNotEdit, newRules],
         }),
       },
     );
@@ -168,6 +189,8 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
+
+    // send a cache rule created email to user
 
     return NextResponse.json(
       { message: "Cache rule created" },

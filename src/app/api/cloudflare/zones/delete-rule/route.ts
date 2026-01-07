@@ -1,21 +1,19 @@
-import { CacheRuleDisabled } from "@/app/api/emails/cloudflareRules";
 import { setupDB } from "@/lib/db";
 import { getServerSupabase } from "@/lib/db/serverSupabase";
 import { NextRequest, NextResponse } from "next/server";
 
-const worker = setupDB();
-
 interface Props {
-  site: string;
   rule_id: string;
-  isEnabled: boolean;
+  site: string;
 }
 
+const worker = setupDB();
+
 export async function POST(req: NextRequest) {
-  const { site, rule_id, isEnabled }: Props = await req.json();
+  const { rule_id, site }: Props = await req.json();
   const user = await getServerSupabase();
 
-  if (!site || !rule_id) {
+  if (!rule_id) {
     return NextResponse.json({ message: "Bad Request" }, { status: 401 });
   }
 
@@ -23,7 +21,7 @@ export async function POST(req: NextRequest) {
     .from("v_cf_zone_per_site")
     .select("token, order_id")
     .eq("website_name", site)
-    .eq("user_id", user?.user?.id as unknown as string)
+    .eq("user_id", user.user?.id as unknown as string)
     .maybeSingle();
 
   if (ZoneError) {
@@ -60,6 +58,8 @@ export async function POST(req: NextRequest) {
     },
   );
 
+  const rulesetData: any = await rulsets.json();
+
   if (!rulsets.ok) {
     return NextResponse.json(
       { message: "Failed to fetch rulesets" },
@@ -67,23 +67,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const rulesetData: any = await rulsets.json();
+  const existingRules = rulesetData.result.rules || [];
 
-  //  filter the rule from available rulesets
-  const filteredRule = rulesetData.result.rules.filter(
-    (x: any) => x.id === rule_id,
-  )[0];
+  // we need to delete / skip the rule passed through
+  const rulesAfterDelete = existingRules.filter((x: any) => x.id !== rule_id);
 
-  if (!filteredRule) {
-    return NextResponse.json({ message: "Rule not found" }, { status: 404 });
-  }
-
-  // then update the rule
-  const updatedRules = rulesetData.result.rules.map((rule: any) =>
-    rule.id === rule_id ? { ...rule, enabled: !isEnabled } : rule,
-  );
-
-  const updateRes = await fetch(
+  // now patch it on cloudflare rule
+  const res = await fetch(
     `https://api.cloudflare.com/client/v4/zones/${zoneData.result[0].id}/rulesets/phases/http_request_cache_settings/entrypoint`,
     {
       method: "PUT",
@@ -92,26 +82,20 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        rules: updatedRules,
+        rules: [rulesAfterDelete],
       }),
     },
   );
 
-  if (!updateRes.ok) {
+  if (!res.ok) {
     return NextResponse.json(
-      { message: "Failed to patch rule status" },
+      { message: "Unable to delete cache rule" },
       { status: 500 },
     );
   }
 
-  // send email update to user
-  CacheRuleDisabled({
-    site: site,
-    ruleName: filteredRule.description,
-    userEmail: user?.user?.email ? user.user.email : "",
-    userName: user.user?.user_metadata.name.split(" ")[0],
-    ruleStatus: isEnabled,
-  });
-
-  return NextResponse.json({ message: "Rule status updated" }, { status: 200 });
+  return NextResponse.json(
+    { isDeleted: true, message: "Cache rule deleted" },
+    { status: 200 },
+  );
 }

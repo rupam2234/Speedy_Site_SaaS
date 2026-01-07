@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 interface Props {
   site: string;
+  cachekey: string;
 }
 
 export type CacheRule = {
@@ -36,14 +37,11 @@ export type CacheRule = {
   version: string;
 }; // based on cloudflare incoming data
 
-export default function CloudflareConfigurations({ site }: Props) {
+export default function CloudflareConfigurations({ site, cachekey }: Props) {
   const [cf_configs, setCfConfigs] = useState<CacheRule[]>();
   const [openRowId, setOpenRowId] = useState<string | null>(null);
   const [editRowId, setEditRowId] = useState<string | null>(null);
   const [selectedData, setSelectedData] = useState<CacheRule[]>([]);
-
-  const CACHE_PREXIF = "cf_rules";
-  const cachekey = `${CACHE_PREXIF}:${site}`;
 
   // handles fetching cache rules from cloudflare
   useEffect(() => {
@@ -229,7 +227,10 @@ export default function CloudflareConfigurations({ site }: Props) {
                               >
                                 {cf_configs[0].enabled ? "Disable" : "Enable"}
                               </li>
-                              <li className="px-4 py-2 cursor-pointer">
+                              <li
+                                className="px-4 py-2 cursor-pointer bg-red-400 text-primary-foreground"
+                                onClick={() => deleteRule(selectedData[0].id)}
+                              >
                                 Delete
                               </li>
                             </ul>
@@ -244,6 +245,7 @@ export default function CloudflareConfigurations({ site }: Props) {
               <div className="p-6 text-primary/80 space-y-3 w-4/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 shadow-md md:w-auto md:h-auto bg-primary-foreground dark:bg-secondary-background border border-primary/10 rounded-md">
                 <EditCacheRule
                   data={selectedData ? selectedData : []}
+                  cacheKey={cachekey}
                   close={handleModalClose}
                 />
               </div>
@@ -326,6 +328,25 @@ export default function CloudflareConfigurations({ site }: Props) {
     localStorage.removeItem(cachekey);
 
     toast.success(`Rule ${selectedData[0].enabled ? "Disabled" : "Enabled"}`);
+  }
+
+  // to delele the selected cache rule
+  async function deleteRule(ruleId: string) {
+    const res = await fetch("/api/cloudflare/zones/delete-rule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rule_id: ruleId, site: site }),
+    });
+
+    if (!res.ok) {
+      console.error("Unable to delete cache rule");
+      toast.error("Couldn't delete your cache rule", {
+        style: { backgroundColor: "red", color: "white" },
+      });
+      return;
+    }
+
+    toast.success("Cache rule deleted");
   }
 
   function handleModalClose() {

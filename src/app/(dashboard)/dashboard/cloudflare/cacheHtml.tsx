@@ -15,9 +15,10 @@ interface CacheConfigs {
 interface Props {
   data: CacheRule[];
   close: () => void;
+  cacheKey: string;
 }
 
-export default function EditCacheRule({ data, close }: Props) {
+export default function EditCacheRule({ data, cacheKey, close }: Props) {
   const isDataAvailable = data.length > 0;
 
   const { selectedSite } = useSiteContext();
@@ -158,6 +159,8 @@ export default function EditCacheRule({ data, close }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          rule_id: data[0].id,
+          rule_desc: data[0].description,
           site: selectedSite,
           edgeTTL: cacheConfig.edgeTTL,
           excludedPaths: cacheConfig.excluded_paths,
@@ -187,6 +190,7 @@ export default function EditCacheRule({ data, close }: Props) {
         style: { backgroundColor: "red", color: "white" },
       });
     } finally {
+      localStorage.removeItem(cacheKey); //flush cachekey
       setLoading(false);
     }
   }
