@@ -5,6 +5,7 @@ import { InfoIcon, PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import EditCacheRule from "./cacheHtml";
 import { toast } from "sonner";
+import CreateCacheRule from "./createNewRule";
 
 interface Props {
   site: string;
@@ -42,6 +43,8 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
   const [openRowId, setOpenRowId] = useState<string | null>(null);
   const [editRowId, setEditRowId] = useState<string | null>(null);
   const [selectedData, setSelectedData] = useState<CacheRule[]>([]);
+  const [confirming, setConfirming] = useState(false);
+  const [openRuleCreator, setOpenRuleCreator] = useState(false);
 
   // handles fetching cache rules from cloudflare
   useEffect(() => {
@@ -55,6 +58,16 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
     return () => document.removeEventListener("click", handleDottedMenuClick);
   }, [openRowId]);
 
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setCfConfigs((prev) => (prev === undefined ? [] : prev));
+    }, 6000);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  console.log(openRuleCreator);
+
   return (
     <>
       {cf_configs === undefined ? (
@@ -64,8 +77,11 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
             <table className="w-full text-left text-sm [&_th]:px-4 [&_th]:font-medium [&_th]:py-3">
               <thead className="bg-primary/5 w-full">
                 <tr className="border-b border-primary/20">
-                  <th className="w-10">
-                    <button className="py-1 cursor-pointer">
+                  <th className="w-10 relative">
+                    <button
+                      className="py-1 cursor-pointer"
+                      onClick={() => setOpenRuleCreator(true)}
+                    >
                       <PlusIcon size={16} />
                     </button>
                   </th>
@@ -105,6 +121,62 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
                 </tr>
               </tbody>
             </table>
+            {openRuleCreator && (
+              <div className="p-2 text-primary/80 space-y-3 w-4/5 absolute top-1/7 left-1/2 -translate-x-1/2 z-20 shadow-md md:w-auto md:h-auto bg-primary-foreground dark:bg-secondary-background border border-primary/10 rounded-md">
+                <CreateCacheRule
+                  close={handleRuleCreatorClosure}
+                  cachekey={cachekey}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : cf_configs.length === 0 ? (
+        <div className="space-y-3">
+          <div className="border border-primary/30 rounded-md overflow-auto">
+            <table className="w-full text-left text-sm [&_th]:px-4 [&_th]:font-medium [&_th]:py-3">
+              <thead className="bg-primary/5 w-full">
+                <tr className="border-b border-primary/20">
+                  <th className="w-10 relative">
+                    <button
+                      className="py-1 cursor-pointer"
+                      onClick={() => setOpenRuleCreator(true)}
+                    >
+                      <PlusIcon size={16} />
+                    </button>
+                  </th>
+                  <th>Rules</th>
+                  <th>Updated on</th>
+                  <th>Edge TTL</th>
+                  <th>Browser TTL</th>
+                  <th>Status</th>
+                  <th className="w-10 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="bg-primary/5">
+                <tr className="border-b last:border-b-0 border-primary/20">
+                  <td className="px-4 py-4"></td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      No Rules Found (Create a new rule)
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">n/a</td>
+                  <td className="px-4 py-4">n/a</td>
+                  <td className="px-4 py-4">n/a</td>
+                  <td className="px-4 py-4">n/a</td>
+                  <td className="px-4 py-4 text-right"></td>
+                </tr>
+              </tbody>
+            </table>
+            {openRuleCreator && (
+              <div className="p-2 text-primary/80 space-y-3 w-4/5 absolute top-1/7 left-1/2 -translate-x-1/2  z-20 shadow-md md:w-auto md:h-auto bg-primary-foreground dark:bg-secondary-background border border-primary/10 rounded-md">
+                <CreateCacheRule
+                  close={handleRuleCreatorClosure}
+                  cachekey={cachekey}
+                />
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -114,8 +186,11 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
             <table className="w-full text-left text-sm [&_th]:px-4 [&_th]:font-medium [&_th]:py-3">
               <thead className="bg-primary/5 w-full">
                 <tr className="border-b border-primary/20">
-                  <th className="w-10">
-                    <button className="py-1 cursor-pointer">
+                  <th className="w-10 relative">
+                    <button
+                      className="py-1 cursor-pointer"
+                      onClick={() => setOpenRuleCreator(true)}
+                    >
                       <PlusIcon size={16} />
                     </button>
                   </th>
@@ -227,11 +302,34 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
                               >
                                 {cf_configs[0].enabled ? "Disable" : "Enable"}
                               </li>
-                              <li
-                                className="px-4 py-2 cursor-pointer bg-red-400 text-primary-foreground"
-                                onClick={() => deleteRule(selectedData[0].id)}
-                              >
-                                Delete
+                              <li className="px-4 py-2 text-red-500 font-medium ">
+                                {!confirming ? (
+                                  <button
+                                    className="w-full cursor-pointer text-right"
+                                    onClick={() => setConfirming(true)}
+                                  >
+                                    Delete
+                                  </button>
+                                ) : (
+                                  <div className="flex justify-center items-center gap-2">
+                                    <button
+                                      className="flex-1 cursor-pointer px-[4px] py-[2px] text-[12px] bg-muted text-foreground rounded"
+                                      onClick={() => setConfirming(false)}
+                                    >
+                                      Cancel
+                                    </button>
+
+                                    <button
+                                      className="flex-1 cursor-pointer px-[4px] py-[2px] text-[12px] bg-red-600 text-white rounded"
+                                      onClick={() => {
+                                        deleteRule(selectedData[0].id);
+                                        setConfirming(false);
+                                      }}
+                                    >
+                                      Confirm
+                                    </button>
+                                  </div>
+                                )}
                               </li>
                             </ul>
                           </div>
@@ -242,11 +340,19 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
               </tbody>
             </table>
             {editRowId !== null && (
-              <div className="p-6 text-primary/80 space-y-3 w-4/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 shadow-md md:w-auto md:h-auto bg-primary-foreground dark:bg-secondary-background border border-primary/10 rounded-md">
+              <div className="p-2 text-primary/80 space-y-3 w-4/5 absolute top-1/7 left-1/2 -translate-x-1/2 z-20 shadow-md md:w-auto md:h-auto bg-primary-foreground dark:bg-secondary-background border border-primary/10 rounded-md">
                 <EditCacheRule
                   data={selectedData ? selectedData : []}
                   cacheKey={cachekey}
                   close={handleModalClose}
+                />
+              </div>
+            )}
+            {openRuleCreator && (
+              <div className="p-2 text-primary/80 space-y-3 w-4/5 absolute top-1/7 left-1/2 -translate-x-1/2  z-20 shadow-md md:w-auto md:h-auto bg-primary-foreground dark:bg-secondary-background border border-primary/10 rounded-md">
+                <CreateCacheRule
+                  close={handleRuleCreatorClosure}
+                  cachekey={cachekey}
                 />
               </div>
             )}
@@ -351,5 +457,9 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
 
   function handleModalClose() {
     setEditRowId(null);
+  }
+
+  function handleRuleCreatorClosure() {
+    setOpenRuleCreator(false);
   }
 }

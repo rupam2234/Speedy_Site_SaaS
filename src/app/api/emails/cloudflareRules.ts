@@ -14,6 +14,65 @@ interface Props {
   site: string;
 }
 
+export async function CacheRuleCreated({
+  ruleName,
+  userEmail,
+  userName,
+  site,
+}: Props) {
+  await resend.emails.send({
+    from: "Cache Rules <contact@speedy.site>",
+    to: [userEmail],
+    cc: ["thespeedysite@gmail.com"],
+    subject: `New cache rule for ${site} has been created`,
+    html: `<table width="100%" cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; background-color: transparent; padding: 20px;">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                <!-- Body -->
+                <tr>
+                  <td style="padding: 30px; color: #333333;">
+                    <h2 style="margin-top: 0; font-size: 22px">Hi ${userName ? userName : "there"},</h2>
+        
+                    <p style="font-size: 16px; line-height: 1.6;">
+                      This is to inform you that Cloudflare cache rule [${ruleName}] for your site: ${site}, has been successfully created on ${current_time}.
+                    </p>
+        
+                    <p style="font-size: 16px; line-height: 1.6;">
+                      You can review your
+                      <a
+                        href="${baseAddress}/dashboard/cloudflare?site=${site}"
+                        target="_blank"
+                        style="color: #CC6CE7; text-decoration: underline;"
+                      >
+                        cache rules</a>&nbsp;and ensure accuracy.
+                    </p>
+        
+                    <p style="font-size: 16px; line-height: 1.6;">
+                      Cloudflare uses edge nodes worldwide, so the new rule is sent to all edges. Ruleset changes propagate globally almost instantly, usually under a minute.
+                    </p>
+                  </td>
+                </tr>
+        
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 20px; text-align: center; font-size: 12px; color: #888888;">
+                    <p>© ${new Date().getFullYear()} Speedy Site. All rights reserved.</p>
+                    <p>
+                      <a href="${baseAddress}/unsubscribe" style="color: #888888; text-decoration: underline;">
+                        Unsubscribe
+                      </a>
+                    </p>
+                  </td>
+                </tr>
+        
+              </table>
+            </td>
+          </tr>
+        </table>`,
+  });
+}
+
 export async function CacheRuleUpdated({
   ruleName,
   userEmail,
@@ -84,7 +143,7 @@ export async function CacheRuleDisabled({
     from: "Cache Rules <contact@speedy.site>",
     to: [userEmail],
     cc: ["thespeedysite@gmail.com"],
-    subject: `Cache rule for ${site} has been disabled`,
+    subject: `Cache rule for ${site} has been ${ruleStatus === true ? "disabled" : "enabled"}`,
     html: `<table width="100%" cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; background-color: transparent; padding: 20px;">
             <tr>
               <td align="center">
@@ -110,6 +169,60 @@ export async function CacheRuleDisabled({
           
                       <p style="font-size: 16px; line-height: 1.6;">
                         You can ${ruleStatus === true ? "enabled" : "disabled"} this rule from the rule row’s context menu.
+                      </p>
+                    </td>
+                  </tr>
+          
+                  <!-- Footer -->
+                  <tr>
+                    <td style="padding: 20px; text-align: center; font-size: 12px; color: #888888;">
+                      <p>© ${new Date().getFullYear()} Speedy Site. All rights reserved.</p>
+                      <p>
+                        <a href="${baseAddress}/unsubscribe" style="color: #888888; text-decoration: underline;">
+                          Unsubscribe
+                        </a>
+                      </p>
+                    </td>
+                  </tr>
+          
+                </table>
+              </td>
+            </tr>
+          </table>`,
+  });
+}
+
+export async function CacheRuleDeleted({
+  ruleName,
+  userEmail,
+  userName,
+  site,
+}: Props) {
+  await resend.emails.send({
+    from: "Cache Rules <contact@speedy.site>",
+    to: [userEmail],
+    cc: ["thespeedysite@gmail.com"],
+    subject: `Cache rule [${ruleName}] for ${site} has been deleted`,
+    html: `<table width="100%" cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; background-color: transparent; padding: 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                  <!-- Body -->
+                  <tr>
+                    <td style="padding: 30px; color: #333333;">
+                      <h2 style="margin-top: 0; font-size: 22px">Hi ${userName ? userName : "there"},</h2>
+          
+                      <p style="font-size: 16px; line-height: 1.6;">
+                        This is to inform you that Cloudflare cache rule [${ruleName}] for your site: ${site}, has been deleted on ${current_time}.
+                      </p>
+
+                      <p style="font-size: 16px; line-height: 1.6;">
+                        If this was unintentional, you can recreate the rule at <a
+                        href="${baseAddress}/dashboard/cloudflare?site=${site}"
+                        target="_blank"
+                        style="color: #CC6CE7; text-decoration: underline;"
+                      >
+                        cache rules</a>&nbsp; by using the same rule name: [${ruleName}]
                       </p>
                     </td>
                   </tr>

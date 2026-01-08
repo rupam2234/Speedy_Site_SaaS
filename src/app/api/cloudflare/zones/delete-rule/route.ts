@@ -1,3 +1,4 @@
+import { CacheRuleDeleted } from "@/app/api/emails/cloudflareRules";
 import { setupDB } from "@/lib/db";
 import { getServerSupabase } from "@/lib/db/serverSupabase";
 import { NextRequest, NextResponse } from "next/server";
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        rules: [rulesAfterDelete],
+        rules: rulesAfterDelete,
       }),
     },
   );
@@ -93,6 +94,14 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
+
+  const deletedRule = existingRules.filter((x: any) => x.id === rule_id);
+  CacheRuleDeleted({
+    ruleName: deletedRule.description,
+    site: site,
+    userEmail: user.user?.email ? user.user.email : "",
+    userName: user.user?.user_metadata.name.split(" ")[0],
+  }); // send deleted email to user
 
   return NextResponse.json(
     { isDeleted: true, message: "Cache rule deleted" },

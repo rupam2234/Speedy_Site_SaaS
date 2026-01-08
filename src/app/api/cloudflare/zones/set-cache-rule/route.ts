@@ -110,91 +110,58 @@ export async function POST(req: NextRequest) {
     expression: exclusionExpression,
   };
 
-  if (existingRules.length !== 0) {
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/zones/${zoneData.result[0].id}/rulesets/phases/http_request_cache_settings/entrypoint`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${ZoneData?.token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          rules: [...rulesToNotEdit, newRules],
-        }),
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/zones/${zoneData.result[0].id}/rulesets/phases/http_request_cache_settings/entrypoint`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${ZoneData?.token}`,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        rules: [...rulesToNotEdit, newRules],
+      }),
+    },
+  );
 
-    if (!res.ok) {
-      return NextResponse.json(
-        { message: "Unable to update cache rule" },
-        { status: 500 },
-      );
-    }
-
-    // if order_id is not available return
-    if (!ZoneData?.order_id) {
-      return NextResponse.json(
-        {
-          message: "Missing ZoneData.order_id, cannot update config_backup",
-        },
-        { status: 500 },
-      );
-    }
-
-    const { error: StoreConfigError } = await worker
-      .from("cloudflare_auth")
-      .update({ config_backup: pathsArray })
-      .eq("site_id", ZoneData.order_id);
-
-    if (StoreConfigError) {
-      return NextResponse.json(
-        {
-          message: "Unable to save HTML cache configs",
-        },
-        { status: 500 },
-      );
-    }
-
-    // send a cache rule update email to user
-    CacheRuleUpdated({
-      site: site,
-      ruleName: rule_desc,
-      userEmail: user.user?.email ? user.user.email : "",
-      userName: user.user?.user_metadata.name.split(" ")[0],
-    });
-
+  if (!res.ok) {
     return NextResponse.json(
-      { message: "Cache rule updated" },
-      { status: 200 },
-    );
-  } else {
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/zones/${zoneData.result[0].id}/rulesets/phases/http_request_cache_settings/entrypoint`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${ZoneData?.token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          rules: [...rulesToNotEdit, newRules],
-        }),
-      },
-    );
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { message: "Unable to create cache rule" },
-        { status: 500 },
-      );
-    }
-
-    // send a cache rule created email to user
-
-    return NextResponse.json(
-      { message: "Cache rule created" },
-      { status: 200 },
+      { message: "Unable to update cache rule" },
+      { status: 500 },
     );
   }
+
+  // if order_id is not available return
+  if (!ZoneData?.order_id) {
+    return NextResponse.json(
+      {
+        message: "Missing ZoneData.order_id, cannot update config_backup",
+      },
+      { status: 500 },
+    );
+  }
+
+  const { error: StoreConfigError } = await worker
+    .from("cloudflare_auth")
+    .update({ config_backup: pathsArray })
+    .eq("site_id", ZoneData.order_id);
+
+  if (StoreConfigError) {
+    return NextResponse.json(
+      {
+        message: "Unable to save HTML cache configs",
+      },
+      { status: 500 },
+    );
+  }
+
+  // send a cache rule update email to user
+  CacheRuleUpdated({
+    site: site,
+    ruleName: rule_desc,
+    userEmail: user.user?.email ? user.user.email : "",
+    userName: user.user?.user_metadata.name.split(" ")[0],
+  });
+
+  return NextResponse.json({ message: "Cache rule updated" }, { status: 200 });
 }
