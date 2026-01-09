@@ -8,7 +8,7 @@ import ImageExtensionSelector, {
   ImageExtension,
 } from "./imageExtensionSelector";
 
-interface CacheConfigs {
+export interface CacheConfigs {
   description?: string;
   excluded_paths?: string;
   excluded_images?: ImageExtension[];

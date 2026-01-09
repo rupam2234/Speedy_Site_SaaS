@@ -1,7 +1,4 @@
-import {
-  IMAGE_EXTENSIONS,
-  ImageExtension,
-} from "@/app/(dashboard)/dashboard/cloudflare/imageExtensionSelector";
+import { ImageExtension } from "@/app/(dashboard)/dashboard/cloudflare/imageExtensionSelector";
 import { CacheRuleCreated } from "@/app/api/emails/cloudflareRules";
 import { setupDB } from "@/lib/db";
 import { getServerSupabase } from "@/lib/db/serverSupabase";

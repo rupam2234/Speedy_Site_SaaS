@@ -66,8 +66,6 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
     return () => clearTimeout(timeout);
   }, []);
 
-  console.log(openRuleCreator);
-
   return (
     <>
       {cf_configs === undefined ? (

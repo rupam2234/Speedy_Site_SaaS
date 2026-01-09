@@ -1,3 +1,4 @@
+import { IMAGE_EXTENSIONS } from "@/app/(dashboard)/dashboard/cloudflare/imageExtensionSelector";
 import { CacheRuleUpdated } from "@/app/api/emails/cloudflareRules";
 import { setupDB } from "@/lib/db";
 import { getServerSupabase } from "@/lib/db/serverSupabase";
@@ -8,8 +9,10 @@ interface Props {
   rule_desc: string;
   site: string;
   edgeTTL: number;
+  browserTTL: number;
   excludedPaths: string;
   cacheByDevice: boolean;
+  excluded_images: string[];
 }
 
 const worker = setupDB();
@@ -20,8 +23,10 @@ export async function POST(req: NextRequest) {
     rule_desc,
     site,
     edgeTTL,
+    browserTTL,
     excludedPaths,
     cacheByDevice,
+    excluded_images,
   }: Props = await req.json();
   const user = await getServerSupabase();
 
@@ -84,31 +89,69 @@ export async function POST(req: NextRequest) {
   // first exclude the rules we don't want to edit
   const rulesToNotEdit = existingRules.filter((x: any) => x.id !== rule_id);
 
-  // prepare excluded path params
-  const pathsArray = excludedPaths.split("\n");
-  const exclusionExpression = `(http.request.method eq "GET") and (${pathsArray
-    .map((path) => `not http.request.uri.path contains "${path.trim()}"`)
-    .join(" and ")})`;
+  let newRule;
+  if (rule_desc === "Cache HTML pages") {
+    // prepare excluded path params
+    const pathsArray = excludedPaths?.split("\n");
+    const exclusionExpression = `(http.request.method eq "GET") and (${pathsArray
+      ?.map((path) => `not http.request.uri.path contains "${path.trim()}"`)
+      .join(" and ")})`;
 
-  const newRules = {
-    id: rule_id,
-    action: "set_cache_settings",
-    action_parameters: {
-      cache: true,
-      edge_ttl: { mode: "override_origin", default: edgeTTL * 60 * 60 },
-      browser_ttl: { mode: "respect_origin" },
-      origin_error_page_passthru: false,
-      serve_stale: { disable_stale_while_updating: false },
-      cache_key: {
-        ignore_query_strings_order: true,
-        cache_deception_armor: true,
-        cache_by_device_type: cacheByDevice,
+    newRule = {
+      id: rule_id,
+      action: "set_cache_settings",
+      action_parameters: {
+        cache: true,
+        edge_ttl: { mode: "override_origin", default: edgeTTL * 60 * 60 },
+        browser_ttl: { mode: "respect_origin" },
+        origin_error_page_passthru: false,
+        serve_stale: { disable_stale_while_updating: false },
+        cache_key: {
+          ignore_query_strings_order: true,
+          cache_deception_armor: true,
+          cache_by_device_type: cacheByDevice,
+        },
       },
-    },
-    description: "Cache HTML pages",
-    enabled: true,
-    expression: exclusionExpression,
-  };
+      description: "Cache HTML pages",
+      enabled: true,
+      expression: exclusionExpression,
+    };
+  } else if (rule_desc === "Cache Images") {
+    const extensionsToInclude = IMAGE_EXTENSIONS.filter(
+      (x) => !excluded_images?.includes(x),
+    );
+
+    if (!extensionsToInclude.length) {
+      return NextResponse.json(
+        { message: "At least one image extension must be included" },
+        { status: 400 },
+      );
+    }
+
+    newRule = {
+      id: rule_id,
+      action: "set_cache_settings",
+      description: "Cache Images",
+      enabled: true,
+      // gives ext such as "png" "jpg" "jpeg" "webp" "gif" "svg"
+      expression: `(http.request.method eq "GET" and http.request.uri.path.extension in {${extensionsToInclude?.map((x) => `"${x}"`).join(" ")}})`,
+      action_parameters: {
+        cache: true,
+        edge_ttl: { mode: "override_origin", default: edgeTTL * 3600 },
+        browser_ttl: {
+          mode: "override_origin",
+          default: browserTTL ? browserTTL * 3600 : 7 * 24 * 3600, // default is 7 days
+        },
+        origin_error_page_passthru: false,
+        serve_stale: { disable_stale_while_updating: false },
+        cache_key: {
+          ignore_query_strings_order: true,
+          cache_deception_armor: true,
+          cache_by_device_type: cacheByDevice ? cacheByDevice : false, // default false
+        },
+      },
+    };
+  }
 
   const res = await fetch(
     `https://api.cloudflare.com/client/v4/zones/${zoneData.result[0].id}/rulesets/phases/http_request_cache_settings/entrypoint`,
@@ -119,41 +162,38 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        rules: [...rulesToNotEdit, newRules],
+        rules: [...rulesToNotEdit, newRule],
       }),
     },
   );
 
   if (!res.ok) {
-    return NextResponse.json(
-      { message: "Unable to update cache rule" },
-      { status: 500 },
-    );
+    return NextResponse.json({ message: res.statusText }, { status: 500 });
   }
 
-  // if order_id is not available return
-  if (!ZoneData?.order_id) {
-    return NextResponse.json(
-      {
-        message: "Missing ZoneData.order_id, cannot update config_backup",
-      },
-      { status: 500 },
-    );
-  }
+  // // if order_id is not available return
+  // if (!ZoneData?.order_id) {
+  //   return NextResponse.json(
+  //     {
+  //       message: "Missing ZoneData.order_id, cannot update config_backup",
+  //     },
+  //     { status: 500 },
+  //   );
+  // }
 
-  const { error: StoreConfigError } = await worker
-    .from("cloudflare_auth")
-    .update({ config_backup: pathsArray })
-    .eq("site_id", ZoneData.order_id);
+  // const { error: StoreConfigError } = await worker
+  //   .from("cloudflare_auth")
+  //   .update({ config_backup: pathsArray })
+  //   .eq("site_id", ZoneData.order_id);
 
-  if (StoreConfigError) {
-    return NextResponse.json(
-      {
-        message: "Unable to save HTML cache configs",
-      },
-      { status: 500 },
-    );
-  }
+  // if (StoreConfigError) {
+  //   return NextResponse.json(
+  //     {
+  //       message: "Unable to save HTML cache configs",
+  //     },
+  //     { status: 500 },
+  //   );
+  // }
 
   // send a cache rule update email to user
   CacheRuleUpdated({
