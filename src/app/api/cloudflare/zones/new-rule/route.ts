@@ -1,3 +1,7 @@
+import {
+  IMAGE_EXTENSIONS,
+  ImageExtension,
+} from "@/app/(dashboard)/dashboard/cloudflare/imageExtensionSelector";
 import { CacheRuleCreated } from "@/app/api/emails/cloudflareRules";
 import { setupDB } from "@/lib/db";
 import { getServerSupabase } from "@/lib/db/serverSupabase";
@@ -9,6 +13,7 @@ interface Props {
   edgeTTL: number;
   browserTTL?: number;
   excludedPaths?: string;
+  excluded_images?: ImageExtension[];
   cacheByDevice?: boolean;
 }
 
@@ -19,6 +24,7 @@ export async function POST(req: NextRequest) {
     edgeTTL,
     excludedPaths,
     cacheByDevice,
+    excluded_images,
     browserTTL,
   }: Props = await req.json();
 
@@ -136,7 +142,8 @@ export async function POST(req: NextRequest) {
         action: "set_cache_settings",
         description: "Cache Images",
         enabled: true,
-        expression: `(http.request.method eq "GET" and http.request.uri.path.extension in {"png" "jpg" "jpeg" "webp" "gif" "svg"})`,
+        // gives ext such as "png" "jpg" "jpeg" "webp" "gif" "svg"
+        expression: `(http.request.method eq "GET" and http.request.uri.path.extension in {${excluded_images?.map((x) => `"${x}"`).join(" ")}})`,
         action_parameters: {
           cache: true,
           edge_ttl: { mode: "override_origin", default: edgeTTL * 3600 },

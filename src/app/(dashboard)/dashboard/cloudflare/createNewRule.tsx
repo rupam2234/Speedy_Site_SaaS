@@ -3,10 +3,15 @@
 import { useState } from "react";
 import { useSiteContext } from "../siteContext";
 import { toast } from "sonner";
+import ImageExtensionSelector, {
+  IMAGE_EXTENSIONS,
+  ImageExtension,
+} from "./imageExtensionSelector";
 
 interface CacheConfigs {
   description?: string;
   excluded_paths?: string;
+  excluded_images?: ImageExtension[];
   edgeTTL?: number; // in hours
   browserTTL?: number; // in hours
   cacheByDevice?: boolean;
@@ -33,6 +38,7 @@ export default function CreateCacheRule({ close, cachekey }: Props) {
     edgeTTL: 72,
     browserTTL: 72, // does not applies for HTML caching (handled at API)
     excluded_paths: "/wp-admin\n/wp-login.php\n/cart\n/checkout",
+    excluded_images: [],
     cacheByDevice: cacheByDevice,
   }); // default setup
   const [loading, setLoading] = useState<boolean>(false);
@@ -190,6 +196,21 @@ export default function CreateCacheRule({ close, cachekey }: Props) {
             </p>
 
             <div className="mt-4 space-y-4">
+              <label className="text-sm">
+                Only exclude image extensions if you encounter issues after
+                applying caching.
+              </label>
+              <ImageExtensionSelector
+                value={
+                  cacheConfig.excluded_images ? cacheConfig.excluded_images : []
+                }
+                onChange={(exts) =>
+                  setCacheConfig((prev) => ({
+                    ...prev,
+                    excluded_images: exts,
+                  }))
+                }
+              />
               <div className="flex gap-2 items-center justify-between">
                 <div className="flex gap-2 items-center">
                   <p className="text-[12px]">CDN Cache Duration (In Hours):</p>
@@ -273,6 +294,16 @@ export default function CreateCacheRule({ close, cachekey }: Props) {
 
   async function createCacheRule() {
     setLoading(true);
+
+    let filteredImages;
+
+    if (selectedRule === "Cache Images") {
+      // filter images
+      filteredImages = IMAGE_EXTENSIONS.filter(
+        (x) => !cacheConfig.excluded_images?.includes(x),
+      );
+    }
+
     try {
       const res = await fetch("/api/cloudflare/zones/new-rule", {
         method: "POST",
@@ -283,6 +314,7 @@ export default function CreateCacheRule({ close, cachekey }: Props) {
           edgeTTL: cacheConfig.edgeTTL,
           browserTTL: cacheConfig.browserTTL,
           excludedPaths: cacheConfig.excluded_paths,
+          excluded_images: filteredImages, // sending without excluded image extensions
         }),
       });
 
