@@ -16,6 +16,7 @@ import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
+import TooltipIcon from "@/components/utils/customTooltip";
 
 echarts.use([
   TitleComponent,
@@ -30,9 +31,15 @@ echarts.use([
   UniversalTransition,
 ]);
 
+type deviceData = {
+  count: number;
+  share: number;
+};
+
 interface ChartProps {
   data: any[];
   metric_key: string;
+  shares: { good: deviceData; avg: deviceData; poor: deviceData };
 }
 
 export function getRanges(metric_key: string) {
@@ -57,7 +64,7 @@ function debounce(fn: () => void, delay: number) {
   };
 }
 
-const RumCwvChart = ({ data, metric_key }: ChartProps) => {
+const RumCwvChart = ({ data, metric_key, shares }: ChartProps) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
@@ -298,14 +305,16 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
             {metric_key.toUpperCase()} Timeline
           </span>
           <span>
-            {["lcp", "cls", "inp", "fcp"].includes(metric_key) ? (
-              <p>Important for a good user experience</p>
+            {metric_key === "lcp" ? (
+              <>
+                LCP measures the render time of the largest image or text block
+                visible within the viewport.
+              </>
             ) : (
-              <p>Crucial for crawler and AI indexing</p>
+              <></>
             )}
           </span>
         </div>
-
         <span className="font-medium px-2 py-1 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">
           Active Distribution:
           <strong className="ml-1 uppercase">
@@ -314,6 +323,110 @@ const RumCwvChart = ({ data, metric_key }: ChartProps) => {
         </span>
       </div>
       <div ref={chartRef} style={{ width: "100%", height: "380px" }} />
+      <div className="px-2 my-2 md:grid-cols-3 text-sm text-primary/80 font-medium grid grid-cols-1 gap-2 ">
+        <div className="md:border-r md:border-primary/10 col-span-1">
+          <TooltipIcon
+            content={
+              metric_key === "lcp"
+                ? `LCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
+                : metric_key === "cls"
+                  ? `CLS is greater than ${metricRange.b} or less than ${metricRange.c}.`
+                  : metric_key === "inp"
+                    ? `INP is greater than ${metricRange.b} ms or less than ${metricRange.c} ms.`
+                    : metric_key === "fcp"
+                      ? `FCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
+                      : metric_key === "ttfb"
+                        ? `TTFB is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
+                        : ""
+            }
+            side="right"
+            trigger={
+              <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
+                Good
+              </span>
+            }
+          />
+          <div className="flex items-center gap-2">
+            <h3 className="text-2xl font-bold">
+              {shares.good.share.toFixed(0)} %
+            </h3>
+            <div className="w-[150px] h-5 bg-gray-300 rounded overflow-hidden">
+              <span
+                className="block h-full bg-green-500"
+                style={{ width: `${shares.good.share}%` }}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="md:border-r md:border-primary/10 col-span-1">
+          <TooltipIcon
+            content={
+              metric_key === "lcp"
+                ? `LCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
+                : metric_key === "cls"
+                  ? `CLS is greater than ${metricRange.b} or less than ${metricRange.c}.`
+                  : metric_key === "inp"
+                    ? `INP is greater than ${metricRange.b} ms or less than ${metricRange.c} ms.`
+                    : metric_key === "fcp"
+                      ? `FCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
+                      : metric_key === "ttfb"
+                        ? `TTFB is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
+                        : ""
+            }
+            side="right"
+            trigger={
+              <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
+                Needs Improvement
+              </span>
+            }
+          />
+          <div className="flex items-center gap-2">
+            <h3 className="text-2xl font-bold">
+              {shares.avg.share.toFixed(0)} %
+            </h3>
+            <div className="w-[150px] h-5 bg-gray-300 rounded overflow-hidden">
+              <span
+                className="block h-full bg-orange-300"
+                style={{ width: `${shares.avg.share}%` }}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="col-span-1">
+          <TooltipIcon
+            content={
+              metric_key === "lcp"
+                ? `LCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
+                : metric_key === "cls"
+                  ? `CLS is greater than ${metricRange.b} or less than ${metricRange.c}.`
+                  : metric_key === "inp"
+                    ? `INP is greater than ${metricRange.b} ms or less than ${metricRange.c} ms.`
+                    : metric_key === "fcp"
+                      ? `FCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
+                      : metric_key === "ttfb"
+                        ? `TTFB is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
+                        : ""
+            }
+            side="right"
+            trigger={
+              <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
+                Poor
+              </span>
+            }
+          />
+          <div className="flex items-center gap-2">
+            <h3 className="text-2xl font-bold">
+              {shares.poor.share.toFixed(0)} %
+            </h3>
+            <div className="w-[150px] h-5 bg-gray-300 rounded overflow-hidden">
+              <span
+                className="block h-full bg-red-400"
+                style={{ width: `${shares.poor.share}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

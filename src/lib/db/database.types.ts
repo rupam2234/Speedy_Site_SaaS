@@ -1499,6 +1499,19 @@ export type Database = {
           largest_shift_target: string;
         }[];
       };
+      rum_distributions_by_metric: {
+        Args: {
+          p_domain_name: string;
+          p_end: string;
+          p_metric_name: string;
+          p_start: string;
+        };
+        Returns: {
+          count: number;
+          device_type: string;
+          rating: string;
+        }[];
+      };
       text_to_bytea: { Args: { data: string }; Returns: string };
       third_party_domains: {
         Args: { site_filter?: string; time_range?: string };

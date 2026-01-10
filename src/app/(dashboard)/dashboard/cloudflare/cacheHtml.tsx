@@ -54,8 +54,6 @@ export default function EditCacheRule({ data, cacheKey, close }: Props) {
   }); // default setup
   const [loading, setLoading] = useState<boolean>(false);
 
-  console.log(cacheConfig);
-
   return (
     <div className="md:w-[800px] h-auto p-2">
       <button

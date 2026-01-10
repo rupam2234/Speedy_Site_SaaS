@@ -11,6 +11,7 @@ import CLSelements from "./cls";
 import INPelements from "./inp";
 import TTFBelements from "./ttfb";
 import { useWebVitalContext } from "../sharedProps";
+import { da } from "date-fns/locale";
 
 interface Metric {
   name: string;
@@ -64,6 +65,7 @@ const RUM_CAPS: Record<MetricKey, { min: number; max: number }> = {
 export default function Main() {
   const { selectedSite, selectedDevice, rumDistribution } = useSiteContext();
   const [historyData, setRumHistoryData] = useState<any>();
+  const [rumDistData, setRumDistData] = useState<any>(); // distribution data
   const [activeMetric, setActiveMetric] = useState<
     "LCP" | "CLS" | "INP" | "TTFB" | "FCP"
   >("LCP");
@@ -107,7 +109,11 @@ export default function Main() {
       getRumHistory({
         startDate: startDate?.toISOString().split("T")[0],
         endDate: endDate?.toISOString().split("T")[0],
-      });
+      }); // get history chart data
+      getDistribution({
+        startDate: startDate?.toISOString().split("T")[0],
+        endDate: endDate?.toISOString().split("T")[0],
+      }); // get distribution data
     }
   }, [selectedSite, startDate, endDate]);
 
@@ -239,13 +245,29 @@ export default function Main() {
   }, [activeMetric, contributors, selectedDevice]);
   //#endregion
 
-  if (!historyData) {
+  const { selectedDist, totalEvents } = useMemo(() => {
+    const selectedDist =
+      rumDistData?.data.filter(
+        (x: any) => x.device_type === selectedDevice.toLowerCase(),
+      ) ?? [];
+
+    const totalEvents = selectedDist.reduce(
+      (sum: number, item: any) => sum + item.count,
+      0,
+    );
+
+    return { selectedDist, totalEvents };
+  }, [rumDistData, selectedDevice, startDate, endDate]);
+
+  if (!historyData || !rumDistData) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
         <LoadingAnimation />
       </div>
     );
   }
+
+  console.log(rumDistData);
 
   return (
     <>
@@ -344,6 +366,29 @@ export default function Main() {
               <RumCwvChart
                 data={activeSeries}
                 metric_key={activeMetric.toLowerCase()}
+                shares={{
+                  good: {
+                    count: selectedDist[0] ? selectedDist[0].count : 0,
+                    share:
+                      (selectedDist[0]
+                        ? selectedDist[0].count / totalEvents
+                        : 0) * 100,
+                  },
+                  avg: {
+                    count: selectedDist[1] ? selectedDist[1].count : 0,
+                    share:
+                      (selectedDist[1]
+                        ? selectedDist[1].count / totalEvents
+                        : 0) * 100,
+                  },
+                  poor: {
+                    count: selectedDist[2] ? selectedDist[2].count : 0,
+                    share:
+                      (selectedDist[2]
+                        ? selectedDist[2].count / totalEvents
+                        : 0) * 100,
+                  },
+                }}
               />
             </div>
           </div>
@@ -374,11 +419,30 @@ export default function Main() {
   );
 
   async function getRumHistory({ startDate, endDate }: getRumHistoryProps) {
+    const cache_key = `rum-history:${selectedSite}`;
+    const cached = localStorage.getItem(cache_key);
+
+    if (cached !== null) {
+      try {
+        const {
+          startDate: cachedStart,
+          endDate: cachedEnd,
+          data,
+        } = JSON.parse(cached);
+
+        // Only reuse if range matches
+        if (cachedStart === startDate && cachedEnd === endDate) {
+          setRumHistoryData(data);
+          return;
+        }
+      } catch {
+        localStorage.removeItem(cache_key);
+      }
+    }
+
     const res = await fetch("/api/rum/history", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         domain: selectedSite,
         date_from: startDate,
@@ -392,8 +456,13 @@ export default function Main() {
     }
 
     const data = await res.json();
-
     setRumHistoryData(data);
+
+    // Overwrites previous cache automatically
+    localStorage.setItem(
+      cache_key,
+      JSON.stringify({ startDate, endDate, data }),
+    );
   }
 
   async function AnalysisHandler() {
@@ -481,5 +550,46 @@ export default function Main() {
     //handles bad data or unrealstick bumps
     if (isNaN(value)) return value;
     return Math.min(Math.max(value, min), max);
+  }
+
+  async function getDistribution({ startDate, endDate }: getRumHistoryProps) {
+    const cache_key = `rum_distributions: ${selectedSite}`;
+    const cache = localStorage.getItem(cache_key);
+
+    if (cache !== null) {
+      const {
+        data,
+        startDate: cachedStartDate,
+        endDate: cachedEndDate,
+      } = JSON.parse(cache);
+
+      if (cachedStartDate === startDate && cachedEndDate === endDate) {
+        setRumDistData(data);
+        return;
+      }
+    }
+
+    const res = await fetch("/api/rum/distributions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        site: selectedSite,
+        metric: activeMetric,
+        startDate: startDate,
+        endDate: endDate,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(res.statusText);
+      return;
+    }
+
+    const data = await res.json();
+    setRumDistData(data);
+    localStorage.setItem(
+      cache_key,
+      JSON.stringify({ data, startDate, endDate }),
+    );
   }
 }
