@@ -111,32 +111,29 @@ function summarizeElement(el) {
   return summary;
 }
 
-// to collect navigation timings
-if ("PerformanceObserver" in window) {
-  let navTimingQueued = false; // ensure we only queue once
+function collectNavigationTiming({ bfcache = false } = {}) {
+  const nav = performance.getEntriesByType("navigation")[0];
+  if (!nav) return;
 
-  const observer = new PerformanceObserver((list) => {
-    if (navTimingQueued) return; // already queued
+  queueEvent({
+    type: "navigation-timing",
+    siteDomain,
+    page: location.pathname + location.search,
+    navigationType: bfcache ? "bfcache" : nav.type, // navigate | reload | back_forward
+    timings: {
+      pageLoad: nav.loadEventEnd - nav.startTime,
 
-    const entry = list.getEntries().find((e) => e.entryType === "navigation");
-    if (!entry) return;
+      dns: nav.domainLookupEnd - nav.domainLookupStart,
+      tcp: nav.connectEnd - nav.connectStart,
 
-    queueEvent({
-      type: "navigation-timing",
-      timings: {
-        pageLoad: entry.loadEventEnd - entry.startTime,
-        dns: entry.domainLookupEnd - entry.domainLookupStart,
-        tcp: entry.connectEnd - entry.connectStart,
-        request: entry.responseStart - entry.requestStart,
-        response: entry.responseEnd - entry.responseStart,
-        processing: entry.domComplete - entry.responseEnd,
-      },
-    });
+      request: nav.responseStart - nav.requestStart,
+      response: nav.responseEnd - nav.responseStart,
 
-    navTimingQueued = true; // prevent further queuing
+      processing: nav.domComplete - nav.responseEnd,
+      loadEvent: nav.loadEventStart - nav.loadEventEnd,
+    },
+    timestamp: Date.now(),
   });
-
-  observer.observe({ type: "navigation", buffered: true });
 }
 
 function initializeWebVitals() {
@@ -205,6 +202,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 initializeWebVitals();
+
+window.addEventListener("load", () => {
+  collectNavigationTiming(); // collect timing
+});
 
 // Reset INP data on SPA navigation
 window.addEventListener("popstate", () => {
