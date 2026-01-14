@@ -5,7 +5,7 @@ const worker = setupDB();
 
 interface Props {
   site: string;
-  metric: "lcp" | "inp" | "fcp" | "ttfb" | "cls";
+  metric: "LCP" | "INP" | "FCP" | "TTFB" | "CLS";
   startDate: string;
   endDate: string;
 }

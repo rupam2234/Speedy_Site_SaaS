@@ -31,15 +31,18 @@ echarts.use([
   UniversalTransition,
 ]);
 
-type deviceData = {
-  count: number;
-  share: number;
+type DeviceDistribution = {
+  device_type: "desktop" | "mobile" | "tablet";
+  good_count: number;
+  needs_improvement_count: number;
+  poor_count: number;
 };
 
 interface ChartProps {
   data: any[];
   metric_key: string;
-  shares: { good: deviceData; avg: deviceData; poor: deviceData };
+  shares: DeviceDistribution;
+  total_events: number;
 }
 
 export function getRanges(metric_key: string) {
@@ -64,7 +67,12 @@ function debounce(fn: () => void, delay: number) {
   };
 }
 
-const RumCwvChart = ({ data, metric_key, shares }: ChartProps) => {
+const RumCwvChart = ({
+  data,
+  metric_key,
+  shares,
+  total_events,
+}: ChartProps) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
@@ -297,6 +305,8 @@ const RumCwvChart = ({ data, metric_key, shares }: ChartProps) => {
     };
   }, []);
 
+  console.log(shares);
+
   return (
     <div ref={containerRef} className="w-full">
       <div className="flex items-center justify-between px-2 mb-2 text-xs">
@@ -348,15 +358,24 @@ const RumCwvChart = ({ data, metric_key, shares }: ChartProps) => {
           />
           <div className="flex items-center gap-2">
             <h3 className="text-2xl font-bold">
-              {shares.good.share.toFixed(0)} %
+              {shares !== null
+                ? `${((shares?.good_count / total_events) * 100).toFixed(0)} %`
+                : "N/A"}
             </h3>
             <div className="w-[150px] h-5 bg-gray-300 rounded overflow-hidden">
               <span
                 className="block h-full bg-green-500"
-                style={{ width: `${shares.good.share}%` }}
+                style={{
+                  width: `${
+                    shares !== null
+                      ? ((shares?.good_count / total_events) * 100).toFixed(0)
+                      : 0
+                  }%`,
+                }}
               />
             </div>
           </div>
+          <p> {shares !== null ? `of total events` : ``}</p>
         </div>
         <div className="md:border-r md:border-primary/10 col-span-1">
           <TooltipIcon
@@ -382,15 +401,27 @@ const RumCwvChart = ({ data, metric_key, shares }: ChartProps) => {
           />
           <div className="flex items-center gap-2">
             <h3 className="text-2xl font-bold">
-              {shares.avg.share.toFixed(0)} %
+              {shares !== null
+                ? `${((shares?.needs_improvement_count / total_events) * 100).toFixed(0)} %`
+                : "N/A"}
             </h3>
             <div className="w-[150px] h-5 bg-gray-300 rounded overflow-hidden">
               <span
                 className="block h-full bg-orange-300"
-                style={{ width: `${shares.avg.share}%` }}
+                style={{
+                  width: `${
+                    shares !== null
+                      ? (
+                          (shares?.needs_improvement_count / total_events) *
+                          100
+                        ).toFixed(0)
+                      : 0
+                  }%`,
+                }}
               />
             </div>
           </div>
+          <p> {shares !== null ? `of total events` : ``}</p>
         </div>
         <div className="col-span-1">
           <TooltipIcon
@@ -416,15 +447,24 @@ const RumCwvChart = ({ data, metric_key, shares }: ChartProps) => {
           />
           <div className="flex items-center gap-2">
             <h3 className="text-2xl font-bold">
-              {shares.poor.share.toFixed(0)} %
+              {shares !== null
+                ? `${((shares?.poor_count / total_events) * 100).toFixed(0)} %`
+                : "N/A"}{" "}
             </h3>
             <div className="w-[150px] h-5 bg-gray-300 rounded overflow-hidden">
               <span
                 className="block h-full bg-red-400"
-                style={{ width: `${shares.poor.share}%` }}
+                style={{
+                  width: `${
+                    shares !== null
+                      ? ((shares?.poor_count / total_events) * 100).toFixed(0)
+                      : 0
+                  }%`,
+                }}
               />
             </div>
           </div>
+          <p> {shares !== null ? `of total events` : ``}</p>
         </div>
       </div>
     </div>

@@ -110,12 +110,19 @@ export default function Main() {
         startDate: startDate?.toISOString().split("T")[0],
         endDate: endDate?.toISOString().split("T")[0],
       }); // get history chart data
+    }
+  }, [selectedSite, startDate, endDate]);
+
+  useEffect(() => {
+    if (!selectedSite) return;
+
+    if (startDate !== undefined && endDate !== undefined) {
       getDistribution({
         startDate: startDate?.toISOString().split("T")[0],
         endDate: endDate?.toISOString().split("T")[0],
       }); // get distribution data
     }
-  }, [selectedSite, startDate, endDate]);
+  }, [selectedSite, startDate, endDate, activeMetric]);
 
   useEffect(() => {
     if (!historyData) return;
@@ -251,10 +258,12 @@ export default function Main() {
         (x: any) => x.device_type === selectedDevice.toLowerCase(),
       ) ?? [];
 
-    const totalEvents = selectedDist.reduce(
-      (sum: number, item: any) => sum + item.count,
-      0,
-    );
+    const totalEvents =
+      selectedDist.length > 0
+        ? selectedDist[0].good_count +
+          selectedDist[0].needs_improvement_count +
+          selectedDist[0].poor_count
+        : 0;
 
     return { selectedDist, totalEvents };
   }, [rumDistData, selectedDevice, startDate, endDate]);
@@ -266,8 +275,6 @@ export default function Main() {
       </div>
     );
   }
-
-  console.log(rumDistData);
 
   return (
     <>
@@ -366,29 +373,8 @@ export default function Main() {
               <RumCwvChart
                 data={activeSeries}
                 metric_key={activeMetric.toLowerCase()}
-                shares={{
-                  good: {
-                    count: selectedDist[0] ? selectedDist[0].count : 0,
-                    share:
-                      (selectedDist[0]
-                        ? selectedDist[0].count / totalEvents
-                        : 0) * 100,
-                  },
-                  avg: {
-                    count: selectedDist[1] ? selectedDist[1].count : 0,
-                    share:
-                      (selectedDist[1]
-                        ? selectedDist[1].count / totalEvents
-                        : 0) * 100,
-                  },
-                  poor: {
-                    count: selectedDist[2] ? selectedDist[2].count : 0,
-                    share:
-                      (selectedDist[2]
-                        ? selectedDist[2].count / totalEvents
-                        : 0) * 100,
-                  },
-                }}
+                shares={selectedDist.length > 0 ? selectedDist[0] : null}
+                total_events={totalEvents}
               />
             </div>
           </div>
@@ -553,17 +539,22 @@ export default function Main() {
   }
 
   async function getDistribution({ startDate, endDate }: getRumHistoryProps) {
-    const cache_key = `rum_distributions: ${selectedSite}`;
+    const cache_key = `rum_distributions:${activeMetric} - ${selectedSite}`;
     const cache = localStorage.getItem(cache_key);
 
     if (cache !== null) {
       const {
         data,
+        metric: activeMetric,
         startDate: cachedStartDate,
         endDate: cachedEndDate,
       } = JSON.parse(cache);
 
-      if (cachedStartDate === startDate && cachedEndDate === endDate) {
+      if (
+        cachedStartDate === startDate &&
+        cachedEndDate === endDate &&
+        activeMetric === activeMetric
+      ) {
         setRumDistData(data);
         return;
       }
@@ -589,7 +580,7 @@ export default function Main() {
     setRumDistData(data);
     localStorage.setItem(
       cache_key,
-      JSON.stringify({ data, startDate, endDate }),
+      JSON.stringify({ data, activeMetric, startDate, endDate }),
     );
   }
 }

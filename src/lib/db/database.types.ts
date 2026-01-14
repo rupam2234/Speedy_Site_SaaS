@@ -666,6 +666,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      rum_daily_distributions: {
+        Row: {
+          day: string;
+          device_type: string;
+          domain_name: string;
+          good: Json;
+          inserted_at: string;
+          needs_improvement: Json;
+          poor: Json;
+          updated_at: string;
+        };
+        Insert: {
+          day: string;
+          device_type: string;
+          domain_name: string;
+          good?: Json;
+          inserted_at?: string;
+          needs_improvement?: Json;
+          poor?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          day?: string;
+          device_type?: string;
+          domain_name?: string;
+          good?: Json;
+          inserted_at?: string;
+          needs_improvement?: Json;
+          poor?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       rum_history_new: {
         Row: {
           cls: Json;
@@ -1489,6 +1522,10 @@ export type Database = {
           rows_inserted: number;
         }[];
       };
+      refresh_rum_daily_distributions: {
+        Args: { p_day?: string };
+        Returns: undefined;
+      };
       rum_cls: {
         Args: { p_domain_name: string; p_from: string; p_to: string };
         Returns: {
@@ -1507,9 +1544,10 @@ export type Database = {
           p_start: string;
         };
         Returns: {
-          count: number;
           device_type: string;
-          rating: string;
+          good_count: number;
+          needs_improvement_count: number;
+          poor_count: number;
         }[];
       };
       text_to_bytea: { Args: { data: string }; Returns: string };
