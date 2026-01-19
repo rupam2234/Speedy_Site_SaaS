@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
   if (rule_desc === "Cache HTML pages") {
     // prepare excluded path params
     const pathsArray = excludedPaths?.split("\n");
-    const exclusionExpression = `(http.request.method eq "GET") and (${pathsArray
+    const exclusionExpression = `(http.request.method in {"GET" "HEAD"}) and (${pathsArray
       ?.map((path) => `not http.request.uri.path contains "${path.trim()}"`)
       .join(" and ")})`;
 

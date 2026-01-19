@@ -305,8 +305,6 @@ const RumCwvChart = ({
     };
   }, []);
 
-  console.log(shares);
-
   return (
     <div ref={containerRef} className="w-full">
       <div className="flex items-center justify-between px-2 mb-2 text-xs">
