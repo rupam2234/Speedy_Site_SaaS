@@ -11,7 +11,7 @@ import CLSelements from "./cls";
 import INPelements from "./inp";
 import TTFBelements from "./ttfb";
 import { useWebVitalContext } from "../sharedProps";
-import { da } from "date-fns/locale";
+import BarGraphTabs from "./barGraphTabs";
 
 interface Metric {
   name: string;
@@ -114,7 +114,7 @@ export default function Main() {
 
     observer.observe(triggerLazyload.current);
     return () => observer.disconnect(); // lazyload config
-  }, [activeMetric, startDate, endDate]);
+  }, [activeMetric, selectedDevice, startDate, endDate]);
 
   useEffect(() => {
     if (!selectedSite) return;
@@ -392,6 +392,9 @@ export default function Main() {
               />
             </div>
           </div>
+
+          {/* distributions accross various tabs */}
+          <BarGraphTabs activeMetric={activeMetric} />
 
           {/* Breakdown/Details placeholder */}
           <div ref={triggerLazyload} className="px-2 md:mt-6 mt-2 py-4">

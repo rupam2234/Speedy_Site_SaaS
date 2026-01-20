@@ -3,7 +3,7 @@
 import TooltipIcon from "@/components/utils/customTooltip";
 import { Code2, FileQuestion, Image, ImageOff } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface LCPelementProps {
   contributors: any;
