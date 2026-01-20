@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { cwv_ranges, scoreMetric } from "../../cwvRanges";
 import TooltipIcon from "@/components/utils/customTooltip";
@@ -75,6 +75,8 @@ export default function Main() {
   const [contributors, setContributors] = useState<any>();
   const { startDate, endDate } = useWebVitalContext();
 
+  const triggerLazyload = useRef(null);
+
   //#region Data manipulation
   const activeSeries = useMemo(() => {
     if (historyData === undefined) return [];
@@ -99,7 +101,19 @@ export default function Main() {
 
   //#region Effects
   useEffect(() => {
-    if (activeMetric !== undefined) AnalysisHandler();
+    if (!triggerLazyload.current) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        AnalysisHandler();
+        observer.disconnect();
+      }
+    });
+
+    observer.observe(triggerLazyload.current);
+    return () => observer.disconnect(); // lazyload config
   }, [activeMetric, startDate, endDate]);
 
   useEffect(() => {
@@ -380,7 +394,7 @@ export default function Main() {
           </div>
 
           {/* Breakdown/Details placeholder */}
-          <div className="px-2 md:mt-6 mt-2 py-4">
+          <div ref={triggerLazyload} className="px-2 md:mt-6 mt-2 py-4">
             {filteredContributors === undefined ||
             filteredContributors.length === 0 ? (
               <></>

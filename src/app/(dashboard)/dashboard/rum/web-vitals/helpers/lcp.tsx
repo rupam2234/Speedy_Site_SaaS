@@ -3,16 +3,82 @@
 import TooltipIcon from "@/components/utils/customTooltip";
 import { Code2, FileQuestion, Image, ImageOff } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface LCPelementProps {
   contributors: any;
 }
 
 export default function LCPelements({ contributors }: LCPelementProps) {
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState(3);
+
+  const totalpages = contributors
+    ? Math.ceil(contributors.length / itemsPerPage)
+    : 0;
+
+  let activeItems;
+
+  function prevPage() {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  }
+
+  function nextPage() {
+    setCurrentPage((prev) => Math.min(prev + 1, totalpages));
+  }
+
+  activeItems = contributors.slice(
+    (currentPage - 1) * itemsPerPage,
+    itemsPerPage * currentPage,
+  );
+
   return (
     <div className="divide-y divide-gray-200 dark:divide-primary/5">
-      <p className="font-semibold text-sm">Major Contributors</p>
-      {contributors?.map((x: any, i: number) => {
+      <div className="flex justify-between pb-2 items-center mb-3">
+        <p className="font-semibold text-sm">Major Contributors</p>
+        <div className="flex gap-6 items-center">
+          <div className="flex items-center gap-2 text-sm">
+            <label htmlFor="itemsPerPage">Items per page:</label>
+            <select
+              id="itemsPerPage"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-[2px] text-sm outline-0 cursor-pointer"
+            >
+              {[3, 5, 10, 20].map((n) => (
+                <option
+                  className="dark:text-primary dark:bg-secondary-background/80"
+                  key={n}
+                  value={n}
+                >
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={prevPage}
+              className="px-2 dark:text-white bg-primary/20 hover:bg-primary/40 text-primary-foreground cursor-pointer rounded-[2px] text-sm"
+            >
+              Prev
+            </button>
+            <span className="text-sm">
+              {currentPage} of {totalpages} pages
+            </span>
+            <button
+              onClick={nextPage}
+              className="px-2 dark:text-white bg-primary/20 hover:bg-primary/40 text-primary-foreground cursor-pointer rounded-[2px] text-sm"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+      {activeItems?.map((x: any, i: number) => {
         const type = classifyElement(x);
 
         return (

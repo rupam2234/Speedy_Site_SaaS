@@ -113,27 +113,38 @@ function summarizeElement(el) {
 
 // to collect navigation timings
 if ("PerformanceObserver" in window) {
-  let navTimingQueued = false; // ensure we only queue once
+  let navTimingQueued = false;
 
   const observer = new PerformanceObserver((list) => {
-    if (navTimingQueued) return; // already queued
+    if (navTimingQueued) return;
 
-    const entry = list.getEntries().find((e) => e.entryType === "navigation");
+    const entry = list.getEntries()[0];
     if (!entry) return;
 
     queueEvent({
       type: "navigation-timing",
-      timings: {
-        pageLoad: entry.loadEventEnd - entry.startTime,
-        dns: entry.domainLookupEnd - entry.domainLookupStart,
-        tcp: entry.connectEnd - entry.connectStart,
-        request: entry.responseStart - entry.requestStart,
-        response: entry.responseEnd - entry.responseStart,
-        processing: entry.domComplete - entry.responseEnd,
+      navigationType: entry.type, // navigate | reload | back_forward | prerender
+      incomplete:
+        entry.loadEventEnd === 0 ||
+        entry.domComplete === 0 ||
+        entry.responseEnd === 0,
+      raw: {
+        startTime: entry.startTime,
+        requestStart: entry.requestStart,
+        responseStart: entry.responseStart,
+        responseEnd: entry.responseEnd,
+        domInteractive: entry.domInteractive,
+        domComplete: entry.domComplete,
+        loadEventEnd: entry.loadEventEnd,
+        transferSize: entry.transferSize,
+        encodedBodySize: entry.encodedBodySize,
+        decodedBodySize: entry.decodedBodySize,
       },
+      timestamp: Date.now(),
     });
 
-    navTimingQueued = true; // prevent further queuing
+    navTimingQueued = true;
+    observer.disconnect();
   });
 
   observer.observe({ type: "navigation", buffered: true });
