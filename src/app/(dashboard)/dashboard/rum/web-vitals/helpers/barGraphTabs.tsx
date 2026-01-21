@@ -16,6 +16,7 @@ export default function BarGraphTabs({ activeMetric }: Props) {
   const { startDate, endDate } = useWebVitalContext();
   const [isloading, setLoading] = useState(false);
   const [pageWiseData, setPageWiseData] = useState<any>();
+  const [connectionData, setconnectionData] = useState<any>();
   const [activeTab, setActivetab] = useState<tabTypes>("url");
 
   const tabRef = useRef(null);
@@ -24,9 +25,9 @@ export default function BarGraphTabs({ activeMetric }: Props) {
     if (!tabRef.current) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
+       ([entry]) => {
         if (entry.isIntersecting) {
-          getUrlData();
+          Promise.all([getUrlData(), getConnectionData()])
           observer.disconnect();
         }
       },
@@ -36,6 +37,8 @@ export default function BarGraphTabs({ activeMetric }: Props) {
     observer.observe(tabRef.current);
     return () => observer.disconnect();
   }, [selectedSite, selectedDevice, startDate, endDate, activeMetric]);
+
+  console.log(connectionData)
 
   return (
     <div className="p-2 mt-2 md:mt-7" ref={tabRef}>
@@ -69,17 +72,17 @@ export default function BarGraphTabs({ activeMetric }: Props) {
                   </div>
                 )}
               </>
-            ) : (
+            ) : activeTab === "connection" ? (
               <>
                 {pageWiseData && pageWiseData.length > 0 ? (
-                  <>No Connection data</>
+                  <>Connection data available</>
                 ) : (
                   <div className="bg-primary/10 h-[468px] flex items-center justify-center">
                     No data available
                   </div>
                 )}
               </>
-            )}
+            ): <></>}
           </div>
         </>
       )}
@@ -112,5 +115,31 @@ export default function BarGraphTabs({ activeMetric }: Props) {
     const data: any = await res.json();
     setLoading(false);
     setPageWiseData(data.data);
+  }
+
+  async function getConnectionData() {
+    setLoading(true);
+
+    const res = await fetch("/api/rum/rum-web-vitals/group-by-connection", {
+      method: "POST",
+      headers: { "Content-type": "application/json" },
+      body: JSON.stringify({
+        domain: selectedSite,
+        metric: activeMetric,
+        startDate: startDate?.toISOString().split("T")[0],
+        endDate: endDate?.toISOString().split("T")[0],
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`Error: ${res.statusText}`);
+      setconnectionData([]);
+      setLoading(false);
+      return;
+    }
+
+    const data: any = await res.json();
+    setLoading(false);
+    setconnectionData(data.data);
   }
 }
