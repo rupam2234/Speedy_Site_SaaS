@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import {
   TitleComponent,
@@ -8,6 +8,7 @@ import {
 } from "echarts/components";
 import { BarChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
 // Register required components
 echarts.use([
@@ -20,6 +21,7 @@ echarts.use([
 ]);
 
 interface Props<T> {
+  activeMetric: "LCP" | "CLS" | "INP" | "TTFB" | "FCP";
   data: T[];
 }
 
@@ -30,30 +32,43 @@ type UrlDistType = {
   needs_improvement: number;
 };
 
-export default function UrlStackBar<T extends UrlDistType>({ data }: Props<T>) {
+export default function UrlStackBar<T extends UrlDistType>({
+  activeMetric,
+  data,
+}: Props<T>) {
+  const { selectedSite } = useSiteContext();
   const chartRef = useRef<HTMLDivElement | null>(null);
+
+  const [MAX_BARS, SET_MAX_BARS] = useState<number>(10);
+
+  const sortedData = [...data]
+    .sort(
+      (a, b) =>
+        b.good +
+        b.needs_improvement +
+        b.poor -
+        (a.good + a.needs_improvement + a.poor),
+    )
+    .slice(0, MAX_BARS);
 
   useEffect(() => {
     if (!chartRef.current) return;
-
     const chart = echarts.init(chartRef.current);
 
     const option = {
       tooltip: {
         trigger: "item",
         formatter: (params: any) => {
-          return `
-            <strong>${params.name}</strong><br/>
-            ${params.seriesName}: ${params.value}
-          `;
+          return `${params.seriesName} ${activeMetric}: ${params.value}`;
         },
       },
       legend: {
         top: 0,
+        right: 0,
       },
       grid: {
-        left: 220,
-        right: 40,
+        left: 300,
+        right: 70,
         top: 40,
         bottom: 40,
       },
@@ -63,10 +78,11 @@ export default function UrlStackBar<T extends UrlDistType>({ data }: Props<T>) {
       },
       yAxis: {
         type: "category",
-        data: data.map((d) => d.url),
+        inverse: true, // <-- this flips the bars top-to-bottom
+        data: sortedData.map((d) => `${selectedSite}${d.url}`),
         axisLabel: {
-          fontSize: 10,
-          width: 200,
+          fontSize: 12,
+          width: 290,
           overflow: "truncate",
         },
       },
@@ -75,22 +91,22 @@ export default function UrlStackBar<T extends UrlDistType>({ data }: Props<T>) {
           name: "Good",
           type: "bar",
           stack: "total",
-          data: data.map((d) => d.good),
-          itemStyle: { color: "#34a853" },
+          data: sortedData.map((d) => d.good),
+          itemStyle: { color: "#00c950" },
         },
         {
           name: "Needs Improvement",
           type: "bar",
           stack: "total",
-          data: data.map((d) => d.needs_improvement),
-          itemStyle: { color: "#fbbc05" },
+          data: sortedData.map((d) => d.needs_improvement),
+          itemStyle: { color: "#ffb86a" },
         },
         {
           name: "Poor",
           type: "bar",
           stack: "total",
-          data: data.map((d) => d.poor),
-          itemStyle: { color: "#ea4335" },
+          data: sortedData.map((d) => d.poor),
+          itemStyle: { color: "#ff6467" },
         },
       ],
     };
@@ -107,15 +123,35 @@ export default function UrlStackBar<T extends UrlDistType>({ data }: Props<T>) {
       resizeObserver.disconnect();
       chart.dispose();
     };
-  }, [data]);
+  }, [data, MAX_BARS]);
 
   return (
-    <div className="my-4">
+    <div className="my-4 relative">
+      <div className="absolute z-10 flex gap-2 items-center text-sm left-0 top-0">
+        <label>Items to display</label>
+        <select
+          value={MAX_BARS}
+          onChange={(e) => {
+            SET_MAX_BARS(Number(e.target.value));
+          }}
+          className="w-10 outline-0 cursor-pointer"
+        >
+          {[5, 10, 15].map((x) => (
+            <option
+              className="dark:text-primary dark:bg-secondary-background/80"
+              key={x}
+              value={x}
+            >
+              {x}
+            </option>
+          ))}
+        </select>
+      </div>
       <div
         ref={chartRef}
         style={{
           width: "100%",
-          height: `${Math.max(data.length * 32, 300)}px`,
+          height: `${Math.max(data.length * 25, 300)}px`,
         }}
       />
     </div>

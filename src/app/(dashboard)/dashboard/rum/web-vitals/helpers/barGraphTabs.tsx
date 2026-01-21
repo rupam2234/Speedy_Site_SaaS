@@ -3,22 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { useWebVitalContext } from "../sharedProps";
-import { LoaderIcon } from "lucide-react";
 import UrlStackBar from "./charts/urls";
 
 interface Props {
   activeMetric: "LCP" | "CLS" | "INP" | "TTFB" | "FCP";
 }
 
+type tabTypes = "url" | "connection" | "countries";
+
 export default function BarGraphTabs({ activeMetric }: Props) {
   const { selectedSite, selectedDevice } = useSiteContext();
   const { startDate, endDate } = useWebVitalContext();
   const [isloading, setLoading] = useState(false);
   const [pageWiseData, setPageWiseData] = useState<any>();
+  const [activeTab, setActivetab] = useState<tabTypes>("url");
 
   const tabRef = useRef(null);
-
-  console.log(pageWiseData);
 
   useEffect(() => {
     if (!tabRef.current) return;
@@ -38,16 +38,49 @@ export default function BarGraphTabs({ activeMetric }: Props) {
   }, [selectedSite, selectedDevice, startDate, endDate, activeMetric]);
 
   return (
-    <div className="p-2 mt-2 md:mt-5" ref={tabRef}>
+    <div className="p-2 mt-2 md:mt-7" ref={tabRef}>
       {isloading === true ? (
-        <LoaderIcon className="animate-spin text-primary/80" size={16} />
+        <div className="animate-pulse bg-primary/10 h-[468px]"></div>
       ) : (
         <>
-          {pageWiseData && pageWiseData.length > 0 ? (
-            <UrlStackBar data={pageWiseData.length > 0 ? pageWiseData : []} />
-          ) : (
-            <>No data available</>
-          )}
+          <div className="flex items-center">
+            <h3 className="font-semibold text-sm mr-3">Distribution by:</h3>
+            {["url", "connection", "countries"].map((x) => (
+              <span
+                className={`border-x border-t text-sm cursor-pointer border-primary/10 font-medium capitalize px-4 ${activeTab === x ? `bg-primary/10 text-primary/80 dark:text-white` : `text-primary`}`}
+                key={x}
+                onClick={() => setActivetab(x as unknown as tabTypes)}
+              >
+                {x}
+              </span>
+            ))}
+          </div>
+          <div className="border rounded-sm border-primary/10 px-4 py-2">
+            {activeTab === "url" ? (
+              <>
+                {pageWiseData && pageWiseData.length > 0 ? (
+                  <UrlStackBar
+                    activeMetric={activeMetric}
+                    data={pageWiseData.length > 0 ? pageWiseData : []}
+                  />
+                ) : (
+                  <div className="bg-primary/10 h-[468px] flex items-center justify-center">
+                    No data available
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {pageWiseData && pageWiseData.length > 0 ? (
+                  <>No Connection data</>
+                ) : (
+                  <div className="bg-primary/10 h-[468px] flex items-center justify-center">
+                    No data available
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </>
       )}
     </div>

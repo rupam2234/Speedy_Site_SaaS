@@ -75,6 +75,7 @@ export default function Main() {
   const [contributors, setContributors] = useState<any>();
   const { startDate, endDate } = useWebVitalContext();
 
+  const hasAnalyzedRef = useRef(false);
   const triggerLazyload = useRef(null);
 
   //#region Data manipulation
@@ -101,20 +102,36 @@ export default function Main() {
 
   //#region Effects
   useEffect(() => {
+    if (!selectedSite || !startDate || !endDate) return;
+
+    // run on first load but never run later
+    // later Analysishandler will be called by intersection observer lazyload
+    if (!hasAnalyzedRef.current && activeMetric === "LCP") {
+      hasAnalyzedRef.current = true;
+      AnalysisHandler();
+    }
+  }, [selectedSite, startDate, endDate]);
+
+  useEffect(() => {
     if (!triggerLazyload.current) {
       return;
     }
 
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        AnalysisHandler();
-        observer.disconnect();
-      }
-    });
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          AnalysisHandler();
+          observer.disconnect();
+        }
+      },
+      {
+        rootMargin: "100px",
+      },
+    );
 
     observer.observe(triggerLazyload.current);
     return () => observer.disconnect(); // lazyload config
-  }, [activeMetric, selectedDevice, startDate, endDate]);
+  }, [activeMetric, selectedSite, selectedDevice, startDate, endDate]);
 
   useEffect(() => {
     if (!selectedSite) return;
@@ -165,16 +182,14 @@ export default function Main() {
 
     historyData.rum_history_data.forEach((x: any) => {
       ["cls", "fcp", "inp", "lcp", "ttfb"].forEach((key) => {
-        const metricKey = activeMetric.toLowerCase() as MetricKey;
-
         const raw = Number(
           x?.[key]?.[selectedDevice.toLowerCase()]?.[rumDistribution],
         );
 
         const capped = winsorize(
           raw,
-          RUM_CAPS[metricKey].min,
-          RUM_CAPS[metricKey].max,
+          RUM_CAPS[key as MetricKey].min,
+          RUM_CAPS[key as MetricKey].max,
         );
 
         if (!isNaN(capped)) {
@@ -397,7 +412,7 @@ export default function Main() {
           <BarGraphTabs activeMetric={activeMetric} />
 
           {/* Breakdown/Details placeholder */}
-          <div ref={triggerLazyload} className="px-2 md:mt-5 mt-2 py-4">
+          <div ref={triggerLazyload} className="px-2 mt-2 md:mt-7 py-4">
             {filteredContributors === undefined ||
             filteredContributors.length === 0 ? (
               <></>

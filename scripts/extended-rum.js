@@ -363,111 +363,107 @@ function handleTTFB(metric) {
   });
 }
 
-const thirdPartyAssetDomains = new Set();
-const thirdPartyAssetTypes = new Set();
-const thirdPartyDomainTimings = {};
+// function isProblematicDomain(data) {
+//   return (
+//     data.count > 0 &&
+//     (data.averageDuration > 3000 ||
+//       data.maxDuration > 5000 ||
+//       data.averageTTFB > 800 ||
+//       data.maxTTFB > 1500 ||
+//       data.totalTransferSize > 500000)
+//   );
+// }
 
-function isProblematicDomain(data) {
-  return (
-    data.count > 0 &&
-    (data.averageDuration > 3000 ||
-      data.maxDuration > 5000 ||
-      data.averageTTFB > 800 ||
-      data.maxTTFB > 1500 ||
-      data.totalTransferSize > 500000)
-  );
-}
+// function safeTTFB(entry) {
+//   if (
+//     typeof entry.responseStart === "number" &&
+//     typeof entry.fetchStart === "number"
+//   ) {
+//     const ttfb = entry.responseStart - entry.fetchStart;
+//     return ttfb >= 0 && isFinite(ttfb) ? ttfb : null;
+//   }
+//   return null;
+// }
 
-function safeTTFB(entry) {
-  if (
-    typeof entry.responseStart === "number" &&
-    typeof entry.fetchStart === "number"
-  ) {
-    const ttfb = entry.responseStart - entry.fetchStart;
-    return ttfb >= 0 && isFinite(ttfb) ? ttfb : null;
-  }
-  return null;
-}
+// new PerformanceObserver((list) => {
+//   for (const entry of list.getEntries()) {
+//     const { name, initiatorType } = entry;
 
-new PerformanceObserver((list) => {
-  for (const entry of list.getEntries()) {
-    const { name, initiatorType } = entry;
+//     if (
+//       name.includes("://") &&
+//       !name.includes(location.hostname) &&
+//       ["script", "img", "link", "iframe", "font", "video", "audio"].includes(
+//         initiatorType,
+//       )
+//     ) {
+//       try {
+//         const url = new URL(name);
+//         const domain = url.hostname;
+//         if (!domain) continue;
 
-    if (
-      name.includes("://") &&
-      !name.includes(location.hostname) &&
-      ["script", "img", "link", "iframe", "font", "video", "audio"].includes(
-        initiatorType,
-      )
-    ) {
-      try {
-        const url = new URL(name);
-        const domain = url.hostname;
-        if (!domain) continue;
+//         // Initialize if first time
+//         if (!thirdPartyDomainTimings[domain]) {
+//           thirdPartyDomainTimings[domain] = {
+//             count: 0,
+//             totalDuration: 0,
+//             maxDuration: 0,
+//             totalTransferSize: 0,
+//             totalEncodedBodySize: 0,
+//             totalTTFB: 0,
+//             maxTTFB: 0,
+//             countTTFB: 0,
+//           };
+//         }
 
-        // Initialize if first time
-        if (!thirdPartyDomainTimings[domain]) {
-          thirdPartyDomainTimings[domain] = {
-            count: 0,
-            totalDuration: 0,
-            maxDuration: 0,
-            totalTransferSize: 0,
-            totalEncodedBodySize: 0,
-            totalTTFB: 0,
-            maxTTFB: 0,
-            countTTFB: 0,
-          };
-        }
+//         const ttfb = safeTTFB(entry);
+//         const duration = entry.duration || 0;
+//         const transferSize = entry.transferSize || 0;
+//         const encodedSize = entry.encodedBodySize || 0;
 
-        const ttfb = safeTTFB(entry);
-        const duration = entry.duration || 0;
-        const transferSize = entry.transferSize || 0;
-        const encodedSize = entry.encodedBodySize || 0;
+//         const domainData = thirdPartyDomainTimings[domain];
+//         domainData.count += 1;
+//         domainData.totalDuration += duration;
+//         domainData.maxDuration = Math.max(domainData.maxDuration, duration);
+//         domainData.totalTransferSize += transferSize;
+//         domainData.totalEncodedBodySize += encodedSize;
 
-        const domainData = thirdPartyDomainTimings[domain];
-        domainData.count += 1;
-        domainData.totalDuration += duration;
-        domainData.maxDuration = Math.max(domainData.maxDuration, duration);
-        domainData.totalTransferSize += transferSize;
-        domainData.totalEncodedBodySize += encodedSize;
+//         if (ttfb !== null) {
+//           domainData.totalTTFB += ttfb;
+//           domainData.maxTTFB = Math.max(domainData.maxTTFB, ttfb);
+//           domainData.countTTFB += 1;
+//         }
 
-        if (ttfb !== null) {
-          domainData.totalTTFB += ttfb;
-          domainData.maxTTFB = Math.max(domainData.maxTTFB, ttfb);
-          domainData.countTTFB += 1;
-        }
+//         // Calculate averages for filtering
+//         const averageDuration = domainData.totalDuration / domainData.count;
+//         const averageTTFB = domainData.countTTFB
+//           ? domainData.totalTTFB / domainData.countTTFB
+//           : 0;
 
-        // Calculate averages for filtering
-        const averageDuration = domainData.totalDuration / domainData.count;
-        const averageTTFB = domainData.countTTFB
-          ? domainData.totalTTFB / domainData.countTTFB
-          : 0;
+//         // Create a temporary data object to check if domain is problematic
+//         const checkData = {
+//           count: domainData.count,
+//           averageDuration,
+//           maxDuration: domainData.maxDuration,
+//           totalTransferSize: domainData.totalTransferSize,
+//           averageTTFB,
+//           maxTTFB: domainData.maxTTFB,
+//         };
 
-        // Create a temporary data object to check if domain is problematic
-        const checkData = {
-          count: domainData.count,
-          averageDuration,
-          maxDuration: domainData.maxDuration,
-          totalTransferSize: domainData.totalTransferSize,
-          averageTTFB,
-          maxTTFB: domainData.maxTTFB,
-        };
-
-        if (isProblematicDomain(checkData)) {
-          thirdPartyAssetDomains.add(domain);
-          thirdPartyAssetTypes.add(initiatorType);
-        } else {
-          // Remove domain if no longer problematic
-          thirdPartyAssetDomains.delete(domain);
-          // Optionally remove types if no domains left for that type (optional)
-          // You could add logic here if needed
-        }
-      } catch (error) {
-        console.warn(`Invalid URL in resource entry: ${entry.name}`, error);
-      }
-    }
-  }
-}).observe({ type: "resource", buffered: true });
+//         if (isProblematicDomain(checkData)) {
+//           thirdPartyAssetDomains.add(domain);
+//           thirdPartyAssetTypes.add(initiatorType);
+//         } else {
+//           // Remove domain if no longer problematic
+//           thirdPartyAssetDomains.delete(domain);
+//           // Optionally remove types if no domains left for that type (optional)
+//           // You could add logic here if needed
+//         }
+//       } catch (error) {
+//         console.warn(`Invalid URL in resource entry: ${entry.name}`, error);
+//       }
+//     }
+//   }
+// }).observe({ type: "resource", buffered: true });
 
 function getDeviceType() {
   const w = window.innerWidth;
@@ -515,7 +511,7 @@ function getDeviceType() {
   }
 })();
 
-let assetSummarySent = false;
+// let assetSummarySent = false;
 let isFlushing = false;
 
 function flushMetrics() {
@@ -523,36 +519,36 @@ function flushMetrics() {
   isFlushing = true;
 
   try {
-    if (!assetSummarySent && thirdPartyAssetDomains.size > 0) {
-      const domains = Array.from(thirdPartyAssetDomains)
-        .map((domain) => {
-          const data = thirdPartyDomainTimings[domain];
-          return {
-            domain,
-            count: data?.count ?? 0,
-            averageDuration: data ? data.totalDuration / data.count : 0,
-            maxDuration: data?.maxDuration ?? 0,
-            totalTransferSize: data?.totalTransferSize ?? 0,
-            totalEncodedBodySize: data?.totalEncodedBodySize ?? 0,
-            averageTTFB:
-              data && data.countTTFB > 0 ? data.totalTTFB / data.countTTFB : 0,
-            maxTTFB: data?.maxTTFB ?? 0,
-          };
-        })
-        .filter(isProblematicDomain);
+    // if (!assetSummarySent && thirdPartyAssetDomains.size > 0) {
+    //   const domains = Array.from(thirdPartyAssetDomains)
+    //     .map((domain) => {
+    //       const data = thirdPartyDomainTimings[domain];
+    //       return {
+    //         domain,
+    //         count: data?.count ?? 0,
+    //         averageDuration: data ? data.totalDuration / data.count : 0,
+    //         maxDuration: data?.maxDuration ?? 0,
+    //         totalTransferSize: data?.totalTransferSize ?? 0,
+    //         totalEncodedBodySize: data?.totalEncodedBodySize ?? 0,
+    //         averageTTFB:
+    //           data && data.countTTFB > 0 ? data.totalTTFB / data.countTTFB : 0,
+    //         maxTTFB: data?.maxTTFB ?? 0,
+    //       };
+    //     })
+    //     .filter(isProblematicDomain);
 
-      if (domains.length > 0) {
-        queueEvent({
-          type: "third-party-asset-summary",
-          count: domains.length,
-          assetTypes: Array.from(thirdPartyAssetTypes),
-          domains,
-          siteDomain,
-          timestamp: Date.now(),
-        });
-        assetSummarySent = true;
-      }
-    }
+    //   if (domains.length > 0) {
+    //     queueEvent({
+    //       type: "third-party-asset-summary",
+    //       count: domains.length,
+    //       assetTypes: Array.from(thirdPartyAssetTypes),
+    //       domains,
+    //       siteDomain,
+    //       timestamp: Date.now(),
+    //     });
+    //     assetSummarySent = true;
+    //   }
+    // }
 
     if (latestMetrics.INP || maxCustomEntry) {
       let inpAttribution = {};
@@ -652,9 +648,10 @@ function flushMetrics() {
   }
 }
 
-// window.addEventListener("beforeunload", flushMetrics);
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") {
-    flushMetrics();
-  }
-});
+window.addEventListener("beforeunload", flushMetrics);
+
+// document.addEventListener("visibilitychange", () => {
+//   if (document.visibilityState === "hidden") {
+//     flushMetrics();
+//   }
+// });

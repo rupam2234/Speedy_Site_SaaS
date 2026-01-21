@@ -35,7 +35,7 @@ export default function LCPelements({ contributors }: LCPelementProps) {
   return (
     <div className="divide-y divide-gray-200 dark:divide-primary/5">
       <div className="flex justify-between pb-2 items-center mb-3">
-        <p className="font-semibold text-sm">Major Contributors</p>
+        <p className="font-semibold text-sm">Contributing Elements</p>
         <div className="flex gap-6 items-center">
           <div className="flex items-center gap-2 text-sm">
             <label htmlFor="itemsPerPage">Items per page:</label>
