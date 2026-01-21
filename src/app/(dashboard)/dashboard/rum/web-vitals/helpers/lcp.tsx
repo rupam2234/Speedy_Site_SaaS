@@ -37,16 +37,15 @@ export default function LCPelements({ contributors }: LCPelementProps) {
       <div className="flex justify-between pb-2 items-center mb-3">
         <p className="font-semibold text-sm">Contributing Elements</p>
         <div className="flex gap-6 items-center">
-          <div className="flex items-center gap-2 text-sm">
-            <label htmlFor="itemsPerPage">Items per page:</label>
+          <div className="flex items-center text-sm">
+            <label>Items per page</label>
             <select
-              id="itemsPerPage"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-2 py-[2px] text-sm outline-0 cursor-pointer"
+              className="py-[2px] ml-2 text-sm outline-0 cursor-pointer"
             >
               {[3, 5, 10, 20].map((n) => (
                 <option

@@ -59,13 +59,13 @@ export default function UrlStackBar<T extends UrlDistType>({
       tooltip: {
         trigger: "item",
         formatter: (params: any) => {
-          return `${params.seriesName} ${activeMetric}: ${params.value}`;
+          return `${params.seriesName} ${activeMetric} count: ${params.value}`;
         },
       },
-      legend: {
-        top: 0,
-        right: 0,
-      },
+      // legend: {
+      //   top: 0,
+      //   left: 0,
+      // },
       grid: {
         left: 300,
         right: 70,
@@ -127,7 +127,7 @@ export default function UrlStackBar<T extends UrlDistType>({
 
   return (
     <div className="my-4 relative">
-      <div className="absolute z-10 flex gap-2 items-center text-sm left-0 top-0">
+      <div className="absolute z-10 flex gap-2 items-center text-sm right-0 top-0">
         <label>Items to display</label>
         <select
           value={MAX_BARS}
