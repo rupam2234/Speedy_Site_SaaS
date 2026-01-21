@@ -397,7 +397,7 @@ export default function Main() {
           <BarGraphTabs activeMetric={activeMetric} />
 
           {/* Breakdown/Details placeholder */}
-          <div ref={triggerLazyload} className="px-2 md:mt-6 mt-2 py-4">
+          <div ref={triggerLazyload} className="px-2 md:mt-5 mt-2 py-4">
             {filteredContributors === undefined ||
             filteredContributors.length === 0 ? (
               <></>

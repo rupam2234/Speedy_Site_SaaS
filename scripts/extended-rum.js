@@ -652,4 +652,9 @@ function flushMetrics() {
   }
 }
 
-window.addEventListener("beforeunload", flushMetrics);
+// window.addEventListener("beforeunload", flushMetrics);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    flushMetrics();
+  }
+});

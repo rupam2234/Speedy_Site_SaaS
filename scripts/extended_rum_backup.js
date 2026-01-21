@@ -111,29 +111,43 @@ function summarizeElement(el) {
   return summary;
 }
 
-function collectNavigationTiming({ bfcache = false } = {}) {
-  const nav = performance.getEntriesByType("navigation")[0];
-  if (!nav) return;
+// to collect navigation timings
+if ("PerformanceObserver" in window) {
+  let navTimingQueued = false;
 
-  queueEvent({
-    type: "navigation-timing",
-    siteDomain,
-    page: location.pathname + location.search,
-    navigationType: bfcache ? "bfcache" : nav.type, // navigate | reload | back_forward
-    timings: {
-      pageLoad: nav.loadEventEnd - nav.startTime,
+  const observer = new PerformanceObserver((list) => {
+    if (navTimingQueued) return;
 
-      dns: nav.domainLookupEnd - nav.domainLookupStart,
-      tcp: nav.connectEnd - nav.connectStart,
+    const entry = list.getEntries()[0];
+    if (!entry) return;
 
-      request: nav.responseStart - nav.requestStart,
-      response: nav.responseEnd - nav.responseStart,
+    queueEvent({
+      type: "navigation-timing",
+      navigationType: entry.type, // navigate | reload | back_forward | prerender
+      incomplete:
+        entry.loadEventEnd === 0 ||
+        entry.domComplete === 0 ||
+        entry.responseEnd === 0,
+      raw: {
+        startTime: entry.startTime,
+        requestStart: entry.requestStart,
+        responseStart: entry.responseStart,
+        responseEnd: entry.responseEnd,
+        domInteractive: entry.domInteractive,
+        domComplete: entry.domComplete,
+        loadEventEnd: entry.loadEventEnd,
+        transferSize: entry.transferSize,
+        encodedBodySize: entry.encodedBodySize,
+        decodedBodySize: entry.decodedBodySize,
+      },
+      timestamp: Date.now(),
+    });
 
-      processing: nav.domComplete - nav.responseEnd,
-      loadEvent: nav.loadEventStart - nav.loadEventEnd,
-    },
-    timestamp: Date.now(),
+    navTimingQueued = true;
+    observer.disconnect();
   });
+
+  observer.observe({ type: "navigation", buffered: true });
 }
 
 function initializeWebVitals() {
@@ -202,10 +216,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 initializeWebVitals();
-
-window.addEventListener("load", () => {
-  collectNavigationTiming(); // collect timing
-});
 
 // Reset INP data on SPA navigation
 window.addEventListener("popstate", () => {

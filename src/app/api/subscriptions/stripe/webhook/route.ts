@@ -157,20 +157,62 @@ export async function POST(req: Request) {
 
       /** CUSTOMER UPDATE */
       case "customer.subscription.updated": {
-        const subcription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object as Stripe.Subscription;
+
+        // Determine period start
+        const periodStart = new Date(subscription.start_date * 1000);
+
+        // Determine period end
+        let periodEnd: Date;
+
+        // Grab the first price item
+        const price = subscription.items.data[0].price;
+        const recurring = price.recurring;
+
+        if (recurring) {
+          // Use subscription.billing_cycle_anchor if available
+          if (subscription.billing_cycle_anchor) {
+            periodEnd = new Date(subscription.billing_cycle_anchor * 1000);
+          } else {
+            // Fallback: calculate from interval
+            periodEnd = new Date(periodStart);
+            const intervalCount = recurring.interval_count ?? 1;
+            if (recurring.interval === "month") {
+              periodEnd.setMonth(periodEnd.getMonth() + intervalCount);
+            } else if (recurring.interval === "year") {
+              periodEnd.setFullYear(periodEnd.getFullYear() + intervalCount);
+            } else {
+              // unknown interval fallback
+              periodEnd.setMonth(periodEnd.getMonth() + 1);
+            }
+          }
+        } else {
+          // Non-recurring / free / lifetime subscription
+          periodEnd = new Date(periodStart);
+          periodEnd.setFullYear(periodEnd.getFullYear() + 100); // or null in DB
+        }
 
         const { error } = await worker
           .from("subscriptions")
           .update({
             status: "active",
-            stripe_subscription_status: subcription.status,
+            stripe_subscription_status: subscription.status,
+            period_starts_at: periodStart.toISOString(),
+            period_ends_at: periodEnd.toISOString(),
             updated_at: new Date().toISOString(),
           })
-          .eq("stripe_customer_id", subcription.customer as string);
+          .eq("stripe_customer_id", subscription.customer as string);
 
-        if (error) {
-          console.log("Subscription update failed", error);
+        if (!error) {
+          // Optional: send renewal email for free plans
+          await sendRenewalSuccessEmail({
+            stripeCustomerId: subscription.customer as string,
+          });
+        } else {
+          console.log("Subscription update failed:", error);
         }
+
+        break;
       }
     }
   } catch (error: any) {

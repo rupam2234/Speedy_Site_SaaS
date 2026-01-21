@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { useWebVitalContext } from "../sharedProps";
-import { Circle, LoaderIcon } from "lucide-react";
+import { LoaderIcon } from "lucide-react";
+import UrlStackBar from "./charts/urls";
 
 interface Props {
   activeMetric: "LCP" | "CLS" | "INP" | "TTFB" | "FCP";
@@ -37,13 +38,13 @@ export default function BarGraphTabs({ activeMetric }: Props) {
   }, [selectedSite, selectedDevice, startDate, endDate, activeMetric]);
 
   return (
-    <div className="p-2 mt-3 md:mt-5" ref={tabRef}>
+    <div className="p-2 mt-2 md:mt-5" ref={tabRef}>
       {isloading === true ? (
         <LoaderIcon className="animate-spin text-primary/80" size={16} />
       ) : (
         <>
           {pageWiseData && pageWiseData.length > 0 ? (
-            <>Data Available</>
+            <UrlStackBar data={pageWiseData.length > 0 ? pageWiseData : []} />
           ) : (
             <>No data available</>
           )}
