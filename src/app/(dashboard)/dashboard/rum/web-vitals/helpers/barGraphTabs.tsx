@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { useWebVitalContext } from "../sharedProps";
-import UrlStackBar from "./charts/urls";
+import { ConnectionStackBars, UrlStackBar } from "./charts";
 
 interface Props {
   activeMetric: "LCP" | "CLS" | "INP" | "TTFB" | "FCP";
@@ -20,16 +20,26 @@ export default function BarGraphTabs({ activeMetric }: Props) {
   const [activeTab, setActivetab] = useState<tabTypes>("url");
 
   const tabRef = useRef(null);
+  const activeMetricRef = useRef<"LCP" | "CLS" | "INP" | "TTFB" | "FCP" | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!tabRef.current) return;
 
     const observer = new IntersectionObserver(
-       ([entry]) => {
-        if (entry.isIntersecting) {
-          Promise.all([getUrlData(), getConnectionData()])
-          observer.disconnect();
+      async ([entry]) => {
+        if (entry.isIntersecting && activeMetricRef.current !== activeMetric) {
+          activeMetricRef.current = activeMetric;
+          await Promise.all([getUrlData(), getConnectionData()]);
+        } else if (
+          entry.isIntersecting &&
+          activeMetricRef.current === activeMetric
+        ) {
+          await getUrlData();
         }
+
+        observer.disconnect();
       },
       { rootMargin: "100px" },
     );
@@ -38,54 +48,56 @@ export default function BarGraphTabs({ activeMetric }: Props) {
     return () => observer.disconnect();
   }, [selectedSite, selectedDevice, startDate, endDate, activeMetric]);
 
-  console.log(connectionData)
-
   return (
     <div className="p-2 mt-2 md:mt-7" ref={tabRef}>
-      {isloading === true ? (
-        <div className="animate-pulse bg-primary/10 h-[468px]"></div>
-      ) : (
-        <>
-          <div className="flex items-center">
-            <h3 className="font-semibold text-sm mr-3">Distribution by:</h3>
-            {["url", "connection", "countries"].map((x) => (
-              <span
-                className={`border-x border-t text-sm cursor-pointer border-primary/10 font-medium capitalize px-4 ${activeTab === x ? `bg-primary/10 text-primary/80 dark:text-white` : `text-primary`}`}
-                key={x}
-                onClick={() => setActivetab(x as unknown as tabTypes)}
-              >
-                {x}
-              </span>
-            ))}
+      {/* Tab Headers */}
+      <div className="flex items-center">
+        <h3 className="font-semibold text-sm mr-3">Distribution by:</h3>
+        {["url", "connection", "countries"].map((tab) => (
+          <span
+            key={tab}
+            className={`border-x border-t text-sm cursor-pointer border-primary/10 font-medium capitalize px-4 ${
+              activeTab === tab
+                ? "bg-primary/10 text-primary/80 dark:text-white"
+                : "text-primary"
+            }`}
+            onClick={() => setActivetab(tab as unknown as tabTypes)}
+          >
+            {tab}
+          </span>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="border rounded-sm border-primary/10 px-4 py-2">
+        {isloading && activeTab === "url" ? (
+          <div className="animate-pulse bg-primary/10 h-[468px]" />
+        ) : activeTab === "connection" ? (
+          connectionData && connectionData.length > 0 ? (
+            <ConnectionStackBars
+              activeMetric={activeMetric}
+              data={connectionData}
+            />
+          ) : (
+            <div className="bg-primary/10 h-[468px] flex items-center justify-center">
+              No data available
+            </div>
+          )
+        ) : activeTab === "url" ? (
+          pageWiseData && pageWiseData.length > 0 ? (
+            <UrlStackBar activeMetric={activeMetric} data={pageWiseData} />
+          ) : (
+            <div className="bg-primary/10 h-[468px] flex items-center justify-center">
+              No data available
+            </div>
+          )
+        ) : activeTab === "countries" ? (
+          /* Add countries chart/component here if available */
+          <div className="bg-primary/10 h-[468px] flex items-center justify-center">
+            No data available
           </div>
-          <div className="border rounded-sm border-primary/10 px-4 py-2">
-            {activeTab === "url" ? (
-              <>
-                {pageWiseData && pageWiseData.length > 0 ? (
-                  <UrlStackBar
-                    activeMetric={activeMetric}
-                    data={pageWiseData.length > 0 ? pageWiseData : []}
-                  />
-                ) : (
-                  <div className="bg-primary/10 h-[468px] flex items-center justify-center">
-                    No data available
-                  </div>
-                )}
-              </>
-            ) : activeTab === "connection" ? (
-              <>
-                {pageWiseData && pageWiseData.length > 0 ? (
-                  <>Connection data available</>
-                ) : (
-                  <div className="bg-primary/10 h-[468px] flex items-center justify-center">
-                    No data available
-                  </div>
-                )}
-              </>
-            ): <></>}
-          </div>
-        </>
-      )}
+        ) : null}
+      </div>
     </div>
   );
 

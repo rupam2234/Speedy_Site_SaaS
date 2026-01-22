@@ -32,7 +32,7 @@ type UrlDistType = {
   needs_improvement: number;
 };
 
-export default function UrlStackBar<T extends UrlDistType>({
+export function UrlStackBar<T extends UrlDistType>({
   activeMetric,
   data,
 }: Props<T>) {
