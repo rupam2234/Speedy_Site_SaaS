@@ -47,7 +47,6 @@ type DeviceSeriesData = {
 };
 
 interface Props {
-  activeMetric: "LCP" | "CLS" | "INP" | "TTFB" | "FCP";
   data: ConnectionPerformanceStats[];
 }
 
