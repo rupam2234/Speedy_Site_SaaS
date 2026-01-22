@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { useWebVitalContext } from "../sharedProps";
 import { ConnectionStackBars, UrlStackBar } from "./charts";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Props {
   activeMetric: "LCP" | "CLS" | "INP" | "TTFB" | "FCP";
@@ -18,6 +19,7 @@ export default function BarGraphTabs({ activeMetric }: Props) {
   const [pageWiseData, setPageWiseData] = useState<any>();
   const [connectionData, setconnectionData] = useState<any>();
   const [activeTab, setActivetab] = useState<tabTypes>("url");
+  const mobile = useIsMobile(); // mobile devices may miss the tabRef lazy trigger
 
   const tabRef = useRef(null);
   const activeMetricRef = useRef<"LCP" | "CLS" | "INP" | "TTFB" | "FCP" | null>(
@@ -27,6 +29,16 @@ export default function BarGraphTabs({ activeMetric }: Props) {
   useEffect(() => {
     if (!tabRef.current) return;
 
+    // this fixes rendering stack bar charts on mobile
+    if (mobile && activeMetricRef.current !== activeMetric) {
+      Promise.all([getUrlData(), getConnectionData()]);
+      return;
+    } else if (mobile && activeMetricRef.current === activeMetric) {
+      getUrlData();
+      return;
+    }
+
+    // if not mobile ....
     const observer = new IntersectionObserver(
       async ([entry]) => {
         if (entry.isIntersecting && activeMetricRef.current !== activeMetric) {
@@ -74,10 +86,7 @@ export default function BarGraphTabs({ activeMetric }: Props) {
           <div className="animate-pulse bg-primary/10 h-[468px]" />
         ) : activeTab === "connection" ? (
           connectionData && connectionData.length > 0 ? (
-            <ConnectionStackBars
-              activeMetric={activeMetric}
-              data={connectionData}
-            />
+            <ConnectionStackBars data={connectionData} />
           ) : (
             <div className="bg-primary/10 h-[468px] flex items-center justify-center">
               No data available

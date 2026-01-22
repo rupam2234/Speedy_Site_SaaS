@@ -51,8 +51,8 @@ interface Props {
   data: ConnectionPerformanceStats[];
 }
 
-export function ConnectionStackBars({ activeMetric, data }: Props) {
-  const { selectedSite, selectedDevice } = useSiteContext();
+export function ConnectionStackBars({ data }: Props) {
+  const { selectedDevice } = useSiteContext();
   const [MAX_BARS, SET_MAX_BARS] = useState<number>(10);
   const chartRef = useRef<HTMLDivElement | null>(null);
 
