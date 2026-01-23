@@ -9,6 +9,7 @@ import {
 import { BarChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
+import { Lightbulb } from "lucide-react";
 
 // Register required components
 echarts.use([
@@ -127,6 +128,13 @@ export function UrlStackBar<T extends UrlDistType>({
 
   return (
     <div className="my-4 relative">
+      <div className="absolute top-0 left-0 flex items-center gap-2">
+        <Lightbulb size={16} className="fill-yellow-300" />
+        <p className="text-primary/60 text-sm">
+          This helps you quickly identify the top pages with most Web Vitals
+          data regsitered.
+        </p>
+      </div>
       <div className="absolute z-10 flex gap-2 items-center text-sm right-0 top-0">
         <label>Items to display</label>
         <select

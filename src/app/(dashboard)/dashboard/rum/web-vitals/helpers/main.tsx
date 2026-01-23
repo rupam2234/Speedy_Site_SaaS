@@ -12,6 +12,8 @@ import INPelements from "./inp";
 import TTFBelements from "./ttfb";
 import { useWebVitalContext } from "../sharedProps";
 import BarGraphTabs from "./barGraphTabs";
+import { InfoIcon } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Metric {
   name: string;
@@ -77,6 +79,8 @@ export default function Main() {
 
   const hasAnalyzedRef = useRef(false);
   const triggerLazyload = useRef(null);
+
+  const isMobile = useIsMobile();
 
   //#region Data manipulation
   const activeSeries = useMemo(() => {
@@ -314,9 +318,29 @@ export default function Main() {
           <div
             className={`bg-primary/5 cursor-help h-fit p-4 space-y-3 border-b border-primary/10`}
           >
-            <p className="text-sm font-semibold text-primary dark:text-primary/80">
-              User Experience Score
-            </p>
+            <span className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-primary dark:text-primary/80">
+                UX Score
+              </p>
+              <TooltipIcon
+                maxWidth={isMobile ? `` : `500px`} // default width on mobile
+                side="right"
+                trigger={
+                  <InfoIcon
+                    size={16}
+                    className="text-primary/60 cursor-pointer hover:bg-primary/5 rounded-full"
+                  />
+                }
+                content="UX Score summarizes your site’s overall performance 
+                using real-time user experience data. While it’s not the same 
+                as the Core Web Vitals shown in Search Console or PageSpeed 
+                Insights, it relies on the same underlying technology to 
+                collect and analyze data. You can use this data to monitor 
+                website performance in real time and identify bottlenecks 
+                before your Core Web Vitals fall below recommended thresholds."
+              />
+            </span>
+
             <TooltipIcon
               content={
                 "Site performance score (0–100%), calculated from all Core Web Vitals metrics."

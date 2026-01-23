@@ -10,7 +10,7 @@ interface Props {
   activeMetric: "LCP" | "CLS" | "INP" | "TTFB" | "FCP";
 }
 
-type tabTypes = "url" | "connection" | "countries";
+type tabTypes = "url" | "connection";
 
 export default function BarGraphTabs({ activeMetric }: Props) {
   const { selectedSite, selectedDevice } = useSiteContext();
@@ -64,11 +64,11 @@ export default function BarGraphTabs({ activeMetric }: Props) {
     <div className="p-2 mt-2 md:mt-7" ref={tabRef}>
       {/* Tab Headers */}
       <div className="flex items-center">
-        <h3 className="font-semibold text-sm mr-3">Distribution by:</h3>
-        {["url", "connection", "countries"].map((tab) => (
+        <h3 className="font-semibold text-[16px] mr-3">Distribution by:</h3>
+        {["url", "connection"].map((tab) => (
           <span
             key={tab}
-            className={`border-x border-t text-sm cursor-pointer border-primary/10 font-medium capitalize px-4 ${
+            className={`border-x rounded-tl-sm rounded-tr-sm border-t text-sm cursor-pointer border-primary/10 font-medium capitalize px-4 ${
               activeTab === tab
                 ? "bg-primary/10 text-primary/80 dark:text-white"
                 : "text-primary"
@@ -100,11 +100,6 @@ export default function BarGraphTabs({ activeMetric }: Props) {
               No data available
             </div>
           )
-        ) : activeTab === "countries" ? (
-          /* Add countries chart/component here if available */
-          <div className="bg-primary/10 h-[468px] flex items-center justify-center">
-            No data available
-          </div>
         ) : null}
       </div>
     </div>
