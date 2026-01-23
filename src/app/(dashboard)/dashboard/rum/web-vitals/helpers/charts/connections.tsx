@@ -52,7 +52,7 @@ interface Props {
 
 export function ConnectionStackBars({ data }: Props) {
   const { selectedDevice } = useSiteContext();
-  const [MAX_BARS, SET_MAX_BARS] = useState<number>(10);
+  // const [MAX_BARS, SET_MAX_BARS] = useState<number>(10);
   const chartRef = useRef<HTMLDivElement | null>(null);
 
   const filteredData: DeviceSeriesData[] = filterDeviceBasedData(
@@ -135,30 +135,10 @@ export function ConnectionStackBars({ data }: Props) {
       resizeObserver.disconnect();
       chart.dispose();
     };
-  }, [data, MAX_BARS]);
+  }, [data]);
 
   return (
     <div className="my-4 relative">
-      <div className="absolute z-10 flex gap-2 items-center text-sm right-0 top-0">
-        <label>Items to display</label>
-        <select
-          value={MAX_BARS}
-          onChange={(e) => {
-            SET_MAX_BARS(Number(e.target.value));
-          }}
-          className="w-10 outline-0 cursor-pointer"
-        >
-          {[5, 10, 15].map((x) => (
-            <option
-              className="dark:text-primary dark:bg-secondary-background/80"
-              key={x}
-              value={x}
-            >
-              {x}
-            </option>
-          ))}
-        </select>
-      </div>
       <div
         ref={chartRef}
         style={{

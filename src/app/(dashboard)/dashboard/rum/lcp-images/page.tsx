@@ -3,15 +3,7 @@
 import React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useSiteContext } from "../../siteContext";
-import {
-  Images,
-  Filter,
-  InfoIcon,
-  MonitorCheck,
-  Smartphone,
-  Tablet,
-  MonitorSmartphone,
-} from "lucide-react";
+import { Images, Filter, LoaderIcon } from "lucide-react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import DashboardToolbar from "@/components/utils/toolbar";
 import Link from "next/link";
@@ -24,9 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import TooltipIcon from "@/components/utils/customTooltip";
 import Performancetab from "./performance";
 import SuggestionsToggle from "./suggestion_toggle";
+import { cwv_ranges } from "../cwvRanges";
 
 // Custom Badge component
 const Badge = ({
@@ -200,22 +192,8 @@ export default function LcpImageDebugger() {
     }
   };
 
-  const getBarColor = (lcp: number) => {
-    const status = getLcpStatus(lcp);
-    switch (status) {
-      case "good":
-        return "#66cc8f";
-      case "needs-improvement":
-        return "#FFEEA9";
-      case "poor":
-        return "#FF9898";
-      default:
-        return "#cccccc";
-    }
-  };
-
   const formatFileSize = (bytes: number | null) => {
-    if (!bytes) return "N/A";
+    if (!bytes) return "";
     return (bytes / 1024).toFixed(2) + " KB";
   };
 
@@ -234,16 +212,17 @@ export default function LcpImageDebugger() {
         <DashboardToolbar />
         <div className="flex flex-col gap-6 p-5 min-h-screen">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Images className="fill-orange-300/50" />
-              <h1 className="text-xl font-bold">LCP Images</h1>
-              {isLoading && (
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.2s]" />
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.1s]" />
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
+            <div className="flex items-center text-primary/80 gap-2">
+              <Images />
+              <h1 className="text-xl font-bold">Critical Images</h1> |
+              {lcpImageData.length > 0 ? (
+                <div className="bg-primary/5 dark:bg-orange-300/60 w-19 h-[20px] rounded-3xl border font-medium border-primary/30 text-[10px] text-center py-[2px]">
+                  {lcpImageData.length} images
                 </div>
+              ) : (
+                <div className="w-19 h-[20px] rounded-3xl bg-primary/20 animate-pulse" />
               )}
+              responsible for largest contentful paint
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -264,7 +243,7 @@ export default function LcpImageDebugger() {
                   setSortBy(value as "avg_lcp" | "occurrence")
                 }
               >
-                <SelectTrigger className="w-48 border border-primary/10 focus-visible:border-primary/10 ring-0 focus-visible:ring-0">
+                <SelectTrigger className="w-48 cursor-pointer border border-primary/10 focus-visible:border-primary/10 ring-0 focus-visible:ring-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -277,33 +256,19 @@ export default function LcpImageDebugger() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
             {/* Left: Image List */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="mb-4 flex md:flex-row flex-col items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    Images responsible for Largest Contentful Paint:
-                  </p>
-                  <Badge variant="outline">{lcpImageData.length} images</Badge>
-                </div>
-                <TooltipIcon
-                  content={
-                    "Red bar means the avg LCP is higher than 4000ms | Orange bar denotes higher LCP than 2500ms and < 4000ms | Green bar is safe with image under avg of 2500ms"
-                  }
-                  delay={300}
-                  trigger={
-                    <InfoIcon
-                      size={20}
-                      className="text-primary/30 hover:bg-primary/10 p-[2px] md:block hidden rounded-full"
-                    />
-                  }
+            <div className="lg:col-span-3 col-span-1 space-y-4">
+              {isLoading && (
+                <LoaderIcon
+                  size={16}
+                  className="animate-spin text-primary/20"
                 />
-              </div>
+              )}
 
               <div className="space-y-3">
                 {lcpImageData.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center text-muted-foreground">
                     {isLoading
                       ? "Loading images..."
                       : "No LCP image data found"}
@@ -313,8 +278,6 @@ export default function LcpImageDebugger() {
                     const lcpValue = parseFloat(
                       metric.avg_lcp_ms as unknown as string,
                     );
-                    const barWidth = Math.min(lcpValue / 50, 100); // Adjusted for better visualization
-                    // const status = getLcpStatus(lcpValue);
 
                     return (
                       <div
@@ -330,16 +293,13 @@ export default function LcpImageDebugger() {
                           <img
                             src={metric.image_url}
                             alt={`LCP image ${index}`}
-                            className="object-cover rounded-sm border w-16 h-16"
+                            className="object-cover rounded-sm border w-10 h-10"
                             loading="lazy"
                           />
-                          {/* <div className="absolute -top-1 -right-1">
-                          {getLcpStatusIcon(lcpValue)}
-                        </div> */}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start mb-1">
+                          <div className="flex justify-between items-start mb-1 w-140">
                             <Link
                               href={metric.image_url}
                               target="_blank"
@@ -351,19 +311,34 @@ export default function LcpImageDebugger() {
                             </Link>
                           </div>
 
-                          <div className="w-full bg-muted h-2 rounded-full overflow-hidden mt-2">
-                            <div
-                              className="h-full rounded-full"
-                              style={{
-                                width: `${barWidth}%`,
-                                backgroundColor: getBarColor(lcpValue),
-                              }}
-                            />
-                          </div>
-
-                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                            <span>{metric.occurrence_count} occurrences</span>
+                          <div className="flex gap-2 items-center text-xs text-muted-foreground mt-1">
                             <span>
+                              Occured: {metric.occurrence_count} times
+                            </span>
+                            <div className="flex items-center gap-1 border shadow-sm border-primary/10 rounded-2xl px-2">
+                              Avg lcp
+                              <span
+                                className={` font-medium text-${(() => {
+                                  const lcp =
+                                    typeof metric?.avg_lcp_ms === "number"
+                                      ? metric.avg_lcp_ms
+                                      : 0;
+
+                                  if (lcp < cwv_ranges.lcp[0])
+                                    return "green-500";
+                                  if (
+                                    lcp >= cwv_ranges.lcp[0] &&
+                                    lcp < cwv_ranges.lcp[1]
+                                  )
+                                    return "yellow-500";
+                                  return "red-300";
+                                })()}`}
+                              >
+                                {metric?.avg_lcp_ms ?? "N/A"} ms
+                              </span>
+                            </div>
+
+                            <span className="border shadow-sm border-primary/10 rounded-2xl px-2 font-medium">
                               {formatFileSize(metric.avg_transfer_size)}
                             </span>
                           </div>
@@ -376,37 +351,11 @@ export default function LcpImageDebugger() {
             </div>
 
             {/* Right: Details */}
-            <div className="space-y-6 md:mt-9">
+            <div className="space-y-6 lg:col-span-5 ">
               {selectedImage ? (
                 <>
-                  <div className="border rounded-sm p-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        <h3 className="text-sm font-semibold">Seen on:</h3>
-                      </div>
-                      <div>
-                        {selectedDevice === "Desktop" ? (
-                          <div className="border rounded-sm shadow-sm px-2 py-[2px] flex items-center gap-2 md:flex-row flex-col">
-                            Desktop
-                            <MonitorCheck size={20} />
-                          </div>
-                        ) : selectedDevice === "Mobile" ? (
-                          <div className="border rounded-sm shadow-sm px-2 py-[2px] flex items-center gap-2 md:flex-row flex-col">
-                            Mobile
-                            <Smartphone size={20} />
-                          </div>
-                        ) : selectedDevice === "Tablet" ? (
-                          <div className="border rounded-sm shadow-sm px-2 py-[2px] flex items-center gap-2 md:flex-row flex-col">
-                            Tablet
-                            <Tablet size={20} />
-                          </div>
-                        ) : (
-                          <MonitorSmartphone size={20} />
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
+                  <div className="grid grid-cols-4 gap-6">
+                    <div className="col-span-1 md:col-span-2 space-y-3">
                       <div className="overflow-hidden rounded-sm border">
                         <img
                           src={selectedImage.image_url}
@@ -414,82 +363,57 @@ export default function LcpImageDebugger() {
                           className="w-full h-48 object-contain bg-primary/20 dark:bg-secondary-background"
                         />
                       </div>
+                      <div className="bg-transparent">
+                        <Performancetab
+                          avg_transfer_size={selectedImage.avg_transfer_size}
+                          avg_decoded_body_size={
+                            selectedImage.avg_decoded_body_size
+                          }
+                          avg_resource_load_delay={
+                            selectedImage.avg_resource_load_delay
+                          }
+                          avg_resource_load_duration={
+                            selectedImage.avg_resource_load_duration
+                          }
+                          avg_element_render_delay={
+                            selectedImage.avg_element_render_delay
+                          }
+                          avg_time_to_first_byte={
+                            selectedImage.avg_time_to_first_byte
+                          }
+                          isLazyloaded={
+                            selectedImage.pct_lazy === 0 ? false : true
+                          }
+                        />
+                      </div>
 
-                      <Tabs defaultValue="metrics" className="w-full ">
-                        <TabsList className="grid w-full bg-primary/5 grid-cols-2">
-                          <TabsTrigger value="metrics">Metrics</TabsTrigger>
-                          <TabsTrigger value="performance">
-                            Performance
-                          </TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="metrics" className="space-y-3 mt-4">
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <div className="text-xs text-muted-foreground">
-                                Avg LCP
-                              </div>
-                              <div
-                                className={`font-semibold ${getLcpStatusColor(
-                                  parseFloat(
-                                    selectedImage.avg_lcp_ms as unknown as string,
-                                  ),
-                                )}`}
-                              >
-                                {(
-                                  (selectedImage.avg_lcp_ms ?? 0) / 1000
-                                )?.toFixed(2)}{" "}
-                                s
-                              </div>
+                      <div className="pt-2 border-t">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="text-xs text-muted-foreground">
+                              Lazy Loaded:
                             </div>
-
-                            <div className="space-y-1">
-                              <div className="text-xs text-muted-foreground">
-                                Occurrences
-                              </div>
-                              <div className="font-semibold">
-                                {selectedImage.occurrence_count}
-                              </div>
+                            <div className="font-medium">
+                              {selectedImage.pct_lazy === 0 ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-red-600"
+                                >
+                                  No
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="text-green-600"
+                                >
+                                  Yes
+                                </Badge>
+                              )}
                             </div>
-
-                            <div className="space-y-1">
-                              <div className="text-xs text-muted-foreground">
-                                Min LCP
-                              </div>
-                              <div className="font-medium">
-                                {(
-                                  (selectedImage.min_lcp_ms ?? 0) / 1000
-                                ).toFixed(2)}{" "}
-                                s
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="text-xs text-muted-foreground">
-                                Max LCP
-                              </div>
-                              <div className="font-medium">
-                                {(
-                                  (selectedImage?.max_lcp_ms ?? 0) / 1000
-                                ).toFixed(2)}{" "}
-                                s
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="text-xs text-muted-foreground">
-                                P75 LCP
-                              </div>
-                              <div className="font-medium">
-                                {(
-                                  (selectedImage?.p75_lcp_ms ?? 0) / 1000
-                                ).toFixed(2)}{" "}
-                                s
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="text-xs text-muted-foreground">
+                          </div>
+                          <>
+                            <div className="flex text-xs items-center gap-2">
+                              <div className="text-muted-foreground">
                                 Exceeding CWV
                               </div>
                               <div
@@ -504,104 +428,26 @@ export default function LcpImageDebugger() {
                                 {selectedImage.pct_exceeding_cwv}%
                               </div>
                             </div>
-                          </div>
-
-                          {selectedImage.avg_height &&
-                            selectedImage.avg_width && (
-                              <div className="pt-2 border-t">
-                                <div className="text-xs text-muted-foreground">
-                                  Avg Rendered Size
-                                </div>
-                                <div className="font-medium">
-                                  {selectedImage.avg_width} ×{" "}
-                                  {selectedImage.avg_height} px
-                                </div>
-                              </div>
-                            )}
-                        </TabsContent>
-
-                        <TabsContent
-                          value="performance"
-                          className="space-y-3 mt-4"
-                        >
-                          <div className="bg-transparent">
-                            <Performancetab
-                              avg_transfer_size={
-                                selectedImage.avg_transfer_size
-                              }
-                              avg_decoded_body_size={
-                                selectedImage.avg_decoded_body_size
-                              }
-                              avg_resource_load_delay={
-                                selectedImage.avg_resource_load_delay
-                              }
-                              avg_resource_load_duration={
-                                selectedImage.avg_resource_load_duration
-                              }
-                              avg_element_render_delay={
-                                selectedImage.avg_element_render_delay
-                              }
-                              avg_time_to_first_byte={
-                                selectedImage.avg_time_to_first_byte
-                              }
-                              isLazyloaded={
-                                selectedImage.pct_lazy === 0 ? false : true
-                              }
-                            />
-                          </div>
-
-                          <div className="pt-2 border-t">
-                            <div className="flex items-center gap-2">
-                              <div className="text-xs text-muted-foreground">
-                                Lazy Loaded:
-                              </div>
-                              <div className="font-medium">
-                                {selectedImage.pct_lazy === 0 ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-red-600"
-                                  >
-                                    No
-                                  </Badge>
-                                ) : (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-green-600"
-                                  >
-                                    Yes
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </TabsContent>
-                      </Tabs>
+                          </>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Suggestions Card */}
-                  <div className="border rounded-sm p-4">
-                    <h2 className="text-lg font-semibold mb-4">
-                      How to optimize?
-                    </h2>
-                    <SuggestionsToggle selectedImage={selectedImage} />
+                    <div className="col-span-1 md:col-span-2 border p-4 rounded-sm">
+                      <SuggestionsToggle selectedImage={selectedImage} />
+                    </div>
                   </div>
                 </>
               ) : (
-                <div className="border rounded-sm p-4 flex flex-col items-center justify-center h-64">
+                <>
                   {isLoading ? (
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.2s]" />
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.1s]" />
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
-                    </div>
+                    <div className="h-[200px] w-full bg-primary/5 rounded-sm animate-pulse"></div>
                   ) : (
                     <div className="text-center text-muted-foreground">
                       <Images className="h-12 w-12 mx-auto mb-2 opacity-50" />
                       <p>Select an image to view details</p>
                     </div>
                   )}
-                </div>
+                </>
               )}
             </div>
           </div>

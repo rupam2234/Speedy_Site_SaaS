@@ -22,7 +22,7 @@ export default function SuggestionsToggle({
 }) {
   const [open, setOpen] = useState<"ai" | "manual" | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<AiSuggestions | null>(
-    null
+    null,
   );
   const [loading, setLoading] = useState(false);
 
@@ -82,27 +82,35 @@ export default function SuggestionsToggle({
   }
 
   return (
-    <div className="space-y-6 mt-6 max-w-xl mx-auto font-sans">
-      {/* AI Suggestions */}
-      <div>
-        <button
-          disabled={!selectedImage || loading}
-          onClick={() => {
-            if (selectedImage) fetchSuggestions(selectedImage);
-          }}
-          className={clsx(
-            "w-full text-primary-foreground py-2 rounded-md text-sm font-semibold transition bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
-          )}
-        >
-          {loading ? "Analyzing..." : "Ask AI for Tips"}
-        </button>
-
-        {open === "ai" && (
-          <div className="mt-4 text-primary/80 dark:text-primary/85 text-sm leading-relaxed min-h-[4rem]">
-            {!loading && aiSuggestions && renderSuggestions(aiSuggestions)}
-          </div>
+    <div>
+      <button
+        disabled={!selectedImage || loading}
+        onClick={() => {
+          if (selectedImage) fetchSuggestions(selectedImage);
+        }}
+        className={clsx(
+          "w-full cursor-pointer bg-primary/80 hover:bg-primary/60 text-primary-foreground py-2 rounded-md text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed",
         )}
-      </div>
+      >
+        {loading ? (
+          <span className="flex gap-3 justify-center items-center">
+            Thinking{" "}
+            <div className="flex items-center gap-1">
+              <div className="w-1 h-1 bg-gray-500 rounded-full animate-pulse [animation-delay:-0.2s]" />
+              <div className="w-1 h-1 bg-gray-500 rounded-full animate-pulse [animation-delay:-0.1s]" />
+              <div className="w-1 h-1 bg-gray-500 rounded-full animate-pulse" />
+            </div>
+          </span>
+        ) : (
+          "Ask AI for how to optimize this image"
+        )}
+      </button>
+
+      {open === "ai" && (
+        <div className="mt-4 text-primary/80 dark:text-primary/85 text-sm leading-relaxed min-h-[4rem]">
+          {!loading && aiSuggestions && renderSuggestions(aiSuggestions)}
+        </div>
+      )}
     </div>
   );
 }
