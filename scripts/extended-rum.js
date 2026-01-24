@@ -45,17 +45,17 @@ if (!sessionId) {
 
 const batchedData = [];
 const latestMetrics = {
-  CLS: null,
   INP: null,
-  LCP: null,
-  FCP: null,
-  TTFB: null,
 };
 
 const geo = window.__GEO_INFO__;
 
 let maxCustomEntry = null;
 let webVitalsINP = null;
+
+let worstLCP = null;
+let worstCLS = null;
+
 const elementSummaryCache = new WeakMap();
 
 function summarizeElement(el) {
@@ -134,13 +134,13 @@ if ("PerformanceObserver" in window) {
         responseStart: entry.responseStart,
         responseEnd: entry.responseEnd,
         domInteractive: entry.domInteractive,
-        domComplete: entry.domComplete,
+        // domComplete: entry.domComplete,
         loadEventEnd: entry.loadEventEnd,
-        transferSize: entry.transferSize,
-        encodedBodySize: entry.encodedBodySize,
-        decodedBodySize: entry.decodedBodySize,
+        // transferSize: entry.transferSize,
+        // encodedBodySize: entry.encodedBodySize,
+        // decodedBodySize: entry.decodedBodySize,
       },
-      timestamp: Date.now(),
+      // timestamp: Date.now(),
     });
 
     navTimingQueued = true;
@@ -201,7 +201,7 @@ function initializeWebVitals() {
       type: "error",
       message: "PerformanceObserver or 'event' entry type not supported",
       siteDomain,
-      timestamp: Date.now(),
+      // timestamp: Date.now(),
     });
   }
 }
@@ -237,26 +237,42 @@ function queueEvent(event) {
     console.warn("Event queue limit reached; flushing early.");
     flushMetrics();
   }
-  batchedData.push({ ...event, sessionId });
+  batchedData.push(event);
+  // batchedData.push({ ...event, sessionId }); // adds session id into the event -> currently unnecessary
 }
 
 function handleCLS(metric) {
-  latestMetrics.CLS = metric.value;
-  const rating = classifyMetric(metric.value, CLSThresholds);
-  queueEvent({
-    type: "web-vital",
-    siteDomain,
-    name: "CLS",
-    value: metric.value,
-    rating,
-    id: metric.id,
-    delta: metric.delta,
-    attribution: {
-      largestShiftTarget: metric.attribution?.largestShiftTarget,
-      largestShiftTime: metric.attribution?.largestShiftTime,
-    },
-    timestamp: Date.now(),
-  });
+  // latestMetrics.CLS = metric.value;
+
+  if(!worstCLS || metric.value > worstCLS.value){
+    worstCLS = {
+      type: "web-vital",
+      siteDomain,
+      name: "CLS",
+      value: metric.value,
+      rating: classifyMetric(metric.value, CLSThresholds),
+      id: metric.id,
+      delta: metric.delta,
+      attribution: {
+        largestShiftTarget: metric.attribution?.largestShiftTarget,
+        largestShiftTime: metric.attribution?.largestShiftTime,
+      },
+    }
+  }
+  // queueEvent({
+  //   type: "web-vital",
+  //   siteDomain,
+  //   name: "CLS",
+  //   value: metric.value,
+  //   rating,
+  //   id: metric.id,
+  //   delta: metric.delta,
+  //   attribution: {
+  //     largestShiftTarget: metric.attribution?.largestShiftTarget,
+  //     largestShiftTime: metric.attribution?.largestShiftTime,
+  //   },
+  //   // timestamp: Date.now(),
+  // });
 }
 
 function handleINP(metric) {
@@ -270,7 +286,7 @@ function handleINP(metric) {
 }
 
 function handleLCP(metric) {
-  latestMetrics.LCP = metric.value;
+  // latestMetrics.LCP = metric.value;
   const rating = classifyMetric(metric.value, LCPThresholds);
   const resourceEntries = performance.getEntriesByType("resource");
   const isImage =
@@ -296,37 +312,65 @@ function handleLCP(metric) {
           document?.querySelector(`img[src="${metric.attribution?.url}"]`)) ||
         null;
 
-  queueEvent({
-    type: "web-vital",
-    siteDomain,
-    name: "LCP",
-    value: metric.value,
-    rating,
-    id: metric.id,
-    delta: metric.delta,
-    attribution: {
-      target: metric.attribution?.target,
-      resourceLoadDelay: metric.attribution?.resourceLoadDelay,
-      resourceLoadDuration: metric.attribution?.resourceLoadDuration,
-      elementRenderDelay: metric.attribution?.elementRenderDelay,
-      timeToFirstByte: metric.attribution?.timeToFirstByte,
-      url: metric.attribution?.url,
-      ...(isImage && {
-        decodedBodySize: matchedEntry?.decodedBodySize ?? null,
-        transferSize: matchedEntry?.transferSize ?? null,
-        width: findImage?.width ?? null,
-        height: findImage?.height ?? null,
-        isLazy:
-          findImage?.classList.contains("lazyloaded") ||
-          findImage?.classList.contains("lazyload"),
-      }),
-    },
-    timestamp: Date.now(),
-  });
+  if(!worstLCP || metric.value > worstLCP.value){
+    worstLCP = {type: "web-vital",
+      siteDomain,
+      name: "LCP",
+      value: metric.value,
+      rating,
+      id: metric.id,
+      delta: metric.delta,
+      attribution: {
+        target: metric.attribution?.target,
+        resourceLoadDelay: metric.attribution?.resourceLoadDelay,
+        resourceLoadDuration: metric.attribution?.resourceLoadDuration,
+        elementRenderDelay: metric.attribution?.elementRenderDelay,
+        timeToFirstByte: metric.attribution?.timeToFirstByte,
+        url: metric.attribution?.url,
+        ...(isImage && {
+          decodedBodySize: matchedEntry?.decodedBodySize ?? null,
+          transferSize: matchedEntry?.transferSize ?? null,
+          width: findImage?.width ?? null,
+          height: findImage?.height ?? null,
+          isLazy:
+            findImage?.classList.contains("lazyloaded") ||
+            findImage?.classList.contains("lazyload"),
+        }),
+      },
+    }
+  }      
+
+  // queueEvent({
+  //   type: "web-vital",
+  //   siteDomain,
+  //   name: "LCP",
+  //   value: metric.value,
+  //   rating,
+  //   id: metric.id,
+  //   delta: metric.delta,
+  //   attribution: {
+  //     target: metric.attribution?.target,
+  //     resourceLoadDelay: metric.attribution?.resourceLoadDelay,
+  //     resourceLoadDuration: metric.attribution?.resourceLoadDuration,
+  //     elementRenderDelay: metric.attribution?.elementRenderDelay,
+  //     timeToFirstByte: metric.attribution?.timeToFirstByte,
+  //     url: metric.attribution?.url,
+  //     ...(isImage && {
+  //       decodedBodySize: matchedEntry?.decodedBodySize ?? null,
+  //       transferSize: matchedEntry?.transferSize ?? null,
+  //       width: findImage?.width ?? null,
+  //       height: findImage?.height ?? null,
+  //       isLazy:
+  //         findImage?.classList.contains("lazyloaded") ||
+  //         findImage?.classList.contains("lazyload"),
+  //     }),
+  //   },
+  //   // timestamp: Date.now(),
+  // });
 }
 
 function handleFCP(metric) {
-  latestMetrics.FCP = metric.value;
+  // latestMetrics.FCP = metric.value;
   const rating = classifyMetric(metric.value, FCPThresholds);
   queueEvent({
     type: "web-vital",
@@ -337,12 +381,12 @@ function handleFCP(metric) {
     id: metric.id,
     delta: metric.delta,
     attribution: {},
-    timestamp: Date.now(),
+    // timestamp: Date.now(),
   });
 }
 
 function handleTTFB(metric) {
-  latestMetrics.TTFB = metric.value;
+  // latestMetrics.TTFB = metric.value;
   const rating = classifyMetric(metric.value, TTFBThresholds);
   const navEntry = performance.getEntriesByType("navigation")[0];
   queueEvent({
@@ -359,7 +403,7 @@ function handleTTFB(metric) {
       responseStart: navEntry?.responseStart,
       requestStart: navEntry?.requestStart,
     },
-    timestamp: Date.now(),
+    // timestamp: Date.now(),
   });
 }
 
@@ -519,37 +563,8 @@ function flushMetrics() {
   isFlushing = true;
 
   try {
-    // if (!assetSummarySent && thirdPartyAssetDomains.size > 0) {
-    //   const domains = Array.from(thirdPartyAssetDomains)
-    //     .map((domain) => {
-    //       const data = thirdPartyDomainTimings[domain];
-    //       return {
-    //         domain,
-    //         count: data?.count ?? 0,
-    //         averageDuration: data ? data.totalDuration / data.count : 0,
-    //         maxDuration: data?.maxDuration ?? 0,
-    //         totalTransferSize: data?.totalTransferSize ?? 0,
-    //         totalEncodedBodySize: data?.totalEncodedBodySize ?? 0,
-    //         averageTTFB:
-    //           data && data.countTTFB > 0 ? data.totalTTFB / data.countTTFB : 0,
-    //         maxTTFB: data?.maxTTFB ?? 0,
-    //       };
-    //     })
-    //     .filter(isProblematicDomain);
 
-    //   if (domains.length > 0) {
-    //     queueEvent({
-    //       type: "third-party-asset-summary",
-    //       count: domains.length,
-    //       assetTypes: Array.from(thirdPartyAssetTypes),
-    //       domains,
-    //       siteDomain,
-    //       timestamp: Date.now(),
-    //     });
-    //     assetSummarySent = true;
-    //   }
-    // }
-
+    // aggregate INP
     if (latestMetrics.INP || maxCustomEntry) {
       let inpAttribution = {};
       if (maxCustomEntry && maxCustomEntry.target) {
@@ -595,7 +610,7 @@ function flushMetrics() {
         id: inpId,
         delta: inpDelta,
         attribution: inpAttribution,
-        timestamp: Date.now(),
+        // timestamp: Date.now(),
       });
 
       console.debug("INP event queued:", {
@@ -607,6 +622,13 @@ function flushMetrics() {
       console.debug("No INP data available for queuing");
     }
 
+    // aggregate CLS
+    if(worstCLS) batchedData.push(worstCLS);
+
+    //aggregate LCP
+    if(worstLCP) batchedData.push(worstLCP)
+
+    // then we prep the payload
     if (batchedData.length > 0) {
       const payload = JSON.stringify({
         sessionId,
@@ -615,6 +637,7 @@ function flushMetrics() {
         previousPage,
         data: batchedData,
       });
+
       let success = false;
       if (navigator.sendBeacon) {
         success = navigator.sendBeacon(CONFIG.API_URL, payload);
@@ -645,13 +668,12 @@ function flushMetrics() {
     }
   } finally {
     isFlushing = false;
+    
+    // clean up
+    worstCLS = null;
+    worstLCP = null;
   }
 }
 
 window.addEventListener("beforeunload", flushMetrics);
 
-// document.addEventListener("visibilitychange", () => {
-//   if (document.visibilityState === "hidden") {
-//     flushMetrics();
-//   }
-// });

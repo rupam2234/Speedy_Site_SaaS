@@ -7,7 +7,6 @@ import { Images, Filter, LoaderIcon } from "lucide-react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
 import DashboardToolbar from "@/components/utils/toolbar";
 import Link from "next/link";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -19,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import Performancetab from "./performance";
 import SuggestionsToggle from "./suggestion_toggle";
 import { cwv_ranges } from "../cwvRanges";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Custom Badge component
 const Badge = ({
@@ -90,11 +90,7 @@ export default function LcpImageDebugger() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { selectedSite, rumDateRange, selectedDevice } = useSiteContext();
 
-  // Constants for LCP thresholds
-  const LCP_THRESHOLDS = {
-    GOOD: 2500, // ms
-    NEEDS_IMPROVEMENT: 4000, // ms
-  };
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (selectedSite && selectedSite.length > 0 && rumDateRange) {
@@ -172,26 +168,6 @@ export default function LcpImageDebugger() {
     }
   }
 
-  const getLcpStatus = (lcp: number) => {
-    if (lcp <= LCP_THRESHOLDS.GOOD) return "good";
-    if (lcp <= LCP_THRESHOLDS.NEEDS_IMPROVEMENT) return "needs-improvement";
-    return "poor";
-  };
-
-  const getLcpStatusColor = (lcp: number) => {
-    const status = getLcpStatus(lcp);
-    switch (status) {
-      case "good":
-        return "text-green-600";
-      case "needs-improvement":
-        return "text-yellow-600";
-      case "poor":
-        return "text-red-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return "";
     return (bytes / 1024).toFixed(2) + " KB";
@@ -209,161 +185,158 @@ export default function LcpImageDebugger() {
   } else {
     return (
       <>
-        <DashboardToolbar />
-        <div className="flex flex-col gap-6 p-5 min-h-screen">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center text-primary/80 gap-2">
-              <Images />
-              <h1 className="text-xl font-bold">Critical Images</h1> |
-              {lcpImageData.length > 0 ? (
-                <div className="bg-primary/5 dark:bg-orange-300/60 w-19 h-[20px] rounded-3xl border font-medium border-primary/30 text-[10px] text-center py-[2px]">
-                  {lcpImageData.length} images
-                </div>
-              ) : (
-                <div className="w-19 h-[20px] rounded-3xl bg-primary/20 animate-pulse" />
-              )}
-              responsible for largest contentful paint
-            </div>
+        {isMobile ? (
+          <>
+            <DashboardToolbar />
 
-            <div className="flex flex-wrap gap-3">
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Search images..."
-                  value={filterText}
-                  onChange={(e) => setFilterText(e.target.value)}
-                  className="w-full md:w-64 pl-10 border border-primary/10 focus-visible:border-primary/10 ring-0 focus-visible:ring-0"
-                />
+            <div className="flex flex-col gap-6 p-4 md:p-5 min-h-screen">
+              {/* Header */}
+              <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
+                <div className="flex flex-wrap items-center text-primary/80 gap-2">
+                  <Images />
+                  <h1 className="text-lg md:text-xl font-bold">
+                    Critical Images
+                  </h1>
+
+                  <span className="hidden md:inline">|</span>
+
+                  {lcpImageData.length > 0 ? (
+                    <div className="bg-primary/5 dark:bg-orange-300/60 h-[20px] rounded-3xl border font-medium border-primary/30 text-[10px] text-center px-2 py-[2px]">
+                      {lcpImageData.length} images
+                    </div>
+                  ) : (
+                    <div className="w-16 h-[20px] rounded-3xl bg-primary/20 animate-pulse" />
+                  )}
+
+                  <span className="text-xs md:text-sm">
+                    responsible for largest contentful paint
+                  </span>
+                </div>
+
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                  <div className="relative w-full sm:w-64">
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search images..."
+                      value={filterText}
+                      onChange={(e) => setFilterText(e.target.value)}
+                      className="w-full pl-10 border border-primary/10 focus-visible:border-primary/10 ring-0"
+                    />
+                  </div>
+
+                  <Select
+                    value={sortBy}
+                    onValueChange={(value) =>
+                      setSortBy(value as "avg_lcp" | "occurrence")
+                    }
+                  >
+                    <SelectTrigger className="w-full sm:w-48 border border-primary/10 ring-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="avg_lcp">Sort by Avg LCP</SelectItem>
+                      <SelectItem value="occurrence">
+                        Sort by Occurrences
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <Select
-                value={sortBy}
-                onValueChange={(value) =>
-                  setSortBy(value as "avg_lcp" | "occurrence")
-                }
-              >
-                <SelectTrigger className="w-48 cursor-pointer border border-primary/10 focus-visible:border-primary/10 ring-0 focus-visible:ring-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="avg_lcp">Sort by Avg LCP</SelectItem>
-                  <SelectItem value="occurrence">
-                    Sort by Occurrences
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
-            {/* Left: Image List */}
-            <div className="lg:col-span-3 col-span-1 space-y-4">
-              {isLoading && (
-                <LoaderIcon
-                  size={16}
-                  className="animate-spin text-primary/20"
-                />
-              )}
-
-              <div className="space-y-3">
-                {lcpImageData.length === 0 ? (
-                  <div className="text-center text-muted-foreground">
-                    {isLoading
-                      ? "Loading images..."
-                      : "No LCP image data found"}
-                  </div>
-                ) : (
-                  lcpImageData.map((metric, index) => {
-                    const lcpValue = parseFloat(
-                      metric.avg_lcp_ms as unknown as string,
-                    );
-
-                    return (
-                      <div
-                        key={index}
-                        className={`flex items-center gap-3 p-3 rounded-sm transition-all border cursor-pointer hover:bg-primary/5 hover:dark:bg-secondary-background ${
-                          selectedImage?.image_url === metric.image_url
-                            ? "border-primary/20 dark:bg-secondary-background"
-                            : "border-primary/5"
-                        }`}
-                        onClick={() => setSelectedImage(metric)}
-                      >
-                        <div className="relative">
+              {/* Main layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
+                {/* Image list */}
+                <div className="lg:col-span-3 space-y-4">
+                  <div className="space-y-3">
+                    {lcpImageData.length === 0 ? (
+                      <div className="text-center text-muted-foreground">
+                        {isLoading
+                          ? "Loading images..."
+                          : "No LCP image data found"}
+                      </div>
+                    ) : (
+                      lcpImageData.map((metric, index) => (
+                        <div
+                          key={index}
+                          onClick={() => setSelectedImage(metric)}
+                          className={`flex gap-3 p-3 rounded-sm border cursor-pointer transition-all ${
+                            selectedImage?.image_url === metric.image_url
+                              ? "border-primary/20 bg-primary/5 dark:bg-secondary-background"
+                              : "border-primary/5 hover:bg-primary/5"
+                          }`}
+                        >
                           <img
                             src={metric.image_url}
                             alt={`LCP image ${index}`}
-                            className="object-cover rounded-sm border w-10 h-10"
+                            className="w-10 h-10 rounded-sm border object-cover shrink-0"
                             loading="lazy"
                           />
-                        </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start mb-1 w-140">
+                          <div className="flex-1 min-w-0">
                             <Link
                               href={metric.image_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm font-medium hover:underline truncate"
+                              className="text-sm font-medium truncate hover:underline block"
                             >
                               {metric.image_url.split("/").pop() ||
                                 "Unknown Image"}
                             </Link>
-                          </div>
 
-                          <div className="flex gap-2 items-center text-xs text-muted-foreground mt-1">
-                            <span>
-                              Occured: {metric.occurrence_count} times
-                            </span>
-                            <div className="flex items-center gap-1 border shadow-sm border-primary/10 rounded-2xl px-2">
-                              Avg lcp
-                              <span
-                                className={` font-medium text-${(() => {
-                                  const lcp =
-                                    typeof metric?.avg_lcp_ms === "number"
-                                      ? metric.avg_lcp_ms
-                                      : 0;
+                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
+                              <span>
+                                Occurred: {metric.occurrence_count} times
+                              </span>
 
-                                  if (lcp < cwv_ranges.lcp[0])
-                                    return "green-500";
-                                  if (
-                                    lcp >= cwv_ranges.lcp[0] &&
-                                    lcp < cwv_ranges.lcp[1]
-                                  )
-                                    return "yellow-500";
-                                  return "red-300";
-                                })()}`}
-                              >
-                                {metric?.avg_lcp_ms ?? "N/A"} ms
+                              <div className="flex items-center gap-1 border shadow-sm border-primary/10 rounded-2xl px-2">
+                                Avg LCP
+                                <span
+                                  className={` font-medium text-${(() => {
+                                    const lcp =
+                                      typeof metric?.avg_lcp_ms === "number"
+                                        ? metric.avg_lcp_ms
+                                        : 0;
+
+                                    if (lcp < cwv_ranges.lcp[0])
+                                      return "green-500";
+                                    if (
+                                      lcp >= cwv_ranges.lcp[0] &&
+                                      lcp < cwv_ranges.lcp[1]
+                                    )
+                                      return "yellow-500";
+                                    return "red-300";
+                                  })()}`}
+                                >
+                                  {metric?.avg_lcp_ms ?? "N/A"} ms
+                                </span>
+                              </div>
+
+                              <span className="border shadow-sm border-primary/10 rounded-2xl px-2 font-medium">
+                                {formatFileSize(metric.avg_transfer_size)}
                               </span>
                             </div>
-
-                            <span className="border shadow-sm border-primary/10 rounded-2xl px-2 font-medium">
-                              {formatFileSize(metric.avg_transfer_size)}
-                            </span>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
+                      ))
+                    )}
+                  </div>
+                </div>
 
-            {/* Right: Details */}
-            <div className="space-y-6 lg:col-span-5 ">
-              {selectedImage ? (
-                <>
-                  <div className="grid grid-cols-4 gap-6">
-                    <div className="col-span-1 md:col-span-2 space-y-3">
-                      <div className="overflow-hidden rounded-sm border">
-                        <img
-                          src={selectedImage.image_url}
-                          alt="Selected LCP image"
-                          className="w-full h-48 object-contain bg-primary/20 dark:bg-secondary-background"
-                        />
-                      </div>
-                      <div className="bg-transparent">
+                {/* Details */}
+                <div className="lg:col-span-5 space-y-6">
+                  {selectedImage ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="overflow-hidden rounded-sm border">
+                          <img
+                            src={selectedImage.image_url}
+                            alt="Selected LCP image"
+                            className="w-full h-48 object-contain bg-primary/20 dark:bg-secondary-background"
+                          />
+                        </div>
+
                         <Performancetab
                           avg_transfer_size={selectedImage.avg_transfer_size}
                           avg_decoded_body_size={
@@ -381,77 +354,308 @@ export default function LcpImageDebugger() {
                           avg_time_to_first_byte={
                             selectedImage.avg_time_to_first_byte
                           }
-                          isLazyloaded={
-                            selectedImage.pct_lazy === 0 ? false : true
-                          }
+                          isLazyloaded={selectedImage.pct_lazy !== 0}
                         />
-                      </div>
 
-                      <div className="pt-2 border-t">
-                        <div className="flex items-center justify-between">
+                        <div className="pt-2 border-t flex justify-between text-xs">
                           <div className="flex items-center gap-2">
-                            <div className="text-xs text-muted-foreground">
+                            <span className="text-muted-foreground">
                               Lazy Loaded:
-                            </div>
-                            <div className="font-medium">
-                              {selectedImage.pct_lazy === 0 ? (
-                                <Badge
-                                  variant="outline"
-                                  className="text-red-600"
-                                >
-                                  No
-                                </Badge>
-                              ) : (
-                                <Badge
-                                  variant="outline"
-                                  className="text-green-600"
-                                >
-                                  Yes
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <>
-                            <div className="flex text-xs items-center gap-2">
-                              <div className="text-muted-foreground">
-                                Exceeding CWV
-                              </div>
-                              <div
-                                className={`font-medium ${
-                                  parseFloat(
-                                    selectedImage.pct_exceeding_cwv as unknown as string,
-                                  ) > 0
-                                    ? "text-red-600"
-                                    : "text-green-600"
-                                }`}
+                            </span>
+                            {selectedImage.pct_lazy === 0 ? (
+                              <Badge variant="outline" className="text-red-600">
+                                No
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="text-green-600"
                               >
-                                {selectedImage.pct_exceeding_cwv}%
-                              </div>
-                            </div>
-                          </>
+                                Yes
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">
+                              Exceeding CWV
+                            </span>
+                            <span
+                              className={`font-medium ${
+                                parseFloat(
+                                  selectedImage.pct_exceeding_cwv as unknown as string,
+                                ) > 0
+                                  ? "text-red-600"
+                                  : "text-green-600"
+                              }`}
+                            >
+                              {selectedImage.pct_exceeding_cwv}%
+                            </span>
+                          </div>
                         </div>
                       </div>
+
+                      <div className="border p-4 rounded-sm">
+                        <SuggestionsToggle selectedImage={selectedImage} />
+                      </div>
                     </div>
-                    <div className="col-span-1 md:col-span-2 border p-4 rounded-sm">
-                      <SuggestionsToggle selectedImage={selectedImage} />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {isLoading ? (
-                    <div className="h-[200px] w-full bg-primary/5 rounded-sm animate-pulse"></div>
+                  ) : isLoading ? (
+                    <div className="h-[200px] w-full bg-primary/5 rounded-sm animate-pulse" />
                   ) : (
-                    <div className="text-center text-muted-foreground">
+                    <div className="text-center text-muted-foreground py-10">
                       <Images className="h-12 w-12 mx-auto mb-2 opacity-50" />
                       <p>Select an image to view details</p>
                     </div>
                   )}
-                </>
-              )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        ) : (
+          <>
+            <DashboardToolbar />
+            <div className="flex flex-col gap-6 p-5 min-h-screen">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex items-center text-primary/80 gap-2">
+                  <Images />
+                  <h1 className="text-xl font-bold">Critical Images</h1> |
+                  {lcpImageData.length > 0 ? (
+                    <div className="bg-primary/5 dark:bg-orange-300/60 w-19 h-[20px] rounded-3xl border font-medium border-primary/30 text-[10px] text-center py-[2px]">
+                      {lcpImageData.length} images
+                    </div>
+                  ) : (
+                    <div className="w-19 h-[20px] rounded-3xl bg-primary/20 animate-pulse" />
+                  )}
+                  responsible for largest contentful paint
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <div className="relative">
+                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search images..."
+                      value={filterText}
+                      onChange={(e) => setFilterText(e.target.value)}
+                      className="w-full md:w-64 pl-10 border border-primary/10 focus-visible:border-primary/10 ring-0 focus-visible:ring-0"
+                    />
+                  </div>
+
+                  <Select
+                    value={sortBy}
+                    onValueChange={(value) =>
+                      setSortBy(value as "avg_lcp" | "occurrence")
+                    }
+                  >
+                    <SelectTrigger className="w-48 cursor-pointer border border-primary/10 focus-visible:border-primary/10 ring-0 focus-visible:ring-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="avg_lcp">Sort by Avg LCP</SelectItem>
+                      <SelectItem value="occurrence">
+                        Sort by Occurrences
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
+                {/* Left: Image List */}
+                <div className="lg:col-span-3 col-span-1 space-y-4">
+                  {isLoading && (
+                    <LoaderIcon
+                      size={16}
+                      className="animate-spin text-primary/20"
+                    />
+                  )}
+
+                  <div className="space-y-3">
+                    {lcpImageData.length === 0 ? (
+                      <div className="text-center text-muted-foreground">
+                        {isLoading
+                          ? "Loading images..."
+                          : "No LCP image data found"}
+                      </div>
+                    ) : (
+                      lcpImageData.map((metric, index) => {
+                        return (
+                          <div
+                            key={index}
+                            className={`flex items-center gap-3 p-3 rounded-sm transition-all border cursor-pointer hover:bg-primary/5 hover:dark:bg-secondary-background ${
+                              selectedImage?.image_url === metric.image_url
+                                ? "border-primary/20 dark:bg-secondary-background"
+                                : "border-primary/5"
+                            }`}
+                            onClick={() => setSelectedImage(metric)}
+                          >
+                            <div className="relative">
+                              <img
+                                src={metric.image_url}
+                                alt={`LCP image ${index}`}
+                                className="object-cover rounded-sm border w-10 h-10"
+                                loading="lazy"
+                              />
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start mb-1 w-[300px]">
+                                <Link
+                                  href={metric.image_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm font-medium hover:underline truncate"
+                                >
+                                  {metric.image_url.split("/").pop() ||
+                                    "Unknown Image"}
+                                </Link>
+                              </div>
+
+                              <div className="flex gap-2 items-center text-xs text-muted-foreground mt-1">
+                                <span>
+                                  Occured: {metric.occurrence_count} times
+                                </span>
+                                <div className="flex items-center gap-1 border shadow-sm border-primary/10 rounded-2xl px-2">
+                                  Avg lcp
+                                  <span
+                                    className={` font-medium text-${(() => {
+                                      const lcp =
+                                        typeof metric?.avg_lcp_ms === "number"
+                                          ? metric.avg_lcp_ms
+                                          : 0;
+
+                                      if (lcp < cwv_ranges.lcp[0])
+                                        return "green-500";
+                                      if (
+                                        lcp >= cwv_ranges.lcp[0] &&
+                                        lcp < cwv_ranges.lcp[1]
+                                      )
+                                        return "yellow-500";
+                                      return "red-300";
+                                    })()}`}
+                                  >
+                                    {metric?.avg_lcp_ms ?? "N/A"} ms
+                                  </span>
+                                </div>
+
+                                <span className="border shadow-sm border-primary/10 rounded-2xl px-2 font-medium">
+                                  {formatFileSize(metric.avg_transfer_size)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Details */}
+                <div className="space-y-6 lg:col-span-5 ">
+                  {selectedImage ? (
+                    <>
+                      <div className="grid grid-cols-4 gap-6">
+                        <div className="col-span-1 md:col-span-2 space-y-3">
+                          <div className="overflow-hidden rounded-sm border">
+                            <img
+                              src={selectedImage.image_url}
+                              alt="Selected LCP image"
+                              className="w-full h-48 object-contain bg-primary/20 dark:bg-secondary-background"
+                            />
+                          </div>
+                          <div className="bg-transparent">
+                            <Performancetab
+                              avg_transfer_size={
+                                selectedImage.avg_transfer_size
+                              }
+                              avg_decoded_body_size={
+                                selectedImage.avg_decoded_body_size
+                              }
+                              avg_resource_load_delay={
+                                selectedImage.avg_resource_load_delay
+                              }
+                              avg_resource_load_duration={
+                                selectedImage.avg_resource_load_duration
+                              }
+                              avg_element_render_delay={
+                                selectedImage.avg_element_render_delay
+                              }
+                              avg_time_to_first_byte={
+                                selectedImage.avg_time_to_first_byte
+                              }
+                              isLazyloaded={
+                                selectedImage.pct_lazy === 0 ? false : true
+                              }
+                            />
+                          </div>
+
+                          <div className="pt-2 border-t">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="text-xs text-muted-foreground">
+                                  Lazy Loaded:
+                                </div>
+                                <div className="font-medium">
+                                  {selectedImage.pct_lazy === 0 ? (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-red-600"
+                                    >
+                                      No
+                                    </Badge>
+                                  ) : (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-green-600"
+                                    >
+                                      Yes
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <>
+                                <div className="flex text-xs items-center gap-2">
+                                  <div className="text-muted-foreground">
+                                    Exceeding CWV
+                                  </div>
+                                  <div
+                                    className={`font-medium ${
+                                      parseFloat(
+                                        selectedImage.pct_exceeding_cwv as unknown as string,
+                                      ) > 0
+                                        ? "text-red-600"
+                                        : "text-green-600"
+                                    }`}
+                                  >
+                                    {selectedImage.pct_exceeding_cwv}%
+                                  </div>
+                                </div>
+                              </>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="col-span-1 md:col-span-2 border p-4 rounded-sm">
+                          <SuggestionsToggle selectedImage={selectedImage} />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {isLoading ? (
+                        <div className="h-[200px] w-full bg-primary/5 rounded-sm animate-pulse"></div>
+                      ) : (
+                        <div className="text-center text-muted-foreground">
+                          <Images className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p>Select an image to view details</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </>
     );
   }

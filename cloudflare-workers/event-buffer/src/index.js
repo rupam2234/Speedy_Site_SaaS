@@ -77,6 +77,32 @@ export class MyDurableObject extends DurableObject {
 				created_at: new Date().toISOString(),
 			};
 
+			// before sending data into buffer we can calculate the navigation timings (reduces bandwidth, saves space)
+			payload.events = payload.events.map((event)=> {
+				if(event.type === "navigation-timing" && event.raw){
+					const r = event.raw;
+
+					const safe = (v) =>
+						typeof v === "number" && v >= 0 ? v : null;
+
+					// Compute derived timings
+					const ttfb = safe(r.responseStart - r.requestStart);
+					const domReady = safe(r.domInteractive - r.startTime);
+					const loadTime = safe(r.loadEventEnd - r.startTime);
+
+					return {
+						...event,
+						raw: {
+							ttfb,
+							domReady,
+							loadTime
+						}
+					}
+				}
+
+				return event;
+			})
+
 			buffer.push(payload);
 
 			// Decide whether to flush
