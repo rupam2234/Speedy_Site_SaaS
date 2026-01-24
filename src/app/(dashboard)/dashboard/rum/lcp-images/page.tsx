@@ -98,9 +98,10 @@ export default function LcpImageDebugger() {
     }
   }, [selectedSite, rumDateRange]);
 
-  function isImageUrl(url: string): boolean {
-    return /\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(url);
-  }
+  const formatFileSize = (bytes: number | null) => {
+    if (!bytes) return "";
+    return (bytes / 1024).toFixed(2) + " KB";
+  };
 
   // Recompute sorted + filtered data only when inputs change
   const lcpImageData = useMemo(() => {
@@ -140,38 +141,6 @@ export default function LcpImageDebugger() {
       setSelectedImage(null);
     }
   }, [lcpImageData]);
-
-  async function fetchLcpImages() {
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/rum/lcp-images", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: rumDateRange || "24hours",
-        }),
-      });
-
-      if (res.ok) {
-        const data: any = await res.json();
-        const metrics: LcpImageMetric[] = data.metrics || [];
-        setRawLcpImageData(metrics);
-      } else {
-        setRawLcpImageData([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch LCP image metrics:", error);
-      setRawLcpImageData([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  const formatFileSize = (bytes: number | null) => {
-    if (!bytes) return "";
-    return (bytes / 1024).toFixed(2) + " KB";
-  };
 
   if (!selectedSite) {
     return (
@@ -463,13 +432,6 @@ export default function LcpImageDebugger() {
               <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
                 {/* Left: Image List */}
                 <div className="lg:col-span-3 col-span-1 space-y-4">
-                  {isLoading && (
-                    <LoaderIcon
-                      size={16}
-                      className="animate-spin text-primary/20"
-                    />
-                  )}
-
                   <div className="space-y-3">
                     {lcpImageData.length === 0 ? (
                       <div className="text-center text-muted-foreground">
@@ -658,5 +620,36 @@ export default function LcpImageDebugger() {
         )}
       </>
     );
+  }
+
+  async function fetchLcpImages() {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/rum/lcp-images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain_name: selectedSite,
+          date_range: rumDateRange || "24hours",
+        }),
+      });
+
+      if (res.ok) {
+        const data: any = await res.json();
+        const metrics: LcpImageMetric[] = data.metrics || [];
+        setRawLcpImageData(metrics);
+      } else {
+        setRawLcpImageData([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch LCP image metrics:", error);
+      setRawLcpImageData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function isImageUrl(url: string): boolean {
+    return /\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(url);
   }
 }
