@@ -56,7 +56,7 @@ export default function SuggestionsToggle({
   return (
     <>
       {estSaving?.newSize === 0 && estSaving.saving === 0 ? (
-        <></>
+        <>{/* display nothing*/}</>
       ) : (
         <div className="mb-10 space-y-3 items-start text-sm text-primary/80 dark:text-primary/85">
           {estSaving && selectedImage && (
