@@ -28,8 +28,8 @@ export default function TrafficSource({
 
   const [scrollTop, setScrollTop] = useState<number>(0);
 
-  const topIndex = Math.ceil(scrollTop / ROW_HEIGHT);
-  const rowsInsideWindow = Math.floor(WINDOW_HEIGHT / ROW_HEIGHT);
+  const topIndex = Math.floor(scrollTop / ROW_HEIGHT);
+  const rowsInsideWindow = Math.ceil(WINDOW_HEIGHT / ROW_HEIGHT);
   const bottomIndex = topIndex + rowsInsideWindow;
 
   const rowsToDisplay = trafficData.slice(topIndex, bottomIndex);

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import clsx from "clsx";
 
 interface TooltipIconProps {
-  content: string;
+  content: string | React.ReactNode;
   side?: "top" | "right" | "bottom" | "left";
   trigger?: React.ReactNode;
   maxWidth?: string;

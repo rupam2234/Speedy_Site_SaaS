@@ -167,7 +167,7 @@ export function SourceHandler() {
             ))}
           </div>
         </div>
-        <div className="py-8 h-[380px]">
+        <div className="py-8 h-auto md:h-[380px]">
           {selectedGeoType === "Visitors" ? (
             <CountryTrafficMap
               trafficData={combinedData}

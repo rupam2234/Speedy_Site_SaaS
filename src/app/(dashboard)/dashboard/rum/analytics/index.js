@@ -1,5 +1,6 @@
 export {default as TrafficSource} from "./traffic-sources/trafficSource"
 export {default as LLMTrafficSource} from "./traffic-sources/llmTrafficSource"
 export {SourceHandler} from "./traffic-sources/sourceHandler"
-export {default as CountryTrafficMap} from "./visual-map/trafficMapContainer"
-export {alpha2ToAlpha3, alpha3ToAlpha2} from"./visual-map/countryCodes"
+export {default as CountryTrafficMap} from "./visual-traffic-map/trafficMapContainer"
+export {alpha2ToAlpha3, alpha3ToAlpha2} from"./visual-traffic-map/countryCodes"
+export {CountryStripe} from "./visual-traffic-map/countryStripe"

@@ -3,9 +3,9 @@
 import React, { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import styles from "../helpers/tooltip.module.css";
 import type { FeatureCollection, Geometry } from "geojson";
-import { alpha2ToAlpha3, alpha3ToAlpha2 } from "..";
+import { alpha2ToAlpha3, alpha3ToAlpha2, CountryStripe } from "..";
+import styles from "./tooltip.module.css";
 
 const ClientMap = dynamic(() => import("../helpers/trafficMap"), {
   ssr: false,
@@ -53,8 +53,6 @@ export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
   const trafficByCountryArray = Object.entries(trafficByCountry).map(
     ([code, traffic]) => ({ code, traffic }),
   );
-
-  console.log(trafficByCountryArray);
 
   useEffect(() => {
     fetch(
@@ -130,7 +128,9 @@ export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
             onEachFeatureFn={onEachFeature}
             theme={theme}
           />
-          <div className="mt-2">Display a scrolling stripe</div>
+          <CountryStripe
+            data={trafficByCountryArray.length > 0 ? trafficByCountryArray : []}
+          />
         </>
       ) : (
         <></>
