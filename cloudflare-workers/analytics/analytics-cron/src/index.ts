@@ -97,10 +97,10 @@ async function updateMetricsToD1(env: Env, metrics: any[]) {
 
 async function getTrafficByCountries(
 	env: Env,
-	range: 'yesterday' | 'last7days' | '30days' | 'thisMonth' | 'lastMonth' | 'last6Months' | 'year' | 'today' | 'thisYear' = '30days',
+	startDate: string,
+	endDate:string,
 	domainName?: string
 ) {
-	const { startDate, endDate } = getDateRange(range);
 
 	let query = `SELECT device_type, country_distribution FROM web_metrics WHERE date_collected BETWEEN ? AND ?`;
 
@@ -127,10 +127,11 @@ async function getTrafficByCountries(
 
 async function getMetricsFromD1(
 	env: Env,
-	range: 'yesterday' | 'last7days' | '30days' | 'thisMonth' | 'lastMonth' | 'last6Months' | 'year' | 'today' | 'thisYear' = '30days',
+	startDate: string,
+	endDate:string,
 	domainName?: string
 ) {
-	const { startDate, endDate } = getDateRange(range);
+	// const { startDate, endDate } = getDateRange(range);
 
 	let query = `
 		SELECT 
@@ -192,19 +193,12 @@ export default {
 
 		// gets overview data
 		if (url.pathname === '/metrics') {
-			const range = url.searchParams.get('range') as
-				| 'yesterday'
-				| 'last7days'
-				| '30days'
-				| 'thisMonth'
-				| 'lastMonth'
-				| 'last6Months'
-				| 'year';
-
+			const startDate = url.searchParams.get('startDate') as string;
+			const endDate = url.searchParams.get("endDate") as string;
 			const domain = url.searchParams.get('domain') || undefined;
 
 			try {
-				const metrics = await getMetricsFromD1(env, range || '30days', domain);
+				const metrics = await getMetricsFromD1(env, startDate, endDate, domain);
 				return new Response(JSON.stringify(metrics, null, 2), {
 					headers: {
 						'Content-Type': 'application/json',
@@ -218,20 +212,16 @@ export default {
 		}
 
 		if (url.pathname === '/country-breakdown') {
-			const range = url.searchParams.get('range') as
-				| 'yesterday'
-				| 'last7days'
-				| '30days'
-				| 'thisMonth'
-				| 'lastMonth'
-				| 'last6Months'
-				| 'year'
-				| 'today'
-				| 'thisYear';
-			const domain = url.searchParams.get('domain') || undefined;
+			const startDate = url.searchParams.get('startDate') || undefined;
+			const endDate = url.searchParams.get("endDate") || undefined;
+			const domain = url.searchParams.get("domain") || undefined;
 
 			try {
-				const data = await getTrafficByCountries(env, range || '30days', domain);
+
+				if(startDate === undefined || endDate === undefined){
+					return new Response('Bad request! Missing Dates', {status: 400});
+				}
+				const data = await getTrafficByCountries(env, startDate, endDate, domain);
 				return new Response(JSON.stringify(data, null, 2), {
 					headers: {
 						'Content-Type': 'application/json',
@@ -259,63 +249,3 @@ export default {
 		return new Response('Not Found', { status: 404 });
 	},
 };
-
-function getDateRange(
-	range: 'yesterday' | 'last7days' | '30days' | 'thisMonth' | 'lastMonth' | 'last6Months' | 'year' | 'today' | 'thisYear' = '30days'
-) {
-	const today = new Date();
-	today.setUTCHours(0, 0, 0, 0); // Set time to midnight UTC
-
-	let startDate: string;
-	let endDate: string;
-
-	switch (range) {
-		case 'today':
-			startDate = today.toISOString().slice(0, 10);
-			endDate = startDate;
-			break;
-		case 'yesterday':
-			startDate = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
-			endDate = startDate;
-			break;
-		case 'last7days':
-			startDate = new Date(today.getTime() - 7 * 86400000).toISOString().slice(0, 10);
-			endDate = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
-			break;
-		case '30days':
-			startDate = new Date(today.getTime() - 29 * 86400000).toISOString().slice(0, 10);
-			endDate = today.toISOString().slice(0, 10);
-			break;
-		case 'thisMonth':
-			startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)).toISOString().slice(0, 10);
-			endDate = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
-			break;
-		case 'lastMonth':
-			const firstOfCurrentMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
-			const lastMonthEnd = new Date(firstOfCurrentMonth.getTime() - 86400000);
-			const lastMonthStart = new Date(Date.UTC(lastMonthEnd.getUTCFullYear(), lastMonthEnd.getUTCMonth(), 1));
-			startDate = lastMonthStart.toISOString().slice(0, 10);
-			endDate = lastMonthEnd.toISOString().slice(0, 10);
-			break;
-		case 'last6Months':
-			const sixMonthsAgo = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 6, 1));
-			startDate = sixMonthsAgo.toISOString().slice(0, 10);
-			endDate = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
-			break;
-		case 'thisYear':
-			const startOfYear = new Date(Date.UTC(today.getUTCFullYear(), 0, 1));
-			startDate = startOfYear.toISOString().slice(0, 10);
-			endDate = today.toISOString().slice(0, 10);
-			break;
-		case 'year':
-			const startOfPrevYear = new Date(Date.UTC(today.getUTCFullYear(), 0, 1));
-			startDate = startOfPrevYear.toISOString().slice(0, 10);
-			endDate = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
-			break;
-		default:
-			startDate = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
-			endDate = startDate;
-	}
-
-	return { startDate, endDate };
-}

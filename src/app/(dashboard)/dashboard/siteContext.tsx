@@ -25,12 +25,12 @@ type SiteContextType = {
   setCruxData: (crux: CruxData[]) => void;
   selectedDevice: "Desktop" | "Mobile" | "Tablet" | "All";
   setSelectedDevice: (device: "Desktop" | "Tablet" | "Mobile" | "All") => void;
-  dateRange: [string, string];
-  setDateRange: (startDate: string, endDate: string) => void | [string, string];
-  rumDateRange: "24hours" | "7days" | "30days" | "90days";
-  setRumDateRange: (
-    dateRange: "24hours" | "7days" | "30days" | "90days",
-  ) => void;
+  // dateRange: [string, string];
+  // setDateRange: (startDate: string, endDate: string) => void | [string, string];
+  // rumDateRange: "24hours" | "7days" | "30days" | "90days";
+  // setRumDateRange: (
+  //   dateRange: "24hours" | "7days" | "30days" | "90days",
+  // ) => void;
   collapsed: boolean;
   setCollapsed: (isCollapsed: boolean) => void;
   experienceType: "p75" | "Distribution";
@@ -41,28 +41,32 @@ type SiteContextType = {
   setSelectedGeoType: (
     selectedGeoType: "Visitors" | "Share" | "User Happiness",
   ) => void;
-  selectedAnalyticsDate:
-    | "yesterday"
-    | "last7days"
-    | "30days"
-    | "thisMonth"
-    | "lastMonth"
-    | "last6Months"
-    | "year"
-    | "today"
-    | "thisYear";
-  setSelectedAnalyticsDate: (
-    selectedAnalyticsDate:
-      | "yesterday"
-      | "last7days"
-      | "30days"
-      | "thisMonth"
-      | "lastMonth"
-      | "last6Months"
-      | "year"
-      | "today"
-      | "thisYear",
-  ) => void;
+  // selectedAnalyticsDate:
+  //   | "yesterday"
+  //   | "last7days"
+  //   | "30days"
+  //   | "thisMonth"
+  //   | "lastMonth"
+  //   | "last6Months"
+  //   | "year"
+  //   | "today"
+  //   | "thisYear";
+  // setSelectedAnalyticsDate: (
+  //   selectedAnalyticsDate:
+  //     | "yesterday"
+  //     | "last7days"
+  //     | "30days"
+  //     | "thisMonth"
+  //     | "lastMonth"
+  //     | "last6Months"
+  //     | "year"
+  //     | "today"
+  //     | "thisYear",
+  // ) => void;
+  startDate?: Date;
+  endDate?: Date;
+  setStartDate: (d?: Date) => void;
+  setEndDate: (d?: Date) => void;
 };
 
 export const SiteContext = createContext<SiteContextType>({
@@ -77,20 +81,22 @@ export const SiteContext = createContext<SiteContextType>({
   setSelectedDevice: () => {},
   cruxData: [],
   setCruxData: () => {},
-  dateRange: ["", ""],
-  setDateRange: () => {},
+  // dateRange: ["", ""],
+  // setDateRange: () => {},
   collapsed: false,
   setCollapsed: () => {},
   experienceType: "p75",
   setExperienceType: () => {},
   rumDistribution: "p75",
   setRumDistribution: () => {},
-  rumDateRange: "7days",
-  setRumDateRange: () => {},
-  selectedAnalyticsDate: "30days",
-  setSelectedAnalyticsDate: () => {},
+  // rumDateRange: "7days",
+  // setRumDateRange: () => {},
+  // selectedAnalyticsDate: "30days",
+  // setSelectedAnalyticsDate: () => {},
   selectedGeoType: "Visitors",
   setSelectedGeoType: () => {},
+  setStartDate: () => {},
+  setEndDate: () => {},
 });
 
 export default function SiteContextProvider({
@@ -105,7 +111,7 @@ export default function SiteContextProvider({
   const [selectedDevice, setSelectedDevice] = useState<
     "Desktop" | "Mobile" | "Tablet" | "All"
   >("Desktop");
-  const [dateRange, setDateRange] = useState<[string, string]>(["", ""]);
+  // const [dateRange, setDateRange] = useState<[string, string]>(["", ""]);
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [experienceType, setExperienceType] = useState<"p75" | "Distribution">(
     "p75",
@@ -113,20 +119,23 @@ export default function SiteContextProvider({
   const [rumDistribution, setRumDistribution] = useState<
     "p50" | "p75" | "p90" | "p95" | "p99"
   >("p75");
-  const [rumDateRange, setRumDateRange] = useState<
-    "24hours" | "7days" | "30days" | "90days"
-  >("30days");
-  const [selectedAnalyticsDate, setSelectedAnalyticsDate] = useState<
-    | "yesterday"
-    | "last7days"
-    | "30days"
-    | "thisMonth"
-    | "lastMonth"
-    | "last6Months"
-    | "year"
-    | "today"
-    | "thisYear"
-  >("30days");
+  // const [rumDateRange, setRumDateRange] = useState<
+  //   "24hours" | "7days" | "30days" | "90days"
+  // >("30days");
+  // const [selectedAnalyticsDate, setSelectedAnalyticsDate] = useState<
+  //   | "yesterday"
+  //   | "last7days"
+  //   | "30days"
+  //   | "thisMonth"
+  //   | "lastMonth"
+  //   | "last6Months"
+  //   | "year"
+  //   | "today"
+  //   | "thisYear"
+  // >("30days");
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+
   const [selectedGeoType, setSelectedGeoType] = useState<
     "Visitors" | "Share" | "User Happiness"
   >("Visitors");
@@ -137,13 +146,13 @@ export default function SiteContextProvider({
     siteFromUrl: string | null;
   } | null>(null);
 
-  const updateDateRange = (startDate: string, endDate: string) => {
-    setDateRange((prev) =>
-      prev[0] === startDate && prev[1] === endDate
-        ? prev
-        : [startDate, endDate],
-    );
-  };
+  // const updateDateRange = (startDate: string, endDate: string) => {
+  //   setDateRange((prev) =>
+  //     prev[0] === startDate && prev[1] === endDate
+  //       ? prev
+  //       : [startDate, endDate],
+  //   );
+  // };
 
   const fetchOrders = useCallback(
     async (siteFromUrl?: string, userId?: string) => {
@@ -237,20 +246,24 @@ export default function SiteContextProvider({
         setSelectedDevice,
         cruxData,
         setCruxData,
-        dateRange,
-        setDateRange: updateDateRange,
+        // dateRange,
+        // setDateRange: updateDateRange,
         collapsed,
         setCollapsed,
         experienceType,
         setExperienceType,
         rumDistribution,
         setRumDistribution,
-        rumDateRange,
-        setRumDateRange,
-        selectedAnalyticsDate,
-        setSelectedAnalyticsDate,
+        // rumDateRange,
+        // setRumDateRange,
+        // selectedAnalyticsDate,
+        // setSelectedAnalyticsDate,
         selectedGeoType,
         setSelectedGeoType,
+        startDate,
+        endDate,
+        setStartDate,
+        setEndDate,
       }}
     >
       <Suspense>{children}</Suspense>

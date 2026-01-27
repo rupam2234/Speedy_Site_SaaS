@@ -10,7 +10,6 @@ import LCPelements from "./lcp";
 import CLSelements from "./cls";
 import INPelements from "./inp";
 import TTFBelements from "./ttfb";
-import { useWebVitalContext } from "../sharedProps";
 import BarGraphTabs from "./barGraphTabs";
 import { InfoIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -75,7 +74,7 @@ export default function Main() {
   const [sideBarObj, setSidebarObj] = useState<SidebarData>();
   const [XpScore, setXpScore] = useState<number | null>();
   const [contributors, setContributors] = useState<any>();
-  const { startDate, endDate } = useWebVitalContext();
+  const { startDate, endDate } = useSiteContext();
 
   const hasAnalyzedRef = useRef(false);
   const triggerLazyload = useRef(null);

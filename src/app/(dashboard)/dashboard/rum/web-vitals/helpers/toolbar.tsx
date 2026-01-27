@@ -12,7 +12,11 @@ import { ChartScatter, InfoIcon, MonitorSmartphone } from "lucide-react";
 import { useSiteContext } from "../../../siteContext";
 import CustomCalendar from "../../../../../../components/utils/datePicker";
 
-export default function RumWebVitalToolbar() {
+interface Props {
+  enableAllDevices?: boolean; // enables ALL device type
+}
+
+export default function RumWebVitalToolbar({ enableAllDevices }: Props) {
   const {
     rumDistribution,
     setRumDistribution,
@@ -26,19 +30,39 @@ export default function RumWebVitalToolbar() {
         <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
           <div className="flex gap-2 w-full items-center px-2">
             <MonitorSmartphone size={18} className="mr-2" />
-            {["Desktop", "Mobile", "Tablet"].map((device) => (
-              <button
-                key={device}
-                className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                  selectedDevice === device
-                    ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                    : ``
-                }`}
-                onClick={() => setSelectedDevice(device as any)}
-              >
-                {device}
-              </button>
-            ))}
+            {enableAllDevices ? (
+              <>
+                {["Desktop", "Mobile", "Tablet", "All"].map((device) => (
+                  <button
+                    key={device}
+                    className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                      selectedDevice === device
+                        ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                        : ``
+                    }`}
+                    onClick={() => setSelectedDevice(device as any)}
+                  >
+                    {device}
+                  </button>
+                ))}
+              </>
+            ) : (
+              <>
+                {["Desktop", "Mobile", "Tablet"].map((device) => (
+                  <button
+                    key={device}
+                    className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                      selectedDevice === device
+                        ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                        : ``
+                    }`}
+                    onClick={() => setSelectedDevice(device as any)}
+                  >
+                    {device}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">

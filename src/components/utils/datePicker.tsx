@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { type DateRange } from "react-day-picker";
 import { format } from "date-fns";
-import { useWebVitalContext } from "../../app/(dashboard)/dashboard/rum/web-vitals/sharedProps";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
 export default function CustomCalendar() {
   const date = new Date();
   date.setDate(date.getDate() - 30);
 
   const [open, setOpen] = useState(false);
-  const { setStartDate, setEndDate } = useWebVitalContext();
+  const { setStartDate, setEndDate } = useSiteContext();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: date,
     to: new Date(),

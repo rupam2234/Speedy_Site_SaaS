@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
-import { useWebVitalContext } from "../sharedProps";
 import { ConnectionStackBars, UrlStackBar } from "./charts";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -14,7 +13,7 @@ type tabTypes = "url" | "connection";
 
 export default function BarGraphTabs({ activeMetric }: Props) {
   const { selectedSite, selectedDevice } = useSiteContext();
-  const { startDate, endDate } = useWebVitalContext();
+  const { startDate, endDate } = useSiteContext();
   const [isloading, setLoading] = useState(false);
   const [pageWiseData, setPageWiseData] = useState<any>();
   const [connectionData, setconnectionData] = useState<any>();

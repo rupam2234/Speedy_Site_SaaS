@@ -68,12 +68,12 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "Overview",
-            url: `/dashboard/rum/overview?site=${selectedSite}`,
-          },
-          {
             title: "Web Vitals",
             url: `/dashboard/rum/web-vitals?site=${selectedSite}`,
+          },
+          {
+            title: "Analytics",
+            url: `/dashboard/rum/analytics?site=${selectedSite}`,
           },
           {
             title: "Page Groups",

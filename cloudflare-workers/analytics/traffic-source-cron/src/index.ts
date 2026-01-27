@@ -80,16 +80,16 @@ async function updateDataOnD1(env: Env, metrics: any[]) {
  */
 async function get_traffic_source(
 	env: Env,
-	range: 'yesterday' | 'last7days' | '30days' | 'thisMonth' | 'lastMonth' | 'last6Months' | 'year' | 'today' | 'thisYear' = '30days',
+	startDate: string,
+	endDate:string,
 	domain_name: string | undefined
 ) {
-	const { startDate, endDate } = getDateRange(range);
 
 	const query = `
-    SELECT day, device_type, referral_domain, count 
-    FROM traffic_source 
-    WHERE domain = ? AND day BETWEEN ? AND ?;
-  `;
+		SELECT day, device_type, referral_domain, count 
+		FROM traffic_source 
+		WHERE domain = ? AND day BETWEEN ? AND ?;
+	`;
 
 	const result = await env.DB.prepare(query).bind(domain_name, startDate, endDate).all();
 
@@ -140,10 +140,8 @@ export default {
 
 		// Fetch stored data
 		if (url.pathname === '/get-source') {
-			const range =
-				(url.searchParams.get('range') as 'yesterday' | 'last7days' | '30days' | 'thisMonth' | 'lastMonth' | 'last6Months' | 'year') ||
-				'30days';
-
+			const startDate = url.searchParams.get('startDate') as string;
+			const endDate = url.searchParams.get("endDate") as string;
 			const domain = url.searchParams.get('domain') || undefined;
 			const access_key = url.searchParams.get('key') || undefined;
 
@@ -152,7 +150,7 @@ export default {
 			}
 
 			try {
-				const metrics = await get_traffic_source(env, range, domain);
+				const metrics = await get_traffic_source(env, startDate, endDate, domain);
 				return new Response(JSON.stringify(metrics, null, 2), {
 					headers: {
 						'Content-Type': 'application/json',
@@ -169,60 +167,3 @@ export default {
 	},
 } satisfies ExportedHandler<Env>;
 
-/**
- * Utility to get date range for analytics queries
- */
-function getDateRange(
-	range: 'yesterday' | 'last7days' | '30days' | 'thisMonth' | 'lastMonth' | 'last6Months' | 'year' | 'today' | 'thisYear' = '30days'
-) {
-	const today = new Date();
-	today.setUTCHours(0, 0, 0, 0);
-
-	let startDate: string;
-	let endDate: string;
-
-	switch (range) {
-		case 'today':
-			startDate = endDate = today.toISOString().slice(0, 10);
-			break;
-		case 'yesterday':
-			startDate = endDate = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
-			break;
-		case 'last7days':
-			startDate = new Date(today.getTime() - 7 * 86400000).toISOString().slice(0, 10);
-			endDate = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
-			break;
-		case '30days':
-			startDate = new Date(today.getTime() - 29 * 86400000).toISOString().slice(0, 10);
-			endDate = today.toISOString().slice(0, 10);
-			break;
-		case 'thisMonth':
-			startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)).toISOString().slice(0, 10);
-			endDate = today.toISOString().slice(0, 10);
-			break;
-		case 'lastMonth': {
-			const firstOfThisMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
-			const lastMonthEnd = new Date(firstOfThisMonth.getTime() - 86400000);
-			const lastMonthStart = new Date(Date.UTC(lastMonthEnd.getUTCFullYear(), lastMonthEnd.getUTCMonth(), 1));
-			startDate = lastMonthStart.toISOString().slice(0, 10);
-			endDate = lastMonthEnd.toISOString().slice(0, 10);
-			break;
-		}
-		case 'last6Months':
-			startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 6, 1)).toISOString().slice(0, 10);
-			endDate = today.toISOString().slice(0, 10);
-			break;
-		case 'thisYear':
-			startDate = new Date(Date.UTC(today.getUTCFullYear(), 0, 1)).toISOString().slice(0, 10);
-			endDate = today.toISOString().slice(0, 10);
-			break;
-		case 'year':
-			startDate = new Date(Date.UTC(today.getUTCFullYear() - 1, 0, 1)).toISOString().slice(0, 10);
-			endDate = today.toISOString().slice(0, 10);
-			break;
-		default:
-			startDate = endDate = today.toISOString().slice(0, 10);
-	}
-
-	return { startDate, endDate };
-}

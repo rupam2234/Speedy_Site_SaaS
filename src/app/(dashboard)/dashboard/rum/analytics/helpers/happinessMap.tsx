@@ -3,9 +3,9 @@
 import React, { ReactNode } from "react";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import type { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
-import { alpha2ToAlpha3, alpha3ToAlpha2 } from "./countryCodes";
 import ReactDOMServer from "react-dom/server";
 import { MapContainer, GeoJSON } from "react-leaflet";
+import { alpha2ToAlpha3, alpha3ToAlpha2 } from "..";
 
 export type HappinessData = {
   collection_date: string;
@@ -168,7 +168,7 @@ export default function HappinessMap({ deviceType, trafficData }: Props) {
   // Load GeoJSON
   React.useEffect(() => {
     fetch(
-      "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json"
+      "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json",
     )
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch GeoJSON");
@@ -182,7 +182,7 @@ export default function HappinessMap({ deviceType, trafficData }: Props) {
           data.type === "FeatureCollection"
         ) {
           setGeoJsonData(
-            data as FeatureCollection<Geometry, GeoJsonProperties>
+            data as FeatureCollection<Geometry, GeoJsonProperties>,
           );
         } else {
           throw new Error("Invalid GeoJSON format");

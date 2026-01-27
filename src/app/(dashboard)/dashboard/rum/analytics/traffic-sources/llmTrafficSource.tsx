@@ -53,14 +53,14 @@ export default function LLMTrafficSource({
     const filtered =
       activeDevice.toLowerCase() !== "all"
         ? originalTrafficData.filter(
-            (x) => x.device_type.toLowerCase() === activeDevice.toLowerCase()
+            (x) => x.device_type.toLowerCase() === activeDevice.toLowerCase(),
           )
         : originalTrafficData;
 
     const llmFiltered = filtered.filter((item: any) =>
       llm_sources.some((llm) =>
-        item.referral_domain?.toLowerCase().includes(llm)
-      )
+        item.referral_domain?.toLowerCase().includes(llm),
+      ),
     );
 
     const aggregatedData = Object.values(
@@ -72,7 +72,7 @@ export default function LLMTrafficSource({
           acc[domain].count += curr.count;
         }
         return acc;
-      }, {})
+      }, {}),
     );
 
     aggregatedData.sort((a: any, b: any) => b.count - a.count);
@@ -86,7 +86,7 @@ export default function LLMTrafficSource({
     llmTrafficData.length > itemPerPage
       ? llmTrafficData.slice(
           (currentPage - 1) * itemPerPage,
-          currentPage * itemPerPage
+          currentPage * itemPerPage,
         )
       : llmTrafficData;
 
@@ -104,8 +104,8 @@ export default function LLMTrafficSource({
         <table className="w-full text-sm min-h-fit">
           <thead>
             <tr className="text-left text-gray-500">
-              <th className="py-2 px-2 font-medium">Referral Domain</th>
-              <th className="py-2 px-2 font-medium text-right">Count</th>
+              <th className="py-2 font-medium">Referral Domain</th>
+              <th className="py-2 font-medium text-right">Count</th>
             </tr>
           </thead>
           <tbody>
@@ -118,8 +118,8 @@ export default function LLMTrafficSource({
                     : undefined
                 }
               >
-                <td className="py-2 px-2">{row.referral_domain}</td>
-                <td className="py-2 px-2 text-right">
+                <td className="py-2 ">{row.referral_domain}</td>
+                <td className="py-2  text-right">
                   {row.count >= 1000
                     ? (row.count / 1000).toFixed(1) + "k"
                     : row.count}
@@ -132,7 +132,7 @@ export default function LLMTrafficSource({
         <div className="text-gray-500">No traffic from LLMs</div>
       )}
       {totalPage > 1 && (
-        <div className="absolute top-5/7 right-1 flex justify-end mt-4 space-x-2">
+        <div className="flex text-sm [&>button]:cursor-pointer [&>button]:hover:bg-primary/5 justify-end items-center mt-4 space-x-2">
           <button
             className="px-3 py-[2px] border rounded disabled:opacity-50"
             onClick={() => goToPage(currentPage - 1)}
@@ -140,19 +140,9 @@ export default function LLMTrafficSource({
           >
             Previous
           </button>
-
-          {Array.from({ length: totalPage }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              className={`px-3 py-[2px] border rounded ${
-                currentPage === page ? "bg-blue-500 text-white" : ""
-              }`}
-              onClick={() => goToPage(page)}
-            >
-              {page}
-            </button>
-          ))}
-
+          <span className="text-primary/80">
+            Page {currentPage} of {totalPage}
+          </span>
           <button
             className="px-3 py-[2px] border rounded disabled:opacity-50"
             onClick={() => goToPage(currentPage + 1)}
