@@ -2,7 +2,7 @@
 
 import React, { ReactNode, useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
-import DashboardToolbar from "@/components/utils/toolbar";
+import DashboardToolbar from "@/components/utils/toolbarUnused";
 import {
   Smile,
   Meh,
@@ -87,7 +87,7 @@ export default function RUMpages() {
   const itemsPerPage = 10;
   const lastFetched = useRef<string | null>(null);
   const [activeMetric, setActiveMetric] = useState<"LCP" | "INP" | "CLS">(
-    "LCP"
+    "LCP",
   );
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function RUMpages() {
       if (res.ok) {
         const data: any = await res.json();
         const metrics: PageData[] = (data.metrics || []).filter(
-          (x: PageData) => x.device_type !== "unknown"
+          (x: PageData) => x.device_type !== "unknown",
         );
         setPageData(metrics);
       } else {
@@ -170,7 +170,7 @@ export default function RUMpages() {
   pageData
     .filter(
       (page) =>
-        !selectedDevice || page.device_type === selectedDevice.toLowerCase()
+        !selectedDevice || page.device_type === selectedDevice.toLowerCase(),
     )
     .forEach((page) => {
       const group = getPerformanceGroup(page);
@@ -189,12 +189,12 @@ export default function RUMpages() {
   const totalPages = Math.ceil(sortedData.length / itemsPerPage);
   const paginatedData = sortedData.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   const getMetricColor = (
     metric: number | null,
-    type: "lcp" | "inp" | "cls"
+    type: "lcp" | "inp" | "cls",
   ) => {
     if (metric == null) return "text-gray-400";
     if (type === "lcp") {
@@ -216,7 +216,7 @@ export default function RUMpages() {
 
   const getMetricStatus = (
     metric: number | null,
-    type: "lcp" | "inp" | "cls"
+    type: "lcp" | "inp" | "cls",
   ) => {
     if (metric == null)
       return {
@@ -464,7 +464,7 @@ export default function RUMpages() {
                                   <span
                                     className={`mr-2 ${getMetricColor(
                                       page.avg_lcp_ms,
-                                      "lcp"
+                                      "lcp",
                                     )}`}
                                   >
                                     {(page.avg_lcp_ms / 1000).toFixed(2)}s
@@ -488,7 +488,7 @@ export default function RUMpages() {
                                   <span
                                     className={`mr-2 ${getMetricColor(
                                       page.avg_inp_ms,
-                                      "inp"
+                                      "inp",
                                     )}`}
                                   >
                                     {page.avg_inp_ms.toFixed(0)}ms
@@ -512,7 +512,7 @@ export default function RUMpages() {
                                   <span
                                     className={`mr-2 ${getMetricColor(
                                       page.avg_cls,
-                                      "cls"
+                                      "cls",
                                     )}`}
                                   >
                                     {page.avg_cls.toFixed(3)}
@@ -570,7 +570,7 @@ export default function RUMpages() {
                                           metric.key as unknown as
                                             | "LCP"
                                             | "INP"
-                                            | "CLS"
+                                            | "CLS",
                                         )
                                       }
                                       className={`flex items-center px-4 py-2 border-b-2 font-medium text-sm transition-colors duration-200 ${
@@ -620,7 +620,7 @@ export default function RUMpages() {
                                                   className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
                                                   onClick={() =>
                                                     redirectToUrl(
-                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`
+                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
                                                     )
                                                   }
                                                 />
@@ -666,7 +666,7 @@ export default function RUMpages() {
                                                   className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
                                                   onClick={() =>
                                                     redirectToUrl(
-                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`
+                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
                                                     )
                                                   }
                                                 />
@@ -712,7 +712,7 @@ export default function RUMpages() {
                                                   className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
                                                   onClick={() =>
                                                     redirectToUrl(
-                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`
+                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
                                                     )
                                                   }
                                                 />

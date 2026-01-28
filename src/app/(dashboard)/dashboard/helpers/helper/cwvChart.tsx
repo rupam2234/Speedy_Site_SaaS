@@ -43,18 +43,30 @@ interface ChartProps {
 
 const helper = new Helpers();
 
-const ChartComponent = ({ metric_key }: ChartProps) => {
+export default function CoreWebVitalChart({ metric_key }: ChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null); // Store chart instance
   const { theme } = useTheme();
-  const { cruxData, selectedDevice, dateRange, setCruxData } = useSiteContext();
+  const { cruxData, selectedDevice, startDate, endDate, setCruxData } =
+    useSiteContext();
+
+  // date fallback options
+  const date = new Date();
+  date.setDate(date.getDate() - 180); // 180 days back
+
+  const dateA = startDate
+    ? startDate?.toISOString().split("T")[0]
+    : date.toISOString().split("T")[0]; // modified start date
+  const dateB = endDate
+    ? endDate?.toISOString().split("T")[0]
+    : new Date().toISOString().split("T")[0]; // modified end date
 
   const deviceBased = cruxData
     .flat()
     .find((d) =>
       selectedDevice === "Mobile"
         ? d.record.key.formFactor === "PHONE"
-        : d.record.key.formFactor === selectedDevice.toUpperCase()
+        : d.record.key.formFactor === selectedDevice.toUpperCase(),
     );
 
   const collectionTime = deviceBased?.record.collectionPeriods;
@@ -67,12 +79,12 @@ const ChartComponent = ({ metric_key }: ChartProps) => {
     const firstDateArray = helper.createDate(
       x.firstDate.year,
       x.firstDate.month,
-      x.firstDate.day
+      x.firstDate.day,
     );
     const lastDateArray = helper.createDate(
       x.lastDate.year,
       x.lastDate.month,
-      x.lastDate.day
+      x.lastDate.day,
     );
     filteredDates.push([firstDateArray, lastDateArray]);
   });
@@ -80,12 +92,17 @@ const ChartComponent = ({ metric_key }: ChartProps) => {
   // filtered data for chart
   const filteredData = filteredDates
     .map((dates, i) => ({ dates, value: p75Series?.[i] ?? 0 }))
-    .filter((x) => x.dates[1] >= dateRange[0] && x.dates[1] <= dateRange[1]);
+    .filter((x) => x.dates[1] >= dateA && x.dates[1] <= dateB);
 
   // configuring for tooltip date readability
   const p75ChartData = filteredData.map(({ dates, value }) => {
-    const startDate = new Date(dates[0]);
-    const endDate = new Date(dates[1]);
+    let startDate;
+    let endDate;
+
+    if (!startDate || !endDate) {
+      startDate = new Date(dates[0]);
+      endDate = new Date(dates[1]);
+    }
     const formatOptions: Intl.DateTimeFormatOptions = {
       day: "numeric",
       month: "short",
@@ -123,12 +140,12 @@ const ChartComponent = ({ metric_key }: ChartProps) => {
       const pointColor = isHigh
         ? "#FF3B30"
         : isMed
-        ? "#FF9500"
-        : isGood
-        ? "#00E676"
-        : theme === "dark"
-        ? "#555"
-        : "#ccc";
+          ? "#FF9500"
+          : isGood
+            ? "#00E676"
+            : theme === "dark"
+              ? "#555"
+              : "#ccc";
 
       return {
         value: [x, y],
@@ -155,7 +172,7 @@ const ChartComponent = ({ metric_key }: ChartProps) => {
         formatter: (params: any) => {
           const param = params[0];
           const metric_key_data = cwv_metrics?.find(
-            (x) => x.key === (metric_key as string)
+            (x) => x.key === (metric_key as string),
           ); // gives us access to metric key props
           return `
             <div class="p-3 bg-[#333446] dark:bg-accent-foreground w-auto rounded-sm text-primary-foreground">
@@ -167,27 +184,28 @@ const ChartComponent = ({ metric_key }: ChartProps) => {
                   param.value[1] >= metricRange.c
                     ? "text-[#FF3B30] dark:text-[#ff5c54]"
                     : param.value[1] < metricRange.c &&
-                      param.value[1] > metricRange.b
-                    ? "text-[#ffa11c] dark:text-[#ffb54d]"
-                    : param.value[1] > metricRange.a &&
-                      param.value[1] <= metricRange.b
-                    ? "text-[#00E676] dark:text-[#2ae387]"
-                    : theme === "dark"
-                    ? "text-[#555]"
-                    : "text-[#ccc]"
+                        param.value[1] > metricRange.b
+                      ? "text-[#ffa11c] dark:text-[#ffb54d]"
+                      : param.value[1] > metricRange.a &&
+                          param.value[1] <= metricRange.b
+                        ? "text-[#00E676] dark:text-[#2ae387]"
+                        : theme === "dark"
+                          ? "text-[#555]"
+                          : "text-[#ccc]"
                 } font-semibold">${param.value[1]}</span> ${
-            metric_key_data?.unit
-          }
+                  metric_key_data?.unit
+                }
               </div>
               <p class="mt-2">Means ${metric_key_data?.acronym} was ${
-            param.value[1] <= metricRange.b
-              ? "good"
-              : param.value[1] > metricRange.b && param.value[1] < metricRange.c
-              ? "okay"
-              : param.value[1] >= metricRange.c
-              ? "poor"
-              : "--"
-          }.</p>
+                param.value[1] <= metricRange.b
+                  ? "good"
+                  : param.value[1] > metricRange.b &&
+                      param.value[1] < metricRange.c
+                    ? "okay"
+                    : param.value[1] >= metricRange.c
+                      ? "poor"
+                      : "--"
+              }.</p>
             </div>
           `;
         },
@@ -266,6 +284,4 @@ const ChartComponent = ({ metric_key }: ChartProps) => {
   }
 
   return <div ref={chartRef} style={{ width: "100%", height: "380px" }} />;
-};
-
-export default ChartComponent;
+}

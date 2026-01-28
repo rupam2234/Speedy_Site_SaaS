@@ -2,35 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
-import {
-  Calendar,
-  ChartColumn,
-  ChartPie,
-  ChartScatter,
-  GalleryThumbnails,
-  Globe,
-  Heart,
-  InfoIcon,
-  Lightbulb,
-  Loader2Icon,
-} from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { InfoIcon } from "lucide-react";
 import { useSiteContext } from "../../siteContext";
 import { overviewApi } from "./cf-apis/calls";
 import TooltipIcon from "@/components/utils/customTooltip";
-import TrafficSource from "./traffic-sources/trafficSource";
-import dynamic from "next/dynamic";
-import LLMTrafficSource from "./traffic-sources/llmTrafficSource";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import RumWebVitalToolbar from "../web-vitals/helpers/toolbar";
+import RumWebVitalToolbar from "../../../../../components/utils/toolbar";
 import { SourceHandler } from ".";
 
 type overviewMetrics = {
@@ -46,31 +22,11 @@ type overviewMetrics = {
 };
 
 export default function AnalyticsDashboard() {
-  const {
-    selectedSite,
-    selectedGeoType,
-    setSelectedGeoType,
-    selectedDevice,
-    setSelectedDevice,
-    rumDistribution,
-    setRumDistribution,
-    startDate,
-    endDate,
-  } = useSiteContext();
+  const { selectedSite, selectedDevice, startDate, endDate } = useSiteContext();
   const [overvewMetrics, setOverviewMetrics] = useState<overviewMetrics[]>([]);
-  const [happinessData, setHappinessData] = useState<any>([]);
-  const [countryDist, setCountryDist] = useState<any>([]);
   const [totalMetricsOverview, setTotalMetricOverview] = useState<
     { label: string; value: string; note: string }[]
   >([]);
-  const [combinedData, setCombinedData] = useState<any>({});
-  const [activeSource, setActiveSource] = useState<
-    "All Traffic" | "LLM Traffic"
-  >("All Traffic");
-  const [originalTrafficData, setOriginalTrafficData] = useState<any[]>([]);
-  const [topLandingPages, setTopLandingPages] = useState<any[]>([]);
-  const [current_page, setCurrentPage] = useState<number>(1);
-  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (!startDate || !endDate) {
@@ -93,45 +49,6 @@ export default function AnalyticsDashboard() {
       calculateOverviewStats(filteredMetrics);
     }
   }, [overvewMetrics, selectedDevice]);
-
-  // useEffect(() => {
-  //   if (countryDist) {
-  //     const newCombinedData = CountryDistributions(countryDist);
-  //     setCombinedData(newCombinedData);
-  //   }
-  // }, [countryDist, selectedDevice]);
-
-  // useEffect(() => {
-  //   if (!selectedSite) return;
-  //   const delay = 3000; // 3 sec
-  //   const timer = setTimeout(() => {
-  //     fetchUserHappinesGeo();
-  //   }, delay);
-  //   return () => clearTimeout(timer);
-  // }, [selectedSite]);
-
-  // const itemPerPage = 7;
-
-  // const total_pages =
-  //   topLandingPages?.length > 0
-  //     ? Math.ceil(topLandingPages.length / itemPerPage)
-  //     : 1;
-
-  // const paginatedData =
-  //   topLandingPages.length > itemPerPage
-  //     ? topLandingPages.slice(
-  //         (current_page - 1) * itemPerPage,
-  //         itemPerPage * current_page,
-  //       )
-  //     : topLandingPages;
-
-  // function goToPage(page: number) {
-  //   if (page <= 1) {
-  //     page = 1;
-  //   }
-  //   if (page > total_pages) page = total_pages;
-  //   setCurrentPage(page);
-  // }
 
   if (!selectedSite) {
     return (
@@ -191,249 +108,6 @@ export default function AnalyticsDashboard() {
         <SourceHandler />
       </div>
     </>
-
-    // <div className="min-h-screen p-5">
-    //   {/* Stats Cards */}
-    //   {/* web vital overview section */}
-    //   {/* <section>
-    //     <div className="font-semibold text-primary flex gap-2 items-center">
-    //       <span>
-    //         <Heart className="fill-pink-500 text-primary dark:text-primary-foreground" />
-    //       </span>
-    //       <Link href={`/dashboard/rum/web-vitals?site=${selectedSite}`}>
-    //         <h3 className="text-[19px] hover:underline">
-    //           Real User Experience
-    //         </h3>
-    //       </Link>
-
-    //       <TooltipIcon
-    //         content={
-    //           "This is Real User Monitoring (RUM) based, real-time experience analysis of your site’s traffic. It closely aligns with Core Web Vitals, enabling you to proactively identify and resolve performance issues before they impact your Core Web Vitals scores."
-    //         }
-    //         delay={300}
-    //         side="bottom"
-    //         trigger={<InfoIcon size={16} />}
-    //       />
-    //     </div>
-    //     <WebVitalsOverview
-    //       selectedSite={selectedSite}
-    //       selectedDevice={selectedDevice}
-    //       fixedDateRange={"7days"}
-    //       rumDistribution={rumDistribution}
-    //     />
-    //   </section> */}
-    //   {/* Top Referrals & regions */}
-    //   <section className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4 mb-4">
-    //     <div className="col-span-1 relative bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
-    //       {/* Traffic Source */}
-    //       <div className="flex gap-2 mb-[30px]">
-    //         <span>
-    //           <ChartPie className="text-primary dark:text-primary" />
-    //         </span>
-    //         <div className="flex items-center text-primary dark:text-primary font-semibold gap-2">
-    //           <span>Traffic Sources</span>
-    //         </div>
-    //       </div>
-    //       <div className="absolute top-5 right-5">
-    //         {["All Traffic", "LLM Traffic"].map((x: string) => (
-    //           <button
-    //             className={`mx-2 cursor-pointer hover:underline hover:underline-offset-4 hover:[text-decoration-color:#bdbdbe] ${
-    //               activeSource === x &&
-    //               `underline underline-offset-4 [text-decoration-color:#bdbdbe]`
-    //             }`}
-    //             onClick={() => handleActiveSource(x)}
-    //             key={x}
-    //           >
-    //             {x}
-    //           </button>
-    //         ))}
-    //       </div>
-    //       {activeSource === "All Traffic" ? (
-    //         <TrafficSource
-    //           activeDevice={selectedDevice}
-    //           originalTrafficData={originalTrafficData}
-    //         />
-    //       ) : (
-    //         <LLMTrafficSource
-    //           activeDevice={selectedDevice}
-    //           originalTrafficData={originalTrafficData}
-    //         />
-    //       )}
-    //     </div>
-    //     {/* Geo Distribution */}
-    //     <div className="col-span-1 bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20">
-    //       <div className="flex items-center justify-between">
-    //         <h3 className="font-semibold text-primary/80 flex gap-2 items-center">
-    //           <span>
-    //             <Globe className="fill-blue-300 text-primary dark:text-primary-foreground" />
-    //           </span>
-    //           <div className="flex items-center gap-2">
-    //             <span>Geo Distribution</span>
-    //           </div>
-    //           {selectedGeoType === "User Happiness" ? (
-    //             <div className="">
-    //               <TooltipIcon
-    //                 content={
-    //                   "If your user happiness scores vary significantly across regions, it's a sign that performance isn't consistent worldwide. To address this, try our Global Performance Booster — a CDN wrapper designed to reduce regional latency and improve metrics like TTFB. You can find it in the left panel under Enhancements > Boost TTFB."
-    //                 }
-    //                 trigger={
-    //                   <Lightbulb size={16} className="fill-yellow-200" />
-    //                 }
-    //                 delay={300}
-    //                 side="bottom"
-    //               />
-    //             </div>
-    //           ) : (
-    //             <></>
-    //           )}
-    //         </h3>
-    //         <div className="flex gap-4 items-center">
-    //           {["Visitors", "Share", "User Happiness"].map((x, index) => (
-    //             <button
-    //               key={index}
-    //               className={`bg-transparent hover:underline decoration-primary/30 underline-offset-4 cursor-pointer ${
-    //                 selectedGeoType === x ? "underline" : ""
-    //               }`}
-    //               onClick={() => handleGeoType(x)}
-    //             >
-    //               {x}
-    //             </button>
-    //           ))}
-    //         </div>
-    //       </div>
-    //       <div className="py-8 h-[380px]">
-    //         {selectedGeoType === "Visitors" ? (
-    //           <CountryTrafficMap
-    //             trafficData={combinedData}
-    //             deviceType={
-    //               selectedDevice === "Desktop"
-    //                 ? "desktop"
-    //                 : selectedDevice === "Mobile"
-    //                   ? "mobile"
-    //                   : selectedDevice === "Tablet"
-    //                     ? "tablet"
-    //                     : "all"
-    //             }
-    //           />
-    //         ) : selectedGeoType === "Share" ? (
-    //           <GeoDistBars
-    //             trafficData={combinedData}
-    //             deviceType={
-    //               selectedDevice === "Desktop"
-    //                 ? "desktop"
-    //                 : selectedDevice === "Mobile"
-    //                   ? "mobile"
-    //                   : selectedDevice === "Tablet"
-    //                     ? "tablet"
-    //                     : "all"
-    //             }
-    //           />
-    //         ) : (
-    //           <HappinessMap
-    //             deviceType={
-    //               selectedDevice.toLowerCase() as unknown as
-    //                 | "desktop"
-    //                 | "mobile"
-    //                 | "tablet"
-    //                 | "all"
-    //             }
-    //             trafficData={happinessData.length > 0 ? happinessData : []}
-    //           />
-    //         )}
-    //       </div>
-    //     </div>
-    //   </section>
-    //   {/* Top pages for LLM */}
-    //   <section
-    //     className={
-    //       "bg-white dark:bg-secondary-background rounded-sm border border-primary/20 p-6 mb-8 flex flex-col gap-4"
-    //     }
-    //   >
-    //     <div className="flex md:flex-row justify-between items-center gap-2">
-    //       <h2 className="text-xl font-semibold mb-3 text-primary">
-    //         📄 Top Landing Pages (Weekly)
-    //       </h2>
-    //       <div
-    //         className="hidden md:block bg-green-100 dark:bg-green-700 hover:text-black text-primary hover:bg-green-500/30 hover:dark:bg-green-100 rounded-sm dark:shadow-md shadow-sm px-2 py-1 cursor-pointer border-primary/60"
-    //         onClick={() =>
-    //           redirect(`/dashboard/rum/pages?site=${selectedSite}`)
-    //         }
-    //       >
-    //         Group by performance
-    //       </div>
-    //     </div>
-    //     {loading || topLandingPages.length === 0 ? (
-    //       <div className="flex items-center justify-center h-auto">
-    //         <Loader2Icon className="text-primary/50 animate-spin w-5 h-5" />
-    //       </div>
-    //     ) : (
-    //       <>
-    //         <table className="w-full text-sm">
-    //           <thead>
-    //             <tr className="text-left text-gray-500">
-    //               <th className="py-2 px-2 font-medium">Page</th>
-    //               <th className="py-2 px-2 font-medium">Source</th>
-    //               <th className="py-2 px-2 font-medium">Pageviews</th>
-    //             </tr>
-    //           </thead>
-    //           <tbody>
-    //             {paginatedData.map((row, idx) => (
-    //               <tr
-    //                 key={idx}
-    //                 className={
-    //                   idx % 2
-    //                     ? "bg-primary-foreground dark:bg-secondary/20"
-    //                     : undefined
-    //                 }
-    //               >
-    //                 <td className="py-2 px-2">
-    //                   {row.current_page?.replace(/\/$/, "")}
-    //                 </td>
-    //                 <td className="py-2 px-2">
-    //                   {row.previous_page?.replace(/\/$/, "")}
-    //                 </td>
-    //                 <td className="py-2 px-2">{row.hits}</td>
-    //               </tr>
-    //             ))}
-    //           </tbody>
-    //         </table>
-    //         {total_pages > 1 && (
-    //           <div className="flex justify-end mt-4 space-x-2">
-    //             <button
-    //               className="px-3 py-[2px] border rounded disabled:opacity-50"
-    //               onClick={() => goToPage(current_page - 1)}
-    //               disabled={current_page === 1}
-    //             >
-    //               Previous
-    //             </button>
-
-    //             {Array.from({ length: total_pages }, (_, i) => i + 1).map(
-    //               (page) => (
-    //                 <button
-    //                   key={page}
-    //                   className={`px-3 py-[2px] border rounded ${
-    //                     current_page === page ? "bg-blue-500 text-white" : ""
-    //                   }`}
-    //                   onClick={() => goToPage(page)}
-    //                 >
-    //                   {page}
-    //                 </button>
-    //               ),
-    //             )}
-
-    //             <button
-    //               className="px-3 py-[2px] border rounded disabled:opacity-50"
-    //               onClick={() => goToPage(current_page + 1)}
-    //               disabled={current_page === total_pages}
-    //             >
-    //               Next
-    //             </button>
-    //           </div>
-    //         )}
-    //       </>
-    //     )}
-    //   </section>
-    // </div>
   );
 
   async function fetchOverview() {
@@ -451,27 +125,6 @@ export default function AnalyticsDashboard() {
       setOverviewMetrics([]);
     }
   }
-
-  // async function fetchUserHappinesGeo() {
-  //   const res = await fetch("/api/rum/analytics/happiness-geo", {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
-  //     },
-  //     body: JSON.stringify({
-  //       domain: selectedSite,
-  //       start_date: startDate,
-  //       end_date: endDate,
-  //     }),
-  //   });
-  //   if (!res.ok) {
-  //     console.error(res.statusText);
-  //     setHappinessData([]);
-  //   }
-  //   const data: any = await res.json();
-  //   setHappinessData(data.data);
-  // }
 
   function calculateOverviewStats(metrics: overviewMetrics[]) {
     let total_pageviews = 0;
@@ -538,102 +191,4 @@ export default function AnalyticsDashboard() {
 
     setTotalMetricOverview(stats);
   }
-  // function CountryDistributions(data: any[]) {
-  //   if (Array.isArray(data)) {
-  //     const combinedCountryDistribution: { [key: string]: number } = {};
-  //     const deviceTypeCountryDistributions: {
-  //       [key: string]: { [key: string]: number };
-  //     } = {};
-  //     data.forEach((entry) => {
-  //       try {
-  //         const countryDistribution = JSON.parse(entry.country_distribution);
-  //         deviceTypeCountryDistributions[entry.device_type] =
-  //           deviceTypeCountryDistributions[entry.device_type] || {};
-  //         Object.keys(countryDistribution).forEach((country) => {
-  //           combinedCountryDistribution[country] =
-  //             (combinedCountryDistribution[country] || 0) +
-  //             countryDistribution[country];
-  //           deviceTypeCountryDistributions[entry.device_type][country] =
-  //             (deviceTypeCountryDistributions[entry.device_type][country] ||
-  //               0) + countryDistribution[country];
-  //         });
-  //       } catch (error) {
-  //         console.error(
-  //           "Failed to parse country_distribution for device_type",
-  //           entry.device_type,
-  //           error,
-  //         );
-  //       }
-  //     });
-  //     const combinedData = {
-  //       device_type: "all",
-  //       country_distribution: JSON.stringify(combinedCountryDistribution),
-  //     };
-  //     const newArray = [
-  //       ...Object.keys(deviceTypeCountryDistributions).map((deviceType) => {
-  //         return {
-  //           device_type: deviceType,
-  //           country_distribution: JSON.stringify(
-  //             deviceTypeCountryDistributions[deviceType],
-  //           ),
-  //         };
-  //       }),
-  //       combinedData,
-  //     ];
-  //     return newArray;
-  //   }
-  //   return data;
-  // }
-
-  // async function getTrafficSource() {
-  //   const res = await fetch("/api/rum/analytics/traffic-source", {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({
-  //       range: selectedAnalyticsDate,
-  //       domain: selectedSite,
-  //       key: "secret_for_speedy_site",
-  //     }),
-  //   });
-
-  //   if (!res.ok) {
-  //     throw new Error("Failed to fetch traffic source data");
-  //   }
-
-  //   return res.json();
-  // }
-  // async function fetchTrafficSourceData() {
-  //   try {
-  //     const data: any = await getTrafficSource();
-  //     setOriginalTrafficData(data);
-  //     const landingPageData: any = await getTopLandingPage();
-  //     setTopLandingPages(landingPageData);
-  //   } catch (err) {
-  //     console.error("Error fetching traffic or landing page data:", err);
-  //     setOriginalTrafficData([]);
-  //     setTopLandingPages([]);
-  //   }
-  // }
-  // async function getTopLandingPage() {
-  //   const date =
-  //     selectedAnalyticsDate === "today"
-  //       ? "today"
-  //       : selectedAnalyticsDate === "yesterday"
-  //         ? "yesterday"
-  //         : selectedAnalyticsDate === "last7days"
-  //           ? "last_7_days"
-  //           : "last_7_days";
-
-  //   const res = await fetch("/api/rum/analytics/landing-pages", {
-  //     method: "POST",
-  //     body: JSON.stringify({ dateRange: date, domain: selectedSite }),
-  //     headers: { "Content-Type": "application/json" },
-  //   });
-
-  //   if (!res.ok) {
-  //     throw new Error("Failed to fetch top landing pages");
-  //   }
-
-  //   return res.json();
-  // }
 }

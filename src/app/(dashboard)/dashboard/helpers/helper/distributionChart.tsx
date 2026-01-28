@@ -36,15 +36,27 @@ const helper = new Helpers();
 export default function DistributionChart({ metric_key }: ChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
-  const { cruxData, selectedDevice, dateRange, setCruxData } = useSiteContext();
+  const { cruxData, selectedDevice, startDate, endDate, setCruxData } =
+    useSiteContext();
 
   const deviceBased = cruxData
     .flat()
     .find((d) =>
       selectedDevice === "Mobile"
         ? d.record.key.formFactor === "PHONE"
-        : d.record.key.formFactor === selectedDevice.toUpperCase()
+        : d.record.key.formFactor === selectedDevice.toUpperCase(),
     );
+
+  // date fallback options
+  const date = new Date();
+  date.setDate(date.getDate() - 180); // 180 days back
+
+  const dateA = startDate
+    ? startDate?.toISOString().split("T")[0]
+    : date.toISOString().split("T")[0]; // modified start date
+  const dateB = endDate
+    ? endDate?.toISOString().split("T")[0]
+    : new Date().toISOString().split("T")[0]; // modified end date
 
   const collectionTime = deviceBased?.record.collectionPeriods;
   const filteredDates: [string, string][] = [];
@@ -52,12 +64,12 @@ export default function DistributionChart({ metric_key }: ChartProps) {
     const firstDateArray = helper.createDate(
       x.firstDate.year,
       x.firstDate.month,
-      x.firstDate.day
+      x.firstDate.day,
     );
     const lastDateArray = helper.createDate(
       x.lastDate.year,
       x.lastDate.month,
-      x.lastDate.day
+      x.lastDate.day,
     );
     filteredDates.push([firstDateArray, lastDateArray]);
   });
@@ -83,12 +95,12 @@ export default function DistributionChart({ metric_key }: ChartProps) {
       ];
 
       const value = rawValues.map((v) =>
-        typeof v === "number" && !isNaN(v) ? v : 0
+        typeof v === "number" && !isNaN(v) ? v : 0,
       );
 
       return { dates, value };
     })
-    .filter((x) => x.dates[1] >= dateRange[0] && x.dates[1] <= dateRange[1]);
+    .filter((x) => x.dates[1] >= dateA && x.dates[1] <= dateB);
 
   // configuring for tooltip date readability
   const DistChartData = filteredData.map(({ dates, value }) => {
@@ -114,7 +126,7 @@ export default function DistributionChart({ metric_key }: ChartProps) {
   });
 
   const xAxisLabels: string[] = DistChartData.map(
-    ([label]) => label as unknown as string
+    ([label]) => label as unknown as string,
   );
 
   const grid = {
@@ -140,10 +152,10 @@ export default function DistributionChart({ metric_key }: ChartProps) {
           name === "Good"
             ? "#66cc8f" // green
             : name === "Okay"
-            ? "#FFEEA9" // yellow
-            : "#FF9898", // red
+              ? "#FFEEA9" // yellow
+              : "#FF9898", // red
       },
-    })
+    }),
   );
 
   useEffect(() => {
@@ -161,7 +173,7 @@ export default function DistributionChart({ metric_key }: ChartProps) {
         formatter: (params: any) => {
           const param = params;
           const metric_key_data = cwv_metrics?.find(
-            (x) => x.key === (metric_key as string)
+            (x) => x.key === (metric_key as string),
           );
 
           return `<div class="p-3 bg-[#333446] border-none border-transparent dark:bg-accent-foreground w-auto rounded-sm text-primary-foreground">
@@ -169,22 +181,22 @@ export default function DistributionChart({ metric_key }: ChartProps) {
             <p class="mb-2">Among ${selectedDevice.toLowerCase()} page loads,</p>
              <ul class="list-disc ml-4">
                 <li>${parseFloat(
-                  (param[0].value * 100).toFixed(2)
+                  (param[0].value * 100).toFixed(2),
                 )} % users experienced <span class="text-[#66cc8f]">${
-            param[0].seriesName
-          }</span> ${metric_key_data?.acronym}
+                  param[0].seriesName
+                }</span> ${metric_key_data?.acronym}
                 </li>
                 <li>${parseFloat(
-                  (param[1].value * 100).toFixed(2)
+                  (param[1].value * 100).toFixed(2),
                 )} % users experienced <span class="text-[#FFEEA9]">${
-            param[1].seriesName
-          }</span> ${metric_key_data?.acronym}
+                  param[1].seriesName
+                }</span> ${metric_key_data?.acronym}
                 </li>
                 <li>${parseFloat(
-                  (param[2].value * 100).toFixed(2)
+                  (param[2].value * 100).toFixed(2),
                 )} % users experienced <span class="text-[#FF9898]">${
-            param[2].seriesName
-          }</span> ${metric_key_data?.acronym}
+                  param[2].seriesName
+                }</span> ${metric_key_data?.acronym}
                 </li>
              </ul>
           </div>`;
@@ -222,7 +234,7 @@ export default function DistributionChart({ metric_key }: ChartProps) {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [cruxData, selectedDevice, dateRange, metric_key]);
+  }, [cruxData, selectedDevice, startDate, endDate, metric_key]);
 
   useEffect(() => {
     return () => {

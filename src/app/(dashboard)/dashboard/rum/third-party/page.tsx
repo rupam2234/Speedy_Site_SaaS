@@ -1,6 +1,6 @@
 "use client";
 
-import DashboardToolbar from "@/components/utils/toolbar";
+import DashboardToolbar from "@/components/utils/toolbarUnused";
 import React, { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
@@ -55,7 +55,7 @@ export default function ThirdParty() {
   }
 
   const activeDomains = ThirdPartyData?.filter(
-    (x) => x.device_type === selectedDevice.toLowerCase()
+    (x) => x.device_type === selectedDevice.toLowerCase(),
   );
 
   if (ThirdPartyData === null) {
@@ -110,8 +110,8 @@ export default function ThirdParty() {
     const filteredDomains =
       activeDomains?.flatMap((x) =>
         x.top_domains.filter(
-          (t) => t.domain !== "rum.thespeedysite.workers.dev"
-        )
+          (t) => t.domain !== "rum.thespeedysite.workers.dev",
+        ),
       ) || [];
 
     if (filteredDomains.length === 0) {

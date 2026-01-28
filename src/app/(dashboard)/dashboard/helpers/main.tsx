@@ -11,18 +11,12 @@ import {
 import { useEffect, useState } from "react";
 import { getColor } from "@/lib/cwv_helper/getColor";
 import { getCWVStatus } from "@/lib/cwv_helper/checkCwvStatus";
-import SegmentedBar from "@/components/utils/webVitalBars";
 import { Tooltip } from "@radix-ui/react-tooltip";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Helpers } from "./helper/helperFunc";
 import { cwv_metrics } from "./helper/cwvMetrics";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
-import DashboardToolbar from "@/components/utils/toolbar";
-import TooltipIcon from "@/components/utils/customTooltip";
-// import { useRouter } from "next/navigation";
 import { fetchCrUXData } from "@/app/api/external/fetch_crux";
-import ChartComponent from "./helper/cwvChart";
-import DistributionChart from "./helper/distributionChart";
 import {
   Select,
   SelectContent,
@@ -30,6 +24,12 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+import {
+  CustomTooltip,
+  RumWebVitalToolbar,
+  SegmentedBar,
+} from "@/components/utils/index";
+import { CoreWebVitalChart, DistributionChart } from "./helper/index";
 
 interface Experience {
   type: "p75" | "Distribution";
@@ -61,22 +61,21 @@ export default function WebsitePage() {
   } = useSiteContext();
   const [hasTriedToLoad, setHasTriedToLoad] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string>(
-    "Largest Contentful Paint"
+    "Largest Contentful Paint",
   );
   const [newMetricKey, setNewMetricKey] = useState<string>(
-    "largest_contentful_paint"
+    "largest_contentful_paint",
   );
   const [acronym, setAcronym] = useState<string>("");
   const [unit, setUnit] = useState<string>("");
   const [latestMetric, setlatestMetric] = useState<number | string>(); // state for managing the latest metric data for daily card
   const [CruxChange, setCruxChange] = useState<number>(0);
-  // const router = useRouter();
 
   const helper = new Helpers();
 
   useEffect(() => {
     setCruxChange(
-      helper.calculateChange(cruxData, selectedDevice, newMetricKey, dailyCrux)
+      helper.calculateChange(cruxData, selectedDevice, newMetricKey, dailyCrux),
     );
   }, [newMetricKey, dailyCrux, cruxData, selectedDevice]);
 
@@ -93,7 +92,7 @@ export default function WebsitePage() {
     const metric = helper.getMetricValue(
       newMetricKey,
       selectedDevice,
-      dailyCrux
+      dailyCrux,
     );
     setlatestMetric(metric !== null ? metric : 0);
   }, [dailyCrux, newMetricKey, selectedDevice]);
@@ -152,7 +151,12 @@ export default function WebsitePage() {
 
   return (
     <>
-      <DashboardToolbar />
+      <RumWebVitalToolbar
+        enableDistribution={false}
+        enableAllDevices={false}
+        disableTablet
+        defaultDateRange={180} // 6 months back
+      />
       <div className="flex flex-1 flex-col gap-6 py-6 px-5">
         <section id="web-vitals">
           <div className="flex flex-col items-start md:flex-row gap-2 md:items-center md:justify-between">
@@ -167,7 +171,7 @@ export default function WebsitePage() {
             </span>
             <span
               className={`${convertTextToBorderClasses(
-                status.colorClass
+                status.colorClass,
               )} border-2 text-sm flex gap-2 items-center font-semibold px-4 py-2 bg-popover dark:bg-secondary-background rounded-md ${
                 status.colorClass
               }`}
@@ -182,7 +186,7 @@ export default function WebsitePage() {
               const value = helper.getMetricValue(
                 key,
                 selectedDevice,
-                dailyCrux
+                dailyCrux,
               );
               const data = findDensities(key);
               const colorClass =
@@ -201,7 +205,7 @@ export default function WebsitePage() {
                         {label === "Largest Contentful Paint" ||
                         label === "Interaction to Next Paint" ||
                         label === "Cumulative Layout Shifts" ? (
-                          <TooltipIcon
+                          <CustomTooltip
                             trigger={
                               <Bookmark
                                 size={20}
@@ -284,7 +288,7 @@ export default function WebsitePage() {
             {/* chart */}
             <div className="absolute z-50 top-4 left-6">
               {ExperienceConfig.map((x, index) => (
-                <TooltipIcon
+                <CustomTooltip
                   side="right"
                   delay={1000}
                   key={index}
@@ -322,7 +326,7 @@ export default function WebsitePage() {
             </div>
             {experienceType === "p75" ? (
               <div className="relative w-full h-[400px]">
-                <ChartComponent metric_key={newMetricKey} />
+                <CoreWebVitalChart metric_key={newMetricKey} />
               </div>
             ) : (
               <div className="relative w-full h-[400px]">
@@ -415,7 +419,7 @@ export default function WebsitePage() {
                   <span
                     className={`${getColor(
                       newMetricKey,
-                      latestMetric as unknown as number
+                      latestMetric as unknown as number,
                     )} font-semibold`}
                   >
                     {latestMetric} {unit}
@@ -438,8 +442,8 @@ export default function WebsitePage() {
                   {CruxChange > 0
                     ? `+${CruxChange} %`
                     : CruxChange < 0
-                    ? `${CruxChange} %`
-                    : `${CruxChange} %`}
+                      ? `${CruxChange} %`
+                      : `${CruxChange} %`}
                 </span>
               </div>
             </div>
@@ -453,7 +457,7 @@ export default function WebsitePage() {
     densities: number[] | undefined;
   } {
     const densities = currentCrux?.record?.metrics[metricKey]?.histogram?.map(
-      (item) => Number((item.density * 100).toFixed(2))
+      (item) => Number((item.density * 100).toFixed(2)),
     );
     if (densities) {
       return { densities };
@@ -465,14 +469,6 @@ export default function WebsitePage() {
   function convertTextToBorderClasses(classString: string) {
     return classString.replace(/(\b(?:dark:)?)(text)(-)/g, "$1border$3");
   }
-
-  // function handleClick() {
-  //   if (router) {
-  //     router.push(`/dashboard/rum/pages?site=${selectedSite}`, {
-  //       scroll: true,
-  //     });
-  //   }
-  // }
 
   function handleExperience(type: string) {
     setExperienceType(type === "p75" ? "p75" : "Distribution");

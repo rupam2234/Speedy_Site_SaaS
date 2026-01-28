@@ -6,8 +6,20 @@ import { type DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
-export default function CustomCalendar() {
+type Props = {
+  /**
+   * Pass default date range (in days): example: 72, 500
+   */
+  defaultDateRange?: number;
+};
+
+export default function CustomCalendar({ defaultDateRange }: Props) {
   const date = new Date();
+  // if we have default date range: use it
+  if (defaultDateRange) {
+    date.setDate(date.getDate() - defaultDateRange);
+  }
+  // else setting 30 days as
   date.setDate(date.getDate() - 30);
 
   const [open, setOpen] = useState(false);

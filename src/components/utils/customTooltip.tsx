@@ -10,13 +10,13 @@ interface TooltipIconProps {
   delay?: number;
 }
 
-const TooltipIcon: React.FC<TooltipIconProps> = ({
+export default function TooltipIcon({
   content,
   side = "left",
   trigger,
   maxWidth = "300px",
   delay = 300,
-}) => {
+}: TooltipIconProps) {
   const [visible, setVisible] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -151,6 +151,4 @@ const TooltipIcon: React.FC<TooltipIconProps> = ({
         )}
     </>
   );
-};
-
-export default TooltipIcon;
+}
