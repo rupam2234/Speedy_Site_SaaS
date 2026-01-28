@@ -1,19 +1,16 @@
-import { ChartPie, Globe, Lightbulb } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ChartPie, Globe, Loader2Icon } from "lucide-react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
-import { CountryTrafficMap, LLMTrafficSource, TrafficSource } from "../index";
+import { LLMTrafficSource, TrafficSource } from "../index";
 import { countryDistributionApi, trafficSourceApi } from "../cf-apis/calls";
-import dynamic from "next/dynamic";
 
-//   () => import("../helpers/trafficMapContainer"),
-//   {
-//     ssr: false,
-//   },
-// );
+const CountryTrafficMap = lazy(
+  () => import(`../visual-traffic-map/trafficMapContainer`),
+);
 
-const HappinessMap = dynamic(() => import("../helpers/happinessMap"), {
-  ssr: false,
-});
+const UserHappinessMap = lazy(
+  () => import(`../visual-happiness-map/happinesMap`),
+); // lazyload the component
 
 export function SourceHandler() {
   const {
@@ -29,11 +26,13 @@ export function SourceHandler() {
     "All Traffic" | "LLM Traffic"
   >("All Traffic");
   const [originalTrafficData, setOriginalTrafficData] = useState<any[]>([]);
+  const [userHappinessData, setHappinessData] = useState<any[]>([]);
   const [countryDist, setCountryDist] = useState<any>([]);
   const [combinedData, setCombinedData] = useState<any>({});
 
   const trafficSourceRef = useRef(null); // to lazyload traffic source data
   const trafficCountryRef = useRef(null); // to lazyload traffic country distributions
+  const userHappinessRef = useRef<string | null>(null); // to control load user happiness data
 
   useEffect(() => {
     const refs = [trafficSourceRef, trafficCountryRef];
@@ -76,6 +75,19 @@ export function SourceHandler() {
     }
   }, [countryDist, selectedDevice]);
 
+  useEffect(() => {
+    if (selectedGeoType !== "UX Experience") return;
+    const key = `${selectedSite}-${startDate}-${endDate}`;
+
+    if (userHappinessRef.current === key) {
+      return;
+    }
+
+    fetchUserHappinesGeo();
+
+    userHappinessRef.current = key;
+  }, [selectedGeoType, selectedSite, startDate, endDate]);
+
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4 mb-4">
       {/* Traffic Source */}
@@ -113,7 +125,7 @@ export function SourceHandler() {
             originalTrafficData={originalTrafficData}
           />
         ) : (
-          // <Virtualization />
+          // <Virtualization /> apply later
           <LLMTrafficSource
             activeDevice={selectedDevice}
             originalTrafficData={originalTrafficData}
@@ -150,16 +162,14 @@ export function SourceHandler() {
             )} */}
           </div>
           <div className="flex gap-4 items-center">
-            {["Visitors", "User Happiness"].map((x, index) => (
+            {["Visitors", "UX Experience"].map((x, index) => (
               <button
                 key={index}
                 className={`bg-transparent hover:underline decoration-primary/30 underline-offset-4 cursor-pointer ${
                   selectedGeoType === x ? "underline" : ""
                 }`}
                 onClick={() =>
-                  setSelectedGeoType(
-                    x as "Visitors" | "Share" | "User Happiness",
-                  )
+                  setSelectedGeoType(x as "Visitors" | "UX Experience")
                 }
               >
                 {x}
@@ -167,47 +177,38 @@ export function SourceHandler() {
             ))}
           </div>
         </div>
-        <div className="py-8 h-auto md:h-[380px]">
-          {selectedGeoType === "Visitors" ? (
-            <CountryTrafficMap
-              trafficData={combinedData}
-              deviceType={
-                selectedDevice === "Desktop"
-                  ? "desktop"
-                  : selectedDevice === "Mobile"
-                    ? "mobile"
-                    : selectedDevice === "Tablet"
-                      ? "tablet"
-                      : "all"
-              }
-            />
-          ) : selectedGeoType === "Share" ? (
-            // <GeoDistBars
-            //   trafficData={combinedData}
-            //   deviceType={
-            //     selectedDevice === "Desktop"
-            //       ? "desktop"
-            //       : selectedDevice === "Mobile"
-            //         ? "mobile"
-            //         : selectedDevice === "Tablet"
-            //           ? "tablet"
-            //           : "all"
-            //   }
-            // />
-            <></>
-          ) : (
-            // <HappinessMap
-            //   deviceType={
-            //     selectedDevice.toLowerCase() as unknown as
-            //       | "desktop"
-            //       | "mobile"
-            //       | "tablet"
-            //       | "all"
-            //   }
-            //   trafficData={happinessData.length > 0 ? happinessData : []}
-            // />
-            <></>
-          )}
+        <div className="py-8 h-auto md:h-[430px]">
+          <Suspense
+            fallback={
+              <div className="flex h-full w-full items-center justify-center">
+                <Loader2Icon
+                  size={18}
+                  className="text-primary/20 animate-spin"
+                />
+              </div>
+            }
+          >
+            {selectedGeoType === "Visitors" ? (
+              <CountryTrafficMap
+                trafficData={combinedData}
+                deviceType={
+                  selectedDevice === "Desktop"
+                    ? "desktop"
+                    : selectedDevice === "Mobile"
+                      ? "mobile"
+                      : selectedDevice === "Tablet"
+                        ? "tablet"
+                        : "all"
+                }
+              />
+            ) : selectedGeoType === "UX Experience" ? (
+              <UserHappinessMap
+                happinessData={
+                  userHappinessData.length > 0 ? userHappinessData : []
+                }
+              />
+            ) : null}
+          </Suspense>
         </div>
       </div>
     </section>
@@ -298,5 +299,28 @@ export function SourceHandler() {
       return newArray;
     }
     return data;
+  }
+
+  async function fetchUserHappinesGeo() {
+    if (!startDate || !endDate || !selectedSite) return;
+
+    const res = await fetch("/api/rum/analytics/happiness-geo", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
+      },
+      body: JSON.stringify({
+        domain: selectedSite,
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+      }),
+    });
+    if (!res.ok) {
+      console.error(res.statusText);
+      setHappinessData([]);
+    }
+    const data: any = await res.json();
+    setHappinessData(data.data);
   }
 }

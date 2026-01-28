@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSiteContext } from "../../siteContext";
-import GeoDistBars from "./helpers/geoDistBars";
 import { overviewApi } from "./cf-apis/calls";
 import TooltipIcon from "@/components/utils/customTooltip";
 import TrafficSource from "./traffic-sources/trafficSource";
@@ -188,6 +187,7 @@ export default function AnalyticsDashboard() {
           </section>
         )}
 
+        {/* Traffic View */}
         <SourceHandler />
       </div>
     </>
@@ -585,9 +585,6 @@ export default function AnalyticsDashboard() {
   //   return data;
   // }
 
-  function handleActiveSource(source: string) {
-    setActiveSource(source as "All Traffic" | "LLM Traffic");
-  }
   // async function getTrafficSource() {
   //   const res = await fetch("/api/rum/analytics/traffic-source", {
   //     method: "POST",

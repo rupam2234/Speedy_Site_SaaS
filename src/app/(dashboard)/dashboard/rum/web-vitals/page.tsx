@@ -6,7 +6,7 @@ import RumWebVitalToolbar from "./helpers/toolbar";
 export default function RUMWebVitals() {
   return (
     <>
-      <RumWebVitalToolbar />
+      <RumWebVitalToolbar enableDistribution />
       <Main />
     </>
   );

@@ -6,6 +6,7 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import type { FeatureCollection, Geometry } from "geojson";
 import { alpha2ToAlpha3, alpha3ToAlpha2, CountryStripe } from "..";
 import styles from "./tooltip.module.css";
+import { useSiteContext } from "../../../siteContext";
 
 const ClientMap = dynamic(() => import("../helpers/trafficMap"), {
   ssr: false,
@@ -25,6 +26,7 @@ export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
   const [geoJsonData, setGeoJsonData] =
     React.useState<FeatureCollection<Geometry> | null>(null);
   const { theme } = useTheme();
+  const { selectedDevice } = useSiteContext();
 
   const trafficByCountry: Record<string, number> = React.useMemo(() => {
     const found = Array.isArray(trafficData)
@@ -122,11 +124,10 @@ export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
       {trafficData && trafficData.length > 0 ? (
         <>
           <ClientMap
-            key={theme}
+            key={selectedDevice + theme}
             geoJsonData={geoJsonData}
             styleFn={style}
             onEachFeatureFn={onEachFeature}
-            theme={theme}
           />
           <CountryStripe
             data={trafficByCountryArray.length > 0 ? trafficByCountryArray : []}

@@ -37,10 +37,8 @@ type SiteContextType = {
   setExperienceType: (experienceType: "p75" | "Distribution") => void;
   rumDistribution: "p50" | "p75" | "p90" | "p95" | "p99";
   setRumDistribution: (rumDist: "p50" | "p75" | "p90" | "p95" | "p99") => void;
-  selectedGeoType: "Visitors" | "Share" | "User Happiness";
-  setSelectedGeoType: (
-    selectedGeoType: "Visitors" | "Share" | "User Happiness",
-  ) => void;
+  selectedGeoType: "Visitors" | "UX Experience";
+  setSelectedGeoType: (selectedGeoType: "Visitors" | "UX Experience") => void;
   // selectedAnalyticsDate:
   //   | "yesterday"
   //   | "last7days"
@@ -137,7 +135,7 @@ export default function SiteContextProvider({
   const [endDate, setEndDate] = useState<Date>();
 
   const [selectedGeoType, setSelectedGeoType] = useState<
-    "Visitors" | "Share" | "User Happiness"
+    "Visitors" | "UX Experience"
   >("Visitors");
 
   const user = useSupabaseUser();
@@ -266,7 +264,9 @@ export default function SiteContextProvider({
         setEndDate,
       }}
     >
-      <Suspense>{children}</Suspense>
+      {/* suspense causes rerender of full page when the entire parent is pushed under suspense */}
+      {/* <Suspense></Suspense> */}
+      {children}
     </SiteContext.Provider>
   );
 }
