@@ -2,7 +2,7 @@
 
 import { OrderData } from "@/app/api/dataTypes";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
-import { CruxData, DailyCrux } from "@/data/cruxData";
+import { CruxData, DailyCruxData } from "@/data-types/index";
 import React, {
   createContext,
   useContext,
@@ -10,7 +10,6 @@ import React, {
   useCallback,
   useEffect,
   useRef,
-  Suspense,
 } from "react";
 
 type SiteContextType = {
@@ -19,8 +18,8 @@ type SiteContextType = {
   orders: OrderData[] | null;
   setOrders: (orders: OrderData[] | null) => void;
   fetchOrders: (siteFromUrl?: string, userId?: string) => Promise<void>;
-  dailyCrux: DailyCrux[];
-  setDailyCrux: (dailyData: DailyCrux[]) => void;
+  dailyCrux: DailyCruxData | null;
+  setDailyCrux: (dailyData: DailyCruxData | null) => void;
   cruxData: CruxData[];
   setCruxData: (crux: CruxData[]) => void;
   selectedDevice: "Desktop" | "Mobile" | "Tablet" | "All";
@@ -45,7 +44,7 @@ export const SiteContext = createContext<SiteContextType>({
   orders: null,
   setOrders: () => {},
   fetchOrders: async () => {},
-  dailyCrux: [],
+  dailyCrux: null,
   setDailyCrux: () => {},
   selectedDevice: "Desktop",
   setSelectedDevice: () => {},
@@ -70,7 +69,7 @@ export default function SiteContextProvider({
 }) {
   const [orders, setOrders] = useState<OrderData[] | null>(null);
   const [selectedSite, setSelectedSite] = useState("");
-  const [dailyCrux, setDailyCrux] = useState<DailyCrux[]>([]);
+  const [dailyCrux, setDailyCrux] = useState<any | null>(null);
   const [cruxData, setCruxData] = useState<CruxData[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<
     "Desktop" | "Mobile" | "Tablet" | "All"

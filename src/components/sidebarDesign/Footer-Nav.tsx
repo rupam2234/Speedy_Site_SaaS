@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
-import { pageMetricCache } from "../../data/cachedPageData";
+import { pageMetricCache } from "../../data-types/cachedPageData";
 import { useSignOut } from "../utils/supabase/signOutUser";
 
 export default function FooterNav({

@@ -8,7 +8,7 @@ export default function RUMWebVitals() {
     <>
       <RumWebVitalToolbar
         enableDistribution={true}
-        enableAllDevices={true}
+        enableAllDevices={false}
         disableTablet={false}
       />
       <Main />

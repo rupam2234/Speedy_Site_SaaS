@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSiteContext } from "./siteContext";
-import WebsitePage from "./helpers/main";
+// import WebsitePage from "./dashboard_render/main";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import DashboardMainContainer from "./dashboard_render/mainContainer";
 
 export default function Dashboard() {
   const { selectedSite } = useSiteContext();
@@ -46,5 +47,5 @@ export default function Dashboard() {
     );
   }
 
-  return <WebsitePage />;
+  return <DashboardMainContainer />;
 }

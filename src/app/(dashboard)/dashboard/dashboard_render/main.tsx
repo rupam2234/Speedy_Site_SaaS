@@ -8,7 +8,7 @@ import {
   History,
   InfoIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getColor } from "@/lib/cwv_helper/getColor";
 import { getCWVStatus } from "@/lib/cwv_helper/checkCwvStatus";
 import { Tooltip } from "@radix-ui/react-tooltip";
@@ -16,7 +16,7 @@ import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Helpers } from "./helper/helperFunc";
 import { cwv_metrics } from "./helper/cwvMetrics";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
-import { fetchCrUXData } from "@/app/api/external/fetch_crux";
+// import { fetchCrUXData } from "@/app/api/external/fetch_crux";
 import {
   Select,
   SelectContent,
@@ -30,6 +30,7 @@ import {
   SegmentedBar,
 } from "@/components/utils/index";
 import { CoreWebVitalChart, DistributionChart } from "./helper/index";
+import { DailyCrux } from "@/data-types/cruxData";
 
 interface Experience {
   type: "p75" | "Distribution";
@@ -54,6 +55,7 @@ export default function WebsitePage() {
     setCruxData,
     cruxData,
     dailyCrux,
+    endDate,
     selectedDevice,
     setDailyCrux,
     experienceType,
@@ -71,7 +73,9 @@ export default function WebsitePage() {
   const [latestMetric, setlatestMetric] = useState<number | string>(); // state for managing the latest metric data for daily card
   const [CruxChange, setCruxChange] = useState<number>(0);
 
-  const helper = new Helpers();
+  const [dailyWebVitals, setDailyWebVitals] = useState<DailyCrux>();
+
+  const helper = useMemo(() => new Helpers(), []);
 
   useEffect(() => {
     setCruxChange(
@@ -80,42 +84,37 @@ export default function WebsitePage() {
   }, [newMetricKey, dailyCrux, cruxData, selectedDevice]);
 
   // 1. Fetch data when selectedSite changes
-  useEffect(() => {
-    if (selectedSite) {
-      fetchCrUXData(selectedSite, setCruxData);
-      helper.getDailyCrux(selectedSite, setDailyCrux);
-    }
-  }, [selectedSite]);
+  // useEffect(() => {
+  //   if (selectedSite) {
+  //     fetchCrUXData(selectedSite, setCruxData);
+  //     helper.getDailyCrux(selectedSite, setDailyCrux);
+  //   }
+
+  //   const timeout = setTimeout(() => {
+  //     setHasTriedToLoad(true);
+  //   }, 500);
+  //   return () => clearTimeout(timeout);
+  // }, [selectedSite]);
 
   // 2. Calculate metric when data changes
-  useEffect(() => {
-    const metric = helper.getMetricValue(
-      newMetricKey,
-      selectedDevice,
-      dailyCrux,
-    );
-    setlatestMetric(metric !== null ? metric : 0);
-  }, [dailyCrux, newMetricKey, selectedDevice]);
+  // useEffect(() => {
+  //   const metric = helper.getMetricValue(
+  //     newMetricKey,
+  //     selectedDevice,
+  //     dailyCrux,
+  //   );
+  //   setlatestMetric(metric !== null ? metric : 0);
+  // }, [dailyCrux, newMetricKey, selectedDevice]);
 
-  useEffect(() => {
-    const metricAcronym = cwv_metrics?.find((X) => X.label === selectedMetric);
-    if (metricAcronym) {
-      setAcronym(metricAcronym.acronym);
-      setUnit(metricAcronym.unit);
-    }
-  }, [selectedMetric]);
+  // useEffect(() => {
+  //   const metricAcronym = cwv_metrics?.find((X) => X.label === selectedMetric);
+  //   if (metricAcronym) {
+  //     setAcronym(metricAcronym.acronym);
+  //     setUnit(metricAcronym.unit);
+  //   }
+  // }, [selectedMetric]);
 
-  useEffect(() => {
-    if (selectedSite) {
-      helper.getDailyCrux(selectedSite, setDailyCrux);
-    }
-    const timeout = setTimeout(() => {
-      setHasTriedToLoad(true);
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [selectedSite]);
-
-  const currentCrux = helper.findDataByDevice(dailyCrux, selectedDevice);
+  // const currentCrux = helper.findDataByDevice(dailyCrux, selectedDevice);
 
   const status = getCWVStatus(currentCrux?.record.metrics || {});
 
@@ -154,19 +153,20 @@ export default function WebsitePage() {
       <RumWebVitalToolbar
         enableDistribution={false}
         enableAllDevices={false}
-        disableTablet
+        disableTablet={false}
         defaultDateRange={180} // 6 months back
       />
       <div className="flex flex-1 flex-col gap-6 py-6 px-5">
+        {/* web vital bars (current date) */}
         <section id="web-vitals">
           <div className="flex flex-col items-start md:flex-row gap-2 md:items-center md:justify-between">
             <span className="flex gap-2 items-center">
               <HeartPulse
-                size={30}
+                size={24}
                 className="fill-pink-600 dark:text-accent-foreground"
               />
-              <h1 className="text-2xl font-bold text-primary">
-                Core Web Vitals
+              <h1 className="text-xl font-bold text-primary">
+                Core Web Vital Status
               </h1>
             </span>
             <span
@@ -188,7 +188,7 @@ export default function WebsitePage() {
                 selectedDevice,
                 dailyCrux,
               );
-              const data = findDensities(key);
+              // const data = findDensities(key);
               const colorClass =
                 typeof value === "number"
                   ? getColor(key, value)
@@ -276,16 +276,15 @@ export default function WebsitePage() {
           </div>
         </section>
       </div>
+      {/* Origin Web Vital Section */}
       <div className="flex flex-1 flex-col gap-3 pb-11 px-5 max-h-screen">
-        {/* Origin Web Vital Section */}
-        <span className="flex gap-2 items-center text-primary/80">
+        {/* <span className="flex gap-2 items-center text-primary/80">
           <History size={22} />
           <h2 className="font-semibold text-[18px]">History</h2>
-        </span>
+        </span> */}
         {/* Render charts and controls */}
-        <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
+        {/* <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
           <div className="relative pt-7 col-span-1 order-2 md:order-1 overflow-hidden overflow-x-clip md:col-span-7 w-full border-gray-500/20 dark:bg-secondary-background bg-primary-foreground border rounded-sm px-4">
-            {/* chart */}
             <div className="absolute z-50 top-4 left-6">
               {ExperienceConfig.map((x, index) => (
                 <CustomTooltip
@@ -334,9 +333,7 @@ export default function WebsitePage() {
               </div>
             )}
           </div>
-          {/* controls */}
           <div className="col-span-1 space-y-7 order-1 md:order-2 md:col-span-3 w-full border-gray-500/20 dark:bg-secondary-background bg-primary-foreground border rounded-sm px-6 py-7">
-            {/* metric controller */}
             <Select value={selectedMetric} onValueChange={setMetricKey}>
               <SelectTrigger className="flex justify-between items-center w-full dark:bg-secondary-background cursor-pointer dark:text-accent-foreground bg-gray-500/10 px-[12px] rounded-sm border-gray-500/20 ring-0 focus-visible:ring-0">
                 {selectedMetric}
@@ -356,7 +353,6 @@ export default function WebsitePage() {
                 </SelectGroup>
               </SelectContent>
             </Select>
-            {/* active experience module */}
             <div>
               <ul className="space-y-1">
                 {[
@@ -392,15 +388,12 @@ export default function WebsitePage() {
                 })}
               </ul>
             </div>
-            {/* live metric card */}
             <div className="w-full space-y-3 p-3 md:text-md rounded-sm bg-gray-500/10 dark:bg-secondary">
               <Tooltip>
                 <TooltipTrigger>
                   <span className="flex gap-3 item-center cursor-help text-accent-foreground/80 dark:text-accent-foreground font-semibold">
                     <div className="relative flex items-center justify-center mt-1 w-4 h-4">
-                      {/* Pulsing effect */}
                       <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
-                      {/* Solid green dot */}
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                     </div>
                     <p>Daily Trend</p>
@@ -413,7 +406,6 @@ export default function WebsitePage() {
                 </TooltipContent>
               </Tooltip>
               <div className="flex justify-between items-center">
-                {/* Left side: Label and Metric */}
                 <div className="flex items-center gap-2">
                   <span>Today&apos;s {acronym} : </span>
                   <span
@@ -426,7 +418,6 @@ export default function WebsitePage() {
                   </span>
                 </div>
 
-                {/* Right side: p75 badge */}
                 <span className="cursor-help dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary-background px-2 py-1 text-[12px] rounded-sm">
                   p75
                 </span>
@@ -448,23 +439,23 @@ export default function WebsitePage() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </>
   );
 
-  function findDensities(metricKey: string): {
-    densities: number[] | undefined;
-  } {
-    const densities = currentCrux?.record?.metrics[metricKey]?.histogram?.map(
-      (item) => Number((item.density * 100).toFixed(2)),
-    );
-    if (densities) {
-      return { densities };
-    } else {
-      return { densities: [] };
-    }
-  }
+  // function findDensities(metricKey: string): {
+  //   densities: number[] | undefined;
+  // } {
+  //   const densities = currentCrux?.record?.metrics[metricKey]?.histogram?.map(
+  //     (item) => Number((item.density * 100).toFixed(2)),
+  //   );
+  //   if (densities) {
+  //     return { densities };
+  //   } else {
+  //     return { densities: [] };
+  //   }
+  // }
 
   function convertTextToBorderClasses(classString: string) {
     return classString.replace(/(\b(?:dark:)?)(text)(-)/g, "$1border$3");
@@ -478,5 +469,34 @@ export default function WebsitePage() {
     setSelectedMetric(newMetric);
     const metricKey = cwv_metrics?.find((x) => x.label === newMetric);
     setNewMetricKey(metricKey ? metricKey.key : "");
+  }
+
+  async function fetchDailyWebVitals() {
+    if (!selectedSite) {
+      setDailyWebVitals(undefined);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/crux/daily", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          site: selectedSite,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Core web vital daily data fetch failed.");
+      }
+
+      const data: DailyCrux = await res.json();
+
+      setDailyWebVitals(data);
+    } catch (error) {
+      console.error(error);
+    }
   }
 }

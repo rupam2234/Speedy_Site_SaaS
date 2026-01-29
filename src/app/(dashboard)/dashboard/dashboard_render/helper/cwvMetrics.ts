@@ -1,4 +1,13 @@
-export const cwv_metrics = [
+import { CruxMetricKey } from "@/data-types/dailyCrux";
+
+type CWVMetric = {
+  label: string;
+  key: CruxMetricKey;
+  unit?: string;
+  acronym: string;
+};
+
+export const cwv_metrics: CWVMetric[] = [
   {
     label: "Largest Contentful Paint",
     key: "largest_contentful_paint",
@@ -24,3 +33,5 @@ export const cwv_metrics = [
     unit: "ms",
   },
 ];
+
+

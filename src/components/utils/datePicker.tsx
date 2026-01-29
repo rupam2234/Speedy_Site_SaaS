@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { type DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
@@ -14,62 +13,83 @@ type Props = {
 };
 
 export default function CustomCalendar({ defaultDateRange }: Props) {
-  const date = new Date();
+  const baseDate = new Date();
+
   // if we have default date range: use it
   if (defaultDateRange) {
-    date.setDate(date.getDate() - defaultDateRange);
+    baseDate.setDate(baseDate.getDate() - defaultDateRange);
+  } else {
+    // else default to 30 days
+    baseDate.setDate(baseDate.getDate() - 30);
   }
-  // else setting 30 days as
-  date.setDate(date.getDate() - 30);
 
-  const [open, setOpen] = useState(false);
   const { setStartDate, setEndDate } = useSiteContext();
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: date,
-    to: new Date(),
-  });
+  const [open, setOpen] = useState(false);
 
+  /**
+   * Using `mode="multiple"` → selected is Date[]
+   * index 0 = start
+   * index 1 = end
+   */
+  const [dates, setDates] = useState<Date[]>([baseDate, new Date()]);
+
+  // sync with context
   useEffect(() => {
-    if (!dateRange) return;
+    if (!dates.length) return;
 
-    setStartDate(dateRange.from);
-    setEndDate(dateRange.to ?? new Date());
-  }, [dateRange, setStartDate, setEndDate]);
+    const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime());
+
+    setStartDate(sorted[0]);
+    setEndDate(sorted[1] ?? sorted[0]);
+  }, [dates, setStartDate, setEndDate]);
+
+  const start = dates[0];
+  const end = dates[1];
 
   return (
     <div className="relative w-full max-w-[300px]">
+      {/* Trigger */}
       <button
-        onClick={() => setOpen(!open)}
-        className="w-full cursor-pointer rounded-md px-3 py-2 flex justify-between items-center dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px]"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full cursor-pointer rounded-md px-3 py-2
+          flex justify-between items-center text-sm
+          dark:bg-secondary-background bg-gray-500/10
+          border border-gray-500/20"
       >
-        <span className="text-sm">
-          {dateRange?.from
-            ? `${format(dateRange.from, "MMM dd, yyyy")} → ${format(
-                dateRange?.to ?? new Date(),
-                "MMM dd, yyyy",
-              )}`
+        <span>
+          {start
+            ? `${format(start, "MMM dd, yyyy")} → ${
+                end ? format(end, "MMM dd, yyyy") : "—"
+              }`
             : "Select date range"}
         </span>
         <span>📅</span>
       </button>
 
-      {/* Dropdown Calendar */}
+      {/* Calendar */}
       {open && (
-        <div className="absolute z-20 mt-2 border rounded-lg shadow-lg bg-white">
+        <div className="absolute z-20 mt-2 rounded-lg border shadow-lg bg-white">
           <Calendar
-            mode="range"
-            defaultMonth={dateRange?.from}
-            selected={dateRange}
+            mode="multiple"
+            selected={dates}
             numberOfMonths={1}
-            onSelect={(range) => {
-              setDateRange(range);
+            onSelect={(selected) => {
+              if (!selected) return;
 
-              // Auto-close when both dates selected
-              if (range?.from && range?.to) {
+              // reset if more than 2 clicks
+              if (selected.length > 2) {
+                setDates([selected[selected.length - 1]]);
+                return;
+              }
+
+              setDates(selected);
+
+              // close after 2nd date
+              if (selected.length === 2) {
                 setOpen(false);
               }
             }}
-            className="rounded-lg w-[250px]"
+            className="w-[250px] rounded-lg"
           />
         </div>
       )}

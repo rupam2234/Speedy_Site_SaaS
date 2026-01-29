@@ -26,8 +26,7 @@ const SegmentedBar: React.FC<SegmentedBarProps> = ({ good, okay, bad }) => {
   ];
 
   return (
-    <div className="w-full mt-4 h-9 relative flex overflow-visible bg-transparent">
-      {/* Bar Sections */}
+    <div className="w-full mt-4 h-7 relative flex overflow-visible bg-transparent">
       {sections.map((section, index) => (
         <Tooltip key={index}>
           <TooltipTrigger asChild>
@@ -41,13 +40,14 @@ const SegmentedBar: React.FC<SegmentedBarProps> = ({ good, okay, bad }) => {
               />
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top">
+          <TooltipContent className="bg-primary/90 rounded-sm">
             <span>
               {section.value === undefined ? (
                 <></>
               ) : (
                 <>
-                  {section.value}% users had {section.label} experience
+                  {(section.value * 100).toFixed(2)}% users had {section.label}{" "}
+                  experience
                 </>
               )}
             </span>

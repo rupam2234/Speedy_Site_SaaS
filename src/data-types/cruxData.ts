@@ -66,7 +66,7 @@ export type CruxData = CruxRecordWrapper[];
 
 export type DailyCrux = {
   website_name: string;
-  device_type: "Desktop" | "Mobile";
+  device_type: "Desktop" | "Mobile" | "Tablet";
   record: CruxRecord;
 };
 

@@ -1,6 +1,6 @@
-import { Helpers } from "@/app/(dashboard)/dashboard/helpers/helper/helperFunc";
+import { Helpers } from "@/app/(dashboard)/dashboard/dashboard_render/helper/helperFunc";
 import { getColor } from "./getColor";
-import { Metric } from "@/data/cruxData";
+import { Metric } from "@/data-types/cruxData";
 
 export type CWVStatus = "pass" | "needs-improvement" | "fail";
 
