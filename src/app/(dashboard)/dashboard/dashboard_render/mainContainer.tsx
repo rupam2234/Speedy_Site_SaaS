@@ -1,17 +1,17 @@
 "use client";
 
 import { useSiteContext } from "../siteContext";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CustomTooltip,
   HistrogramBar,
   RumWebVitalToolbar,
 } from "@/components/utils";
-import { Bookmark, HeartPulse, InfoIcon, MoveRight } from "lucide-react";
-import { DailyCruxData } from "@/data-types";
-import { cwv_metrics } from "./helper/cwvMetrics";
-import { CruxMetricKey } from "@/data-types/dailyCrux";
+import { Bookmark, MoveRight } from "lucide-react";
+import { CruxMetricKey, DailyCruxData } from "@/data-types";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cwv_metrics } from "./helper";
+import DashboardChartContainer from "./chartConatiner";
 
 export default function DashboardMainContainer() {
   const {
@@ -21,10 +21,12 @@ export default function DashboardMainContainer() {
     startDate,
     endDate,
     selectedDevice,
+    setCruxData,
   } = useSiteContext();
   const isMobile = useIsMobile();
 
   const dailyCruxRef = useRef<string | null>(null);
+  const cruxHistoryRef = useRef<string | null>(null);
   const [activeDailyCrux, setDailyActiveCrux] = useState<{
     dailyCruxData: DailyCruxData | null;
     status:
@@ -38,21 +40,37 @@ export default function DashboardMainContainer() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!selectedSite) return;
+    if (!selectedSite || !startDate || !endDate) return;
 
     const key = `${selectedSite}-${startDate}-${endDate}`;
 
-    if (dailyCruxRef.current !== key) {
-      setLoading(true);
-      fetchDailyWebVitals();
-      dailyCruxRef.current = key;
+    const d = dailyCruxRef.current !== key; // d denotes daily crux
+    const h = cruxHistoryRef.current !== key; // h denotes history crux
+
+    if (!d && !h) {
+      return;
     }
+
+    setLoading(true);
+
+    Promise.all([
+      d ? fetchDailyWebVitals() : Promise.resolve(), // if d is true then fetch or resolve (check as done)
+      h ? fetchWebVitalHistory() : Promise.resolve(), // if h is true then fetch or resolve (check as done)
+    ])
+      .catch((error) => {
+        console.error(error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+
+    if (d) dailyCruxRef.current = key;
+    if (h) cruxHistoryRef.current = key;
   }, [selectedSite, startDate, endDate]);
 
   useEffect(() => {
     if (!dailyCrux) {
       setDailyActiveCrux({ dailyCruxData: null, status: null });
-      setLoading(false);
       return;
     }
 
@@ -87,7 +105,6 @@ export default function DashboardMainContainer() {
       dailyCruxData: filtered?.length ? filtered : null,
       status: status,
     });
-    setLoading(false);
   }, [dailyCrux, selectedDevice]);
 
   return (
@@ -97,170 +114,193 @@ export default function DashboardMainContainer() {
         enableAllDevices={false}
         disableTablet={false}
         defaultDateRange={180}
+        isSticky={true}
       />
-      <div className="flex flex-1 flex-col gap-6 py-6 px-5">
-        <section id="web-vitals">
-          <div className="flex flex-col items-start md:flex-row gap-2 md:items-center justify-between">
-            <div className="flex gap-2 items-center">
-              <HeartPulse
-                size={24}
-                className="fill-pink-600 dark:text-accent-foreground"
-              />
-              <h1 className="text-xl font-bold text-primary">
-                {isMobile ? "CWV Status" : "Core Web Vital Status"}
-              </h1>
-              <MoveRight />
-              {(() => {
-                let p = activeDailyCrux.status;
-                const borderColor =
-                  p === "Passing"
-                    ? "border-green-500"
-                    : p === "Failing"
-                      ? "border-red-500"
-                      : p === "Need improvement"
-                        ? "border-yellow-500"
-                        : p === "Insufficient data"
-                          ? "border-gray-500/30"
-                          : "border-gray-500/30";
-                const bgColour =
-                  p === "Passing"
-                    ? "bg-green-500/10"
-                    : p === "Failing"
-                      ? "bg-red-500/10"
-                      : p === "Need improvement"
-                        ? "bg-yellow-500/10"
-                        : p === "Insufficient data"
-                          ? "bg-gray-500/10"
-                          : "bg-gray-500/10";
-
-                return (
-                  <span
-                    className={`rounded-full text-primary text-sm ${borderColor} ${bgColour} border-2 font-medium dark:text-primary px-4 py-[2px]`}
-                  >
-                    {activeDailyCrux.status !== null
-                      ? activeDailyCrux.status
-                      : "Insufficient data"}
-                  </span>
-                );
-              })()}
-            </div>
-            <div className="flex items-center gap-1">
-              <CustomTooltip
-                content={
-                  <p>
-                    This represents the latest Web Vitals (CrUX) data
-                    you&apos;ll see in Google Search Console. For a deeper
-                    understanding of your website&apos;s performance, set up{" "}
-                    <span className="font-medium text-blue-400">
-                      real user monitoring
-                    </span>{" "}
-                    to identify and fix issues before they impact your Core Web
-                    Vitals globally.
-                  </p>
-                }
-                trigger={
-                  <p className="text-sm rounded-sm px-2 py-[2px] hover:bg-primary/5 text-primary/80">
-                    What this means?
-                  </p>
-                }
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-            {(loading || !activeDailyCrux
-              ? Array.from({ length: 4 })
-              : cwv_metrics
-            ).map((_, idx) => {
-              if (loading || !activeDailyCrux) {
-                return (
-                  <div key={idx}>
-                    <div className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground animate-pulse">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex gap-2 items-center">
-                          <div className="w-5 h-5 rounded-full bg-primary/30"></div>
-                          <div className="h-5 w-28 bg-primary/30 rounded"></div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-5 w-12 bg-primary/30 rounded"></div>
-                          <div className="h-5 w-8 bg-primary/30 rounded ml-2"></div>
-                        </div>
-                      </div>
-                      <div className="w-full mt-4 h-8 rounded-sm bg-primary/30 animate-pulse"></div>
-                    </div>
-                  </div>
-                );
-              }
-
-              const { label, key, unit } = _ as (typeof cwv_metrics)[0];
-              const prefix =
-                activeDailyCrux.dailyCruxData?.[0].record.metrics?.[key];
-              const percentile = prefix?.percentiles.p75 as number;
-              const histrogram = prefix?.histogram;
-              const metricColor = getColor({
-                metric: key,
-                value: percentile || 0,
-              });
+      {/* web vital bar section */}
+      <section id="web-vitals" className="py-6 px-5">
+        <div className="flex flex-col items-start md:flex-row md:items-center justify-between">
+          <div className="flex gap-2 items-center">
+            <div
+              className="w-6 h-6 rounded-full p-[2px]"
+              style={{
+                background:
+                  "conic-gradient(#FF9898 0% 33%, #ffeea9 33% 66%, #66cc8f 66% 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            />
+            <h1 className="text-xl font-bold text-primary">
+              {isMobile ? "CWV Status" : "Core Web Vital Status"}
+            </h1>
+            <MoveRight />
+            {(() => {
+              let p = activeDailyCrux.status;
+              const borderColor =
+                p === "Passing"
+                  ? "border-green-300"
+                  : p === "Failing"
+                    ? "border-red-300"
+                    : p === "Need improvement"
+                      ? "border-yellow-300"
+                      : p === "Insufficient data"
+                        ? "border-gray-300/30"
+                        : "border-gray-300/30";
+              const bgColour =
+                p === "Passing"
+                  ? "bg-green-300/10"
+                  : p === "Failing"
+                    ? "bg-red-300/10"
+                    : p === "Need improvement"
+                      ? "bg-yellow-300/10"
+                      : p === "Insufficient data"
+                        ? "bg-gray-300/10"
+                        : "bg-gray-300/10";
 
               return (
-                <div key={key}>
-                  <div className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
-                    <div className="flex items-center justify-between">
+                <span
+                  className={`rounded-full text-primary text-sm ${borderColor} ${bgColour} border-2 font-medium dark:text-primary px-4 py-[2px]`}
+                >
+                  {activeDailyCrux.status !== null
+                    ? activeDailyCrux.status
+                    : "Insufficient data"}
+                </span>
+              );
+            })()}
+          </div>
+          <div className="flex items-center gap-1">
+            <CustomTooltip
+              content={
+                <p>
+                  This represents the latest Web Vitals (CrUX) data you&apos;ll
+                  see in Google Search Console. For a deeper understanding of
+                  your website&apos;s performance, set up{" "}
+                  <span className="font-medium text-blue-400">
+                    real user monitoring
+                  </span>{" "}
+                  to identify and fix issues before they impact your user
+                  experience globally.
+                </p>
+              }
+              trigger={
+                <p className="text-sm rounded-sm px-2 py-[2px] hover:bg-primary/5 text-primary/80">
+                  What this means?
+                </p>
+              }
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+          {(loading || !activeDailyCrux
+            ? Array.from({ length: 4 })
+            : cwv_metrics
+          ).map((_, idx) => {
+            if (loading || !activeDailyCrux) {
+              return (
+                <div key={idx}>
+                  <div className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-primary/5 text-card-foreground animate-pulse">
+                    <div className="flex items-center justify-between mb-4">
                       <div className="flex gap-2 items-center">
-                        {(label === "Largest Contentful Paint" ||
-                          label === "Interaction to Next Paint" ||
-                          label === "Cumulative Layout Shifts") && (
-                          <CustomTooltip
-                            trigger={
-                              <Bookmark
-                                size={20}
-                                className="fill-blue-400 text-blue-400"
-                              />
-                            }
-                            content="Major core web vital component"
-                            delay={300}
-                            side="top"
-                          />
-                        )}
-                        <h3 className="text-[16px] text-primary/80 font-semibold">
-                          {label}
-                        </h3>
+                        <div className="w-5 h-5 rounded-full bg-primary/30"></div>
+                        <div className="h-5 w-28 bg-primary/5 rounded"></div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span
-                          className={`flex gap-[2px] items-center text-sm font-semibold ${metricColor}`}
-                        >
-                          {percentile ?? "--"}
-                          <p>{unit}</p>
-                        </span>
-                        <CustomTooltip
-                          content={`At least 75% of users experienced ${percentile} ${label.toLowerCase()}.`}
-                          trigger={
-                            <span className="cursor-help dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
-                              p75
-                            </span>
-                          }
-                        />
+                        <div className="h-5 w-12 bg-primary/5 rounded"></div>
+                        <div className="h-5 w-8 bg-primary/5 rounded ml-2"></div>
                       </div>
                     </div>
-                    <div>
-                      {histrogram && histrogram.length > 0 ? (
-                        <HistrogramBar
-                          good={histrogram[0].density}
-                          okay={histrogram[1].density}
-                          bad={histrogram[2].density}
-                        />
-                      ) : (
-                        <div className="w-full mt-4 h-8 rounded-sm bg-primary/30 animate-pulse"></div>
-                      )}
-                    </div>
+                    <div className="w-full mt-4 h-8 rounded-sm bg-primary/5 animate-pulse"></div>
                   </div>
                 </div>
               );
-            })}
-          </div>
-        </section>
-      </div>
+            }
+
+            const { label, key, unit } = _ as (typeof cwv_metrics)[0];
+            const prefix =
+              activeDailyCrux.dailyCruxData?.[0].record.metrics?.[key];
+            const percentile = prefix?.percentiles.p75 as number;
+            const histrogram = prefix?.histogram;
+            const metricColor = getColor({
+              metric: key,
+              value: percentile || 0,
+            });
+
+            return (
+              <div key={key}>
+                <div className="border rounded-sm p-4 dark:bg-secondary-background border-accent-foreground/20 bg-card text-card-foreground">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-2 items-center">
+                      {(label === "Largest Contentful Paint" ||
+                        label === "Interaction to Next Paint" ||
+                        label === "Cumulative Layout Shifts") && (
+                        <CustomTooltip
+                          trigger={
+                            <Bookmark
+                              size={20}
+                              className="fill-blue-400 text-blue-400"
+                            />
+                          }
+                          content="Major core web vital component"
+                          delay={300}
+                          side="top"
+                        />
+                      )}
+                      <h3 className="text-[16px] text-primary/80 font-semibold">
+                        {label}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`flex gap-[2px] items-center text-sm font-semibold ${metricColor}`}
+                      >
+                        {percentile ?? "--"}
+                        <p>{unit}</p>
+                      </span>
+                      <CustomTooltip
+                        content={`At least 75% of users experienced ${percentile} ${label.toLowerCase()}.`}
+                        trigger={
+                          <span className="cursor-help dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
+                            p75
+                          </span>
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    {histrogram && histrogram.length > 0 ? (
+                      <HistrogramBar
+                        good={histrogram[0].density}
+                        okay={histrogram[1].density}
+                        bad={histrogram[2].density}
+                      />
+                    ) : (
+                      <div className="w-full mt-4 h-8 rounded-sm bg-primary/5 animate-pulse"></div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      {/* chart section */}
+      <section className="py-6 px-5 space-y-3">
+        <div className="flex gap-2 items-center">
+          <div
+            className="w-6 h-6 rounded-[2px]"
+            style={{
+              clipPath: "polygon(0% 100%, 0% 0%, 100% 100%)", // right-angle triangle
+              background:
+                "linear-gradient(to right, #66CC8F 0% 33%, #FFEEA9 33% 66%, #FF9898 66% 100%)",
+            }}
+          />
+          <h1 className="text-xl font-bold text-primary">
+            {isMobile ? "CWV History" : "Core Web Vital History"}
+          </h1>
+        </div>
+        <DashboardChartContainer />
+      </section>
     </>
   );
 
@@ -296,29 +336,29 @@ export default function DashboardMainContainer() {
   }) {
     switch (metric) {
       case "largest_contentful_paint":
-        return value < 2500
-          ? "text-green-500"
+        return value < 2300
+          ? "text-green-300"
           : value < 4000
-            ? "text-yellow-500"
-            : "text-red-500";
+            ? "text-yellow-300"
+            : "text-red-300";
       case "interaction_to_next_paint":
         return value < 200
-          ? "text-green-500"
-          : value < 500
-            ? "text-yellow-500"
-            : "text-red-500";
+          ? "text-green-300"
+          : value < 300
+            ? "text-yellow-300"
+            : "text-red-300";
       case "cumulative_layout_shift":
         return value < 0.1
-          ? "text-green-500"
+          ? "text-green-300"
           : value < 0.25
-            ? "text-yellow-500"
-            : "text-red-500";
+            ? "text-yellow-300"
+            : "text-red-300";
       case "experimental_time_to_first_byte":
         return value < 800
-          ? "text-green-500"
+          ? "text-green-300"
           : value < 1800
-            ? "text-yellow-500"
-            : "text-red-500";
+            ? "text-yellow-300"
+            : "text-red-300";
       default:
         return "text-primary/50";
     }
@@ -342,10 +382,34 @@ export default function DashboardMainContainer() {
       return "No data";
     } else if (lcp === 0 && inp === 0 && cls === 0) {
       return "Insufficient data";
-    } else if (lcp > 4000 || inp > 500 || cls > 0.25) {
+    } else if (lcp > 4000 || inp > 300 || cls > 0.25) {
       return "Failing";
-    } else if (lcp > 2500 || inp > 200 || cls > 0.1) {
+    } else if (lcp > 2300 || inp > 200 || cls > 0.1) {
       return "Need improvement";
     } else return "Passing";
+  }
+
+  async function fetchWebVitalHistory() {
+    if (!selectedSite) {
+      setCruxData([]);
+      return;
+    }
+    try {
+      const res = await fetch("/api/crux/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ site: selectedSite }),
+      });
+
+      if (!res.ok) {
+        setCruxData([]);
+        throw new Error(res.statusText);
+      }
+
+      const body: any = await res.json();
+      setCruxData(body.data);
+    } catch (error) {
+      console.error(error);
+    }
   }
 }

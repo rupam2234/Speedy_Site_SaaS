@@ -62,7 +62,7 @@ export interface CruxRecordWrapper {
   record: CruxRecord;
 }
 
-export type CruxData = CruxRecordWrapper[];
+export type CruxData = CruxRecordWrapper;
 
 export type DailyCrux = {
   website_name: string;

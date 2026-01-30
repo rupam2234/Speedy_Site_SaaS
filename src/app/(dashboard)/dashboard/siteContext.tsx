@@ -26,8 +26,8 @@ type SiteContextType = {
   setSelectedDevice: (device: "Desktop" | "Tablet" | "Mobile" | "All") => void;
   collapsed: boolean;
   setCollapsed: (isCollapsed: boolean) => void;
-  experienceType: "p75" | "Distribution";
-  setExperienceType: (experienceType: "p75" | "Distribution") => void;
+  experienceType: "Percentile" | "Distribution";
+  setExperienceType: (experienceType: "Percentile" | "Distribution") => void;
   rumDistribution: "p50" | "p75" | "p90" | "p95" | "p99";
   setRumDistribution: (rumDist: "p50" | "p75" | "p90" | "p95" | "p99") => void;
   selectedGeoType: "Visitors" | "UX Experience";
@@ -52,7 +52,7 @@ export const SiteContext = createContext<SiteContextType>({
   setCruxData: () => {},
   collapsed: false,
   setCollapsed: () => {},
-  experienceType: "p75",
+  experienceType: "Percentile",
   setExperienceType: () => {},
   rumDistribution: "p75",
   setRumDistribution: () => {},
@@ -75,9 +75,9 @@ export default function SiteContextProvider({
     "Desktop" | "Mobile" | "Tablet" | "All"
   >("Desktop");
   const [collapsed, setCollapsed] = useState<boolean>(false);
-  const [experienceType, setExperienceType] = useState<"p75" | "Distribution">(
-    "p75",
-  );
+  const [experienceType, setExperienceType] = useState<
+    "Percentile" | "Distribution"
+  >("Percentile");
   const [rumDistribution, setRumDistribution] = useState<
     "p50" | "p75" | "p90" | "p95" | "p99"
   >("p75");

@@ -60,7 +60,7 @@ export default function AnalyticsDashboard() {
 
   return (
     <>
-      <RumWebVitalToolbar enableAllDevices={true} />
+      <RumWebVitalToolbar enableAllDevices={true} isSticky />
       <div className="min-h-screen p-5">
         {/* Page View Section */}
         {overvewMetrics.length > 0 && totalMetricsOverview.length > 0 ? (

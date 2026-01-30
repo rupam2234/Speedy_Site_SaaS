@@ -1,6 +1,6 @@
 import { CruxMetricKey } from "@/data-types/dailyCrux";
 
-type CWVMetric = {
+export type CWVMetric = {
   label: string;
   key: CruxMetricKey;
   unit?: string;

@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       )
     );
 
-    const data: CruxData = await Promise.all(
+    const data: any = await Promise.all(
       responses.map(async (res) => {
         if (!res.ok) throw new Error(`CrUX API request failed with status ${res.status}`);
         return await res.json();

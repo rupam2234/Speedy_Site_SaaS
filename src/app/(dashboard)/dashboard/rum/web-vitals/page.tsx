@@ -10,6 +10,7 @@ export default function RUMWebVitals() {
         enableDistribution={true}
         enableAllDevices={false}
         disableTablet={false}
+        isSticky
       />
       <Main />
     </>

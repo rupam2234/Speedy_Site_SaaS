@@ -14,9 +14,8 @@ import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import { getRanges } from "./referenceAreaHandler";
-import { Helpers } from "./helperFunc";
 import { cwv_metrics } from "./cwvMetrics";
+import { getRanges } from ".";
 
 echarts.use([
   TitleComponent,
@@ -40,8 +39,6 @@ function debounce(fn: () => void, delay: number) {
 interface ChartProps {
   metric_key: string;
 }
-
-const helper = new Helpers();
 
 export default function CoreWebVitalChart({ metric_key }: ChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
@@ -76,12 +73,12 @@ export default function CoreWebVitalChart({ metric_key }: ChartProps) {
   // prepare date filter
   const filteredDates: [string, string][] = [];
   collectionTime?.forEach((x) => {
-    const firstDateArray = helper.createDate(
+    const firstDateArray = createDate(
       x.firstDate.year,
       x.firstDate.month,
       x.firstDate.day,
     );
-    const lastDateArray = helper.createDate(
+    const lastDateArray = createDate(
       x.lastDate.year,
       x.lastDate.month,
       x.lastDate.day,
@@ -284,4 +281,18 @@ export default function CoreWebVitalChart({ metric_key }: ChartProps) {
   }
 
   return <div ref={chartRef} style={{ width: "100%", height: "380px" }} />;
+}
+
+export function createDate(year: number, month: number, day: number): string {
+  if (year !== null && month !== null && day !== null) {
+    if (month > 12 || month < 0 || day < 0 || day > 31) {
+      throw new Error("invalid date values");
+    }
+
+    return `${year}-${month.toString().padStart(2, "0")}-${day
+      .toString()
+      .padStart(2, "0")}`;
+  }
+
+  return "invalid date!!!";
 }

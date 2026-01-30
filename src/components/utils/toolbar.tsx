@@ -11,6 +11,9 @@ import {
 import { ChartScatter, InfoIcon, MonitorSmartphone } from "lucide-react";
 import { useSiteContext } from "../../app/(dashboard)/dashboard/siteContext";
 import CustomCalendar from "./datePicker";
+import { useEffect, useState } from "react";
+import { SidebarTrigger } from "../ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Props {
   /**
@@ -32,6 +35,11 @@ interface Props {
    * Default date range in days (e.g. 72, 500).
    */
   defaultDateRange?: number;
+
+  /**
+   * Enable sticky toolbar, default: false
+   */
+  isSticky?: boolean;
 }
 
 export default function PrimaryToolbar({
@@ -39,6 +47,7 @@ export default function PrimaryToolbar({
   enableDistribution,
   disableTablet,
   defaultDateRange,
+  isSticky,
 }: Props) {
   const {
     rumDistribution,
@@ -47,9 +56,32 @@ export default function PrimaryToolbar({
     setSelectedDevice,
   } = useSiteContext();
 
+  const isMobile = useIsMobile();
+
+  const [sticky, setIsSticky] = useState<boolean>(false); // this sets border bottom when user is scrolling
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsSticky(window.scrollY > 0);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <div className="flex flex-col md:flex-row p-5 w-full items-start gap-3 md:justify-between bg-transparent">
+    <div
+      className="flex flex-col md:flex-row p-5 w-full items-start gap-3 md:justify-between bg-transparent"
+      style={{
+        position: isSticky && !isMobile ? "sticky" : "unset",
+        top: 0,
+        zIndex: 50,
+        background: "inherit",
+        borderBottom: sticky ? "1px solid rgba(0,0,0,0.1)" : "",
+      }}
+    >
       <div className="flex gap-3 md:items-center items-start flex-col md:flex-row">
+        {sticky && !isMobile ? <SidebarTrigger /> : <></>}
         <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
           <div className="flex gap-2 w-full items-center px-2">
             <MonitorSmartphone size={18} className="mr-2" />

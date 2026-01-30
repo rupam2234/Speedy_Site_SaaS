@@ -10,8 +10,8 @@ import { BarChart, BarSeriesOption } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useRef } from "react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import { Helpers } from "./helperFunc";
 import { cwv_metrics } from "./cwvMetrics";
+import { createDate } from ".";
 
 echarts.use([GridComponent, BarChart, CanvasRenderer]);
 
@@ -30,8 +30,6 @@ type EChartsOption = echarts.ComposeOption<
 interface ChartProps {
   metric_key: string;
 }
-
-const helper = new Helpers();
 
 export default function DistributionChart({ metric_key }: ChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
@@ -61,12 +59,12 @@ export default function DistributionChart({ metric_key }: ChartProps) {
   const collectionTime = deviceBased?.record.collectionPeriods;
   const filteredDates: [string, string][] = [];
   collectionTime?.forEach((x) => {
-    const firstDateArray = helper.createDate(
+    const firstDateArray = createDate(
       x.firstDate.year,
       x.firstDate.month,
       x.firstDate.day,
     );
-    const lastDateArray = helper.createDate(
+    const lastDateArray = createDate(
       x.lastDate.year,
       x.lastDate.month,
       x.lastDate.day,
