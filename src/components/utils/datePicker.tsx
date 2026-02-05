@@ -35,7 +35,8 @@ export default function CustomCalendar({ defaultDateRange }: Props) {
 
   // sync with context
   useEffect(() => {
-    if (!dates.length) return;
+    // this means we will expose the date object to context when both startDate and endDate are ready
+    if (dates.length !== 2) return;
 
     const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime());
 
@@ -47,7 +48,7 @@ export default function CustomCalendar({ defaultDateRange }: Props) {
   const end = dates[1];
 
   return (
-    <div className="relative w-full max-w-[300px]">
+    <div className="relative w-full max-w-75">
       {/* Trigger */}
       <button
         onClick={() => setOpen((v) => !v)}

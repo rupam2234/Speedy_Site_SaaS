@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useSiteContext } from "../../siteContext";
-import { Images, Filter, LoaderIcon } from "lucide-react";
+import { Images, Filter } from "lucide-react";
 import { LoadingAnimation } from "@/components/utils/loadingAnimation";
-import DashboardToolbar from "@/components/utils/toolbarUnused";
 import Link from "next/link";
 import {
   Select,
@@ -19,6 +18,7 @@ import Performancetab from "./performance";
 import SuggestionsToggle from "./suggestion_toggle";
 import { cwv_ranges } from "../cwvRanges";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { RumWebVitalToolbar } from "@/components/utils";
 
 // Custom Badge component
 const Badge = ({
@@ -88,15 +88,29 @@ export default function LcpImageDebugger() {
   const [sortBy, setSortBy] = useState<"avg_lcp" | "occurrence">("avg_lcp");
   const [filterText, setFilterText] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { selectedSite, rumDateRange, selectedDevice } = useSiteContext();
+  const { selectedSite, startDate, endDate, selectedDevice } = useSiteContext();
 
   const isMobile = useIsMobile();
 
+  const startDateRef = useRef<Date | null>(null); // to prevent unnecessary the lcp image api call
+  const endDateRef = useRef<Date | null>(null);
+  const domainRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (selectedSite && selectedSite.length > 0 && rumDateRange) {
+    if (!selectedSite || !endDate || !startDate) return;
+
+    if (
+      domainRef.current !== selectedSite ||
+      startDateRef.current !== startDate ||
+      endDateRef.current !== endDate
+    ) {
       fetchLcpImages();
     }
-  }, [selectedSite, rumDateRange]);
+
+    domainRef.current = selectedSite;
+    startDateRef.current = startDate;
+    endDateRef.current = endDate;
+  }, [selectedSite, startDate, endDate]);
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return "";
@@ -156,8 +170,13 @@ export default function LcpImageDebugger() {
       <>
         {isMobile ? (
           <>
-            <DashboardToolbar />
-
+            <RumWebVitalToolbar
+              isSticky
+              defaultDateRange={30}
+              enableDistribution={false}
+              enableAllDevices={false}
+              disableTablet={false}
+            />
             <div className="flex flex-col gap-6 p-4 md:p-5 min-h-screen">
               {/* Header */}
               <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
@@ -382,7 +401,13 @@ export default function LcpImageDebugger() {
           </>
         ) : (
           <>
-            <DashboardToolbar />
+            <RumWebVitalToolbar
+              isSticky
+              defaultDateRange={30}
+              enableDistribution={false}
+              enableAllDevices={false}
+              disableTablet={false}
+            />
             <div className="flex flex-col gap-6 p-5 min-h-screen">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center text-primary/80 gap-2">
@@ -624,13 +649,15 @@ export default function LcpImageDebugger() {
 
   async function fetchLcpImages() {
     setIsLoading(true);
+
     try {
       const res = await fetch("/api/rum/lcp-images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          domain_name: selectedSite,
-          date_range: rumDateRange || "24hours",
+          domain: selectedSite,
+          startDate: startDate?.toISOString().split("T")[0],
+          endDate: endDate?.toISOString().split("T")[0],
         }),
       });
 
@@ -640,9 +667,10 @@ export default function LcpImageDebugger() {
         setRawLcpImageData(metrics);
       } else {
         setRawLcpImageData([]);
+        throw Error(res.statusText);
       }
     } catch (error) {
-      console.error("Failed to fetch LCP image metrics:", error);
+      console.error(error);
       setRawLcpImageData([]);
     } finally {
       setIsLoading(false);

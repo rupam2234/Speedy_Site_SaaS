@@ -6,14 +6,12 @@ import {
   CWVMetric,
   DistributionChart,
   getColor,
-  getRanges,
 } from "./helper";
 import { useSiteContext } from "../siteContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, InfoIcon } from "lucide-react";
 import { CustomTooltip } from "@/components/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { CruxData, DailyCruxData } from "@/data-types";
 
 export default function DashboardChartContainer() {
   const {
@@ -74,7 +72,10 @@ export default function DashboardChartContainer() {
 
     if (lastHistoryData && latestData) {
       return {
-        change: Number(latestData) - Number(lastHistoryData[0]),
+        change:
+          ((Number(latestData) - Number(lastHistoryData[0])) /
+            Number(lastHistoryData[0])) *
+          100, // ( new value - old value / old value) * 100
         latestData: latestData,
       };
     } else
@@ -90,7 +91,7 @@ export default function DashboardChartContainer() {
         <div className="p-5 bg-white dark:bg-secondary-background border rounded-sm border-primary/20">
           <div className="flex md:items-center flex-col md:flex-row gap-4 md:gap-0 md:justify-between">
             <div
-              className="flex relative items-center gap-2 border-b border-primary/20 min-w-[180px] py-1 text-sm cursor-pointer"
+              className="flex relative items-center gap-2 border-b border-primary/20 min-w-45 py-1 text-sm cursor-pointer"
               onClick={() => setToggleMetric((prev) => !prev)}
               ref={metricDropdownRef}
             >
@@ -123,10 +124,10 @@ export default function DashboardChartContainer() {
                 </div>
               )}
             </div>
-            <div className="flex text-sm flex-col sm:flex-row items-start sm:items-center gap-4 px-4 py-1 bg-white dark:bg-white/80 shadow-sm rounded-full border border-gray-200">
-              <p className="flex items-center gap-1 text-primary/80 font-medium">
-                Live {activeMetric.acronym.toLowerCase()}:
-                <span className="ml-1  text-primary/80">
+            <div className="flex text-sm flex-col sm:flex-row items-start sm:items-center gap-4 px-2 py-1 bg-white dark:bg-white/80 shadow-sm rounded-full border border-gray-200">
+              <p className="flex items-center gap-1 text-primary/80 dark:text-primary-foreground font-medium">
+                Today&apos;s {activeMetric.acronym.toLowerCase()}:
+                <span className="ml-1 text-primary/80">
                   {(() => {
                     const ranges = getColor(
                       activeMetric.key,
@@ -139,7 +140,7 @@ export default function DashboardChartContainer() {
                 </span>
               </p>
 
-              <p className="flex items-center gap-2 text-primary/80 font-medium">
+              <p className="flex items-center gap-2 text-primary/80 dark:text-primary-foreground font-medium">
                 Change this week:
                 <span
                   className={`
@@ -149,12 +150,11 @@ export default function DashboardChartContainer() {
                     `}
                 >
                   {change.change > 0
-                    ? `+${change.change.toFixed(2)}`
-                    : change.change.toFixed(2)}
+                    ? `+ ${change.change.toFixed(2)} %`
+                    : `${change.change.toFixed(2)} %`}
                 </span>
               </p>
             </div>
-
             <div className="flex items-center gap-2 text-sm">
               {!isMobile ? (
                 <CustomTooltip
@@ -206,7 +206,7 @@ export default function DashboardChartContainer() {
         // placeholder
         <div className="p-5 bg-white dark:bg-secondary-background border rounded-sm border-primary/20 animate-pulse">
           <div className="flex items-center justify-between mb-6">
-            <div className="h-5 w-[180px] bg-primary/10 rounded" />
+            <div className="h-5 w-45 bg-primary/10 rounded" />
             <div className="flex gap-2">
               <div className="h-6 w-20 bg-primary/10 rounded" />
               <div className="h-6 w-24 bg-primary/10 rounded" />
