@@ -45,7 +45,7 @@ export default function LCPelements({ contributors }: LCPelementProps) {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="py-[2px] ml-2 text-sm outline-0 cursor-pointer"
+              className="py-0.5 ml-2 text-sm outline-0 cursor-pointer"
             >
               {[3, 5, 10, 20].map((n) => (
                 <option
@@ -77,131 +77,132 @@ export default function LCPelements({ contributors }: LCPelementProps) {
           </div>
         </div>
       </div>
-      {activeItems?.map((x: any, i: number) => {
-        const type = classifyElement(x);
+      {activeItems &&
+        activeItems?.map((x: any, i: number) => {
+          const type = classifyElement(x);
 
-        return (
-          <div key={i} className="flex items-center justify-between py-3">
-            <div className="flex items-start gap-2">
-              <div className="mt-1 text-primary/40">
-                {type === "image" ? (
-                  <Image size={16} />
-                ) : type === "text" ? (
-                  <p className="font-black w-4">T</p>
-                ) : type === "div" ? (
-                  <Code2 size={16} />
-                ) : type === "background-image" ? (
-                  <ImageOff size={16} />
-                ) : type === "other" ? (
-                  <FileQuestion size={16} />
-                ) : (
-                  <div className="bg-primary/5 rounded-sm w-4 h-4"></div>
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-medium text-primary/80">
-                  {x.element_target}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {x.page_url.includes("fbclid") ? (
-                    <span className="truncate block md:w-2/5 w-56">
-                      {x.page_url}
-                    </span>
+          return (
+            <div key={i} className="flex items-center justify-between py-3">
+              <div className="flex items-start gap-2">
+                <div className="mt-1 text-primary/40">
+                  {type === "image" ? (
+                    <Image size={16} />
+                  ) : type === "text" ? (
+                    <p className="font-black w-4">T</p>
+                  ) : type === "div" ? (
+                    <Code2 size={16} />
+                  ) : type === "background-image" ? (
+                    <ImageOff size={16} />
+                  ) : type === "other" ? (
+                    <FileQuestion size={16} />
                   ) : (
-                    (x.page_url.replace(/\/$/, "") ?? "—")
+                    <div className="bg-primary/5 rounded-sm w-4 h-4"></div>
                   )}
-                </p>
-                {type === "image" || type === "background-image" ? (
-                  <p className="text-[12px] text-primary/60">
-                    <span className="font-semibold">Image address:</span>{" "}
-                    <Link
-                      className="underline hover:underline-none decoration-dotted underline-offset-2 cursor-pointer"
-                      href={x.image_url}
-                      target="_blank"
-                      rel="nofollow"
-                    >
-                      {x.image_url.length > 50
-                        ? x.image_url.slice(0, 50) + "…"
-                        : x.image_url}
-                    </Link>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-primary/80">
+                    {x.element_target}
                   </p>
-                ) : (
-                  <></>
-                )}
-                {x.poor_count ? (
-                  <p className="text-primary/60 text-[12px]">
-                    Captured {x.poor_count} times
+                  <p className="text-xs text-gray-500">
+                    {x.page_url.includes("fbclid") ? (
+                      <span className="truncate block md:w-2/5 w-56">
+                        {x.page_url}
+                      </span>
+                    ) : (
+                      (x.page_url.replace(/\/$/, "") ?? "—")
+                    )}
                   </p>
-                ) : (
-                  <p></p>
-                )}
+                  {type === "image" || type === "background-image" ? (
+                    <p className="text-[12px] text-primary/60">
+                      <span className="font-semibold">Image address:</span>{" "}
+                      <Link
+                        className="underline hover:underline-none decoration-dotted underline-offset-2 cursor-pointer"
+                        href={x.image_url ? x.image_url : ""}
+                        target="_blank"
+                        rel="nofollow"
+                      >
+                        {x.image_url?.length > 50
+                          ? x.image_url.slice(0, 50) + "…"
+                          : x.image_url}
+                      </Link>
+                    </p>
+                  ) : (
+                    <></>
+                  )}
+                  {x.poor_count ? (
+                    <p className="text-primary/60 text-[12px]">
+                      Captured {x.poor_count} times
+                    </p>
+                  ) : (
+                    <p></p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-medium">
+                {(() => {
+                  const s = getTimingStatus(x.avg_resource_load_delay);
+                  return (
+                    <TooltipIcon
+                      content={`Element load delay: ${s.label}`}
+                      side="left"
+                      trigger={
+                        <div
+                          className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
+                        >
+                          ⏳
+                          {x.avg_resource_load_delay
+                            ? `${(x.avg_resource_load_delay / 1000).toFixed(2)}s`
+                            : "—"}
+                        </div>
+                      }
+                    />
+                  );
+                })()}
+
+                {(() => {
+                  const s = getTimingStatus(x.avg_resource_load_duration);
+                  return (
+                    <TooltipIcon
+                      content={`Resource load duration: ${s.label}`}
+                      side="left"
+                      trigger={
+                        <div
+                          className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
+                        >
+                          ⚡
+                          {x.avg_resource_load_duration
+                            ? `${(x.avg_resource_load_duration / 1000).toFixed(2)}s`
+                            : "—"}
+                        </div>
+                      }
+                    />
+                  );
+                })()}
+
+                {(() => {
+                  const s = getTimingStatus(x.avg_element_render_delay);
+                  return (
+                    <TooltipIcon
+                      content={`Element render delay: ${s.label}`}
+                      side="left"
+                      trigger={
+                        <div
+                          className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
+                        >
+                          🎨
+                          {x.avg_element_render_delay
+                            ? `${(x.avg_element_render_delay / 1000).toFixed(2)}s`
+                            : "—"}
+                        </div>
+                      }
+                    />
+                  );
+                })()}
               </div>
             </div>
-
-            <div className="flex items-center gap-2 text-xs font-medium">
-              {(() => {
-                const s = getTimingStatus(x.avg_resource_load_delay);
-                return (
-                  <TooltipIcon
-                    content={`Element load delay: ${s.label}`}
-                    side="left"
-                    trigger={
-                      <div
-                        className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
-                      >
-                        ⏳
-                        {x.avg_resource_load_delay
-                          ? `${(x.avg_resource_load_delay / 1000).toFixed(2)}s`
-                          : "—"}
-                      </div>
-                    }
-                  />
-                );
-              })()}
-
-              {(() => {
-                const s = getTimingStatus(x.avg_resource_load_duration);
-                return (
-                  <TooltipIcon
-                    content={`Resource load duration: ${s.label}`}
-                    side="left"
-                    trigger={
-                      <div
-                        className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
-                      >
-                        ⚡
-                        {x.avg_resource_load_duration
-                          ? `${(x.avg_resource_load_duration / 1000).toFixed(2)}s`
-                          : "—"}
-                      </div>
-                    }
-                  />
-                );
-              })()}
-
-              {(() => {
-                const s = getTimingStatus(x.avg_element_render_delay);
-                return (
-                  <TooltipIcon
-                    content={`Element render delay: ${s.label}`}
-                    side="left"
-                    trigger={
-                      <div
-                        className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
-                      >
-                        🎨
-                        {x.avg_element_render_delay
-                          ? `${(x.avg_element_render_delay / 1000).toFixed(2)}s`
-                          : "—"}
-                      </div>
-                    }
-                  />
-                );
-              })()}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
     </div>
   );
 
