@@ -8,7 +8,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -66,12 +66,14 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <SidebarProvider>
-      <AuthProvider>
-        <SiteContextProvider>
-          <LayoutContent>{children}</LayoutContent>
-        </SiteContextProvider>
-      </AuthProvider>
-    </SidebarProvider>
+    <Suspense>
+      <SidebarProvider>
+        <AuthProvider>
+          <SiteContextProvider>
+            <LayoutContent>{children}</LayoutContent>
+          </SiteContextProvider>
+        </AuthProvider>
+      </SidebarProvider>
+    </Suspense>
   );
 }
