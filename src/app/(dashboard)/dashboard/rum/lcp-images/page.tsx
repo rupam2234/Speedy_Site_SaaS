@@ -58,6 +58,12 @@ const Badge = ({
   );
 };
 
+type RefObj = {
+  domain: string;
+  startDate: Date;
+  endDate: Date;
+};
+
 export interface LcpImageMetric {
   period: string;
   domain_name: string;
@@ -92,25 +98,26 @@ export default function LcpImageDebugger() {
 
   const isMobile = useIsMobile();
 
-  const startDateRef = useRef<Date | null>(null); // to prevent unnecessary the lcp image api call
-  const endDateRef = useRef<Date | null>(null);
-  const domainRef = useRef<string | null>(null);
+  const ref = useRef<RefObj | null>(null); // to prevent unnecessary the lcp image api call
 
   useEffect(() => {
-    if (!selectedSite || !endDate || !startDate) return;
+    if (!selectedSite || !startDate || !endDate) return;
+
+    const current: RefObj = {
+      domain: selectedSite,
+      startDate: startDate,
+      endDate: endDate,
+    };
 
     if (
-      domainRef.current !== selectedSite ||
-      startDateRef.current !== startDate ||
-      endDateRef.current !== endDate
+      current.domain !== ref.current?.domain ||
+      current.startDate !== ref.current.startDate ||
+      current.endDate !== ref.current.endDate
     ) {
       fetchLcpImages();
+      ref.current = current;
     }
-
-    domainRef.current = selectedSite;
-    startDateRef.current = startDate;
-    endDateRef.current = endDate;
-  }, [selectedSite, startDate, endDate]);
+  }, [selectedSite, endDate]);
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return "";

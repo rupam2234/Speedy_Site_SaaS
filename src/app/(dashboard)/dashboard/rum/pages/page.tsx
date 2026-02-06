@@ -2,7 +2,6 @@
 
 import React, { ReactNode, useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
-import DashboardToolbar from "@/components/utils/toolbarUnused";
 import {
   Smile,
   Meh,
@@ -25,6 +24,7 @@ import {
   Bug,
 } from "lucide-react";
 import TooltipIcon from "@/components/utils/customTooltip";
+import { RumWebVitalToolbar } from "@/components/utils";
 
 type PerformanceGroup = "good" | "average" | "poor";
 
@@ -77,36 +77,40 @@ type SortKey = "avg_lcp_ms" | "avg_inp_ms" | "avg_cls";
 type SortDirection = "asc" | "desc";
 
 export default function RUMpages() {
-  const { selectedSite, selectedDevice, rumDateRange } = useSiteContext();
+  const { selectedSite, selectedDevice, startDate, endDate } = useSiteContext();
   const [pageData, setPageData] = useState<PageData[]>([]);
   const [activeTab, setActiveTab] = useState<PerformanceGroup>("good");
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
-  const itemsPerPage = 10;
-  const lastFetched = useRef<string | null>(null);
   const [activeMetric, setActiveMetric] = useState<"LCP" | "INP" | "CLS">(
     "LCP",
   );
 
+  const itemsPerPage = 10;
+  const lastFetched = useRef<string | null>(null);
+
   useEffect(() => {
-    const cacheKey = `${selectedSite}_${rumDateRange}`;
+    const cacheKey = `${selectedSite}-${startDate}-${endDate}`;
     if (selectedSite && lastFetched.current !== cacheKey) {
-      GetPages(rumDateRange);
+      getPages();
       lastFetched.current = cacheKey;
     }
-  }, [selectedSite, rumDateRange]);
+  }, [selectedSite, startDate, endDate]);
 
-  async function GetPages(date_range: string) {
-    const hours =
-      date_range === "last7" ? 168 : date_range === "last24Hours" ? 24 : 168;
+  async function getPages() {
+    if (!selectedSite || !startDate || !endDate) return;
 
     try {
       const res = await fetch("/api/rum/page_performance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ p_domain: selectedSite, hours: hours }),
+        body: JSON.stringify({
+          domain: selectedSite,
+          startDate: startDate,
+          endDate: endDate,
+        }),
       });
 
       if (res.ok) {
@@ -117,6 +121,7 @@ export default function RUMpages() {
         setPageData(metrics);
       } else {
         setPageData([]);
+        throw Error(res.statusText);
       }
     } catch (error) {
       console.error("Fetch failed:", error);
@@ -339,7 +344,7 @@ export default function RUMpages() {
 
   return (
     <>
-      <DashboardToolbar />
+      <RumWebVitalToolbar defaultDateRange={30} enableDistribution={false} />
 
       <div className="px-5 mt-5 flex md:flex-row flex-col gap-2 justify-start items-center md:justify-between text-primary/80">
         <div className="flex items-center gap-2">

@@ -133,7 +133,23 @@ export default function PrimaryToolbar({
                   </button>
                 ))}
               </>
-            ) : null}
+            ) : (
+              <>
+                {["Desktop", "Mobile", "Tablet"].map((device) => (
+                  <button
+                    key={device}
+                    className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
+                      selectedDevice === device
+                        ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
+                        : ``
+                    }`}
+                    onClick={() => setSelectedDevice(device as any)}
+                  >
+                    {device}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">

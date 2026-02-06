@@ -1551,23 +1551,45 @@ export type Database = {
           width: number
         }[]
       }
-      page_performance_analysis: {
-        Args: { p_domain?: string; p_hours?: number }
-        Returns: {
-          avg_cls: number
-          avg_fcp_ms: number
-          avg_inp_ms: number
-          avg_lcp_ms: number
-          avg_ttfb_ms: number
-          cls_targets: Json
-          current_page: string
-          device_type: string
-          inp_targets: Json
-          lcp_targets: Json
-          performance_group: string
-          visit_count: number
-        }[]
-      }
+      page_performance_analysis:
+        | {
+            Args: { p_domain?: string; p_hours?: number }
+            Returns: {
+              avg_cls: number
+              avg_fcp_ms: number
+              avg_inp_ms: number
+              avg_lcp_ms: number
+              avg_ttfb_ms: number
+              cls_targets: Json
+              current_page: string
+              device_type: string
+              inp_targets: Json
+              lcp_targets: Json
+              performance_group: string
+              visit_count: number
+            }[]
+          }
+        | {
+            Args: {
+              p_domain?: string
+              p_end_date: string
+              p_start_date: string
+            }
+            Returns: {
+              avg_cls: number
+              avg_fcp_ms: number
+              avg_inp_ms: number
+              avg_lcp_ms: number
+              avg_ttfb_ms: number
+              cls_targets: Json
+              current_page: string
+              device_type: string
+              inp_targets: Json
+              lcp_targets: Json
+              performance_group: string
+              visit_count: number
+            }[]
+          }
       process_web_vitals_date_range: {
         Args: { end_date?: string; start_date: string }
         Returns: {
