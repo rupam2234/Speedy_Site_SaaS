@@ -82,7 +82,7 @@ export default function PrimaryToolbar({
     >
       <div className="flex gap-3 md:items-center items-start flex-col md:flex-row">
         {sticky && !isMobile ? <SidebarTrigger /> : <></>}
-        <div className="p-[6px] dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border-[1px] rounded-sm">
+        <div className="p-1.5 dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border rounded-sm">
           <div className="flex gap-2 w-full items-center px-2">
             <MonitorSmartphone size={18} className="mr-2" />
             {enableAllDevices ? (
@@ -155,8 +155,8 @@ export default function PrimaryToolbar({
         <div className="flex items-center gap-2">
           {enableDistribution ? (
             <>
-              <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border-[1px] px-1 rounded-sm">
-                <div className="flex justify-between items-center pl-2 py-[2px] w-full">
+              <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border px-1 rounded-sm">
+                <div className="flex justify-between items-center pl-2 py-0.5 w-full">
                   <ChartScatter size={18} />
                   <Select
                     value={rumDistribution}
@@ -191,7 +191,7 @@ export default function PrimaryToolbar({
                 side="bottom"
                 trigger={
                   <InfoIcon
-                    className="bg-transparent hover:bg-primary/5 text-primary/50 p-[2px] rounded-full"
+                    className="bg-transparent hover:bg-primary/5 text-primary/50 p-0.5 rounded-full"
                     size={22}
                   />
                 }

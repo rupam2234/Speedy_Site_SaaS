@@ -99,73 +99,6 @@ export default function RUMpages() {
     }
   }, [selectedSite, startDate, endDate]);
 
-  async function getPages() {
-    if (!selectedSite || !startDate || !endDate) return;
-
-    try {
-      const res = await fetch("/api/rum/page_performance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain: selectedSite,
-          startDate: startDate,
-          endDate: endDate,
-        }),
-      });
-
-      if (res.ok) {
-        const data: any = await res.json();
-        const metrics: PageData[] = (data.metrics || []).filter(
-          (x: PageData) => x.device_type !== "unknown",
-        );
-        setPageData(metrics);
-      } else {
-        setPageData([]);
-        throw Error(res.statusText);
-      }
-    } catch (error) {
-      console.error("Fetch failed:", error);
-      setPageData([]);
-    }
-  }
-
-  function getPerformanceGroup(page: PageData): PerformanceGroup {
-    const classify = (value: number | null, type: "lcp" | "inp" | "cls") => {
-      if (value == null) return "average"; // fallback
-      if (type === "lcp") {
-        if (value <= 2500) return "good";
-        if (value <= 4000) return "average";
-        return "poor";
-      }
-      if (type === "inp") {
-        if (value <= 200) return "good";
-        if (value <= 500) return "average";
-        return "poor";
-      }
-      if (type === "cls") {
-        if (value <= 0.1) return "good";
-        if (value <= 0.25) return "average";
-        return "poor";
-      }
-      return "average";
-    };
-
-    const scores = [
-      classify(page.avg_lcp_ms, "lcp"),
-      classify(page.avg_inp_ms, "inp"),
-      classify(page.avg_cls, "cls"),
-    ];
-
-    // If any metric is poor, overall is poor
-    if (scores.includes("poor")) return "poor";
-
-    // If any metric is average, overall is average
-    if (scores.includes("average")) return "average";
-
-    // Otherwise, it's good
-    return "good";
-  }
-
   const grouped: Record<PerformanceGroup, PageData[]> = {
     good: [],
     average: [],
@@ -351,11 +284,14 @@ export default function RUMpages() {
           <GroupIcon size={22} className="fill-green-200" />
           <h2 className="text-xl font-semibold">Page Groups</h2>
           <TooltipIcon
-            content="You can expand the pages to identify page-specific issues. Use the debug option to navigate directly to the exact page and pinpoint the elements affecting your web vitals. From there, finding a solution becomes much easier."
+            content="Pages are grouped as Good, Average, or Poor. 
+            Good pages need no UX action, while Average and Poor 
+            pages should be expanded to identify the most frequent 
+            issues."
             trigger={
               <InfoIcon
-                size={22}
-                className="text-primary/60 hover:bg-primary/20 rounded-full p-[2px]"
+                size={20}
+                className="text-primary/60 mt-0.5 hover:bg-primary/20 rounded-full p-0.75"
               />
             }
             delay={300}
@@ -454,8 +390,12 @@ export default function RUMpages() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                             {rowIndex + 1}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate">
-                            {current_page}
+                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-white truncate">
+                            {current_page.length > 50
+                              ? `${current_page.slice(0, 50)}...`
+                              : current_page.length === 0
+                                ? `/`
+                                : current_page}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -601,12 +541,14 @@ export default function RUMpages() {
                                           key={i}
                                           className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
                                         >
-                                          <div className="flex-shrink-0">
+                                          <div className="shrink-0">
                                             {getTargetIcon(target.target)}
                                           </div>
-                                          <div className="ml-3 flex-1 md:max-w-[1024px]">
+                                          <div className="ml-3 flex-1 md:max-w-5xl">
                                             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                              {target.target}
+                                              {target.target.length > 100
+                                                ? `${target.target.slice(0, 100)}...`
+                                                : target.target}
                                             </p>
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
                                               {target.count} occurrence
@@ -647,12 +589,14 @@ export default function RUMpages() {
                                           key={i}
                                           className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
                                         >
-                                          <div className="flex-shrink-0">
+                                          <div className="shrink-0">
                                             {getTargetIcon(target.target)}
                                           </div>
-                                          <div className="ml-3 flex-1 md:max-w-[1024px]">
+                                          <div className="ml-3 flex-1 md:max-w-5xl">
                                             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                              {target.target}
+                                              {target.target.length > 100
+                                                ? `${target.target.slice(0, 100)}...`
+                                                : target.target}
                                             </p>
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
                                               {target.count} occurrence
@@ -693,12 +637,14 @@ export default function RUMpages() {
                                           key={i}
                                           className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
                                         >
-                                          <div className="flex-shrink-0">
+                                          <div className="shrink-0">
                                             {getTargetIcon(target.target)}
                                           </div>
-                                          <div className="ml-3 flex-1 md:max-w-[1024px]">
+                                          <div className="ml-3 flex-1 md:max-w-5xl">
                                             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                              {target.target}
+                                              {target.target.length > 100
+                                                ? `${target.target.slice(0, 100)}...`
+                                                : target.target}
                                             </p>
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
                                               {target.count} occurrence
@@ -791,5 +737,74 @@ export default function RUMpages() {
     if (url) {
       window.open(`https://${url}`, "_blank", "noopener,noreferrer");
     }
+  }
+
+  async function getPages() {
+    if (!selectedSite || !startDate || !endDate) return;
+
+    try {
+      const res = await fetch("/api/rum/page_performance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain: selectedSite,
+          startDate: startDate,
+          endDate: endDate,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData: any = await res.json();
+        throw new Error(errData.error || `HTTP error ${res.status}`);
+      }
+
+      const data: any = await res.json();
+
+      const metrics: PageData[] = (data.data || []).filter(
+        (x: PageData) => x.device_type !== "unknown",
+      );
+
+      setPageData(metrics);
+    } catch (error: any) {
+      console.error("Fetch failed:", error.message || error);
+      setPageData([]);
+    }
+  }
+
+  function getPerformanceGroup(page: PageData): PerformanceGroup {
+    const classify = (value: number | null, type: "lcp" | "inp" | "cls") => {
+      if (value == null) return "average"; // fallback
+      if (type === "lcp") {
+        if (value <= 2500) return "good";
+        if (value <= 4000) return "average";
+        return "poor";
+      }
+      if (type === "inp") {
+        if (value <= 200) return "good";
+        if (value <= 500) return "average";
+        return "poor";
+      }
+      if (type === "cls") {
+        if (value <= 0.1) return "good";
+        if (value <= 0.25) return "average";
+        return "poor";
+      }
+      return "average";
+    };
+
+    const scores = [
+      classify(page.avg_lcp_ms, "lcp"),
+      classify(page.avg_inp_ms, "inp"),
+      classify(page.avg_cls, "cls"),
+    ];
+
+    // If any metric is poor, overall is poor
+    if (scores.includes("poor")) return "poor";
+
+    // If any metric is average, overall is average
+    if (scores.includes("average")) return "average";
+
+    // Otherwise, it's good
+    return "good";
   }
 }

@@ -105,11 +105,11 @@ export default function DashboardChartContainer() {
                 }`}
               />
               {toggleMetric && (
-                <div className="bg-white dark:bg-gray-700 border-2 rounded-bl-sm rounded-br-sm border-primary/60 absolute top-7 left-0  text-primary text-sm min-w-[200px] z-20 h-auto flex flex-col">
+                <div className="bg-white dark:bg-gray-700 border-2 rounded-bl-sm rounded-br-sm border-primary/60 absolute top-7 left-0  text-primary text-sm min-w-50 z-20 h-auto flex flex-col">
                   {cwv_metrics.map((item) => (
                     <span
                       key={item.key}
-                      className="px-2 py-[3px] border-b border-primary/5 hover:bg-primary/5 cursor-pointer font-medium"
+                      className="px-2 py-0.75 border-b border-primary/5 hover:bg-primary/5 cursor-pointer font-medium"
                       onClick={() =>
                         setActiveMetric({
                           acronym: item.acronym,
@@ -182,7 +182,7 @@ export default function DashboardChartContainer() {
                     onClick={() =>
                       setExperienceType(x as "Percentile" | "Distribution")
                     }
-                    className={`px-3 py-[2px] text-sm transition-colors cursor-pointer duration-200
+                    className={`px-3 py-0.5 text-sm transition-colors cursor-pointer duration-200
                       ${
                         experienceType === x
                           ? "bg-primary text-white dark:text-primary-foreground"
@@ -212,7 +212,7 @@ export default function DashboardChartContainer() {
               <div className="h-6 w-24 bg-primary/10 rounded" />
             </div>
           </div>
-          <div className="w-full h-[350px] bg-primary/5 rounded" />
+          <div className="w-full h-87.5 bg-primary/5 rounded" />
         </div>
       )}
     </>

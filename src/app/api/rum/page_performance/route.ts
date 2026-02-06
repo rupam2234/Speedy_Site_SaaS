@@ -24,11 +24,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      throw Error("Error fetching page performance analysis");
+      throw Error(error.message);
     }
 
     return NextResponse.json({ data }, { status: 200 });
-  } catch (error) {
-    return NextResponse.json({ message: `${error}` }, { status: 500 });
+  } catch (error:any) {
+    return NextResponse.json({ error: error.message || "Unknown error" }, { status: 500 });
   }
 }
