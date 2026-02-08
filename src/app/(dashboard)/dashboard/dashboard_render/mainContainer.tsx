@@ -121,7 +121,7 @@ export default function DashboardMainContainer() {
         <div className="flex flex-col items-start md:flex-row md:items-center justify-between">
           <div className="flex gap-2 items-center">
             <div
-              className="w-6 h-6 rounded-full p-[2px]"
+              className="w-6 h-6 rounded-full p-0.5"
               style={{
                 background:
                   "conic-gradient(#FF9898 0% 33%, #ffeea9 33% 66%, #66cc8f 66% 100%)",
@@ -130,9 +130,9 @@ export default function DashboardMainContainer() {
                 justifyContent: "center",
               }}
             />
-            <h1 className="text-xl font-bold text-primary">
+            <h2 className="text-xl font-bold text-primary">
               {isMobile ? "CWV Status" : "Core Web Vital Status"}
-            </h1>
+            </h2>
             <MoveRight />
             {(() => {
               let p = activeDailyCrux.status;
@@ -159,7 +159,7 @@ export default function DashboardMainContainer() {
 
               return (
                 <span
-                  className={`rounded-full text-primary text-sm ${borderColor} ${bgColour} border-2 font-medium dark:text-primary px-4 py-[2px]`}
+                  className={`rounded-full text-primary text-sm ${borderColor} ${bgColour} border-2 font-medium dark:text-primary px-4 py-0.5`}
                 >
                   {activeDailyCrux.status !== null
                     ? activeDailyCrux.status
@@ -183,7 +183,7 @@ export default function DashboardMainContainer() {
                 </p>
               }
               trigger={
-                <p className="text-sm rounded-sm px-2 py-[2px] hover:bg-primary/5 text-primary/80">
+                <p className="text-sm rounded-sm px-2 py-0.5 hover:bg-primary/5 text-primary/80">
                   What this means?
                 </p>
               }
@@ -252,7 +252,7 @@ export default function DashboardMainContainer() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span
-                        className={`flex gap-[2px] items-center text-sm font-semibold ${metricColor}`}
+                        className={`flex gap-0.5 items-center text-sm font-semibold ${metricColor}`}
                       >
                         {percentile ?? "--"}
                         <p>{unit}</p>
@@ -295,9 +295,20 @@ export default function DashboardMainContainer() {
                 "linear-gradient(to right, #66CC8F 0% 33%, #FFEEA9 33% 66%, #FF9898 66% 100%)",
             }}
           />
-          <h1 className="text-xl font-bold text-primary">
-            {isMobile ? "CWV History" : "Core Web Vital History"}
-          </h1>
+          <div className="text-xl flex items-center gap-4 font-bold text-primary">
+            {isMobile ? (
+              <h2>CWV Trajectory</h2>
+            ) : (
+              <h2>
+                Trajectory
+                <span className="relative mx-3 inline-flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75 animate-ping"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-300"></span>
+                </span>
+                Live Data
+              </h2>
+            )}
+          </div>
         </div>
         <DashboardChartContainer />
       </section>

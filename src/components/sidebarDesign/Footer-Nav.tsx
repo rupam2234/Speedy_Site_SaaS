@@ -34,7 +34,7 @@ export default function FooterNav({
   };
 }) {
   const [NameAvatar, setNameAvatar] = useState<string>("");
-  const resetPageMetric = pageMetricCache((state) => state.reset);
+  // const resetPageMetric = pageMetricCache((state) => state.reset);
 
   useEffect(() => {
     if (items) {
@@ -109,7 +109,7 @@ export default function FooterNav({
                 sessionStorage.removeItem("orders");
                 sessionStorage.removeItem("ordersEmail");
                 sessionStorage.removeItem("selectedSite");
-                resetPageMetric();
+                // resetPageMetric();
                 signOut({ redirectTo: "/sign-in" });
               }}
             >

@@ -11,17 +11,16 @@ interface SignOutOptions {
 export function useSignOut() {
   const router = useRouter();
 
-  return useCallback(
-    async ({ redirectTo }: SignOutOptions = {}) => {
-      const { error } = await supabase_client.auth.signOut();
-      if (error) {
-        console.error("Error signing out:", error.message);
-        return;
-      }
-      if (redirectTo) {
-        router.push(redirectTo);
-      }
-    },
-    [router]
-  );
+  const signOut = useCallback(async ({ redirectTo }: SignOutOptions = {}) => {
+    const { error } = await supabase_client.auth.signOut();
+
+    if (error) {
+      console.error(error.message);
+      return;
+    }
+
+    router.push(redirectTo ?? "/sign-in");
+  }, [router]);
+
+  return signOut;
 }
