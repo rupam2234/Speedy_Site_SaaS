@@ -12,6 +12,6 @@ jobs:
     steps:
       - name: Daily user usage update
         run: |
-          curl -f -X POST https://speedy-sense.vercel.app/api/subscriptions/usage \
+          curl -f -L -v -X POST https://speedy-sense.vercel.app/api/subscriptions/usage \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET_TOKEN }}" \
             -H "Content-Type: application/json"
