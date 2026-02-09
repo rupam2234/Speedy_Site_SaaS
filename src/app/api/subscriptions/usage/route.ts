@@ -1,4 +1,3 @@
-// app/api/subscriptions/usage/route.ts
 import { setupDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -30,7 +29,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1️⃣ Get usage counts by domain (yesterday)
+    // Get usage counts by domain (yesterday)
     const { data: usageData, error: usageError } = await worker.rpc(
       "get_yesterday_usage_counts"
     );
@@ -49,7 +48,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2️⃣ Fetch current usage from orders table
+    // Fetch current usage from orders table
     const { data: currentOrders, error: currentOrdersError } = await worker
       .from("orders")
       .select("website_name, usage_by_site");
@@ -61,7 +60,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3️⃣ Build lookup map for fast matching
+    // Build lookup map for fast matching
     const currentUsageMap = Object.fromEntries(
       currentOrders.map((o) => [
         o.website_name.trim().toLowerCase(),
@@ -69,8 +68,8 @@ export async function POST(req: NextRequest) {
       ])
     );
 
-    // 4️⃣ Update orders usage
-    console.log("Updating order usage counts...");
+    // Update orders usage
+    // console.log("Updating order usage counts...");
     await Promise.all(
       usageData.map(async (x) => {
         const domainKey = x.domain_name.trim().toLowerCase();

@@ -3,14 +3,15 @@ name: Daily Usage Update
 on:
   schedule:
     - cron: "1 0 * * *" # Runs daily at 00:01 UTC
-  workflow_dispatch: # Allows manual triggering from the GitHub UI
+  workflow_dispatch:
 
 jobs:
   trigger-api:
     runs-on: ubuntu-latest
 
     steps:
-      - name: User based usage update (daily)
+      - name: Daily user usage update
         run: |
-          curl -X POST https://speedy-sense.vercel.app/api/subscriptions/usage \
-            -H "Authorization: Bearer usagecountercronvalid"
+          curl -f -X POST https://speedy-sense.vercel.app/api/subscriptions/usage \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET_TOKEN }}" \
+            -H "Content-Type: application/json"
