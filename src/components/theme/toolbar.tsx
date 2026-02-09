@@ -1,6 +1,6 @@
 "use client";
 
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 import {
   Select,
   SelectContent,
@@ -13,7 +13,7 @@ import { useSiteContext } from "../../app/(dashboard)/dashboard/siteContext";
 import CustomCalendar from "./datePicker";
 import { useEffect, useState } from "react";
 import { SidebarTrigger } from "../ui/sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/components/theme/use-mobile";
 
 interface Props {
   /**

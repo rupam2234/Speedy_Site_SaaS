@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { setupDB } from "@/lib/db";
-import { getServerSupabase } from "@/lib/db/serverSupabase";
+import { GetServerSupabase } from "@/lib/db/getUser";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
@@ -10,7 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const worker = setupDB();
 
 export async function POST(request: Request) {
-  const { user } = await getServerSupabase();
+  const { user } = await GetServerSupabase();
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

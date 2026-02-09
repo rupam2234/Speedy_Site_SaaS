@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "@/components/theme/ThemeProvider";
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 import { useMemo, useState } from "react";
 import { alpha3ToAlpha2 } from "..";
 

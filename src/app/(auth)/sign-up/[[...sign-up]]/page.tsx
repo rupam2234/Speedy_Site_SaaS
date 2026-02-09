@@ -40,7 +40,7 @@ export default function SignUpPage() {
 
     setLoading(false);
     setMessage(
-      error ? error.message : "Check your email to confirm your account."
+      error ? error.message : "Check your email to confirm your account.",
     );
   };
 

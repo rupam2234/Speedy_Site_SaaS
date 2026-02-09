@@ -10,7 +10,7 @@ import {
 import { Separator } from "@radix-ui/react-separator";
 import { ReactNode, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
 
 interface DashboardLayoutProps {

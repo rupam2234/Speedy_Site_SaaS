@@ -23,7 +23,7 @@ import {
   InfoIcon,
   Bug,
 } from "lucide-react";
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 import { RumWebVitalToolbar } from "@/components/utils";
 
 type PerformanceGroup = "good" | "average" | "poor";
@@ -277,7 +277,11 @@ export default function RUMpages() {
 
   return (
     <>
-      <RumWebVitalToolbar defaultDateRange={30} enableDistribution={false} />
+      <RumWebVitalToolbar
+        defaultDateRange={30}
+        enableDistribution={false}
+        isSticky
+      />
 
       <div className="px-5 mt-5 flex md:flex-row flex-col gap-2 justify-start items-center md:justify-between text-primary/80">
         <div className="flex items-center gap-2">

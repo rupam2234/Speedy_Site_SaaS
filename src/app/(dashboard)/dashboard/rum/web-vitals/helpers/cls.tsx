@@ -1,6 +1,6 @@
 "use client";
 
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 import { Code2, File, Megaphone } from "lucide-react";
 import Link from "next/link";
 

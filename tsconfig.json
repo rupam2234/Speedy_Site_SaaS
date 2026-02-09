@@ -34,7 +34,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    "src/hooks/ParticleBackground.tsx",
+    "src/lib/hooks/ParticleBackground.tsx",
     "C:/projectbuild/speedy-next-cache/types/**/*.ts",
     "src/app/(dashboard)/dashboard/rum/page.tsx.bak",
     "src/app/(dashboard)/dashboard/rum/helpers/ExperienceBar.tsx.bak",

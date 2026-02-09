@@ -16,6 +16,7 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { cwv_metrics } from "./cwvMetrics";
 import { getRanges } from ".";
+import { collectSegmentData } from "next/dist/server/app-render/collect-segment-data";
 
 echarts.use([
   TitleComponent,
@@ -37,15 +38,25 @@ function debounce(fn: () => void, delay: number) {
 }
 
 interface ChartProps {
-  metric_key: string;
+  metric_key:
+    | "cumulative_layout_shift"
+    | "experimental_time_to_first_byte"
+    | "interaction_to_next_paint"
+    | "largest_contentful_paint";
 }
 
 export default function CoreWebVitalChart({ metric_key }: ChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null); // Store chart instance
   const { theme } = useTheme();
-  const { cruxData, selectedDevice, startDate, endDate, setCruxData } =
-    useSiteContext();
+  const {
+    cruxData,
+    selectedDevice,
+    dailyCrux,
+    startDate,
+    endDate,
+    setCruxData,
+  } = useSiteContext();
 
   // date fallback options
   const date = new Date();
@@ -113,6 +124,14 @@ export default function CoreWebVitalChart({ metric_key }: ChartProps) {
     const label = `${startLabel} to ${endLabel}`; // "22, Dec to 25, Dec"
     return [label, value];
   });
+
+  // if we have new daily data we will insert it to cruxhistory
+  if (dailyCrux !== undefined && dailyCrux !== null) {
+    const firstDate = dailyCrux[0].record.collectionPeriod.firstDate;
+    const lastDate = dailyCrux[0].record.collectionPeriod.lastDate;
+    const p75 = dailyCrux[0].record.metrics[metric_key].percentiles.p75;
+    p75ChartData.push([formatRange({ start: firstDate, end: lastDate }), p75]);
+  }
 
   const metricRange = getRanges(metric_key);
 
@@ -295,4 +314,17 @@ export function createDate(year: number, month: number, day: number): string {
   }
 
   return "invalid date!!!";
+}
+
+function formatRange({
+  start,
+  end,
+}: {
+  start: { day: number; month: number; year: number };
+  end: { day: number; month: number; year: number };
+}) {
+  const startDate = new Date(start.year, start.month - 1, start.day);
+  const endDate = new Date(end.year, end.month - 1, end.day);
+
+  return `${startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })} to ${endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
 }

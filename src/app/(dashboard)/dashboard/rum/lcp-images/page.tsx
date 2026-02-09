@@ -4,7 +4,7 @@ import React, { useRef } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useSiteContext } from "../../siteContext";
 import { Images, Filter } from "lucide-react";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import Link from "next/link";
 import {
   Select,
@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import Performancetab from "./performance";
 import SuggestionsToggle from "./suggestion_toggle";
 import { cwv_ranges } from "../cwvRanges";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/components/theme/use-mobile";
 import { RumWebVitalToolbar } from "@/components/utils";
 
 // Custom Badge component
@@ -167,9 +167,6 @@ export default function LcpImageDebugger() {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
         <LoadingAnimation />
-        <p className="mt-4 text-muted-foreground">
-          Please select a site to view LCP image data
-        </p>
       </div>
     );
   } else {
@@ -196,11 +193,11 @@ export default function LcpImageDebugger() {
                   <span className="hidden md:inline">|</span>
 
                   {lcpImageData.length > 0 ? (
-                    <div className="bg-primary/5 dark:bg-orange-300/60 h-[20px] rounded-3xl border font-medium border-primary/30 text-[10px] text-center px-2 py-[2px]">
+                    <div className="bg-primary/5 dark:bg-orange-300/60 h-5 rounded-3xl border font-medium border-primary/30 text-[10px] text-center px-2 py-0.5">
                       {lcpImageData.length} images
                     </div>
                   ) : (
-                    <div className="w-16 h-[20px] rounded-3xl bg-primary/20 animate-pulse" />
+                    <div className="w-16 h-5 rounded-3xl bg-primary/20 animate-pulse" />
                   )}
 
                   <span className="text-xs md:text-sm">
@@ -395,7 +392,7 @@ export default function LcpImageDebugger() {
                       </div>
                     </div>
                   ) : isLoading ? (
-                    <div className="h-[200px] w-full bg-primary/5 rounded-sm animate-pulse" />
+                    <div className="h-50 w-full bg-primary/5 rounded-sm animate-pulse" />
                   ) : (
                     <div className="text-center text-muted-foreground py-10">
                       <Images className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -421,11 +418,11 @@ export default function LcpImageDebugger() {
                   <Images />
                   <h1 className="text-xl font-bold">Critical Images</h1> |
                   {lcpImageData.length > 0 ? (
-                    <div className="bg-primary/5 dark:bg-orange-300/60 w-19 h-[20px] rounded-3xl border font-medium border-primary/30 text-[10px] text-center py-[2px]">
+                    <div className="bg-primary/5 dark:bg-orange-300/60 w-19 h-5 rounded-3xl border font-medium border-primary/30 text-[10px] text-center py-0.5">
                       {lcpImageData.length} images
                     </div>
                   ) : (
-                    <div className="w-19 h-[20px] rounded-3xl bg-primary/20 animate-pulse" />
+                    <div className="w-19 h-5 rounded-3xl bg-primary/20 animate-pulse" />
                   )}
                   responsible for largest contentful paint
                 </div>
@@ -493,7 +490,7 @@ export default function LcpImageDebugger() {
                             </div>
 
                             <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-start mb-1 w-[300px]">
+                              <div className="flex justify-between items-start mb-1 w-75">
                                 <Link
                                   href={metric.image_url}
                                   target="_blank"
@@ -636,7 +633,7 @@ export default function LcpImageDebugger() {
                   ) : (
                     <>
                       {isLoading ? (
-                        <div className="h-[200px] w-full bg-primary/5 rounded-sm animate-pulse"></div>
+                        <div className="h-50 w-full bg-primary/5 rounded-sm animate-pulse"></div>
                       ) : (
                         <div className="text-center text-muted-foreground">
                           <Images className="h-12 w-12 mx-auto mb-2 opacity-50" />

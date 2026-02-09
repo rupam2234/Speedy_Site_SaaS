@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { ConnectionStackBars, UrlStackBar } from "./charts";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/components/theme/use-mobile";
 
 interface Props {
   activeMetric: "LCP" | "CLS" | "INP" | "TTFB" | "FCP";

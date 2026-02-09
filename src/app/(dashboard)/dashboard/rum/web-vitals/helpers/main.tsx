@@ -3,16 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { cwv_ranges, scoreMetric } from "../../cwvRanges";
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 import RumCwvChart from "./chart";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import LCPelements from "./lcp";
 import CLSelements from "./cls";
 import INPelements from "./inp";
 import TTFBelements from "./ttfb";
 import BarGraphTabs from "./barGraphTabs";
 import { InfoIcon } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/components/theme/use-mobile";
 
 interface Metric {
   name: string;

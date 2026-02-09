@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import { InfoIcon } from "lucide-react";
 import { useSiteContext } from "../../siteContext";
 import { overviewApi } from "./cf-apis/calls";
-import TooltipIcon from "@/components/utils/customTooltip";
-import RumWebVitalToolbar from "../../../../../components/utils/toolbar";
+import TooltipIcon from "@/components/theme/customTooltip";
+import RumWebVitalToolbar from "../../../../../components/theme/toolbar";
 import { SourceHandler } from ".";
 
 type overviewMetrics = {

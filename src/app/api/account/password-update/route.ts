@@ -1,7 +1,7 @@
-import { getServerSupabase } from "@/lib/db/serverSupabase";
+import { GetServerSupabase } from "@/lib/db/getUser";
 
 export async function POST(req: Request) {
-  const { supabase, user, error } = await getServerSupabase();
+  const { supabase, user, error } = await GetServerSupabase();
 
   if (!user || error) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });

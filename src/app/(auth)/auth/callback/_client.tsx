@@ -46,7 +46,7 @@ export default function AuthCallbackClient() {
               Authorization: `Bearer ${access_token}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         const result: any = await response.json();
@@ -54,8 +54,8 @@ export default function AuthCallbackClient() {
         if (!response.ok) {
           router.replace(
             `/sign-in?error=${encodeURIComponent(
-              result.message || "unauthorized"
-            )}`
+              result.message || "unauthorized",
+            )}`,
           );
           return;
         }

@@ -122,7 +122,7 @@ export default function SuggestionsToggle({
       </button>
 
       {open === "ai" && (
-        <div className="mt-4 text-primary/80 dark:text-primary/85 text-sm leading-relaxed min-h-[4rem]">
+        <div className="mt-4 text-primary/80 dark:text-primary/85 text-sm leading-relaxed min-h-16">
           {!loading && aiSuggestions && renderSuggestions(aiSuggestions)}
         </div>
       )}
