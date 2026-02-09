@@ -4,7 +4,7 @@ import { reviews } from "./reviews";
 
 export function DesktopSideContent() {
   return (
-    <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br dark:bg-secondary-background from-indigo-500 to-purple-400 relative px-8 py-12 overflow-hidden">
+    <div className="hidden md:flex flex-col items-center justify-center bg-linear-to-br dark:bg-secondary-background from-indigo-500 to-purple-400 relative px-8 py-12 overflow-hidden">
       <div className="absolute top-10 right-10 w-48 h-48 bg-purple-300 rounded-full opacity-20 blur-2xl" />
       <div className="absolute bottom-10 left-10 w-24 h-24 bg-indigo-200 rounded-full opacity-20 blur-xl" />
       <div className="backdrop-blur-md space-y-7 bg-white/10 dark:bg-black/20 p-10 rounded-md max-w-xl text-white z-10">
@@ -28,7 +28,7 @@ export function DesktopSideContent() {
               {reviews.map((review, idx) => (
                 <div
                   key={idx}
-                  className="mx-4 bg-white/90 dark:bg-black/70 text-black dark:text-white rounded-lg shadow-md px-4 py-3 min-w-[220px] max-w-xs"
+                  className="mx-4 bg-white/90 dark:bg-black/70 text-black dark:text-white rounded-lg shadow-md px-4 py-3 min-w-55 max-w-xs"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Image
@@ -48,7 +48,7 @@ export function DesktopSideContent() {
               {reviews.map((review, idx) => (
                 <div
                   key={idx + reviews.length}
-                  className="mx-4 bg-white/90 dark:bg-black/70 text-black dark:text-white rounded-lg shadow-md px-4 py-3 min-w-[220px] max-w-xs"
+                  className="mx-4 bg-white/90 dark:bg-black/70 text-black dark:text-white rounded-lg shadow-md px-4 py-3 min-w-55 max-w-xs"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Image
