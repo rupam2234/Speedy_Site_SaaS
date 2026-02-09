@@ -13,5 +13,5 @@ jobs:
       - name: Daily user usage update
         run: |
           curl -f -X POST https://analytics.speedy.site/api/subscriptions/usage \
-            -H "Authorization: Bearer usagecountercronvalid" \
+            -H "Authorization: Bearer ${{ secrets.USAGE_COUNTER_CRON }}" \
             -H "Content-Type: application/json"
