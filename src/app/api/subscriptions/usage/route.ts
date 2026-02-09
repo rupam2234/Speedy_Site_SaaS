@@ -1,3 +1,4 @@
+// app/api/subscriptions/usage/route.ts
 import { setupDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -11,6 +12,7 @@ const worker = setupDB();
 
 export async function POST(req: NextRequest) {
   try {
+    // Check auth header
     const authHeader =
       req.headers.get("authorization") || req.headers.get("Authorization");
 
@@ -28,7 +30,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get usage counts by domain (yesterday)
+    // 1️⃣ Get usage counts by domain (yesterday)
     const { data: usageData, error: usageError } = await worker.rpc(
       "get_yesterday_usage_counts"
     );
@@ -40,38 +42,62 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // fetch current usage count from order table
-    const {data: current_usage_per_order, error: error_current_usage_per_order } = await worker.from("orders").select("website_name, usage_by_site");
+    if (!usageData || !Array.isArray(usageData)) {
+      return NextResponse.json(
+        { error: "RPC returned no usage data" },
+        { status: 500 }
+      );
+    }
 
-    if(error_current_usage_per_order){
-      return NextResponse.json({error: error_current_usage_per_order.details}, {status: Number(error_current_usage_per_order.code)});
-    };
-    
-    // a lookup object instead of relying on indexes to avoid not even order output
+    // 2️⃣ Fetch current usage from orders table
+    const { data: currentOrders, error: currentOrdersError } = await worker
+      .from("orders")
+      .select("website_name, usage_by_site");
+
+    if (currentOrdersError) {
+      return NextResponse.json(
+        { error: currentOrdersError.details || "Failed to fetch orders" },
+        { status: Number(currentOrdersError.code) || 500 }
+      );
+    }
+
+    // 3️⃣ Build lookup map for fast matching
     const currentUsageMap = Object.fromEntries(
-      current_usage_per_order.map((o) => [o.website_name, o.usage_by_site])
+      currentOrders.map((o) => [
+        o.website_name.trim().toLowerCase(),
+        o.usage_by_site || 0,
+      ])
     );
 
-    // Update usage_by_site in orders table
+    // 4️⃣ Update orders usage
+    console.log("Updating order usage counts...");
     await Promise.all(
       usageData.map(async (x) => {
+        const domainKey = x.domain_name.trim().toLowerCase();
+        const current = currentUsageMap[domainKey];
 
-        const current = currentUsageMap[x.domain_name]
+        if (current !== undefined) {
+          const newUsage = current + x.usage_count;
 
-        if(current !== undefined){
           const { error } = await worker
-          .from("orders")
-          .update({ usage_by_site: x.usage_count + current })
-          .eq("website_name", x.domain_name);
-  
+            .from("orders")
+            .update({ usage_by_site: newUsage })
+            .eq("website_name", x.domain_name);
+
           if (error) {
-            console.error(`Error updating order for ${x.domain_name}:`, error);
+            console.error(`Error updating order ${x.domain_name}:`, error);
+          } else {
+            console.log(
+              `Updated order ${x.domain_name}: ${current} + ${x.usage_count} = ${newUsage}`
+            );
           }
-        }  
+        } else {
+          console.warn(`Order not found for domain: ${x.domain_name}`);
+        }
       })
     );
 
-    // Get daily aggregated usage by user ID
+    // 5️⃣ Aggregate usage by user
     const { data: dailyUsage, error: dailyUsageError } = await worker.rpc(
       "daily_aggregate_usage_by_userid"
     );
@@ -86,53 +112,53 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Update current_usage in subscriptions table
+    // 6️⃣ Update subscriptions usage (only existing rows)
+    console.log("Updating subscriptions usage...");
     await Promise.all(
       dailyUsage.map(async (x) => {
-        // Fetch current usage
+        const { user_id, total_usage } = x;
+
+        // Fetch existing usage
         const { data: existing, error: fetchError } = await worker
           .from("subscriptions")
           .select("current_usage")
-          .eq("user_id", x.user_id)
+          .eq("user_id", user_id)
           .single();
 
         if (fetchError) {
-          console.error(
-            `Error fetching current usage for ${x.user_id}:`,
-            fetchError
+          console.warn(
+            `Skipping subscription update for ${user_id} (not found):`,
+            fetchError.details || fetchError.message
           );
           return;
         }
 
         const current = existing?.current_usage ?? 0;
-        const newUsage = current + x.total_usage;
+        const newUsage = current + total_usage;
 
-        // Update usage
         const { error: updateError } = await worker
           .from("subscriptions")
           .update({ current_usage: newUsage })
-          .eq("user_id", x.user_id);
+          .eq("user_id", user_id);
 
         if (updateError) {
-          console.error(`Error updating usage for ${x.user_id}:`, updateError);
+          console.error(`Error updating subscription for ${user_id}:`, updateError);
+        } else {
+          console.log(`Updated subscription ${user_id}: ${current} + ${total_usage} = ${newUsage}`);
         }
       })
     );
 
-    // Final response
     return NextResponse.json(
       {
         message: "Usage data updated successfully",
         domainsUpdated: usageData.length,
-        usersUpdated: dailyUsage?.length ?? 0,
+        usersUpdated: dailyUsage.length,
       },
       { status: 200 }
     );
   } catch (e) {
     console.error("Unexpected server error:", e);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
