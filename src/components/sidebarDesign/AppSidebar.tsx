@@ -17,13 +17,13 @@ import {
 } from "../ui/sidebar";
 import MainNav from "./Main-Nav";
 import FooterNav from "./Footer-Nav";
-import { SelectSite } from "../utils/SiteSelect";
+import { SelectSite } from "../utils/siteSelector";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { usePathname } from "next/navigation";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
 import { useTheme } from "../theme/ThemeProvider";
 import { DynamicLogo } from "@/app/(auth)/helpers/dynamicLogo";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/components/theme/use-mobile";
 
 export default function AppSidebar({
   ...props

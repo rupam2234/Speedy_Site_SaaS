@@ -2,16 +2,13 @@
 
 import { useSiteContext } from "../siteContext";
 import { useEffect, useRef, useState } from "react";
-import {
-  CustomTooltip,
-  HistrogramBar,
-  RumWebVitalToolbar,
-} from "@/components/utils";
+import { HistrogramBar, RumWebVitalToolbar } from "@/components/utils";
 import { Bookmark, MoveRight } from "lucide-react";
 import { CruxMetricKey, DailyCruxData } from "@/data-types";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/components/theme/use-mobile";
 import { cwv_metrics } from "./helper";
 import DashboardChartContainer from "./chartConatiner";
+import { CustomTooltip } from "@/components/theme";
 
 export default function DashboardMainContainer() {
   const {

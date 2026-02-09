@@ -4,7 +4,7 @@ import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { DynamicLogo } from "../(auth)/helpers/dynamicLogo";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/components/theme/use-mobile";
 
 export default function SiteHeader() {
   const user = useSupabaseUser();

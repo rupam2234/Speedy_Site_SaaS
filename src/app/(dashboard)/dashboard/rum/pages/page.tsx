@@ -23,7 +23,7 @@ import {
   InfoIcon,
   Bug,
 } from "lucide-react";
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 import { RumWebVitalToolbar } from "@/components/utils";
 
 type PerformanceGroup = "good" | "average" | "poor";

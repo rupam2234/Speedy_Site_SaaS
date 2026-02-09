@@ -1,6 +1,6 @@
 "use client";
 
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 
 interface INPelementProps {
   contributors: any;

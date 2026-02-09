@@ -1,6 +1,6 @@
 "use client";
 
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 import { Code2, FileQuestion, Image, ImageOff } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";

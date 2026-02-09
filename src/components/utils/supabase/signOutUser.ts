@@ -13,6 +13,9 @@ export function useSignOut() {
 
   const signOut = useCallback(async ({ redirectTo }: SignOutOptions = {}) => {
     const { error } = await supabase_client.auth.signOut();
+  
+    sessionStorage.removeItem("subscriptionData"); // remove subscription data
+
 
     if (error) {
       console.error(error.message);

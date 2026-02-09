@@ -1,6 +1,6 @@
 "use client";
 
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 import { ClipboardList, LoaderIcon, Settings2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";

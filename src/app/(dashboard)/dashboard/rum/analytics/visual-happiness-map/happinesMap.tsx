@@ -7,7 +7,7 @@ import styles from "../visual-traffic-map/tooltip.module.css";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { Frown, Info, Meh, Smile } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 
 const ClientMap = dynamic(() => import("../helpers/trafficMap"), {
   ssr: false,

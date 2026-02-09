@@ -16,7 +16,7 @@ import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 
 echarts.use([
   TitleComponent,

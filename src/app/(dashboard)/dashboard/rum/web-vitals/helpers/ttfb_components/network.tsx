@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Contributor, TTFBelementProps } from "../ttfb";
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 
 export default function TTFBbyNetwork({ contributors }: TTFBelementProps) {
   const ttfb_by_network = useMemo(() => {

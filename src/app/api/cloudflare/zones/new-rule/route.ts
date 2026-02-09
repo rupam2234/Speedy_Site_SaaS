@@ -1,7 +1,7 @@
 import { ImageExtension } from "@/app/(dashboard)/dashboard/cloudflare/imageExtensionSelector";
 import { CacheRuleCreated } from "@/app/api/emails/cloudflareRules";
 import { setupDB } from "@/lib/db";
-import { getServerSupabase } from "@/lib/db/serverSupabase";
+import { GetServerSupabase } from "@/lib/db/getUser";
 import { NextRequest, NextResponse } from "next/server";
 
 interface Props {
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     browserTTL,
   }: Props = await req.json();
 
-  const user = await getServerSupabase();
+  const user = await GetServerSupabase();
   const worker = setupDB();
 
   if (!rule_type || !site || !edgeTTL) {

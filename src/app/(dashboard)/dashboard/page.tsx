@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSiteContext } from "./siteContext";
-// import WebsitePage from "./dashboard_render/main";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import DashboardMainContainer from "./dashboard_render/mainContainer";
 
 export default function Dashboard() {
@@ -30,7 +29,7 @@ export default function Dashboard() {
 
   if (!selectedSite && showPrompt) {
     return (
-      <div className="flex flex-col space-y-4 md:mt-[-50px] items-center justify-center min-h-full dark:text-secondary-background p-8">
+      <div className="flex flex-col space-y-4 md:-mt-12.5 items-center justify-center min-h-full dark:text-secondary-background p-8">
         <p className="text-4xl md:text-6xl font-bold text-primary/50">
           Website 404
         </p>

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Contributor, TTFBelementProps } from "../ttfb";
-import TooltipIcon from "@/components/utils/customTooltip";
+import TooltipIcon from "@/components/theme/customTooltip";
 
 export default function TTFBbyCountry({ contributors }: TTFBelementProps) {
   const [currentPage, setCurrentPage] = useState<number>(1);

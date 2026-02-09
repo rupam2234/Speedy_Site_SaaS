@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { OrderData } from "@/app/api/dataTypes";
 import { useSiteContext } from "../siteContext";
 import { toast } from "sonner";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import Integrations from "./integrations";
 import { sendRenewalSuccessEmail } from "@/app/api/emails/renewalSuccess";
 

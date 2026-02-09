@@ -106,7 +106,7 @@ export default function ResetPassPage() {
     } else {
       if (!recoverToken) {
         setMessage(
-          "Recovery token not found. Please use the link in your email"
+          "Recovery token not found. Please use the link in your email",
         );
         return;
       }

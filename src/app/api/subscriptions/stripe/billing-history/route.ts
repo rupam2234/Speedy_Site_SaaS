@@ -1,7 +1,7 @@
-import { getServerSupabase } from "@/lib/db/serverSupabase";
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
+import { GetServerSupabase } from "@/lib/db/getUser";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
@@ -10,7 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const worker = setupDB();
 
 export async function GET() {
-  const { user, error: authError } = await getServerSupabase();
+  const { user, error: authError } = await GetServerSupabase();
 
   if (authError || !user) {
     return NextResponse.json(

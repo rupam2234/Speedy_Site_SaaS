@@ -1,8 +1,8 @@
 "use client";
 
 import { UserPlan } from "@/app/api/subscriptions/plan/route";
-import TooltipIcon from "@/components/utils/customTooltip";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import TooltipIcon from "@/components/theme/customTooltip";
+import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { BadgeCheck, CheckCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -20,7 +20,7 @@ interface PlanCardProps {
 
 export default function Subscription() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
-    "monthly"
+    "monthly",
   );
   const [planData, setPlanData] = useState<UserPlan | null>(null);
   const user = useSupabaseUser();
@@ -157,7 +157,7 @@ export default function Subscription() {
                   checked={billingCycle === "yearly"}
                   onChange={() =>
                     setBillingCycle((prev) =>
-                      prev === "monthly" ? "yearly" : "monthly"
+                      prev === "monthly" ? "yearly" : "monthly",
                     )
                   }
                 />
@@ -361,8 +361,8 @@ function PlanCard({
           current
             ? "bg-blue-500/30 text-primary cursor-not-allowed"
             : highlight
-            ? "bg-blue-600 text-white hover:bg-blue-700"
-            : "bg-gray-100 text-gray-800 hover:bg-blue-500/30 hover:text-primary"
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-gray-100 text-gray-800 hover:bg-blue-500/30 hover:text-primary"
         }`}
       >
         {current ? "✓ Current Plan" : `Change to ${name}`}

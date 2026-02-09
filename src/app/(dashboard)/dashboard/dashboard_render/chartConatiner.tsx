@@ -10,8 +10,8 @@ import {
 import { useSiteContext } from "../siteContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, InfoIcon } from "lucide-react";
-import { CustomTooltip } from "@/components/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { CustomTooltip } from "@/components/theme";
+import { useIsMobile } from "@/components/theme/use-mobile";
 
 export default function DashboardChartContainer() {
   const {

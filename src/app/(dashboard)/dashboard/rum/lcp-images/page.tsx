@@ -4,7 +4,7 @@ import React, { useRef } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useSiteContext } from "../../siteContext";
 import { Images, Filter } from "lucide-react";
-import { LoadingAnimation } from "@/components/utils/loadingAnimation";
+import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import Link from "next/link";
 import {
   Select,
@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import Performancetab from "./performance";
 import SuggestionsToggle from "./suggestion_toggle";
 import { cwv_ranges } from "../cwvRanges";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/components/theme/use-mobile";
 import { RumWebVitalToolbar } from "@/components/utils";
 
 // Custom Badge component
