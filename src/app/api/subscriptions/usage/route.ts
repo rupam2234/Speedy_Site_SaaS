@@ -40,17 +40,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // fetch current usage count from order table
+    const {data: current_usage_per_order, error: error_current_usage_per_order } = await worker.from("orders").select("website_name, usage_by_site");
+
+    if(error_current_usage_per_order){
+      return NextResponse.json({error: error_current_usage_per_order.details}, {status: Number(error_current_usage_per_order.code)});
+    };
+    
+    // a lookup object instead of relying on indexes to avoid not even order output
+    const currentUsageMap = Object.fromEntries(
+      current_usage_per_order.map((o) => [o.website_name, o.usage_by_site])
+    );
+
     // Update usage_by_site in orders table
     await Promise.all(
       usageData.map(async (x) => {
-        const { error } = await worker
-          .from("orders")
-          .update({ usage_by_site: x.usage_count })
-          .eq("website_name", x.domain_name);
 
-        if (error) {
-          console.error(`Error updating order for ${x.domain_name}:`, error);
-        }
+        const current = currentUsageMap[x.domain_name]
+
+        if(current !== undefined){
+          const { error } = await worker
+          .from("orders")
+          .update({ usage_by_site: x.usage_count + current })
+          .eq("website_name", x.domain_name);
+  
+          if (error) {
+            console.error(`Error updating order for ${x.domain_name}:`, error);
+          }
+        }  
       })
     );
 
