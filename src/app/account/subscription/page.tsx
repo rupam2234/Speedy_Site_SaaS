@@ -1,11 +1,10 @@
 "use client";
 
 import { UserPlan } from "@/app/api/subscriptions/plan/route";
-import TooltipIcon from "@/components/theme/customTooltip";
-import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { BadgeCheck, CheckCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { CustomTooltip, LoadingAnimation } from "@/components/theme";
 import ActivePlanCard from "./activePlan";
 
 export type PlanType = "Basic" | "Pro" | "Agency" | "Free";
@@ -87,7 +86,7 @@ export default function Subscription() {
       features: [
         "Unlimited sites",
         "Real-Time Performance Tracking",
-        "500,000 pageviews/month",
+        "150,000 pageviews/month",
         "1 year data retention",
         "Analytics Dashboard",
         "Element Debugging",
@@ -104,7 +103,7 @@ export default function Subscription() {
       features: [
         "Unlimited sites",
         "Real-Time Performance Tracking",
-        "2,000,000 pageviews",
+        "5,00,000 pageviews",
         "1 year data retention",
         "Analytics Dashboard",
         "Element Debugging",
@@ -323,11 +322,11 @@ function PlanCard({
                 key={feature}
                 className="flex items-start text-sm text-primary/60 relative group"
               >
-                <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-[2px] shrink-0" />
+                <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 shrink-0" />
                 <span>
                   {before}
                   {shouldUnderline ? (
-                    <TooltipIcon
+                    <CustomTooltip
                       trigger={
                         <span className="underline decoration-dotted decoration-primary/40">
                           {numberPart}

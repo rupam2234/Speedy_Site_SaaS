@@ -27,7 +27,6 @@ export async function GET() {
       .single();
 
     if (error || !data) {
-      console.log("Error fetching stripe customer ID", error);
       return NextResponse.json(
         { error: "No subscription found" },
         { status: 404 }
@@ -41,7 +40,6 @@ export async function GET() {
 
     return NextResponse.json({ invoices });
   } catch (err: any) {
-    console.error("Error retrieving customer or invoices:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

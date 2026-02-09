@@ -1,3 +1,4 @@
+import { useIsMobile } from "@/components/theme";
 import { Link2Icon } from "lucide-react";
 import { useState } from "react";
 
@@ -52,6 +53,8 @@ export default function Testimonials() {
   const maxSlide = testimonials.length - visibleCards + 1;
   const [selectedPair, setSelectedPair] = useState(1);
 
+  const isMobile = useIsMobile();
+
   function handleSlider(value: number) {
     if (value > maxSlide) return maxSlide;
     if (value < 1) return 1;
@@ -69,78 +72,82 @@ export default function Testimonials() {
   return (
     <div className="max-w-7xl mx-auto px-6 text-center">
       <h2 className="text-lg sm:text-2xl font-bold text-primary/70">
-        Hear From Speedy Site Legacy Customers
+        Hear From Oure Legacy Customers
       </h2>
 
       <div className="flex items-center gap-10">
-        <button
-          onClick={left}
-          className="rounded-full px-5 py-3 hover:bg-primary/30 cursor-pointer mt-10 bg-primary/10"
-        >
-          Prev
-        </button>
-
-        <div className="overflow-hidden w-full mt-12 h-96">
-          <div
-            className="flex transition-transform duration-500 gap-8"
-            style={{
-              width: `${(testimonials.length / visibleCards) * 100}%`,
-              transform: `translateX(-${(selectedPair - 1) * (100 / testimonials.length)}%)`,
-            }}
-          >
-            {testimonials.map((t, idx) => (
+        {isMobile ? (
+          <></>
+        ) : (
+          <>
+            <button
+              onClick={left}
+              className="rounded-full px-5 py-3 hover:bg-primary/30 cursor-pointer mt-10 bg-primary/10"
+            >
+              Prev
+            </button>
+            <div className="overflow-hidden w-full mt-12 h-96">
               <div
-                key={idx}
-                className="relative bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-start text-left w-1/3"
+                className="flex transition-transform duration-500 gap-8"
+                style={{
+                  width: `${(testimonials.length / visibleCards) * 100}%`,
+                  transform: `translateX(-${(selectedPair - 1) * (100 / testimonials.length)}%)`,
+                }}
               >
-                <div className="flex items-center mb-4">
-                  {Array(5)
-                    .fill(0)
-                    .map((_, i) => (
-                      <svg
-                        key={i}
-                        className="w-4 h-4 text-green-500 mr-0.5"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M10 15l-5.878 3.09 1.122-6.545L.488 6.91l6.561-.955L10 0l2.951 5.955 6.561.955-4.756 4.635 1.122 6.545z" />
-                      </svg>
-                    ))}
-                </div>
-                <div className="absolute top-5 right-5">
-                  {t.link ? (
-                    <Link2Icon
-                      size={18}
-                      className="text-primary/60 hover:text-primary cursor-pointer"
-                      onClick={() => window.open(t.link, "_blank")}
-                    />
-                  ) : t.business ? (
-                    <Link2Icon
-                      size={18}
-                      className="text-primary/60 hover:text-primary cursor-pointer"
-                      onClick={() => window.open(t.business, "_blank")}
-                    />
-                  ) : (
-                    <></>
-                  )}
-                </div>
+                {testimonials.map((t, idx) => (
+                  <div
+                    key={idx}
+                    className="relative bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-start text-left w-1/3"
+                  >
+                    <div className="flex items-center mb-4">
+                      {Array(5)
+                        .fill(0)
+                        .map((_, i) => (
+                          <svg
+                            key={i}
+                            className="w-4 h-4 text-green-500 mr-0.5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M10 15l-5.878 3.09 1.122-6.545L.488 6.91l6.561-.955L10 0l2.951 5.955 6.561.955-4.756 4.635 1.122 6.545z" />
+                          </svg>
+                        ))}
+                    </div>
+                    <div className="absolute top-5 right-5">
+                      {t.link ? (
+                        <Link2Icon
+                          size={18}
+                          className="text-primary/60 hover:text-primary cursor-pointer"
+                          onClick={() => window.open(t.link, "_blank")}
+                        />
+                      ) : t.business ? (
+                        <Link2Icon
+                          size={18}
+                          className="text-primary/60 hover:text-primary cursor-pointer"
+                          onClick={() => window.open(t.business, "_blank")}
+                        />
+                      ) : (
+                        <></>
+                      )}
+                    </div>
 
-                <p className="text-gray-700 italic">“{t.feedback}”</p>
-                <div className="mt-4">
-                  <p className="font-semibold text-gray-900">{t.name}</p>
-                  <p className="text-sm text-gray-500">{t.role}</p>
-                </div>
+                    <p className="text-gray-700 italic">“{t.feedback}”</p>
+                    <div className="mt-4">
+                      <p className="font-semibold text-gray-900">{t.name}</p>
+                      <p className="text-sm text-gray-500">{t.role}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={right}
-          className="rounded-full px-5 py-3 hover:bg-primary/30 cursor-pointer mt-10 bg-primary/10"
-        >
-          Next
-        </button>
+            </div>
+            <button
+              onClick={right}
+              className="rounded-full px-5 py-3 hover:bg-primary/30 cursor-pointer mt-10 bg-primary/10"
+            >
+              Next
+            </button>
+          </>
+        )}
       </div>
 
       <div className="mt-12">
@@ -150,7 +157,7 @@ export default function Testimonials() {
           rel="noopener noreferrer"
           className="inline-block bg-green-500 text-white px-6 py-3 rounded-full font-semibold shadow hover:bg-green-600 transition"
         >
-          Read More Reviews
+          {isMobile ? <>Read Reviews</> : <>Read More Reviews</>}
         </a>
       </div>
     </div>

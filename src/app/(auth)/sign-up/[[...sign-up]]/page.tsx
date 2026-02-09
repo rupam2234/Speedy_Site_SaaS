@@ -28,9 +28,8 @@ export default function SignUpPage() {
     setMessage("");
 
     const authRedirect =
-      window.location.hostname === "localhost"
-        ? "http://localhost:3000/auth/callback"
-        : "https://speedy-sense.vercel.app/auth/callback";
+      process.env.NEXT_PUBLIC_PROD_BASE_URL ??
+      "http://localhost:3000/auth/callback";
 
     const { error } = await supabase_client.auth.signUp({
       email,
@@ -136,7 +135,7 @@ function SignUpForm({
         )}
 
         <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-          <a href="#" className="hover:underline">
+          <a href="/forgot-password" className="hover:underline">
             Forgot Password?
           </a>
           <span>

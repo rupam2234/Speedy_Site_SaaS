@@ -115,7 +115,7 @@ export default function Account() {
                 placeholder="New Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input px-2 py-1 w-[300px] dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
+                className="input px-2 py-1 w-75 dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
               />
             </div>
             <div className="flex gap-2 items-center">
@@ -124,7 +124,7 @@ export default function Account() {
                 placeholder="Confirm New Password"
                 value={conf_pass}
                 onChange={(e) => setConfPass(e.target.value)}
-                className="input px-2 py-1 w-[300px] dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
+                className="input px-2 py-1 w-75 dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
               />
             </div>
           </div>
@@ -167,7 +167,7 @@ export default function Account() {
                 <span className="font-semibold">Created at: </span>
                 <span className="px-2 py-1 dark:bg-secondary-background text-primary/80">
                   {new Date(
-                    activeUser.user.identities[0].created_at
+                    activeUser.user.identities[0].created_at,
                   ).toLocaleDateString("en-GB", {
                     day: "numeric",
                     month: "long",

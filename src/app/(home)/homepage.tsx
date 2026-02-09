@@ -4,9 +4,7 @@ import { motion } from "framer-motion";
 import { ReactNode } from "react";
 import SiteHeader from "./header";
 import Link from "next/link";
-import FeatureBlock from "./helper";
-import ComparisonTable from "./compairsion-table";
-import Testimonials from "./testimonials";
+import { ComparisonTable, FeatureBlock, Testimonials } from "./index";
 
 export interface FeatureCore {
   title: string;
@@ -152,7 +150,7 @@ export default function Home() {
       <SiteHeader />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
+      <section className="relative overflow-hidden bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
         <div className="mx-auto max-w-6xl px-6 py-30 text-center">
           <h1 className="max-w-7xl text-4xl sm:text-[45px] font-extrabold font-serif leading-tight">
             Monitor, Diagnose & Improve User Experience
@@ -211,7 +209,7 @@ export default function Home() {
                   scale: 1.05,
                   boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
                 }}
-                className="bg-primary/80 rounded-lg p-6 shadow cursor-pointer flex-1 md:hover:bg-gradient-to-br md:hover:from-indigo-600/60 md:hover:via-purple-600/60 md:hover:from md:hover:to-95% md:hover:to-pink-600/60"
+                className="bg-primary/80 rounded-lg p-6 shadow cursor-pointer flex-1 md:hover:bg-linear-to-br md:hover:from-indigo-600/60 md:hover:via-purple-600/60 md:hover:from md:hover:to-95% md:hover:to-pink-600/60"
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <h3 className="text-lg font-semibold text-white tracking-tight">
@@ -267,7 +265,7 @@ export default function Home() {
       {/* Feature Comparison */}
       <section
         id="pricing"
-        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+        className="bg-linear-to-r from-indigo-600 to-purple-600 text-white"
       >
         <div className="w-full px-6 text-center bg-primary/70 p-10">
           <div className="mx-auto max-w-6xl py-5">

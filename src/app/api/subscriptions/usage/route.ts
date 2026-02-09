@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    // 5️⃣ Aggregate usage by user
+    // Aggregate usage by user
     const { data: dailyUsage, error: dailyUsageError } = await worker.rpc(
       "daily_aggregate_usage_by_userid"
     );
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6️⃣ Update subscriptions usage (only existing rows)
+    // Update subscriptions usage (only existing rows)
     console.log("Updating subscriptions usage...");
     await Promise.all(
       dailyUsage.map(async (x) => {

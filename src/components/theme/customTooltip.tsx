@@ -136,7 +136,7 @@ export default function TooltipIcon({
         rect &&
         createPortal(
           <div
-            className="fixed z-[9999] pointer-events-none"
+            className="fixed z-9999 pointer-events-none"
             style={getPositionStyle()}
           >
             <div

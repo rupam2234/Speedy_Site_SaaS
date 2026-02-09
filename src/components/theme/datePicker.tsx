@@ -90,7 +90,7 @@ export default function CustomCalendar({ defaultDateRange }: Props) {
                 setOpen(false);
               }
             }}
-            className="w-[250px] rounded-lg"
+            className="w-62.5 rounded-lg"
           />
         </div>
       )}
