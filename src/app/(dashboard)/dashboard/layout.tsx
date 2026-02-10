@@ -66,11 +66,13 @@ function LayoutContent({ children }: { children: ReactNode }) {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <Suspense>
-      <SidebarProvider>
-        <SiteContextProvider>
-          <LayoutContent>{children}</LayoutContent>
-        </SiteContextProvider>
-      </SidebarProvider>
+      <AuthProvider>
+        <SidebarProvider>
+          <SiteContextProvider>
+            <LayoutContent>{children}</LayoutContent>
+          </SiteContextProvider>
+        </SidebarProvider>
+      </AuthProvider>
     </Suspense>
   );
 }

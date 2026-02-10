@@ -5,10 +5,29 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useIsMobile } from "@/components/theme/use-mobile";
 import { SpeedySiteLogo } from "@/components/theme";
+import { useEffect, useState } from "react";
+import { User } from "@supabase/supabase-js";
 
 export default function SiteHeader() {
   const user = useSupabaseUser();
   const isMobile = useIsMobile();
+
+  // will hold the user object late to render the CTA button with fade in - fade out effect
+  const [delayedUser, setDelayedUser] = useState<User | null>(null);
+  const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    if (user === delayedUser) return;
+
+    setFade(false);
+
+    const timeout = setTimeout(() => {
+      setDelayedUser(user);
+      setFade(true);
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }, [user, delayedUser]);
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200">
@@ -16,6 +35,7 @@ export default function SiteHeader() {
         <div className="text-xl font-bold text-indigo-600">
           <SpeedySiteLogo isDark={false} />
         </div>
+
         <nav className="hidden md:flex gap-8 text-sm font-medium">
           <a href="#features" className="hover:text-indigo-600">
             Features
@@ -27,21 +47,28 @@ export default function SiteHeader() {
             Testimonials
           </a>
         </nav>
-        {user !== null ? (
-          <Link
-            href="/dashboard"
-            className="md:inline-flex items-center gap-1 rounded-md bg-green-600 text-white px-4 py-2 text-sm font-semibold hover:bg-green-500"
-          >
-            {isMobile ? "Dashboard" : "Go to Dashboard"}
-          </Link>
-        ) : (
-          <Link
-            href="/sign-in"
-            className="flex md:inline-flex items-center gap-1 rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-500"
-          >
-            Sign in <ArrowRight size={16} />
-          </Link>
-        )}
+
+        <div
+          className={`transition-opacity duration-200 md:min-w-50 flex justify-end ${
+            fade ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {delayedUser ? (
+            <Link
+              href="/dashboard"
+              className="md:inline-flex items-center gap-1 rounded-md bg-green-600 text-white px-4 py-2 text-sm font-semibold hover:bg-green-500"
+            >
+              {isMobile ? "Dashboard" : "Go to Dashboard"}
+            </Link>
+          ) : (
+            <Link
+              href="/sign-in"
+              className="flex md:inline-flex items-center gap-1 rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-500"
+            >
+              Sign in <ArrowRight size={16} />
+            </Link>
+          )}
+        </div>
       </div>
     </header>
   );

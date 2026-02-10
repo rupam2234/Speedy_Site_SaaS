@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import HomepageComponent from "./(home)/homepage";
+import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Speedy Site | Home",
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <HomepageComponent />;
+  return (
+    <AuthProvider>
+      <HomepageComponent />
+    </AuthProvider>
+  );
 }

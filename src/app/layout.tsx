@@ -31,10 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          {" "}
-          <ThemeProvider defaultTheme="light">{children} </ThemeProvider>
-        </AuthProvider>
+        <ThemeProvider defaultTheme="light">{children} </ThemeProvider>
       </body>
     </html>
   );
