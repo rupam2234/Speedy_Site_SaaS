@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Eye, EyeClosed } from "lucide-react";
 import { SpeedySiteLogo } from "../../../components/theme/logo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { MobileViewHandler } from "../helpers/monileView";
+import { MobileViewHandler } from "../helpers/mobileView";
 import { DesktopSideContent } from "../helpers/sideContent";
 import { supabase_client } from "@/lib/db/browser_client";
 

@@ -6,7 +6,7 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MobileViewHandler } from "../../helpers/monileView";
+import { MobileViewHandler } from "../../helpers/mobileView";
 import { DesktopSideContent } from "../../helpers/sideContent";
 import { SpeedySiteLogo } from "@/components/theme";
 

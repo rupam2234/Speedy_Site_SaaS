@@ -94,7 +94,7 @@ export function SelectSite({
             !collapsed
               ? "w-full border-2 border-gray-300 dark:border-muted gap-2"
               : "w-auto gap-0 pr-2 [&>svg]:hidden"
-          } ${disabled ? "opacity-50 pointer-events-none" : "mr-[-10px]"}`}
+          } ${disabled ? "opacity-50 pointer-events-none" : "-mr-2.5"}`}
         >
           <div className="flex items-center gap-2 truncate">
             {selectedFavicon ? (

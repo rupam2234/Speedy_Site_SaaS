@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase_client } from "@/lib/db/browser_client";
 
@@ -12,9 +18,11 @@ const AuthContext = createContext<AuthContextType>({ user: null });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const didFetch = useRef(false);
 
   useEffect(() => {
-    // Try to load from sessionStorage firstimport { NextResponse, type NextRequest } from "next/server";
+    if (didFetch.current) return;
+    didFetch.current = true;
 
     const cached = sessionStorage.getItem("supabase-user");
     if (cached) {
@@ -22,7 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Otherwise, fetch from Supabase
     supabase_client.auth.getUser().then(({ data, error }) => {
       if (error) {
         console.log("Supabase user fetch error:", error.message);

@@ -16,7 +16,6 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { cwv_metrics } from "./cwvMetrics";
 import { getRanges } from ".";
-import { collectSegmentData } from "next/dist/server/app-render/collect-segment-data";
 
 echarts.use([
   TitleComponent,

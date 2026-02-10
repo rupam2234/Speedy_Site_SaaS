@@ -1,6 +1,6 @@
 {
-  "name": "speedysense",
-  "version": "1.0.0",
+  "name": "speedysite",
+  "version": "1.5.0",
   "private": true,
   "scripts": {
     "clean": "powershell -Command \"Remove-Item -Recurse -Force .next\"",

@@ -1,3 +1,5 @@
+"use client";
+
 import { ChevronsUpDown, LogOut, LucideIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -16,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
-import { pageMetricCache } from "../../data-types/cachedPageData";
 import { useSignOut } from "../utils/supabase/signOutUser";
 
 export default function FooterNav({
@@ -34,7 +35,6 @@ export default function FooterNav({
   };
 }) {
   const [NameAvatar, setNameAvatar] = useState<string>("");
-  // const resetPageMetric = pageMetricCache((state) => state.reset);
 
   useEffect(() => {
     if (items) {

@@ -3,7 +3,7 @@
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { SpeedySiteLogo } from "../../../components/theme/logo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { MobileViewHandler } from "../helpers/monileView";
+import { MobileViewHandler } from "../helpers/mobileView";
 import { DesktopSideContent } from "../helpers/sideContent";
 import { useState } from "react";
 import { MailSearch } from "lucide-react";

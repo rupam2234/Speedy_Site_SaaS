@@ -1,3 +1,5 @@
+"use client";
+
 import { ChevronRight, LucideIcon, Settings2 } from "lucide-react";
 import {
   SidebarGroup,
@@ -40,13 +42,6 @@ export default function MainNav({
     isActive: false;
   };
 
-  // WebVitals: {
-  //   title: "Core Web Vitals";
-  //   url: string;
-  //   icon: typeof HeartPulse;
-  //   isActive: false;
-  // };
-
   Settings: {
     title: "Settings";
     url: string;
@@ -69,16 +64,6 @@ export default function MainNav({
               </a>
             </CollapsibleTrigger>
           </SidebarMenuItem>
-          {/* <SidebarMenuItem>
-            <CollapsibleTrigger asChild>
-              <a href={WebVitals.url} title={WebVitals.title}>
-                <SidebarMenuButton tooltip={WebVitals.title}>
-                  {WebVitals.icon && <WebVitals.icon />}
-                  {WebVitals.title}
-                </SidebarMenuButton>
-              </a>
-            </CollapsibleTrigger>
-          </SidebarMenuItem> */}
         </Collapsible>
       </SidebarMenu>
 

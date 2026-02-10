@@ -32,6 +32,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
+          {" "}
           <ThemeProvider defaultTheme="light">{children} </ThemeProvider>
         </AuthProvider>
       </body>
