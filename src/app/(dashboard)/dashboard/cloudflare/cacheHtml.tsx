@@ -55,9 +55,9 @@ export default function EditCacheRule({ data, cacheKey, close }: Props) {
   const [loading, setLoading] = useState<boolean>(false);
 
   return (
-    <div className="md:w-[800px] h-auto p-2">
+    <div className="md:w-200 h-auto p-2">
       <button
-        className="absolute top-1 right-1 rounded-full hover:bg-primary/5 px-2 py-[1px] cursor-pointer"
+        className="absolute top-1 right-1 rounded-full hover:bg-primary/5 px-2 py-px cursor-pointer"
         onClick={close}
       >
         x
@@ -105,7 +105,7 @@ export default function EditCacheRule({ data, cacheKey, close }: Props) {
               <div className="flex gap-2 items-center">
                 <p className="text-[12px]">CDN Cache Durtation (In Hours):</p>
                 <input
-                  className="text-[12px] w-[100px] px-2 py-1 border border-primary/10 bg-primary/5 rounded-sm outline-none"
+                  className="text-[12px] w-25 px-2 py-1 border border-primary/10 bg-primary/5 rounded-sm outline-none"
                   placeholder="24"
                   value={cacheConfig.edgeTTL ? cacheConfig.edgeTTL : ""}
                   onChange={(e) =>
@@ -119,7 +119,7 @@ export default function EditCacheRule({ data, cacheKey, close }: Props) {
               <div className="flex gap-2 items-center">
                 <p className="text-[12px]">Browser TTL (Read Only):</p>
                 <input
-                  className="text-[12px] capitalize w-[100px] px-2 py-1 border border-primary/10 bg-primary/5 rounded-sm outline-none"
+                  className="text-[12px] capitalize w-25 px-2 py-1 border border-primary/10 bg-primary/5 rounded-sm outline-none"
                   value={
                     isDataAvailable
                       ? data[0].action_parameters.browser_ttl.mode.replace(
@@ -204,7 +204,7 @@ export default function EditCacheRule({ data, cacheKey, close }: Props) {
               <div className="flex gap-2 items-center">
                 <p className="text-[12px]">CDN Cache Duration (In Hours):</p>
                 <input
-                  className="text-[12px] w-[100px] px-2 py-1 border border-primary/10 bg-primary/5 rounded-sm outline-none"
+                  className="text-[12px] w-25 px-2 py-1 border border-primary/10 bg-primary/5 rounded-sm outline-none"
                   placeholder="720"
                   value={cacheConfig.edgeTTL || ""}
                   onChange={(e) =>
@@ -219,7 +219,7 @@ export default function EditCacheRule({ data, cacheKey, close }: Props) {
               <div className="flex gap-2 items-center">
                 <p className="text-[12px]">Browser TTL (In Hours):</p>
                 <input
-                  className="text-[12px] w-[100px] px-2 py-1 border border-primary/10 bg-primary/5 rounded-sm outline-none"
+                  className="text-[12px] w-25 px-2 py-1 border border-primary/10 bg-primary/5 rounded-sm outline-none"
                   placeholder="168"
                   value={cacheConfig.browserTTL || ""}
                   onChange={(e) =>

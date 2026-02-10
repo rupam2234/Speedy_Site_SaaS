@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { LcpImageMetric } from "../lcp-images/page";
 import { toast } from "sonner";
+import { LcpImageMetric } from ".";
 
 type AiTip = {
   recommendation: string;

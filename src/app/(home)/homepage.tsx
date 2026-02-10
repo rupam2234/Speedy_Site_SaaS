@@ -152,14 +152,14 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
         <div className="mx-auto max-w-6xl px-6 py-30 text-center">
-          <h1 className="max-w-7xl text-4xl sm:text-[45px] font-extrabold font-serif leading-tight">
-            Monitor, Diagnose & Improve User Experience
+          <h1 className="text-4xl sm:text-[37px] font-extrabold leading-tight">
+            Monitor Core Web Vitals, Diagnose Issues & Improve UX
           </h1>
           <p className="mt-6 max-w-4xl mx-auto text-lg text-indigo-100">
-            Great content can&apos;t win without a great experience that shapes
-            engagement and SEO. At Speedy Site you can keep track of UX and Web
-            Vitals insights similar to Google Search Console — and a whole lot
-            more insights on your website&apos;s performance.
+            Measure real user performance across devices, identify bottlenecks
+            affecting Core Web Vitals, and turn UX data into clear, actionable
+            improvements your team can ship with confidence, with visibility
+            into how changes impact real users over time.
           </p>
           <div className="mt-10 flex justify-center gap-4">
             <a

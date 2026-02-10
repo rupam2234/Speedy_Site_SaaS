@@ -53,7 +53,7 @@ export default function ImageExtensionSelector({
         {value.map((ext) => (
           <span
             key={ext}
-            className="flex items-center gap-1 text-[11px] bg-primary/10 px-2 py-[2px] rounded"
+            className="flex items-center gap-1 text-[11px] bg-primary/10 px-2 py-0.5 rounded"
           >
             {ext}
             <button

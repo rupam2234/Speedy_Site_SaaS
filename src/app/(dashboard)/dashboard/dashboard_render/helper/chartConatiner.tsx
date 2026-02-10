@@ -6,12 +6,12 @@ import {
   CWVMetric,
   DistributionChart,
   getColor,
-} from "./helper";
-import { useSiteContext } from "../siteContext";
+} from "../helper";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, InfoIcon } from "lucide-react";
 import { CustomTooltip } from "@/components/theme";
 import { useIsMobile } from "@/components/theme/use-mobile";
+import { useSiteContext } from "../../siteContext";
 
 export default function DashboardChartContainer() {
   const {

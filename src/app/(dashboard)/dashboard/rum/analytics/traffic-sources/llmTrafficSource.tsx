@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 
@@ -134,7 +136,7 @@ export default function LLMTrafficSource({
       {totalPage > 1 && (
         <div className="flex text-sm [&>button]:cursor-pointer [&>button]:hover:bg-primary/5 justify-end items-center mt-4 space-x-2">
           <button
-            className="px-3 py-[2px] border rounded disabled:opacity-50"
+            className="px-3 py-0.5 border rounded disabled:opacity-50"
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
           >
@@ -144,7 +146,7 @@ export default function LLMTrafficSource({
             Page {currentPage} of {totalPage}
           </span>
           <button
-            className="px-3 py-[2px] border rounded disabled:opacity-50"
+            className="px-3 py-0.5 border rounded disabled:opacity-50"
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPage}
           >

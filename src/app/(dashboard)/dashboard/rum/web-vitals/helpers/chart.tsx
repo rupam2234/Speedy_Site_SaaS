@@ -360,7 +360,7 @@ const RumCwvChart = ({
                 ? `${((shares?.good_count / total_events) * 100).toFixed(0)} %`
                 : "N/A"}
             </h3>
-            <div className="w-[150px] h-5 bg-gray-300 rounded overflow-hidden">
+            <div className="w-37.5 h-5 bg-gray-300 rounded overflow-hidden">
               <span
                 className="block h-full bg-green-500"
                 style={{
@@ -403,7 +403,7 @@ const RumCwvChart = ({
                 ? `${((shares?.needs_improvement_count / total_events) * 100).toFixed(0)} %`
                 : "N/A"}
             </h3>
-            <div className="w-[150px] h-5 bg-gray-300 rounded overflow-hidden">
+            <div className="w-37.5 h-5 bg-gray-300 rounded overflow-hidden">
               <span
                 className="block h-full bg-orange-300"
                 style={{
@@ -449,7 +449,7 @@ const RumCwvChart = ({
                 ? `${((shares?.poor_count / total_events) * 100).toFixed(0)} %`
                 : "N/A"}{" "}
             </h3>
-            <div className="w-[150px] h-5 bg-gray-300 rounded overflow-hidden">
+            <div className="w-37.5 h-5 bg-gray-300 rounded overflow-hidden">
               <span
                 className="block h-full bg-red-400"
                 style={{

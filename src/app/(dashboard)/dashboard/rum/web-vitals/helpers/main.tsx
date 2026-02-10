@@ -3,16 +3,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { cwv_ranges, scoreMetric } from "../../cwvRanges";
-import TooltipIcon from "@/components/theme/customTooltip";
-import RumCwvChart from "./chart";
-import { LoadingAnimation } from "@/components/theme/loadingAnimation";
-import LCPelements from "./lcp";
-import CLSelements from "./cls";
-import INPelements from "./inp";
-import TTFBelements from "./ttfb";
-import BarGraphTabs from "./barGraphTabs";
+import {
+  CustomTooltip,
+  LoadingAnimation,
+  useIsMobile,
+} from "@/components/theme";
+import {
+  RumCwvChart,
+  LCPelements,
+  CLSelements,
+  INPelements,
+  TTFBelements,
+  BarGraphTabs,
+} from "./index";
 import { InfoIcon } from "lucide-react";
-import { useIsMobile } from "@/components/theme/use-mobile";
+import { RumWebVitalToolbar } from "@/components/utils";
 
 interface Metric {
   name: string;
@@ -321,7 +326,7 @@ export default function Main() {
               <p className="text-sm font-semibold text-primary dark:text-primary/80">
                 UX Score
               </p>
-              <TooltipIcon
+              <CustomTooltip
                 maxWidth={isMobile ? `` : `500px`} // default width on mobile
                 side="right"
                 trigger={
@@ -340,7 +345,7 @@ export default function Main() {
               />
             </span>
 
-            <TooltipIcon
+            <CustomTooltip
               content={
                 "Site performance score (0–100%), calculated from all Core Web Vitals metrics."
               }

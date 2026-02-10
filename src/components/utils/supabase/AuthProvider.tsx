@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Otherwise, fetch from Supabase
     supabase_client.auth.getUser().then(({ data, error }) => {
       if (error) {
-        console.error("Supabase user fetch error:", error.message);
+        console.log("Supabase user fetch error:", error.message);
         setUser(null);
       } else {
         setUser(data.user);

@@ -23,7 +23,7 @@ export function MobileViewHandler() {
               {reviews.map((review, idx) => (
                 <div
                   key={idx}
-                  className="mx-4 bg-white/90 dark:bg-black/70 text-black dark:text-white rounded-lg shadow-md px-4 py-3 min-w-[220px] max-w-xs"
+                  className="mx-4 bg-white/90 dark:bg-black/70 text-black dark:text-white rounded-lg shadow-md px-4 py-3 min-w-55 max-w-xs"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Image
@@ -43,7 +43,7 @@ export function MobileViewHandler() {
               {reviews.map((review, idx) => (
                 <div
                   key={idx + reviews.length}
-                  className="mx-4 bg-white/90 dark:bg-black/70 text-black dark:text-white rounded-lg shadow-md px-4 py-3 min-w-[220px] max-w-xs"
+                  className="mx-4 bg-white/90 dark:bg-black/70 text-black dark:text-white rounded-lg shadow-md px-4 py-3 min-w-55 max-w-xs"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Image

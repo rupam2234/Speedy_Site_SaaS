@@ -148,7 +148,7 @@ export default function LCPelements({ contributors }: LCPelementProps) {
                       side="left"
                       trigger={
                         <div
-                          className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
+                          className={`flex items-center gap-1 px-2 py-0.75 rounded-md border ${getPillDesign(s.status)}`}
                         >
                           ⏳
                           {x.avg_resource_load_delay
@@ -168,7 +168,7 @@ export default function LCPelements({ contributors }: LCPelementProps) {
                       side="left"
                       trigger={
                         <div
-                          className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
+                          className={`flex items-center gap-1 px-2 py-0.75 rounded-md border ${getPillDesign(s.status)}`}
                         >
                           ⚡
                           {x.avg_resource_load_duration
@@ -188,7 +188,7 @@ export default function LCPelements({ contributors }: LCPelementProps) {
                       side="left"
                       trigger={
                         <div
-                          className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
+                          className={`flex items-center gap-1 px-2 py-0.75 rounded-md border ${getPillDesign(s.status)}`}
                         >
                           🎨
                           {x.avg_element_render_delay

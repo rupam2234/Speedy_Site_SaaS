@@ -11,7 +11,6 @@ import { Separator } from "@radix-ui/react-separator";
 import { ReactNode, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { LoadingAnimation } from "@/components/theme/loadingAnimation";
-import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -42,11 +41,9 @@ function AccountLayout({ children }: { children: ReactNode }) {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
-      <AuthProvider>
-        <Suspense fallback={<LoadingAnimation />}>
-          <AccountLayout>{children}</AccountLayout>
-        </Suspense>
-      </AuthProvider>
+      <Suspense fallback={<LoadingAnimation />}>
+        <AccountLayout>{children}</AccountLayout>
+      </Suspense>
     </SidebarProvider>
   );
 }

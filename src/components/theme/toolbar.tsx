@@ -1,6 +1,5 @@
 "use client";
 
-import TooltipIcon from "@/components/theme/customTooltip";
 import {
   Select,
   SelectContent,
@@ -10,10 +9,9 @@ import {
 } from "@/components/ui/select";
 import { ChartScatter, InfoIcon, MonitorSmartphone } from "lucide-react";
 import { useSiteContext } from "../../app/(dashboard)/dashboard/siteContext";
-import CustomCalendar from "./datePicker";
 import { useEffect, useRef, useState } from "react";
 import { SidebarTrigger } from "../ui/sidebar";
-import { useIsMobile } from "@/components/theme/use-mobile";
+import { useIsMobile, CustomCalendar, CustomTooltip } from ".";
 
 interface Props {
   /**
@@ -65,7 +63,7 @@ export default function PrimaryToolbar({
       if (!headerRef.current) return;
 
       const { top } = headerRef.current.getBoundingClientRect();
-      setIsSticky(scrollY > 0 && top <= 0);
+      setIsSticky(top <= 0);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -187,7 +185,7 @@ export default function PrimaryToolbar({
                   </Select>
                 </div>
               </div>
-              <TooltipIcon
+              <CustomTooltip
                 content={
                   "Percentiles help normalize performance by showing real user experiences. P50 shows the median (typical) experience, P75 is used in Core Web Vitals to represent the majority of users, and higher percentiles like P90 or P99 highlight slower experiences at the tail end. These help uncover issues that averages or medians might miss."
                 }

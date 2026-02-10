@@ -11,7 +11,6 @@ import { ReactNode, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -67,11 +66,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <Suspense>
       <SidebarProvider>
-        <AuthProvider>
-          <SiteContextProvider>
-            <LayoutContent>{children}</LayoutContent>
-          </SiteContextProvider>
-        </AuthProvider>
+        <SiteContextProvider>
+          <LayoutContent>{children}</LayoutContent>
+        </SiteContextProvider>
       </SidebarProvider>
     </Suspense>
   );

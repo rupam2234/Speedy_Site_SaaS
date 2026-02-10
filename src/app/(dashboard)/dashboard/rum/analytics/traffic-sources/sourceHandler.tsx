@@ -1,3 +1,5 @@
+"use client";
+
 import { ChartPie, Globe, Loader2Icon } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
@@ -93,9 +95,9 @@ export function SourceHandler() {
       {/* Traffic Source */}
       <div
         ref={trafficSourceRef}
-        className="col-span-1 relative bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20"
+        className="col-span-1 relative bg-white dark:bg-secondary-background p-5 rounded-sm border border-primary/20"
       >
-        <div className="flex items-center gap-2 mb-[30px]">
+        <div className="flex items-center gap-2 mb-7.5">
           <span>
             <ChartPie size={16} className="text-primary dark:text-primary" />
           </span>
@@ -106,9 +108,9 @@ export function SourceHandler() {
         <div className="absolute top-5 right-5">
           {["All Traffic", "LLM Traffic"].map((x: string) => (
             <button
-              className={`mx-2 cursor-pointer hover:underline hover:underline-offset-4 hover:[text-decoration-color:#bdbdbe] ${
+              className={`mx-2 cursor-pointer hover:underline hover:underline-offset-4 hover:decoration-[#bdbdbe] ${
                 activeSource === x &&
-                `underline underline-offset-4 [text-decoration-color:#bdbdbe]`
+                `underline underline-offset-4 decoration-[#bdbdbe]`
               }`}
               onClick={() =>
                 setActiveSource(x as "All Traffic" | "LLM Traffic")
@@ -135,7 +137,7 @@ export function SourceHandler() {
       {/* Geo Distribution */}
       <div
         ref={trafficCountryRef}
-        className="col-span-1 bg-white dark:bg-secondary-background p-5 rounded-sm border-[1px] border-primary/20"
+        className="col-span-1 bg-white dark:bg-secondary-background p-5 rounded-sm border border-primary/20"
       >
         <div className="flex items-center justify-between">
           <div className="font-semibold text-primary/80 flex gap-2 items-center">
@@ -177,7 +179,7 @@ export function SourceHandler() {
             ))}
           </div>
         </div>
-        <div className="py-8 h-auto md:h-[430px]">
+        <div className="py-8 h-auto md:h-107.5">
           <Suspense
             fallback={
               <div className="flex h-full w-full items-center justify-center">

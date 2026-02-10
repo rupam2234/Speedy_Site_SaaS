@@ -231,7 +231,7 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
                       className="border-b last:border-b-0 border-primary/20"
                       key={x.id}
                     >
-                      <td className="px-[18px] py-4">
+                      <td className="px-4.5 py-4">
                         <input
                           type="checkbox"
                           className="h-3 w-3 rounded border-primary/40"
@@ -273,7 +273,7 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
                       </td>
                       <td className="px-4 py-4 text-right">
                         <button
-                          className="text-primary/80 hover:bg-primary/20 w-6 rounded-sm p-[2px] cursor-pointer"
+                          className="text-primary/80 hover:bg-primary/20 w-6 rounded-sm p-0.5 cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation(); // to prevent immediate closure
                             setOpenRowId(openRowId === x.id ? null : x.id);
@@ -311,14 +311,14 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
                                 ) : (
                                   <div className="flex justify-center items-center gap-2">
                                     <button
-                                      className="flex-1 cursor-pointer px-[4px] py-[2px] text-[12px] bg-muted text-foreground rounded"
+                                      className="flex-1 cursor-pointer px-1 py-0.5 text-[12px] bg-muted text-foreground rounded"
                                       onClick={() => setConfirming(false)}
                                     >
                                       Cancel
                                     </button>
 
                                     <button
-                                      className="flex-1 cursor-pointer px-[4px] py-[2px] text-[12px] bg-red-600 text-white rounded"
+                                      className="flex-1 cursor-pointer px-1 py-0.5 text-[12px] bg-red-600 text-white rounded"
                                       onClick={() => {
                                         deleteRule(selectedData[0].id);
                                         setConfirming(false);

@@ -82,12 +82,12 @@ export default function BarGraphTabs({ activeMetric }: Props) {
       {/* Tab Content */}
       <div className="border rounded-sm border-primary/10 px-4 py-2">
         {isloading && activeTab === "url" ? (
-          <div className="animate-pulse bg-primary/10 h-[468px]" />
+          <div className="animate-pulse bg-primary/10 h-117" />
         ) : activeTab === "connection" ? (
           connectionData && connectionData.length > 0 ? (
             <ConnectionStackBars data={connectionData} />
           ) : (
-            <div className="bg-primary/10 h-[468px] flex items-center justify-center">
+            <div className="bg-primary/10 h-117 flex items-center justify-center">
               No data available
             </div>
           )
@@ -95,7 +95,7 @@ export default function BarGraphTabs({ activeMetric }: Props) {
           pageWiseData && pageWiseData.length > 0 ? (
             <UrlStackBar activeMetric={activeMetric} data={pageWiseData} />
           ) : (
-            <div className="bg-primary/10 h-[468px] flex items-center justify-center">
+            <div className="bg-primary/10 h-117 flex items-center justify-center">
               No data available
             </div>
           )

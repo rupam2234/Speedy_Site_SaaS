@@ -199,7 +199,7 @@ export default function Integrations({ siteId }: Props) {
                 onChange={(e) => setToken(e.target.value)}
               />
               <button
-                className="rounded-sm bg-primary/80 px-3 py-1 w-[200px] text-primary-foreground cursor-pointer hover:bg-primary/70"
+                className="rounded-sm bg-primary/80 px-3 py-1 w-50 text-primary-foreground cursor-pointer hover:bg-primary/70"
                 onClick={() => validateToken()}
                 disabled={!token || status.status === "loading"}
               >

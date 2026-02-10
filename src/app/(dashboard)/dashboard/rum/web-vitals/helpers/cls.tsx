@@ -70,7 +70,7 @@ export default function CLSelements({
                     side="left"
                     trigger={
                       <div
-                        className={`flex items-center gap-1 px-2 py-[3px] rounded-md border ${getPillDesign(s.status)}`}
+                        className={`flex items-center gap-1 px-2 py-0.75 rounded-md border ${getPillDesign(s.status)}`}
                       >
                         ⏳{x.cls_value ? `${x.cls_value.toFixed(4)}` : "—"}
                       </div>

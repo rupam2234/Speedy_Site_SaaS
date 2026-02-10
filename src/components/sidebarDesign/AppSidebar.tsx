@@ -22,7 +22,7 @@ import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { usePathname } from "next/navigation";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
 import { useTheme } from "../theme/ThemeProvider";
-import { DynamicLogo } from "@/app/(auth)/helpers/dynamicLogo";
+import { SpeedySiteLogo } from "@/components/theme/logo";
 import { useIsMobile } from "@/components/theme/use-mobile";
 
 export default function AppSidebar({
@@ -111,7 +111,7 @@ export default function AppSidebar({
           <div className="flex-1">
             {selectSiteDisabled === true ? (
               <div className="px-2">
-                <DynamicLogo isDark={isDark} />
+                <SpeedySiteLogo isDark={isDark} />
               </div>
             ) : (
               <SelectSite collapsed={selectSiteCollapsed} disabled={false} />

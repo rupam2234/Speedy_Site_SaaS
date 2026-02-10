@@ -1,16 +1,16 @@
 "use client";
 
-import { useSiteContext } from "../siteContext";
 import { useEffect, useRef, useState } from "react";
+import { useSiteContext } from "../../siteContext";
+import { LoadingAnimation } from "@/components/theme/loadingAnimation";
+import { CustomTooltip, useIsMobile } from "@/components/theme";
+import { CruxMetricKey, DailyCruxData } from "@/data-types";
 import { HistrogramBar, RumWebVitalToolbar } from "@/components/utils";
 import { Bookmark, MoveRight } from "lucide-react";
-import { CruxMetricKey, DailyCruxData } from "@/data-types";
-import { useIsMobile } from "@/components/theme/use-mobile";
-import { cwv_metrics } from "./helper";
-import DashboardChartContainer from "./chartConatiner";
-import { CustomTooltip } from "@/components/theme";
+import { cwv_metrics, DashboardChartContainer } from ".";
 
-export default function DashboardMainContainer() {
+export default function Main() {
+  const [showPrompt, setShowPrompt] = useState(false);
   const {
     selectedSite,
     setDailyCrux,
@@ -103,6 +103,43 @@ export default function DashboardMainContainer() {
       status: status,
     });
   }, [dailyCrux, selectedDevice]);
+
+  useEffect(() => {
+    if (!selectedSite) {
+      const timeout = setTimeout(() => {
+        setShowPrompt(true);
+      }, 5000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [selectedSite]);
+
+  if (!selectedSite && !showPrompt) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+        <LoadingAnimation />
+      </div>
+    );
+  }
+
+  if (!selectedSite && showPrompt) {
+    return (
+      <div className="flex flex-col space-y-4 md:-mt-12.5 items-center justify-center min-h-full dark:text-secondary-background p-8">
+        <p className="text-4xl md:text-6xl font-bold text-primary/50">
+          Website 404
+        </p>
+        <p className="text-center text-muted-foreground w-full">
+          We couldn&apos;t find the website you&apos;re looking for.
+          <br />
+          To get started, try{" "}
+          <span className="font-medium text-foreground">
+            adding a new site
+          </span>{" "}
+          using the left sidebar.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
