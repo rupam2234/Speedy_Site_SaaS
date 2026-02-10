@@ -1,6 +1,5 @@
+import { LcpImageMetric } from "@/app/(dashboard)/dashboard/rum/lcp-images";
 import { NextRequest, NextResponse } from "next/server";
-// import { ModelMessage, streamText } from "ai";
-import { LcpImageMetric } from "@/app/(dashboard)/dashboard/rum/lcp-images/page";
 
 interface Props {
   metric: LcpImageMetric;

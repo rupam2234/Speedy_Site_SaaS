@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PlanType } from "./page";
 import Link from "next/link";
-import { useTheme } from "@/components/theme/ThemeProvider";
+import { useTheme } from "@/components/theme";
+import { PlanType } from "./main";
 
 export default function ActivePlanCard({
   userPlan,
