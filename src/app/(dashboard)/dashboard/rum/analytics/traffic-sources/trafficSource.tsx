@@ -32,7 +32,7 @@ export default function TrafficSource({
   const rowsInsideWindow = Math.ceil(WINDOW_HEIGHT / ROW_HEIGHT);
   const bottomIndex = topIndex + rowsInsideWindow;
 
-  const rowsToDisplay = trafficData.slice(topIndex, bottomIndex);
+  const rowsToDisplay = trafficData.slice(topIndex, bottomIndex + 1);
 
   useEffect(() => {
     if (!originalTrafficData) {
@@ -70,24 +70,6 @@ export default function TrafficSource({
     setLoading(false);
   }, [activeDevice, originalTrafficData, selectedSite]);
 
-  // const totalPage = Math.ceil(trafficData.length / itemPerPage);
-
-  // const paginatedData =
-  //   trafficData.length > itemPerPage
-  //     ? trafficData.slice(
-  //         (currentPage - 1) * itemPerPage,
-  //         currentPage * itemPerPage,
-  //       )
-  //     : trafficData;
-
-  // const goToPage = (page: number) => {
-  //   if (page <= 1) {
-  //     page = 1;
-  //   }
-  //   if (page > totalPage) page = totalPage;
-  //   setCurrentPage(page);
-  // };
-
   return (
     <div className="relative h-full">
       {loading || trafficData.length === 0 ? (
@@ -101,33 +83,6 @@ export default function TrafficSource({
       ) : null}
 
       {!loading && trafficData.length > 0 && (
-        // <table className="w-full text-sm min-h-fit">
-        // <thead>
-        //   <tr className="text-left text-gray-500">
-        //     <th className="py-2 px-2 font-medium">Referral Domain</th>
-        //     <th className="py-2 px-2 font-medium text-right">Count</th>
-        //   </tr>
-        // </thead>
-        //   <tbody>
-        //     {paginatedData.map((row, idx) => (
-        //       <tr
-        //         key={idx}
-        //         className={
-        //           idx % 2
-        //             ? "bg-primary-foreground dark:bg-secondary/20"
-        //             : undefined
-        //         }
-        //       >
-        //         <td className="py-2 px-2">{row.referral_domain}</td>
-        //         <td className="py-2 px-2 text-right">
-        //           {row.count >= 1000
-        //             ? (row.count / 1000).toFixed(1) + "k"
-        //             : row.count}
-        //         </td>
-        //       </tr>
-        //     ))}
-        //   </tbody>
-        // </table>
         <>
           <div className="flex items-center justify-between text-sm text-gray-500 border-b border-primary/10">
             <span className="py-2 font-medium">Referral Domain</span>
@@ -178,27 +133,6 @@ export default function TrafficSource({
           </div>
         </>
       )}
-      {/* {totalPage > 1 && paginatedData.length > 0 && (
-        <div className="flex text-sm [&>button]:cursor-pointer [&>button]:hover:bg-primary/5 justify-end items-center mt-4 space-x-2">
-          <button
-            className="px-3 py-[2px] border rounded disabled:opacity-50"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </button>
-          <span className="text-primary/80">
-            Page {currentPage} of {totalPage}
-          </span>
-          <button
-            className="px-3 py-[2px] border rounded disabled:opacity-50"
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPage}
-          >
-            Next
-          </button>
-        </div>
-      )} */}
     </div>
   );
 }

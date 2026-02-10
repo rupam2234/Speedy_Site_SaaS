@@ -11,7 +11,7 @@ import {
 import { ChartScatter, InfoIcon, MonitorSmartphone } from "lucide-react";
 import { useSiteContext } from "../../app/(dashboard)/dashboard/siteContext";
 import CustomCalendar from "./datePicker";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SidebarTrigger } from "../ui/sidebar";
 import { useIsMobile } from "@/components/theme/use-mobile";
 
@@ -57,12 +57,15 @@ export default function PrimaryToolbar({
   } = useSiteContext();
 
   const isMobile = useIsMobile();
-
   const [sticky, setIsSticky] = useState<boolean>(false); // this sets border bottom when user is scrolling
+  const headerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsSticky(window.scrollY > 0);
+      if (!headerRef.current) return;
+
+      const { top } = headerRef.current.getBoundingClientRect();
+      setIsSticky(scrollY > 0 && top <= 0);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -71,6 +74,7 @@ export default function PrimaryToolbar({
 
   return (
     <div
+      ref={headerRef}
       className="flex flex-col md:flex-row p-5 w-full items-start gap-3 md:justify-between bg-transparent"
       style={{
         position: isSticky && !isMobile ? "sticky" : "unset",
