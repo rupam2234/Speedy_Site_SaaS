@@ -15,7 +15,7 @@ export function useSignOut() {
     const { error } = await supabase_client.auth.signOut();
   
     sessionStorage.removeItem("subscriptionData"); // remove subscription data
-
+    sessionStorage.removeItem("supabase-user") // remove user
 
     if (error) {
       console.error(error.message);

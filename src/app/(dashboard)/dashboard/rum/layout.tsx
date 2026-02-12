@@ -1,58 +1,57 @@
 "use client";
 
+import { Fallback, NoSiteSelected } from "@/components/theme";
 import { validatePlan } from "@/components/utils/planValidation/activePlan";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
-import Link from "next/link";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect } from "react";
+import { useSiteContext } from "../siteContext";
 
-interface RUMlayoutProps {
+interface RumLayoutProps {
   children: ReactNode;
 }
 
-export default function RumLayout({ children }: RUMlayoutProps) {
+export default function RumLayout({ children }: RumLayoutProps) {
   const user = useSupabaseUser();
-  const [plan, setPlan] = useState<string | null>(null); // or type it better if you know the structure
-  const [loading, setLoading] = useState(true);
+  const { plan, setPlan, selectedSite } = useSiteContext();
 
   useEffect(() => {
-    const fetchPlan = async () => {
-      if (user?.id) {
-        const activePlan: any = await validatePlan(user?.id);
-        setPlan(activePlan?.data[0]?.plan);
-        setLoading(false);
+    if (!user?.id || plan !== null) return; // already fetched
+
+    const key = `${user.id}-plan`;
+
+    const fetchAndCachePlan = async () => {
+      // Check sessionStorage first
+      const cached = sessionStorage.getItem(key);
+      if (cached) {
+        setPlan(cached);
+        return;
+      }
+
+      try {
+        const activePlan: any = await validatePlan(user.id);
+        const planValue = activePlan?.data?.[0]?.plan ?? "Free";
+        setPlan(planValue);
+        sessionStorage.setItem(key, planValue);
+      } catch (err) {
+        console.error("Failed to fetch plan:", err);
+        setPlan("Free");
+        sessionStorage.setItem(key, "Free");
       }
     };
 
-    fetchPlan();
-  }, [user]);
+    fetchAndCachePlan();
+  }, [user?.id, plan, setPlan]);
 
-  if (loading) return null;
+  // Show nothing until plan is loaded
+  if (plan === null) return null;
 
-  if (plan === "Free") {
+  if (!selectedSite) {
+    <NoSiteSelected />;
+  }
+
+  if (selectedSite && plan === "Free") {
     return <Fallback />;
   }
 
   return <>{children}</>;
-}
-
-function Fallback() {
-  return (
-    <div className="flex flex-col items-center justify-center p-6 min-h-full">
-      <span className="text-4xl mb-4">🔒</span>
-      <h2 className="text-lg font-semibold text-center text-primary/70  mb-2">
-        Need an upgraded plan
-      </h2>
-      <p className="text-sm text-center text-primary/60 mb-8 max-w-xl">
-        You&apos;re currently on <strong>FREE</strong> plan.{" "}
-        <Link
-          className="font-semibold text-indigo-500 cursor-pointer hover:underline"
-          href={`/account/subscription`}
-        >
-          Upgrade your plan
-        </Link>{" "}
-        to unlock performance insights, advanced analytics, and real time user
-        experience debugging.
-      </p>
-    </div>
-  );
 }

@@ -28,8 +28,9 @@ export default function Main() {
     setMessage("");
 
     const authRedirect =
-      process.env.NEXT_PUBLIC_PROD_BASE_URL ??
-      "http://localhost:3000/auth/callback";
+      process.env.NODE_ENV === "production"
+        ? process.env.NEXT_PUBLIC_PROD_BASE_URL
+        : "http://localhost:3000/auth/callback";
 
     const { error } = await supabase_client.auth.signUp({
       email,

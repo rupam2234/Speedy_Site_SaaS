@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useSiteContext } from "../siteContext";
 import CloudflareConfigurations from "./configurations";
 import { PlusIcon } from "lucide-react";
+import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
+import { validatePlan } from "@/components/utils/planValidation/activePlan";
+import { Fallback } from "@/components/theme";
 
 export default function Main() {
   const { selectedSite } = useSiteContext();
@@ -12,6 +15,22 @@ export default function Main() {
 
   const [isConfigured, setConfigured] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  const user = useSupabaseUser();
+  const [plan, setPlan] = useState<string | null>(null); // or type it better if you know the structure
+  const [loadingPlanCheck, setLoadingPlanCheck] = useState(true);
+
+  useEffect(() => {
+    const fetchPlan = async () => {
+      if (user?.id) {
+        const activePlan: any = await validatePlan(user?.id);
+        setPlan(activePlan?.data[0]?.plan);
+        setLoadingPlanCheck(false);
+      }
+    };
+
+    fetchPlan();
+  }, [user]);
 
   useEffect(() => {
     if (!selectedSite) return;
@@ -37,6 +56,12 @@ export default function Main() {
 
     checkSiteConnection();
   }, [selectedSite]);
+
+  if (loadingPlanCheck) return null;
+
+  if (plan === "Free") {
+    return <Fallback />;
+  }
 
   return (
     <div className="p-5 space-y-4">

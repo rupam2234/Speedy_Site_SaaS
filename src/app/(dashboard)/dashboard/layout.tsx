@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
+import { LoadingAnimation, NoSiteSelected } from "@/components/theme";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -39,7 +40,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
     const timeout = setTimeout(() => {
       router.push("/dashboard");
-    }, 4000);
+    }, 5000);
 
     return () => clearTimeout(timeout);
   }, [selectedSite, router]);
@@ -55,8 +56,16 @@ function LayoutContent({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="flex-1 dark:bg-background bg-background">
-          {children}
-          <Toaster />
+          {selectedSite !== undefined || selectedSite !== null ? (
+            <>
+              {children}
+              <Toaster />
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+              <LoadingAnimation />
+            </div>
+          )}
         </main>
       </SidebarInset>
     </>

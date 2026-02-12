@@ -33,7 +33,7 @@ export default function ActivePlanCard({
         const body: any = await res.json();
 
         if (!res.ok) {
-          throw new Error(body.error);
+          throw new Error(body);
         }
 
         setInvoices(body.invoices);
@@ -71,7 +71,8 @@ export default function ActivePlanCard({
   const rowsInsideWindow = Math.ceil(WINDOW_HEIGHT / ROW_HEIGHT);
   const bottomIndex = topIndex + rowsInsideWindow;
 
-  const rowsToDisplay = invoices && invoices.data.slice(topIndex, bottomIndex);
+  const rowsToDisplay =
+    invoices && invoices?.data?.slice(topIndex, bottomIndex);
 
   return (
     <div className="bg-primary-foreground dark:bg-secondary-background border border-primary/20 rounded-sm p-6">

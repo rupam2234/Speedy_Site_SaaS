@@ -120,7 +120,7 @@ export default function AppSidebar({
                 <SpeedySiteLogo isDark={isDark} />
               </div>
             ) : (
-              <SelectSite collapsed={selectSiteCollapsed} disabled={false} />
+              <SelectSite collapsed={selectSiteCollapsed} />
             )}
           </div>
         </div>
@@ -134,12 +134,6 @@ export default function AppSidebar({
             icon: LayoutDashboardIcon,
             isActive: false,
           }}
-          // WebVitals={{
-          //   title: "Core Web Vitals",
-          //   url: `/dashboard/cwv?site=${selectedSite}`,
-          //   icon: HeartPulse,
-          //   isActive: false,
-          // }}
           Settings={{
             title: "Settings",
             url: `/dashboard/settings?site=${selectedSite}`,

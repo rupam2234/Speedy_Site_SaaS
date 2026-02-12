@@ -305,7 +305,7 @@ export default function Main() {
     return { selectedDist, totalEvents };
   }, [rumDistData, selectedDevice, startDate, endDate]);
 
-  if (!historyData || !rumDistData) {
+  if (!selectedSite) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
         <LoadingAnimation />
@@ -315,6 +315,12 @@ export default function Main() {
 
   return (
     <>
+      <RumWebVitalToolbar
+        enableDistribution={true}
+        enableAllDevices={false}
+        disableTablet={false}
+        isSticky
+      />
       <div className="m-5 grid grid-cols-1 md:grid-cols-12 gap-2 overflow-x-hidden">
         {/* Sidebar */}
         <div className="md:col-span-2 border border-primary/10 max-h-fit rounded-sm text-primary dark:bg-secondary-background/20 bg-transparent">

@@ -18,6 +18,7 @@ export default function Main() {
     startDate,
     endDate,
     selectedDevice,
+    plan,
     setCruxData,
   } = useSiteContext();
   const isMobile = useIsMobile();
@@ -108,7 +109,7 @@ export default function Main() {
     if (!selectedSite) {
       const timeout = setTimeout(() => {
         setShowPrompt(true);
-      }, 5000);
+      }, 3000);
 
       return () => clearTimeout(timeout);
     }

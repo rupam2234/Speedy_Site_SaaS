@@ -1,5 +1,4 @@
 import Main from "./helpers/main";
-import { RumWebVitalToolbar } from "../../../../../components/utils/index";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,12 +10,6 @@ export const metadata: Metadata = {
 export default function RUMWebVitals() {
   return (
     <>
-      <RumWebVitalToolbar
-        enableDistribution={true}
-        enableAllDevices={false}
-        disableTablet={false}
-        isSticky
-      />
       <Main />
     </>
   );

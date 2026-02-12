@@ -52,7 +52,6 @@ interface Props {
 
 export function ConnectionStackBars({ data }: Props) {
   const { selectedDevice } = useSiteContext();
-  // const [MAX_BARS, SET_MAX_BARS] = useState<number>(10);
   const chartRef = useRef<HTMLDivElement | null>(null);
 
   const filteredData: DeviceSeriesData[] = filterDeviceBasedData(
@@ -153,39 +152,34 @@ export function ConnectionStackBars({ data }: Props) {
     data: ConnectionPerformanceStats[],
     selectedDevice: "Desktop" | "Mobile" | "Tablet" | "All",
   ): DeviceSeriesData[] {
-    switch (selectedDevice) {
-      case "Desktop":
-        return data.map((x) => ({
-          good: x.desktop_good,
-          needs_improvement: x.desktop_needs_improvement,
-          poor: x.desktop_poor,
-        }));
+    const metrics = ["good", "needs_improvement", "poor"] as const;
 
-      case "Mobile":
-        return data.map((x) => ({
-          good: x.mobile_good,
-          needs_improvement: x.mobile_needs_improvement,
-          poor: x.mobile_poor,
-        }));
-
-      case "Tablet":
-        return data.map((x) => ({
-          good: x.tablet_good,
-          needs_improvement: x.tablet_needs_improvement,
-          poor: x.tablet_poor,
-        }));
-
-      case "All":
-      default:
-        return data.map((x) => ({
-          good: x.desktop_good + x.mobile_good + x.tablet_good + x.other_good,
-          needs_improvement:
-            x.desktop_needs_improvement +
-            x.mobile_needs_improvement +
-            x.tablet_needs_improvement +
-            x.other_needs_improvement,
-          poor: x.desktop_poor + x.mobile_poor + x.tablet_poor + x.other_poor,
-        }));
+    if (selectedDevice === "All") {
+      return data.map((x) =>
+        metrics.reduce((acc, metric) => {
+          acc[metric] =
+            x[`desktop_${metric}`] +
+            x[`mobile_${metric}`] +
+            x[`tablet_${metric}`] +
+            x[`other_${metric}`];
+          return acc;
+        }, {} as DeviceSeriesData),
+      );
     }
-  }
+
+    const devicePrefixMap = {
+      Desktop: "desktop",
+      Mobile: "mobile",
+      Tablet: "tablet",
+    };
+
+    const prefix = devicePrefixMap[selectedDevice];
+
+    return data.map((x) =>
+      metrics.reduce((acc, metric) => {
+        acc[metric] = x[`${prefix}_${metric}` as keyof typeof x] as number;
+        return acc;
+      }, {} as DeviceSeriesData),
+    );
+  } // applied DRY
 }

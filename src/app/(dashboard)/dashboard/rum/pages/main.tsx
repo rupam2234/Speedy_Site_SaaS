@@ -24,7 +24,7 @@ import {
   Bug,
 } from "lucide-react";
 import TooltipIcon from "@/components/theme/customTooltip";
-import { PrimaryToolbar } from "@/components/theme";
+import { LoadingAnimation, PrimaryToolbar } from "@/components/theme";
 
 type PerformanceGroup = "good" | "average" | "poor";
 
@@ -275,6 +275,14 @@ export default function Main() {
     setExpandedRow((prev) => (prev === index ? null : index));
   };
 
+  if (!selectedSite) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+        <LoadingAnimation />
+      </div>
+    );
+  }
+
   return (
     <>
       <PrimaryToolbar
@@ -325,415 +333,469 @@ export default function Main() {
         </div>
       </div>
 
-      <div className="min-h-screen p-5">
-        <div className="w-auto">
-          {/* Table */}
-          <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700/50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      S.No
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      URL
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Visits
-                    </th>
-                    <th
-                      onClick={() => handleSort("avg_lcp_ms")}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
-                    >
-                      <div className="flex items-center">
-                        LCP{" "}
-                        {sortKey === "avg_lcp_ms" &&
-                          (sortDirection === "asc" ? "↑" : "↓")}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => handleSort("avg_inp_ms")}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
-                    >
-                      <div className="flex items-center">
-                        INP{" "}
-                        {sortKey === "avg_inp_ms" &&
-                          (sortDirection === "asc" ? "↑" : "↓")}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => handleSort("avg_cls")}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
-                    >
-                      <div className="flex items-center">
-                        CLS{" "}
-                        {sortKey === "avg_cls" &&
-                          (sortDirection === "asc" ? "↑" : "↓")}
-                      </div>
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-secondary-background divide-y divide-gray-200 dark:divide-gray-700">
-                  {paginatedData.map((page, idx) => {
-                    const rowIndex = (currentPage - 1) * itemsPerPage + idx;
-                    const isExpanded = expandedRow === rowIndex;
-                    const current_page = page.current_page.replace(/\/$/, "");
+      {pageData && pageData.length > 0 ? (
+        <div className="min-h-screen p-5">
+          <div className="w-auto">
+            {/* Table */}
+            <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        S.No
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        URL
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Visits
+                      </th>
+                      <th
+                        onClick={() => handleSort("avg_lcp_ms")}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                      >
+                        <div className="flex items-center">
+                          LCP{" "}
+                          {sortKey === "avg_lcp_ms" &&
+                            (sortDirection === "asc" ? "↑" : "↓")}
+                        </div>
+                      </th>
+                      <th
+                        onClick={() => handleSort("avg_inp_ms")}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                      >
+                        <div className="flex items-center">
+                          INP{" "}
+                          {sortKey === "avg_inp_ms" &&
+                            (sortDirection === "asc" ? "↑" : "↓")}
+                        </div>
+                      </th>
+                      <th
+                        onClick={() => handleSort("avg_cls")}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                      >
+                        <div className="flex items-center">
+                          CLS{" "}
+                          {sortKey === "avg_cls" &&
+                            (sortDirection === "asc" ? "↑" : "↓")}
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-secondary-background divide-y divide-gray-200 dark:divide-gray-700">
+                    {paginatedData.map((page, idx) => {
+                      const rowIndex = (currentPage - 1) * itemsPerPage + idx;
+                      const isExpanded = expandedRow === rowIndex;
+                      const current_page = page.current_page.replace(/\/$/, "");
 
-                    return (
-                      <React.Fragment key={idx}>
-                        <tr
-                          className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors duration-150 ${
-                            isExpanded ? "bg-gray-50 dark:bg-gray-700/30" : ""
-                          }`}
-                          onClick={() => toggleRow(rowIndex)}
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                            {rowIndex + 1}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-white truncate">
-                            {current_page.length > 50
-                              ? `${current_page.slice(0, 50)}...`
-                              : current_page.length === 0
-                                ? `/`
-                                : current_page}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {page.visit_count}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="flex items-center">
-                              {page.avg_lcp_ms ? (
-                                <>
-                                  <span
-                                    className={`mr-2 ${getMetricColor(
-                                      page.avg_lcp_ms,
-                                      "lcp",
-                                    )}`}
-                                  >
-                                    {(page.avg_lcp_ms / 1000).toFixed(2)}s
-                                  </span>
-                                  <div
-                                    className={`w-2 h-2 rounded-full ${
-                                      getMetricStatus(page.avg_lcp_ms, "lcp")
-                                        .color
-                                    }`}
-                                  />
-                                </>
-                              ) : (
-                                <span className="text-gray-400">N/A</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="flex items-center">
-                              {page.avg_inp_ms ? (
-                                <>
-                                  <span
-                                    className={`mr-2 ${getMetricColor(
-                                      page.avg_inp_ms,
-                                      "inp",
-                                    )}`}
-                                  >
-                                    {page.avg_inp_ms.toFixed(0)}ms
-                                  </span>
-                                  <div
-                                    className={`w-2 h-2 rounded-full ${
-                                      getMetricStatus(page.avg_inp_ms, "inp")
-                                        .color
-                                    }`}
-                                  />
-                                </>
-                              ) : (
-                                <span className="text-gray-400">N/A</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="flex items-center">
-                              {page.avg_cls ? (
-                                <>
-                                  <span
-                                    className={`mr-2 ${getMetricColor(
-                                      page.avg_cls,
-                                      "cls",
-                                    )}`}
-                                  >
-                                    {page.avg_cls.toFixed(3)}
-                                  </span>
-                                  <div
-                                    className={`w-2 h-2 rounded-full ${
-                                      getMetricStatus(page.avg_cls, "cls").color
-                                    }`}
-                                  />
-                                </>
-                              ) : (
-                                <span className="text-gray-400">N/A</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                              {isExpanded ? (
-                                <ChevronUp size={18} />
-                              ) : (
-                                <ChevronDown size={18} />
-                              )}
-                            </button>
-                          </td>
-                        </tr>
-                        {isExpanded && (
-                          <tr className="bg-gray-50 dark:bg-gray-700/20">
-                            <td colSpan={7} className="px-6 py-4">
-                              <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                                {/* Tabs for Metrics */}
-                                <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
-                                  {[
-                                    {
-                                      key: "LCP",
-                                      label: "LCP Elements",
-                                      icon: <Clock className="w-4 h-4" />,
-                                    },
-                                    {
-                                      key: "INP",
-                                      label: "INP Elements",
-                                      icon: (
-                                        <MousePointerClick className="w-4 h-4" />
-                                      ),
-                                    },
-                                    {
-                                      key: "CLS",
-                                      label: "CLS Elements",
-                                      icon: <Layout className="w-4 h-4" />,
-                                    },
-                                  ].map((metric) => (
-                                    <button
-                                      key={metric.key}
-                                      onClick={() =>
-                                        setActiveMetric(
-                                          metric.key as unknown as
-                                            | "LCP"
-                                            | "INP"
-                                            | "CLS",
-                                        )
-                                      }
-                                      className={`flex items-center px-4 py-2 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                                        activeMetric === metric.key
-                                          ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                                          : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                                      }`}
+                      return (
+                        <React.Fragment key={idx}>
+                          <tr
+                            className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors duration-150 ${
+                              isExpanded ? "bg-gray-50 dark:bg-gray-700/30" : ""
+                            }`}
+                            onClick={() => toggleRow(rowIndex)}
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                              {rowIndex + 1}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white truncate">
+                              {current_page.length > 50
+                                ? `${current_page.slice(0, 50)}...`
+                                : current_page.length === 0
+                                  ? `/`
+                                  : current_page}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {page.visit_count}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <div className="flex items-center">
+                                {page.avg_lcp_ms ? (
+                                  <>
+                                    <span
+                                      className={`mr-2 ${getMetricColor(
+                                        page.avg_lcp_ms,
+                                        "lcp",
+                                      )}`}
                                     >
-                                      {metric.icon}
-                                      <span className="ml-2">
-                                        {metric.label}
-                                      </span>
-                                    </button>
-                                  ))}
-                                </div>
-
-                                {/* Targets List */}
-                                <div className="space-y-3">
-                                  {activeMetric === "LCP" &&
-                                    (page.lcp_targets.length > 0 ? (
-                                      page.lcp_targets.map((target, i) => (
-                                        <div
-                                          key={i}
-                                          className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
-                                        >
-                                          <div className="shrink-0">
-                                            {getTargetIcon(target.target)}
-                                          </div>
-                                          <div className="ml-3 flex-1 md:max-w-5xl">
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                              {target.target.length > 100
-                                                ? `${target.target.slice(0, 100)}...`
-                                                : target.target}
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              {target.count} occurrence
-                                              {target.count !== 1 ? "s" : ""}
-                                            </p>
-                                          </div>
-                                          <div className="flex gap-4 items-center">
-                                            <TooltipIcon
-                                              content={
-                                                "Debug the element on live page"
-                                              }
-                                              delay={300}
-                                              trigger={
-                                                <Bug
-                                                  size={19}
-                                                  className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
-                                                  onClick={() =>
-                                                    redirectToUrl(
-                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
-                                                    )
-                                                  }
-                                                />
-                                              }
-                                              side="left"
-                                            />
-                                          </div>
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                                        No LCP elements identified
-                                      </div>
-                                    ))}
-                                  {activeMetric === "INP" &&
-                                    (page.inp_targets.length > 0 ? (
-                                      page.inp_targets.map((target, i) => (
-                                        <div
-                                          key={i}
-                                          className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
-                                        >
-                                          <div className="shrink-0">
-                                            {getTargetIcon(target.target)}
-                                          </div>
-                                          <div className="ml-3 flex-1 md:max-w-5xl">
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                              {target.target.length > 100
-                                                ? `${target.target.slice(0, 100)}...`
-                                                : target.target}
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              {target.count} occurrence
-                                              {target.count !== 1 ? "s" : ""}
-                                            </p>
-                                          </div>
-                                          <div className="flex gap-4 items-center">
-                                            <TooltipIcon
-                                              content={
-                                                "Debug the element on live page"
-                                              }
-                                              delay={300}
-                                              trigger={
-                                                <Bug
-                                                  size={19}
-                                                  className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
-                                                  onClick={() =>
-                                                    redirectToUrl(
-                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
-                                                    )
-                                                  }
-                                                />
-                                              }
-                                              side="left"
-                                            />
-                                          </div>
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                                        No INP elements identified
-                                      </div>
-                                    ))}
-                                  {activeMetric === "CLS" &&
-                                    (page.cls_targets.length > 0 ? (
-                                      page.cls_targets.map((target, i) => (
-                                        <div
-                                          key={i}
-                                          className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
-                                        >
-                                          <div className="shrink-0">
-                                            {getTargetIcon(target.target)}
-                                          </div>
-                                          <div className="ml-3 flex-1 md:max-w-5xl">
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                              {target.target.length > 100
-                                                ? `${target.target.slice(0, 100)}...`
-                                                : target.target}
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              {target.count} occurrence
-                                              {target.count !== 1 ? "s" : ""}
-                                            </p>
-                                          </div>
-                                          <div className="flex gap-4 items-center">
-                                            <TooltipIcon
-                                              content={
-                                                "Debug the element on live page"
-                                              }
-                                              delay={300}
-                                              trigger={
-                                                <Bug
-                                                  size={19}
-                                                  className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
-                                                  onClick={() =>
-                                                    redirectToUrl(
-                                                      `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
-                                                    )
-                                                  }
-                                                />
-                                              }
-                                              side="left"
-                                            />
-                                          </div>
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                                        No CLS elements identified
-                                      </div>
-                                    ))}
-                                </div>
+                                      {(page.avg_lcp_ms / 1000).toFixed(2)}s
+                                    </span>
+                                    <div
+                                      className={`w-2 h-2 rounded-full ${
+                                        getMetricStatus(page.avg_lcp_ms, "lcp")
+                                          .color
+                                      }`}
+                                    />
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400">N/A</span>
+                                )}
                               </div>
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <div className="flex items-center">
+                                {page.avg_inp_ms ? (
+                                  <>
+                                    <span
+                                      className={`mr-2 ${getMetricColor(
+                                        page.avg_inp_ms,
+                                        "inp",
+                                      )}`}
+                                    >
+                                      {page.avg_inp_ms.toFixed(0)}ms
+                                    </span>
+                                    <div
+                                      className={`w-2 h-2 rounded-full ${
+                                        getMetricStatus(page.avg_inp_ms, "inp")
+                                          .color
+                                      }`}
+                                    />
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400">N/A</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <div className="flex items-center">
+                                {page.avg_cls ? (
+                                  <>
+                                    <span
+                                      className={`mr-2 ${getMetricColor(
+                                        page.avg_cls,
+                                        "cls",
+                                      )}`}
+                                    >
+                                      {page.avg_cls.toFixed(3)}
+                                    </span>
+                                    <div
+                                      className={`w-2 h-2 rounded-full ${
+                                        getMetricStatus(page.avg_cls, "cls")
+                                          .color
+                                      }`}
+                                    />
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400">N/A</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <button className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                {isExpanded ? (
+                                  <ChevronUp size={18} />
+                                ) : (
+                                  <ChevronDown size={18} />
+                                )}
+                              </button>
+                            </td>
                           </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          {isExpanded && (
+                            <tr className="bg-gray-50 dark:bg-gray-700/20">
+                              <td colSpan={7} className="px-6 py-4">
+                                <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                                  {/* Tabs for Metrics */}
+                                  <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                                    {[
+                                      {
+                                        key: "LCP",
+                                        label: "LCP Elements",
+                                        icon: <Clock className="w-4 h-4" />,
+                                      },
+                                      {
+                                        key: "INP",
+                                        label: "INP Elements",
+                                        icon: (
+                                          <MousePointerClick className="w-4 h-4" />
+                                        ),
+                                      },
+                                      {
+                                        key: "CLS",
+                                        label: "CLS Elements",
+                                        icon: <Layout className="w-4 h-4" />,
+                                      },
+                                    ].map((metric) => (
+                                      <button
+                                        key={metric.key}
+                                        onClick={() =>
+                                          setActiveMetric(
+                                            metric.key as unknown as
+                                              | "LCP"
+                                              | "INP"
+                                              | "CLS",
+                                          )
+                                        }
+                                        className={`flex items-center px-4 py-2 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                                          activeMetric === metric.key
+                                            ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                        }`}
+                                      >
+                                        {metric.icon}
+                                        <span className="ml-2">
+                                          {metric.label}
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+
+                                  {/* Targets List */}
+                                  <div className="space-y-3">
+                                    {activeMetric === "LCP" &&
+                                      (page.lcp_targets.length > 0 ? (
+                                        page.lcp_targets.map((target, i) => (
+                                          <div
+                                            key={i}
+                                            className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
+                                          >
+                                            <div className="shrink-0">
+                                              {getTargetIcon(target.target)}
+                                            </div>
+                                            <div className="ml-3 flex-1 md:max-w-5xl">
+                                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                {target.target.length > 100
+                                                  ? `${target.target.slice(0, 100)}...`
+                                                  : target.target}
+                                              </p>
+                                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                {target.count} occurrence
+                                                {target.count !== 1 ? "s" : ""}
+                                              </p>
+                                            </div>
+                                            <div className="flex gap-4 items-center">
+                                              <TooltipIcon
+                                                content={
+                                                  "Debug the element on live page"
+                                                }
+                                                delay={300}
+                                                trigger={
+                                                  <Bug
+                                                    size={19}
+                                                    className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
+                                                    onClick={() =>
+                                                      redirectToUrl(
+                                                        `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
+                                                      )
+                                                    }
+                                                  />
+                                                }
+                                                side="left"
+                                              />
+                                            </div>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                                          No LCP elements identified
+                                        </div>
+                                      ))}
+                                    {activeMetric === "INP" &&
+                                      (page.inp_targets.length > 0 ? (
+                                        page.inp_targets.map((target, i) => (
+                                          <div
+                                            key={i}
+                                            className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
+                                          >
+                                            <div className="shrink-0">
+                                              {getTargetIcon(target.target)}
+                                            </div>
+                                            <div className="ml-3 flex-1 md:max-w-5xl">
+                                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                {target.target.length > 100
+                                                  ? `${target.target.slice(0, 100)}...`
+                                                  : target.target}
+                                              </p>
+                                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                {target.count} occurrence
+                                                {target.count !== 1 ? "s" : ""}
+                                              </p>
+                                            </div>
+                                            <div className="flex gap-4 items-center">
+                                              <TooltipIcon
+                                                content={
+                                                  "Debug the element on live page"
+                                                }
+                                                delay={300}
+                                                trigger={
+                                                  <Bug
+                                                    size={19}
+                                                    className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
+                                                    onClick={() =>
+                                                      redirectToUrl(
+                                                        `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
+                                                      )
+                                                    }
+                                                  />
+                                                }
+                                                side="left"
+                                              />
+                                            </div>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                                          No INP elements identified
+                                        </div>
+                                      ))}
+                                    {activeMetric === "CLS" &&
+                                      (page.cls_targets.length > 0 ? (
+                                        page.cls_targets.map((target, i) => (
+                                          <div
+                                            key={i}
+                                            className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
+                                          >
+                                            <div className="shrink-0">
+                                              {getTargetIcon(target.target)}
+                                            </div>
+                                            <div className="ml-3 flex-1 md:max-w-5xl">
+                                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                {target.target.length > 100
+                                                  ? `${target.target.slice(0, 100)}...`
+                                                  : target.target}
+                                              </p>
+                                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                {target.count} occurrence
+                                                {target.count !== 1 ? "s" : ""}
+                                              </p>
+                                            </div>
+                                            <div className="flex gap-4 items-center">
+                                              <TooltipIcon
+                                                content={
+                                                  "Debug the element on live page"
+                                                }
+                                                delay={300}
+                                                trigger={
+                                                  <Bug
+                                                    size={19}
+                                                    className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
+                                                    onClick={() =>
+                                                      redirectToUrl(
+                                                        `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
+                                                      )
+                                                    }
+                                                  />
+                                                }
+                                                side="left"
+                                              />
+                                            </div>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                                          No CLS elements identified
+                                        </div>
+                                      ))}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white dark:bg-secondary-background border border-gray-200 dark:border-gray-700 rounded-lg">
+                <div className="text-sm text-gray-700 dark:text-gray-300">
+                  Showing{" "}
+                  <span className="font-medium">
+                    {(currentPage - 1) * itemsPerPage + 1}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-medium">
+                    {Math.min(currentPage * itemsPerPage, sortedData.length)}
+                  </span>{" "}
+                  of <span className="font-medium">{sortedData.length}</span>{" "}
+                  results
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-secondary-background border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-secondary-background border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="min-h-screen p-5">
+            <div className="w-full">
+              <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-pulse">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700/50">
+                      <tr>
+                        {[
+                          "S.No",
+                          "URL",
+                          "Visits",
+                          "LCP",
+                          "INP",
+                          "CLS",
+                          "Actions",
+                        ].map((header) => (
+                          <th
+                            key={header}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                          >
+                            <div className="h-3 w-16 bg-gray-300 dark:bg-gray-600 rounded" />
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+
+                    <tbody className="bg-white dark:bg-secondary-background divide-y divide-gray-200 dark:divide-gray-700">
+                      {[...Array(5)].map((_, idx) => (
+                        <tr
+                          key={idx}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        >
+                          {[...Array(7)].map((__, cellIdx) => (
+                            <td
+                              key={cellIdx}
+                              className="px-6 py-4 text-sm text-gray-900 dark:text-white"
+                            >
+                              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full" />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white dark:bg-secondary-background border border-gray-200 dark:border-gray-700 rounded-lg">
-              <div className="text-sm text-gray-700 dark:text-gray-300">
-                Showing{" "}
-                <span className="font-medium">
-                  {(currentPage - 1) * itemsPerPage + 1}
-                </span>{" "}
-                to{" "}
-                <span className="font-medium">
-                  {Math.min(currentPage * itemsPerPage, sortedData.length)}
-                </span>{" "}
-                of <span className="font-medium">{sortedData.length}</span>{" "}
-                results
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(1, prev - 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-secondary-background border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-secondary-background border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+        </>
+      )}
     </>
   );
 

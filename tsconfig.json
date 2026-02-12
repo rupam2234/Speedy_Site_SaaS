@@ -40,7 +40,7 @@
     "src/app/(dashboard)/dashboard/rum/helpers/ExperienceBar.tsx.bak",
     "scripts/journey.js",
     ".next/dev/types/**/*.ts"
-, "src/app/(dashboard)/dashboard/rum/web-vitals/helpers/charts/index.js", "src/app/account/subscription/index.js"  ],
+, "src/app/(dashboard)/dashboard/rum/web-vitals/helpers/charts/index.js", "src/app/account/subscription/index.js", "src/app/(auth)/auth/callback/page_backup.tsx"  ],
   "exclude": [
     "node_modules"
   ]

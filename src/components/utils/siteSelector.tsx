@@ -1,32 +1,19 @@
 "use client";
 
 import * as React from "react";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { CirclePlus } from "lucide-react";
-import { AddWebsiteModal } from "./addWebsiteModal";
+import { usePathname } from "next/navigation";
+import { ArrowRight, CirclePlus, PlusCircle } from "lucide-react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import { toast } from "sonner";
+import { AddNewWebsite, CustomTooltip } from "../theme";
 
-export function SelectSite({
-  collapsed = false,
-  disabled = false,
-}: {
-  collapsed?: boolean;
-  disabled?: boolean;
-}) {
+export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
   const { selectedSite, setSelectedSite, orders, setCollapsed } =
     useSiteContext();
-  const [showAddModal, setShowAddModal] = React.useState(false);
+  const [isOpen, setOpen] = React.useState<boolean>(false);
+  const [displayModal, setDisplayModal] = React.useState<boolean>(false);
+
+  const selectorRef = React.useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
-  const router = useRouter();
 
   // Only update collapsed if it actually changes
   React.useEffect(() => {
@@ -46,18 +33,35 @@ export function SelectSite({
     }
   }, [orders, pathname, selectedSite, setSelectedSite]);
 
-  const handleChange = React.useCallback(
-    (value: string) => {
-      if (value === "__add__") {
-        setShowAddModal(true);
-      } else {
-        setSelectedSite(value);
-        // sync URL so deep linking works
-        router.push(`/dashboard/${value}`);
+  // const handleChange = React.useCallback(
+  //   (value: string) => {
+  //     if (value === "__add__") {
+  //       setShowAddModal(true);
+  //     } else {
+  //       setSelectedSite(value);
+  //       // sync URL so deep linking works
+  //       router.push(`/dashboard/${value}`);
+  //     }
+  //   },
+  //   [setSelectedSite, router],
+  // );
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        selectorRef.current &&
+        !selectorRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
       }
-    },
-    [setSelectedSite, router],
-  );
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Memoize derived data to prevent re-renders
   const selectedOrder = React.useMemo(
@@ -65,107 +69,137 @@ export function SelectSite({
     [orders, selectedSite],
   );
 
-  const selectedFavicon = selectedOrder?.favicon_file;
+  const selectedFavicon = {
+    fav: selectedOrder?.favicon_file,
+    site: selectedOrder?.website_name,
+  };
 
   if (!orders) {
     return (
-      <div className="text-sm text-muted-foreground p-2">
-        Loading your websites…
-      </div>
+      <div className="text-sm text-muted-foreground p-2">Loading websites…</div>
     );
   }
 
   if (orders.length === 0) {
     return (
-      <div
-        className="text-blue-500 text-sm flex p-2 items-center gap-1 cursor-pointer"
-        onClick={() => setShowAddModal(true)}
-      >
-        <CirclePlus className="w-4 h-4" /> Add your first website
-      </div>
+      <>
+        <div
+          className="text-blue-500 font-medium text-sm flex p-2 items-center gap-1 cursor-pointer min-w-30"
+          onClick={() => setDisplayModal(true)}
+        >
+          {collapsed ? (
+            <CustomTooltip
+              content={"Add website"}
+              side="right"
+              trigger={<CirclePlus className="w-4 h-4" />}
+            />
+          ) : (
+            <>
+              <CirclePlus className="w-4 h-4" /> Add website
+            </>
+          )}
+        </div>
+
+        {displayModal && (
+          <AddNewWebsite
+            setDisplay={({ display }) => setDisplayModal(display)}
+          />
+        )}
+      </>
     );
   }
 
   return (
-    <>
-      <Select value={selectedSite} onValueChange={handleChange}>
-        <SelectTrigger
-          className={`flex items-center pl-2 ${
-            !collapsed
-              ? "w-full border-2 border-gray-300 dark:border-muted gap-2"
-              : "w-auto gap-0 pr-2 [&>svg]:hidden"
-          } ${disabled ? "opacity-50 pointer-events-none" : "-mr-2.5"}`}
-        >
-          <div className="flex items-center gap-2 truncate">
-            {selectedFavicon ? (
-              <Image
-                src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon}`}
-                alt="favicon"
-                width={16}
-                height={16}
-                className="rounded"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-4 h-4 flex items-center justify-center rounded bg-blue-400 text-primary text-xs font-semibold">
-                {selectedSite?.[0]?.toUpperCase() || "?"}
-              </div>
-            )}
-            {!collapsed && (
-              <span className="truncate text-sm">
-                {selectedSite || "Select a Website"}
-              </span>
-            )}
-          </div>
-        </SelectTrigger>
-
-        <SelectContent>
-          <SelectGroup>
-            {orders.map((order) => (
-              <SelectItem
-                key={order.website_name}
-                value={order.website_name}
-                className="flex items-center gap-2"
-              >
-                {order.favicon_file ? (
-                  <Image
-                    src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${order.favicon_file}`}
-                    alt="favicon"
+    <div className="relative" ref={selectorRef}>
+      <div
+        className={`border-2 text-sm text-primary/80
+           font-medium border-primary/30 px-2 py-0.5 outline-none 
+           appearance-none relative cursor-pointer
+            ${collapsed ? "w-8.25 rounded-md" : "w-full "}
+            ${isOpen ? "rounded-tl-md rounded-tr-md" : "rounded-md"}
+           `}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        {selectedSite !== undefined ? (
+          <div className="flex items-center justify-between min-h-6.25">
+            {collapsed ? (
+              <CustomTooltip
+                content={selectedSite}
+                side="right"
+                trigger={
+                  <img
+                    src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon.fav}`}
+                    alt={`${selectedFavicon.site}_logo`}
                     width={16}
                     height={16}
                     className="rounded"
                     loading="lazy"
                   />
-                ) : (
-                  <div className="w-4 h-4 flex items-center justify-center rounded bg-blue-400 text-primary text-xs font-semibold">
-                    {order.website_name?.[0]?.toUpperCase() || "?"}
-                  </div>
-                )}
-                <span>{order.website_name}</span>
-              </SelectItem>
-            ))}
+                }
+              />
+            ) : (
+              <div className="flex items-center gap-1">
+                <img
+                  src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon.fav}`}
+                  alt={`${selectedFavicon.site}_logo`}
+                  width={16}
+                  height={16}
+                  className="rounded"
+                  loading="lazy"
+                />
+                <span className="truncate">{selectedSite}</span>
+              </div>
+            )}
 
-            <SelectItem
-              value="__add__"
-              className="text-blue-500 font-medium flex gap-1 items-center"
-            >
-              <CirclePlus /> Add New Website
-            </SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+            <ArrowRight
+              size={16}
+              className={`text-primary/80 transition-all duration-200 ${
+                !collapsed && isOpen ? "rotate-90" : ""
+              } ${!collapsed ? "block" : "hidden"}`}
+            />
+          </div>
+        ) : (
+          "Select a website"
+        )}
+      </div>
 
-      {/* Move modal outside SelectContent to avoid re-render issues */}
-      <AddWebsiteModal
-        open={showAddModal}
-        onOpenChange={setShowAddModal}
-        onSuccess={() => {
-          toast.success("Website added!", {
-            style: { backgroundColor: "green", color: "white" },
-          });
-          router.push("/dashboard");
-        }}
-      />
-    </>
+      {isOpen && !collapsed && (
+        <div className="absolute dark:bg-gray-600 top-[110%] left-0 w-full bg-primary-foreground shadow-md z-10 border-2 border-primary/30 rounded-bl-md rounded-br-md py-0.5">
+          {orders.map((x, i) => {
+            return (
+              <div
+                key={i}
+                className="flex items-center gap-2 py-1 text-sm px-2 hover:bg-primary/5 dark:hover:bg-secondary-background cursor-pointer"
+                onClick={() => {
+                  setSelectedSite(x.website_name);
+                  setOpen(false);
+                }}
+              >
+                <img
+                  src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${x.favicon_file}`}
+                  alt={`${x.website_name}_logo`}
+                  width={16}
+                  height={16}
+                  className="rounded"
+                  loading="lazy"
+                />
+                <p>{x.website_name}</p>
+              </div>
+            );
+          })}
+          <div
+            className="flex items-center gap-2 py-1 text-sm px-2 hover:bg-primary/5 dark:hover:bg-secondary-background cursor-pointer"
+            onClick={() => setDisplayModal(true)}
+          >
+            <PlusCircle size={16} className="text-primary/80" />
+            Add a new site
+          </div>
+        </div>
+      )}
+
+      {displayModal && (
+        <AddNewWebsite setDisplay={({ display }) => setDisplayModal(display)} />
+      )}
+    </div>
   );
 }

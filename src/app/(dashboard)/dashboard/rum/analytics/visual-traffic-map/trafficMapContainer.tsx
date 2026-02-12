@@ -65,18 +65,6 @@ export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
       .catch((e) => console.error(e));
   }, []);
 
-  const colors = ["#2c7bb6", "#00ccbc", "#90eb9d", "#f29e2e", "#e76818"];
-  const getColor = (count: number) =>
-    count > 100
-      ? colors[4]
-      : count > 50
-        ? colors[3]
-        : count > 20
-          ? colors[2]
-          : count > 0
-            ? colors[1]
-            : colors[0];
-
   const style = (feature: any) => {
     const countryCode = feature.id?.toUpperCase();
     const count = trafficByCountry[countryCode] || 0;
@@ -138,4 +126,18 @@ export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
       )}
     </>
   );
+
+  function getColor(count: number) {
+    const colors = ["#2c7bb6", "#00ccbc", "#90eb9d", "#f29e2e", "#e76818"];
+
+    const thresholds: { min: number; color: string }[] = [
+      { min: 100, color: colors[4] },
+      { min: 50, color: colors[3] },
+      { min: 20, color: colors[2] },
+      { min: 1, color: colors[1] },
+      { min: 0, color: colors[0] },
+    ];
+
+    return thresholds.find((x) => count >= x.min)?.color ?? colors[0];
+  }
 }

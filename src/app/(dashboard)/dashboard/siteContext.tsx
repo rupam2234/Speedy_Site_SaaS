@@ -1,6 +1,7 @@
 "use client";
 
 import { OrderData } from "@/app/api/dataTypes";
+import { validatePlan } from "@/components/utils/planValidation/activePlan";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { CruxData, DailyCruxData } from "@/data-types/index";
 import React, {
@@ -36,6 +37,8 @@ type SiteContextType = {
   endDate?: Date;
   setStartDate: (d?: Date) => void;
   setEndDate: (d?: Date) => void;
+  plan: string | null;
+  setPlan: (plan: string | null) => void;
 };
 
 export const SiteContext = createContext<SiteContextType>({
@@ -60,6 +63,8 @@ export const SiteContext = createContext<SiteContextType>({
   setSelectedGeoType: () => {},
   setStartDate: () => {},
   setEndDate: () => {},
+  plan: "",
+  setPlan: () => {},
 });
 
 export default function SiteContextProvider({
@@ -86,11 +91,12 @@ export default function SiteContextProvider({
   const [selectedGeoType, setSelectedGeoType] = useState<
     "Visitors" | "UX Experience"
   >("Visitors");
+  const [plan, setPlan] = useState<string | null>(null);
 
   const user = useSupabaseUser();
   const fetchCalledRef = useRef<{
-    userId: string;
-    siteFromUrl: string | null;
+    userId?: string;
+    siteFromUrl?: string | null;
   } | null>(null);
 
   const fetchOrders = useCallback(
@@ -164,11 +170,12 @@ export default function SiteContextProvider({
     if (
       fetchCalledRef.current?.userId === user.id &&
       fetchCalledRef.current?.siteFromUrl === siteFromUrl
-    )
+    ) {
       return; // already fetched
+    }
 
-    fetchCalledRef.current = { userId: user.id, siteFromUrl };
     fetchOrders(siteFromUrl ?? "", user.id);
+    fetchCalledRef.current = { userId: user.id, siteFromUrl };
   }, [user?.id, fetchOrders]);
 
   return (
@@ -197,6 +204,8 @@ export default function SiteContextProvider({
         endDate,
         setStartDate,
         setEndDate,
+        plan,
+        setPlan,
       }}
     >
       {children}
