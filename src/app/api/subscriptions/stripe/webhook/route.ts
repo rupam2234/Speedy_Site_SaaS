@@ -125,6 +125,13 @@ export async function POST(req: Request) {
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
 
+        // Only reset usage on real subscription renewals
+        // this will only reset usage on monthly renewal, 
+        // not upgrades (reseting on upgrade can allow people additional quota, revenue leakage)
+        if (invoice.billing_reason !== "subscription_cycle") { 
+          break;
+        }
+
         if (!invoice.period_start || !invoice.period_end) {
           break;
         }
@@ -138,6 +145,7 @@ export async function POST(req: Request) {
             status: "active",
             stripe_subscription_status: "active",
             updated_at: new Date().toISOString(),
+            current_usage: 0, // resets the usage
             period_starts_at: periodStart,
             period_ends_at: periodEnd,
           })
