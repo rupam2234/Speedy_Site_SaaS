@@ -69,7 +69,6 @@ export async function POST(req: NextRequest) {
     );
 
     // Update orders usage
-    // console.log("Updating order usage counts...");
     await Promise.all(
       usageData.map(async (x) => {
         const domainKey = x.domain_name.trim().toLowerCase();

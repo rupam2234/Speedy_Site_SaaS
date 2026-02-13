@@ -2,13 +2,19 @@ import { setupDB } from "@/lib/db";
 import { serverClient } from "@/lib/db/server_client";
 import { NextRequest, NextResponse } from "next/server";
 
+const worker = setupDB();
+
+interface Props {
+  domain: string;
+}
+
 export async function POST(req: NextRequest) {
-  const worker = setupDB();
 
-  const body: any = await req.json();
   const res = NextResponse.next();
-
   const supabase = serverClient(req, res);
+
+  const { domain }: Props = await req.json();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -17,30 +23,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "User unauthorized" }, { status: 401 });
   }
 
-  if (!req) {
+  if (!domain) {
     return NextResponse.json(
-      { message: "Bad request: Missing req body" },
+      { message: "Bad request" },
       { status: 400 }
     );
   }
 
   try {
-    const { error, status } = await worker
+
+    // validate the domain for user
+    const {data: verifiedDomain, error: validationError} = await worker.from("orders").select("website_name").eq("website_name", domain).eq("user_id", user.id).maybeSingle();
+
+    if(validationError || verifiedDomain?.website_name !== domain){
+      throw new Error(validationError?.message || "Unauthorised")
+    }
+
+    // then delete the site
+    const { error } = await worker
       .from("orders")
       .delete()
-      .eq("website_name", body.domain);
+      .eq("website_name", verifiedDomain.website_name);
 
     if (error) {
-      return NextResponse.json(
-        { message: "unable to delete website", status },
-        { status: 500 }
-      );
+      throw new Error(error.message);
     }
 
     return NextResponse.json({ message: "website deleted" }, { status: 200 });
-  } catch (error) {
+  } catch (error:any) {
     return NextResponse.json(
-      { message: "Error in deleting website", error },
+      { message: error.message || "Error deleting website" },
       { status: 500 }
     );
   }

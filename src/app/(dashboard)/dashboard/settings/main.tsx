@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Edit, Trash } from "lucide-react";
+import { Edit, LoaderIcon, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { OrderData } from "@/app/api/dataTypes";
@@ -16,28 +16,16 @@ import Integrations from "./integrations";
 
 export default function Main() {
   const [siteData, setSiteData] = useState<OrderData>();
-  const { selectedSite, fetchOrders } = useSiteContext();
+  const { selectedSite } = useSiteContext();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [cloudflareStatus, setCloudflareStatus] = useState<boolean | null>(
     null,
   );
+  const [isDeleting, setDeleting] = useState<boolean>(false);
 
   useEffect(() => {
     fetchDomainData(selectedSite);
   }, [selectedSite]);
-
-  // useEffect(() => {
-  //   getUserData();
-  // }, []);
-
-  // async function getUserData() {
-  //   await fetch("/api/test");
-  // }
-
-  const handleRefetch = () => {
-    sessionStorage.removeItem("orders");
-    fetchOrders();
-  };
 
   const formattedDate = new Date(siteData?.order_date ?? "").toLocaleString(
     "en-GB",
@@ -84,14 +72,20 @@ export default function Main() {
             {confirmingDelete ? (
               <div className="flex gap-1 items-center">
                 <button
-                  className="text-red-500 px-2 py-0 text-xs hover:text-red-600 cursor-pointer"
-                  onClick={handleDelete}
+                  className="text-red-500 px-2 py-1 text-xs hover:text-white rounded-sm hover:bg-red-500 cursor-pointer"
+                  onClick={deleteSite}
+                  disabled={isDeleting}
                 >
-                  Confirm
+                  {isDeleting ? (
+                    <LoaderIcon size={14} className="animate-spin" />
+                  ) : (
+                    "Confirm"
+                  )}
                 </button>
                 <button
                   className="text-muted-foreground px-2 py-0 cursor-pointer hover:text-primary/80 text-xs"
                   onClick={() => setConfirmingDelete(false)}
+                  disabled={isDeleting}
                 >
                   Cancel
                 </button>
@@ -218,25 +212,43 @@ export default function Main() {
     }
   }
 
-  async function handleDelete() {
+  async function deleteSite() {
     if (!selectedSite) return;
 
-    const res = await fetch("/api/orders/delete-site", {
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-      body: JSON.stringify({ domain: selectedSite }),
-    });
+    setDeleting(true);
 
-    if (!res.ok) {
-      toast.error("Unexpected error in deleting website", {
-        style: { backgroundColor: "#FF9898", color: "white" },
+    try {
+      const res = await fetch("/api/orders/delete-site", {
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        body: JSON.stringify({ domain: selectedSite }),
       });
-      return;
-    }
 
-    toast.success("Website deleted", {
-      style: { backgroundColor: "#66cc8f", color: "white" },
-    });
-    handleRefetch();
+      const body: any = await res.json();
+
+      if (!res.ok) {
+        toast.error("Error in deleting website", {
+          style: { backgroundColor: "#FF9898", color: "white" },
+        });
+        setDeleting(false);
+        throw new Error(body.message);
+      }
+
+      toast.success("Website deleted", {
+        style: { backgroundColor: "#66cc8f", color: "white" },
+      });
+
+      // delete order cache
+      sessionStorage.removeItem("orders");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDeleting(false);
+      setConfirmingDelete(false);
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+    }
   }
 }
