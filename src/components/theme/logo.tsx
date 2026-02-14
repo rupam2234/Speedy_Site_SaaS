@@ -11,6 +11,7 @@ export function SpeedySiteLogo({ isDark }: { isDark: boolean }) {
             alt="SpeedySite-logo-dark"
             width={130}
             height={20}
+            preload
           />
         </Link>
       ) : (
@@ -20,6 +21,7 @@ export function SpeedySiteLogo({ isDark }: { isDark: boolean }) {
             alt="SpeedySite-logo-light"
             width={130}
             height={20}
+            preload
           />
         </Link>
       )}

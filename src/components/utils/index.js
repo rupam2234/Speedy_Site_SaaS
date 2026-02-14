@@ -1,3 +1,4 @@
 export {default as RumWebVitalToolbar} from "../theme/toolbar"
 export {useSignOut} from "./supabase/signOutUser"
-export {default as HistrogramBar} from  "./webVitalBars"
+export {default as HistrogramBar} from  "../theme/webVitalBars"
+export {setRatelimiter, getRateLimiter} from "./rateLimiter"

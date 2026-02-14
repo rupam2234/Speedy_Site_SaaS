@@ -33,19 +33,6 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
     }
   }, [orders, pathname, selectedSite, setSelectedSite]);
 
-  // const handleChange = React.useCallback(
-  //   (value: string) => {
-  //     if (value === "__add__") {
-  //       setShowAddModal(true);
-  //     } else {
-  //       setSelectedSite(value);
-  //       // sync URL so deep linking works
-  //       router.push(`/dashboard/${value}`);
-  //     }
-  //   },
-  //   [setSelectedSite, router],
-  // );
-
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (

@@ -2,18 +2,31 @@ import { setupDB } from "@/lib/db";
 import { serverClient } from "@/lib/db/server_client";
 import { NextRequest, NextResponse } from "next/server";
 
+const worker = setupDB();
+
+interface Props {
+  domain: string;
+}
+
 export async function POST(req: NextRequest) {
-  const worker = setupDB();
 
   const res = NextResponse.next();
-
   const supabase = serverClient(req, res);
+
+  const {domain}: Props = await req.json();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  
+  if(!user?.id){
+    return NextResponse.json(
+      { message: "User unauthorized" },
+      { status: 401 }
+    );
+  }
 
-  if (!req) {
+  if (!domain) {
     return NextResponse.json(
       {
         message: "Bad request",
@@ -22,35 +35,23 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!user?.id) {
-    return NextResponse.json(
-      { message: "Missing user authorization" },
-      { status: 401 }
-    );
-  }
-
-  const body: any = await req.json();
-
   try {
-    const { error, status, data } = await worker
+    const { error, data } = await worker
       .from("orders")
       .select("*")
-      .eq("website_name", body.domain);
+      .eq("website_name", domain);
 
     if (error) {
-      return NextResponse.json(
-        { message: "Error fetching website data" },
-        { status: status }
-      );
+      throw new Error(error.message)
     }
 
     return NextResponse.json(
-      { message: "Received domain data", data },
+      { data:data },
       { status: 200 }
     );
   } catch (error) {
     return NextResponse.json(
-      { message: "Internal server error: ", error },
+      { message: error },
       { status: 500 }
     );
   }

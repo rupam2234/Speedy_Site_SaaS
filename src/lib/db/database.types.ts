@@ -75,6 +75,7 @@ export type Database = {
           order_date: string
           order_id: string
           order_status: boolean
+          rum_connection: boolean | null
           usage_by_site: number
           user_id: string
           website_address: string
@@ -85,6 +86,7 @@ export type Database = {
           order_date?: string
           order_id?: string
           order_status: boolean
+          rum_connection?: boolean | null
           usage_by_site?: number
           user_id?: string
           website_address: string
@@ -95,6 +97,7 @@ export type Database = {
           order_date?: string
           order_id?: string
           order_status?: boolean
+          rum_connection?: boolean | null
           usage_by_site?: number
           user_id?: string
           website_address?: string

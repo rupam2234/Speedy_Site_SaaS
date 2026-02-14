@@ -22,6 +22,7 @@ export default function Main() {
     null,
   );
   const [isDeleting, setDeleting] = useState<boolean>(false);
+  const [rumConnectionStatus, setRumConnectionStatus] = useState<boolean>(false)
 
   useEffect(() => {
     fetchDomainData(selectedSite);
@@ -138,17 +139,19 @@ export default function Main() {
               ) : (
                 <span
                   className={`font-medium ${
-                    siteData?.order_status ? "text-green-500" : "text-red-500"
+                    siteData?.rum_connection ? "text-green-500" : "text-red-500"
                   }`}
                 >
-                  {siteData?.order_status ? "Running" : "Stopped"}
+                  {siteData?.rum_connection ? "Running" : "Not connected"}
                 </span>
               )}
             </div>
 
             {/* cloudflare connection */}
             <div className="flex justify-between items-center">
-              <Label className="text-muted-foreground">Cloudflare Status</Label>
+              <Label className="text-muted-foreground">
+                Cloudflare Integration
+              </Label>
 
               {!siteData || cloudflareStatus === null ? (
                 <div className="h-4 w-28 rounded-md bg-primary/20 animate-pulse" />
@@ -173,25 +176,26 @@ export default function Main() {
     if (!selectedSite) return;
 
     try {
-      const response = await fetch("/api/orders/get-single-site", {
+      const siteRes = await fetch("/api/orders/get-site", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain: selectedSite }),
       });
 
-      if (!response.ok) {
-        console.error("Error fetching site data:", response.statusText);
+      const body:{message?: string, data?: any, status: number } = await siteRes.json();
+
+      if (!siteRes.ok) {
         setSiteData(undefined);
-        return;
+        throw new Error(body.message)
       }
 
-      const data: any = await response.json();
-      const siteData = data.data[0];
-
+      const siteData = body.data[0];
       setSiteData(siteData);
+      setRumConnectionStatus(siteData.rum_connection !== null || siteData.rum_connection !== false)
 
       setCloudflareStatus(null);
 
+      // this checks cloudflare integration
       const res = await fetch("/api/cloudflare/check-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -201,14 +205,17 @@ export default function Main() {
         }),
       });
 
+      const cfData: any = await res.json();
+
+
       if (!res.ok) {
-        console.log("Failed to retrieve Cloudflare status");
+        setCloudflareStatus(cfData.found)
+        throw new Error("cloudflare validation error")
       }
 
-      const cfData: any = await res.json();
       setCloudflareStatus(cfData.found);
     } catch (error) {
-      console.error("Network or server error:", error);
+      console.error(error);
     }
   }
 

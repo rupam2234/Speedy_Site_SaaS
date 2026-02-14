@@ -1,17 +1,19 @@
 "use client";
 
 import TooltipIcon from "@/components/theme/customTooltip";
-import { ClipboardList, LoaderIcon, Settings2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ClipboardList, LoaderCircle, Settings2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSiteContext } from "../siteContext";
+import { isSet } from "util/types";
+import { getRateLimiter, setRatelimiter } from "@/components/utils";
 
 interface Props {
   siteId: string | undefined;
 }
 
 type Status = {
-  status: string;
+  status: "success" | "idle" | "error" | "loading";
   comment?: string;
 };
 
@@ -19,40 +21,22 @@ type Tabs = {
   name: string;
 };
 
-const tabs: Tabs[] = [
-  { name: "Real User Monitoring" },
-  { name: "Cloudflare Authentication" },
-];
+const tabs: Tabs[] = [{ name: "Real User Monitoring" }, { name: "Cloudflare" }];
 
 export default function Integrations({ siteId }: Props) {
   const { selectedSite } = useSiteContext();
   const [activeTab, setActiveTab] = useState<string>("Real User Monitoring");
   const [token, setToken] = useState<string>("");
   const [status, setStatus] = useState<Status>({ status: "idle" });
+  const [rumScriptAvailable, setRumScript] = useState<{
+    isAvailable: boolean;
+    loading: boolean;
+    isSet?: boolean;
+  }>({ isAvailable: false, loading: false });
+
+  // const lastcalRef = useRef<Record<string, number>>({});
 
   const trackingScript = `<script src="https://rum.speedy.site/rum.js?v=0.0.1&id=${siteId?.split("-")[0]}" defer></script>`;
-
-  const validateToken = async () => {
-    setStatus({ status: "loading" });
-
-    const res = await fetch("/api/cloudflare/validate-token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, site: selectedSite }),
-    });
-
-    const data: any = await res.json();
-    const status = data.valid === true ? "success" : "error";
-    const message = data.message;
-
-    console.log(data);
-
-    if (res.ok) {
-      setStatus({ status: status, comment: message });
-    } else {
-      setStatus({ status: status, comment: message });
-    }
-  };
 
   useEffect(() => {
     if (status.status === "success" || status.status === "error") {
@@ -63,6 +47,16 @@ export default function Integrations({ siteId }: Props) {
       return () => clearTimeout(timer);
     }
   }, [status]);
+
+  useEffect(() => {
+    if (rumScriptAvailable.isSet === false) return;
+
+    const timer = setTimeout(() => {
+      setRumScript({ isAvailable: false, loading: false, isSet: false });
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [rumScriptAvailable.isSet]);
 
   return (
     <div className="border rounded-sm px-4 pb-4 bg-primary-foreground dark:bg-secondary-background">
@@ -75,7 +69,7 @@ export default function Integrations({ siteId }: Props) {
           <button
             key={x.name}
             className={`px-2 cursor-pointer py-1 text-sm hover:bg-primary/10 ${activeTab === x.name ? "bg-primary/10" : ""}`}
-            onClick={() => handleActiveTab(x.name)}
+            onClick={() => setActiveTab(x.name)}
           >
             {x.name}
           </button>
@@ -108,10 +102,33 @@ export default function Integrations({ siteId }: Props) {
                 side="left"
               />
             </div>
+            <div className="flex items-center gap-3">
+              <button
+                className="px-2 py-1 bg-green-600 min-w-36 rounded-sm hover:bg-green-700 text-white cursor-pointer"
+                onClick={() => validateScript()}
+                disabled={rumScriptAvailable.loading}
+              >
+                {rumScriptAvailable.loading
+                  ? "Checking..."
+                  : "Validate connection"}
+              </button>
+              {rumScriptAvailable.loading === false &&
+              rumScriptAvailable.isSet ? (
+                <span
+                  className={`px-2 py-1 text-primary/80 font-medium ${rumScriptAvailable.isAvailable ? "bg-green-200" : "bg-red-200"}`}
+                >
+                  {rumScriptAvailable.isAvailable
+                    ? "RUM script found. You are all set."
+                    : "RUM script not found!"}
+                </span>
+              ) : (
+                <></>
+              )}
+            </div>
           </div>
           <div className="border-x border-b border-primary/10 px-4 py-2 text-sm space-y-3 bg-transparent">
             <p className="text-primary/70 leading-relaxed">
-              This script collects only{" "}
+              This script collects{" "}
               <strong>anonymous performance metrics</strong>:
             </p>
 
@@ -190,7 +207,13 @@ export default function Integrations({ siteId }: Props) {
               to create a custom token and then connect to Speedy Site for a
               working setup.
             </p>
-            <div className="flex gap-2 items-center">
+            <form
+              className="flex gap-2 items-center"
+              onSubmit={(e) => {
+                e.preventDefault(); // this prevents the browser from reload after form submission
+                validateToken();
+              }}
+            >
               <input
                 placeholder="Cloudflare Token"
                 className="bg-primary/10 border w-full text-primary rounded-sm px-3 py-1"
@@ -200,7 +223,6 @@ export default function Integrations({ siteId }: Props) {
               />
               <button
                 className="rounded-sm bg-primary/80 px-3 py-1 w-50 text-primary-foreground cursor-pointer hover:bg-primary/70"
-                onClick={() => validateToken()}
                 disabled={!token || status.status === "loading"}
               >
                 {status.status === "loading" ? (
@@ -209,7 +231,7 @@ export default function Integrations({ siteId }: Props) {
                   <>Connect</>
                 )}
               </button>
-            </div>
+            </form>
             <div className="">
               {status.status === "success" ? (
                 <p className="text-green-500 font-semibold ">
@@ -232,10 +254,6 @@ export default function Integrations({ siteId }: Props) {
     </div>
   );
 
-  function handleActiveTab(name: string) {
-    setActiveTab(name);
-  }
-
   function handleCopy(value: string) {
     navigator.clipboard
       .writeText(value)
@@ -249,5 +267,71 @@ export default function Integrations({ siteId }: Props) {
           style: { backgroundColor: "red", color: "white" },
         });
       });
+  }
+
+  async function validateToken() {
+    if (!selectedSite) return;
+
+    setStatus({ status: "loading" });
+
+    const res = await fetch("/api/cloudflare/validate-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, site: selectedSite }),
+    });
+
+    const data: any = await res.json();
+    const status = data.valid === true ? "success" : "error";
+    const message = data.message;
+
+    setStatus({ status: status, comment: message });
+  }
+
+  async function validateScript() {
+    if (!selectedSite) {
+      return;
+    }
+
+    const key = selectedSite;
+
+    const FIVE_MINUTES = 5 * 60 * 1000;
+
+    // rate limiting...
+    const lastCall = getRateLimiter(key);
+
+    if (lastCall) {
+      console.log("API call skipped: still within 5 minutes window");
+      setRumScript({ loading: false, isAvailable: lastCall, isSet: true });
+      return;
+    }
+
+    setRumScript({ loading: true, isAvailable: false });
+
+    try {
+      const res = await fetch("/api/orders/validate-rum-script", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ domain: selectedSite }),
+      });
+
+      const body: any = await res.json();
+
+      setRatelimiter({ key: key, ttl: FIVE_MINUTES, value: body.scriptExists });
+
+      if (!res.ok) {
+        throw new Error(body.message);
+      }
+
+      setRumScript({
+        isAvailable: body.scriptExists,
+        loading: false,
+        isSet: true,
+      });
+    } catch (error) {
+      setRumScript({ loading: false, isAvailable: false, isSet: true });
+      console.error(error);
+    }
   }
 }
