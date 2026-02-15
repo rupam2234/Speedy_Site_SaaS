@@ -12,17 +12,17 @@ import { OrderData } from "@/app/api/dataTypes";
 import { useSiteContext } from "../siteContext";
 import { toast } from "sonner";
 import { LoadingAnimation } from "@/components/theme/loadingAnimation";
-import Integrations from "./integrations";
+import Integrations, { CfConnection } from "./integrations";
 
 export default function Main() {
   const [siteData, setSiteData] = useState<OrderData>();
   const { selectedSite } = useSiteContext();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [cloudflareStatus, setCloudflareStatus] = useState<boolean | null>(
-    null,
-  );
+  const [cloudflareStatus, setCloudflareStatus] = useState<CfConnection>({
+    isConnected: false,
+    key: "",
+  });
   const [isDeleting, setDeleting] = useState<boolean>(false);
-  const [rumConnectionStatus, setRumConnectionStatus] = useState<boolean>(false)
 
   useEffect(() => {
     fetchDomainData(selectedSite);
@@ -155,7 +155,7 @@ export default function Main() {
 
               {!siteData || cloudflareStatus === null ? (
                 <div className="h-4 w-28 rounded-md bg-primary/20 animate-pulse" />
-              ) : cloudflareStatus ? (
+              ) : cloudflareStatus.isConnected ? (
                 <span className="font-medium text-green-500">Connected</span>
               ) : (
                 <span className="font-medium text-red-500">Not Connected</span>
@@ -166,7 +166,7 @@ export default function Main() {
 
         {/* RUM Integration - Wider Section */}
         <div className="col-span-1 md:col-span-8">
-          <Integrations siteId={siteData?.order_id} />
+          <Integrations siteId={siteData?.order_id} cfData={cloudflareStatus} />
         </div>
       </div>
     </div>
@@ -182,18 +182,18 @@ export default function Main() {
         body: JSON.stringify({ domain: selectedSite }),
       });
 
-      const body:{message?: string, data?: any, status: number } = await siteRes.json();
+      const body: { message?: string; data?: any; status: number } =
+        await siteRes.json();
 
       if (!siteRes.ok) {
         setSiteData(undefined);
-        throw new Error(body.message)
+        throw new Error(body.message);
       }
 
       const siteData = body.data[0];
       setSiteData(siteData);
-      setRumConnectionStatus(siteData.rum_connection !== null || siteData.rum_connection !== false)
 
-      setCloudflareStatus(null);
+      setCloudflareStatus({ isConnected: false });
 
       // this checks cloudflare integration
       const res = await fetch("/api/cloudflare/check-status", {
@@ -207,13 +207,14 @@ export default function Main() {
 
       const cfData: any = await res.json();
 
+      console.log(cfData);
 
       if (!res.ok) {
-        setCloudflareStatus(cfData.found)
-        throw new Error("cloudflare validation error")
+        setCloudflareStatus({ isConnected: cfData.found });
+        throw new Error(cfData.message);
       }
 
-      setCloudflareStatus(cfData.found);
+      setCloudflareStatus({ isConnected: cfData.found, key: cfData.key });
     } catch (error) {
       console.error(error);
     }

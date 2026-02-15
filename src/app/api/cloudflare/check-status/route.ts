@@ -8,6 +8,24 @@ interface Props {
 
 const worker = setupDB();
 
+function maskApi(key: string | null, visible: number){
+
+  if(!key){
+     return "";
+  }
+
+  if(visible > key.length){
+    return key;
+  }
+
+  const unmaskedKey = key.slice(0, visible);
+
+  const masked = "*".repeat(key.length - visible)
+
+  return unmaskedKey + masked;
+
+}
+
 export async function POST(req: NextRequest) {
   const { site_id, user_id }: Props = await req.json();
 
@@ -18,20 +36,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { data, error } = await worker
+  if(!site_id){
+    return NextResponse.json({found: false, message: "Bad request"}, {status: 400})
+  }
+
+  try {
+    const { data, error } = await worker
     .from("cloudflare_auth")
     .select("token")
     .eq("site_id", site_id)
     .eq("user_id", user_id)
     .maybeSingle();
 
-  if (error) {
-    return NextResponse.json({ found: false }, { status: 500 });
-  }
+    if(error){
+      throw new Error(error.message);
+    }
 
-  if (!data?.token) {
-    return NextResponse.json({ found: false }, { status: 404 });
-  }
+    const maskedkey = maskApi(data && data.token, 8)
 
-  return NextResponse.json({ found: true }, { status: 200 }); // pass valid as true or 200 status code when we find a token for the site
+    return NextResponse.json({found: data?.token !== undefined ? true : false, key: maskedkey}, {status: 200})
+
+  }catch (error: any){
+    return NextResponse.json({found: false, message: error}, {status: 500})
+  }
 }

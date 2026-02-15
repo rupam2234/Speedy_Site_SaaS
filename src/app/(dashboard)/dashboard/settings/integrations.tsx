@@ -1,16 +1,21 @@
 "use client";
 
 import TooltipIcon from "@/components/theme/customTooltip";
-import { ClipboardList, LoaderCircle, Settings2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ClipboardList, Settings2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSiteContext } from "../siteContext";
-import { isSet } from "util/types";
 import { getRateLimiter, setRatelimiter } from "@/components/utils";
 
 interface Props {
   siteId: string | undefined;
+  cfData: CfConnection;
 }
+
+export type CfConnection = {
+  isConnected: boolean;
+  key?: string | null;
+};
 
 type Status = {
   status: "success" | "idle" | "error" | "loading";
@@ -23,7 +28,7 @@ type Tabs = {
 
 const tabs: Tabs[] = [{ name: "Real User Monitoring" }, { name: "Cloudflare" }];
 
-export default function Integrations({ siteId }: Props) {
+export default function Integrations({ siteId, cfData }: Props) {
   const { selectedSite } = useSiteContext();
   const [activeTab, setActiveTab] = useState<string>("Real User Monitoring");
   const [token, setToken] = useState<string>("");
@@ -33,8 +38,6 @@ export default function Integrations({ siteId }: Props) {
     loading: boolean;
     isSet?: boolean;
   }>({ isAvailable: false, loading: false });
-
-  // const lastcalRef = useRef<Record<string, number>>({});
 
   const trackingScript = `<script src="https://rum.speedy.site/rum.js?v=0.0.1&id=${siteId?.split("-")[0]}" defer></script>`;
 
@@ -207,47 +210,67 @@ export default function Integrations({ siteId }: Props) {
               to create a custom token and then connect to Speedy Site for a
               working setup.
             </p>
-            <form
-              className="flex gap-2 items-center"
-              onSubmit={(e) => {
-                e.preventDefault(); // this prevents the browser from reload after form submission
-                validateToken();
-              }}
-            >
-              <input
-                placeholder="Cloudflare Token"
-                className="bg-primary/10 border w-full text-primary rounded-sm px-3 py-1"
-                value={token}
-                type="password"
-                onChange={(e) => setToken(e.target.value)}
-              />
-              <button
-                className="rounded-sm bg-primary/80 px-3 py-1 w-50 text-primary-foreground cursor-pointer hover:bg-primary/70"
-                disabled={!token || status.status === "loading"}
-              >
-                {status.status === "loading" ? (
-                  <>Connecting...</>
-                ) : (
-                  <>Connect</>
-                )}
-              </button>
-            </form>
-            <div className="">
-              {status.status === "success" ? (
-                <p className="text-green-500 font-semibold ">
-                  Connection succesful
-                </p>
-              ) : status.status === "error" ? (
-                <p className="text-red-500 font-semibold ">
-                  Connection Failed:{" "}
-                  <span className="font-mono bg-red-100 px-2 text-primary/80 py-1">
-                    {status.comment}
+            {cfData.isConnected == true ? (
+              <>
+                <div className="flex items-center justify-between rounded-md border bg-muted/40 px-4 py-3">
+                  <span className="font-mono text-sm tracking-widest text-foreground">
+                    {cfData.key}
                   </span>
-                </p>
-              ) : (
-                <></>
-              )}
-            </div>
+
+                  <button
+                    type="button"
+                    className="ml-4 cursor-pointer hover:bg-primary/20 rounded border px-3 py-1 text-xs font-medium transition"
+                  >
+                    {/* revoke yet to apply */}
+                    Revoke
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <form
+                  className="flex gap-2 items-center"
+                  onSubmit={(e) => {
+                    e.preventDefault(); // this prevents the browser from reload after form submission
+                    validateToken();
+                  }}
+                >
+                  <input
+                    placeholder="Cloudflare Token"
+                    className="bg-primary/10 border w-full text-primary rounded-sm px-3 py-1"
+                    value={token}
+                    type="password"
+                    onChange={(e) => setToken(e.target.value)}
+                  />
+                  <button
+                    className="rounded-sm bg-primary/80 px-3 py-1 w-50 text-primary-foreground cursor-pointer hover:bg-primary/70"
+                    disabled={!token || status.status === "loading"}
+                  >
+                    {status.status === "loading" ? (
+                      <>Connecting...</>
+                    ) : (
+                      <>Connect</>
+                    )}
+                  </button>
+                </form>
+                <div className="">
+                  {status.status === "success" ? (
+                    <p className="text-green-500 font-semibold ">
+                      Connection succesful
+                    </p>
+                  ) : status.status === "error" ? (
+                    <p className="text-red-500 font-semibold ">
+                      Connection Failed:{" "}
+                      <span className="font-mono bg-red-100 px-2 text-primary/80 py-1">
+                        {status.comment}
+                      </span>
+                    </p>
+                  ) : (
+                    <></>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
