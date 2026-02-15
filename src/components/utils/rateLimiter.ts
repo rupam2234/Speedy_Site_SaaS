@@ -22,7 +22,7 @@ export function setRatelimiter({key, value, ttl}:Ratelimiter){
 
     const item = {
         value,
-        expiry: now + ttl
+        expiry: now + ttl // ttl extends the time to future for a expiry
     }
 
     sessionStorage.setItem(key, JSON.stringify(item))
