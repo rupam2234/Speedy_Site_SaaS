@@ -54,7 +54,9 @@ export async function POST(req: NextRequest) {
 
     const maskedkey = maskApi(data && data.token, 8)
 
-    return NextResponse.json({found: data?.token !== undefined ? true : false, key: maskedkey}, {status: 200})
+    // console.log( data !== null && data?.token !== null ? true : false, data)
+
+    return NextResponse.json({found: data !== null && data?.token !== null ? true : false, key: maskedkey}, {status: 200})
 
   }catch (error: any){
     return NextResponse.json({found: false, message: error}, {status: 500})

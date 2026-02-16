@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   if (ZoneError) {
     return NextResponse.json(
-      { message: "Couldn't get Cf Zones" },
+      { message: ZoneError.message},
       { status: 404 },
     );
   }

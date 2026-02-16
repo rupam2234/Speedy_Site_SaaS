@@ -10,6 +10,7 @@ import { getRateLimiter, setRatelimiter } from "@/components/utils";
 interface Props {
   siteId: string | undefined;
   cfData: CfConnection;
+  setCfData?: (cfData: CfConnection) => void;
 }
 
 export type CfConnection = {
@@ -28,7 +29,7 @@ type Tabs = {
 
 const tabs: Tabs[] = [{ name: "Real User Monitoring" }, { name: "Cloudflare" }];
 
-export default function Integrations({ siteId, cfData }: Props) {
+export default function Integrations({ siteId, cfData, setCfData }: Props) {
   const { selectedSite } = useSiteContext();
   const [activeTab, setActiveTab] = useState<string>("Real User Monitoring");
   const [token, setToken] = useState<string>("");
@@ -213,13 +214,13 @@ export default function Integrations({ siteId, cfData }: Props) {
             {cfData.isConnected == true ? (
               <>
                 <div className="flex items-center justify-between rounded-md border bg-muted/40 px-4 py-3">
-                  <span className="font-mono text-sm tracking-widest text-foreground">
+                  <span className="font-mono md:text-sm text-[12px] truncate overflow-hidden text-foreground">
                     {cfData.key}
                   </span>
-
                   <button
                     type="button"
                     className="ml-4 cursor-pointer hover:bg-primary/20 rounded border px-3 py-1 text-xs font-medium transition"
+                    onClick={revokeCf}
                   >
                     {/* revoke yet to apply */}
                     Revoke
@@ -307,6 +308,9 @@ export default function Integrations({ siteId, cfData }: Props) {
     const status = data.valid === true ? "success" : "error";
     const message = data.message;
 
+    // clear previous cache
+    sessionStorage.removeItem(`${selectedSite}-cloudflare-status`);
+
     setStatus({ status: status, comment: message });
   }
 
@@ -354,6 +358,30 @@ export default function Integrations({ siteId, cfData }: Props) {
       });
     } catch (error) {
       setRumScript({ loading: false, isAvailable: false, isSet: true });
+      console.error(error);
+    }
+  }
+
+  async function revokeCf() {
+    if (!selectedSite) return;
+
+    try {
+      const res = await fetch("/api/cloudflare/revoke-token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "appliaction/json",
+        },
+        body: JSON.stringify({ domain: siteId }),
+      });
+
+      const body: any = await res.json();
+
+      if (!res.ok) {
+        throw new Error(body.message);
+      }
+
+      setCfData && setCfData({ isConnected: false, key: "" });
+    } catch (error) {
       console.error(error);
     }
   }

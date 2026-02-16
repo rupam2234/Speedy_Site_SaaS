@@ -13,6 +13,7 @@ import { useSiteContext } from "../siteContext";
 import { toast } from "sonner";
 import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import Integrations, { CfConnection } from "./integrations";
+import { getRateLimiter, setRatelimiter } from "@/components/utils";
 
 export default function Main() {
   const [siteData, setSiteData] = useState<OrderData>();
@@ -131,7 +132,7 @@ export default function Main() {
               )}
             </div>
 
-            {/* Status */}
+            {/*RUM connection Status */}
             <div className="flex justify-between items-center">
               <Label className="text-muted-foreground">RUM Status</Label>
               {!siteData ? (
@@ -155,7 +156,7 @@ export default function Main() {
 
               {!siteData || cloudflareStatus === null ? (
                 <div className="h-4 w-28 rounded-md bg-primary/20 animate-pulse" />
-              ) : cloudflareStatus.isConnected ? (
+              ) : cloudflareStatus.isConnected && cloudflareStatus.key ? (
                 <span className="font-medium text-green-500">Connected</span>
               ) : (
                 <span className="font-medium text-red-500">Not Connected</span>
@@ -166,7 +167,14 @@ export default function Main() {
 
         {/* RUM Integration - Wider Section */}
         <div className="col-span-1 md:col-span-8">
-          <Integrations siteId={siteData?.order_id} cfData={cloudflareStatus} />
+          <Integrations
+            siteId={siteData?.order_id}
+            cfData={cloudflareStatus}
+            setCfData={() => {
+              setCloudflareStatus;
+              sessionStorage.removeItem(`${selectedSite}-cloudflare-status`);
+            }}
+          />
         </div>
       </div>
     </div>
@@ -175,48 +183,76 @@ export default function Main() {
   async function fetchDomainData(selectedSite: string) {
     if (!selectedSite) return;
 
-    try {
-      const siteRes = await fetch("/api/orders/get-site", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: selectedSite }),
-      });
+    const siteKey = `${selectedSite}-domain-info`;
+    const cfKey = `${selectedSite}-cloudflare-status`;
+    const expiry = 5 * 60 * 1000; // five minutes
 
-      const body: { message?: string; data?: any; status: number } =
-        await siteRes.json();
+    // Check site data cache
+    const cachedSiteData = getRateLimiter(siteKey);
+    if (cachedSiteData) {
+      setSiteData(cachedSiteData);
+    } else {
+      try {
+        const siteRes = await fetch("/api/orders/get-site", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ domain: selectedSite }),
+        });
 
-      if (!siteRes.ok) {
-        setSiteData(undefined);
-        throw new Error(body.message);
+        const siteBody: { message?: string; data?: any[]; status: number } =
+          await siteRes.json();
+
+        if (!siteRes.ok || !siteBody.data || !siteBody.data.length) {
+          setSiteData(undefined);
+          setRatelimiter({ key: siteKey, ttl: expiry, value: undefined });
+          throw new Error(siteBody.message || "Failed to fetch site data");
+        }
+
+        const siteData = siteBody.data[0];
+        setSiteData(siteData);
+        setRatelimiter({ key: siteKey, ttl: expiry, value: siteData });
+      } catch (error) {
+        console.error("Error fetching site data:", error);
+        return;
       }
+    }
 
-      const siteData = body.data[0];
-      setSiteData(siteData);
+    const siteData = getRateLimiter(siteKey); // guaranteed to exist here
 
-      setCloudflareStatus({ isConnected: false });
+    // Check Cloudflare status cache
+    const cachedCFStatus = getRateLimiter(cfKey);
 
-      // this checks cloudflare integration
-      const res = await fetch("/api/cloudflare/check-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: siteData.user_id,
-          site_id: siteData.order_id,
-        }),
-      });
+    if (cachedCFStatus) {
+      setCloudflareStatus(cachedCFStatus);
+    } else {
+      try {
+        const cfRes = await fetch("/api/cloudflare/check-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: siteData.user_id,
+            site_id: siteData.order_id,
+          }),
+        });
 
-      const cfData: any = await res.json();
+        const cfData: { found?: boolean; key?: string; message?: string } =
+          await cfRes.json();
 
-      console.log(cfData);
+        const status = { isConnected: cfData.found ?? false, key: cfData.key };
 
-      if (!res.ok) {
-        setCloudflareStatus({ isConnected: cfData.found });
-        throw new Error(cfData.message);
+        console.log(cfData);
+
+        setCloudflareStatus(status);
+        setRatelimiter({ key: cfKey, ttl: expiry, value: status });
+
+        if (!cfRes.ok) {
+          throw new Error(
+            cfData.message || "Failed to fetch Cloudflare status",
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching Cloudflare status:", error);
       }
-
-      setCloudflareStatus({ isConnected: cfData.found, key: cfData.key });
-    } catch (error) {
-      console.error(error);
     }
   }
 

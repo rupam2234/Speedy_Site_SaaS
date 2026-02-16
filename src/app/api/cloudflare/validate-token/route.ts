@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // if the cf zone has the site the we can proceed to store the site
+  // if the cf zone has the site then we can proceed to store the site
   // but first get the site_id
 
   const { data: SiteIdData, error: SiteIdError } = await worker
