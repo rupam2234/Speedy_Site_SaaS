@@ -45,7 +45,9 @@ export default function AppSidebar({
 
   const data = {
     user: {
-      name: user?.email?.split("@")[0] || "",
+      name: user?.user_metadata.name
+        ? (user?.user_metadata.name as string)
+        : "",
       email: user?.email ?? "",
       avatar: "",
       items: [

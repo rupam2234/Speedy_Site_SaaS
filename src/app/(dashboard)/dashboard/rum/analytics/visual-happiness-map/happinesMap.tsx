@@ -105,15 +105,14 @@ export default function UserHappinessMap({
         <div className="flex gap-3 items-center">
           <div>
             Good UX:
-            <span className="px-[14px] ml-2 rounded-[4px] bg-green-400" />
+            <span className="px-3.5 ml-2 rounded-lg bg-green-400" />
           </div>
           <div>
             Average UX:
-            <span className="px-[14px] ml-2 rounded-[4px] bg-yellow-400" />
+            <span className="px-3.5 ml-2 rounded-lg bg-yellow-400" />
           </div>
           <div>
-            Poor UX:{" "}
-            <span className="px-[14px] ml-2 rounded-[4px] bg-red-400" />
+            Poor UX: <span className="px-3.5 ml-2 rounded-lg bg-red-400" />
           </div>
         </div>
         <TooltipIcon

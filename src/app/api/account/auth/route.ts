@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { jwtVerify } from 'jose';
+import { GetServerSupabase } from '@/lib/db/getUser';
 
 const supabaseAdmin = () => {
   const url = process.env.SUPABASE_URL!;
@@ -121,7 +122,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ message: 'Request allowed', subscription });
   } catch (err: any) {
-    console.error('Error in API route:', err);
+    // console.error('Error in API route:', err);
     return NextResponse.json({ message: 'Unauthorized', error: err.message }, { status: 401 });
   }
 }

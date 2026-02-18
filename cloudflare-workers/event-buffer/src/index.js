@@ -10,7 +10,7 @@ export default {
 			}
 
 			// Round-robin sharding
-			const shardCount = 5;
+			const shardCount = 20;
 			const index = Math.floor(Math.random() * shardCount);
 			const shardId = `metrics-forwarder-${index}`;
 			const id = env.MY_DURABLE_OBJECT.idFromName(shardId);

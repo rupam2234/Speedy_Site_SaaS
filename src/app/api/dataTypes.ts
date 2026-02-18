@@ -13,3 +13,8 @@ export type Rum_history =
 
 export type CloudflareConfig =
   Database["public"]["Tables"]["cloudflare_auth"]["Insert"];
+
+export type SpeedySiteTickets = Database["public"]["Tables"]["tickets"]["Insert"];
+
+export type TicketMessages = Database["public"]["Tables"]["ticket_messages"]["Insert"]
+

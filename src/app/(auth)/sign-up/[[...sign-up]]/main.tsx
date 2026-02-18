@@ -14,7 +14,7 @@ export default function Main() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-
+  const [name, setName] = useState<string>("");
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -35,7 +35,7 @@ export default function Main() {
     const { error } = await supabase_client.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: authRedirect },
+      options: { emailRedirectTo: authRedirect, data: { name } },
     });
 
     setLoading(false);
@@ -59,6 +59,8 @@ export default function Main() {
         loading={loading}
         message={message}
         handleSignUp={handleSignUp}
+        name={name}
+        setName={setName}
       />
       <DesktopSideContent />
     </div>
@@ -73,6 +75,8 @@ function SignUpForm({
   loading,
   message,
   handleSignUp,
+  name,
+  setName,
 }: {
   email: string;
   setEmail: (value: string) => void;
@@ -81,6 +85,8 @@ function SignUpForm({
   loading: boolean;
   message: string;
   handleSignUp: (e: React.FormEvent) => Promise<void>;
+  name: string;
+  setName: (name: string) => void;
 }) {
   return (
     <div className="flex flex-col justify-center px-8 md:px-16 lg:px-24 pt-16 md:pt-0">
@@ -93,6 +99,19 @@ function SignUpForm({
         </div>
 
         <form onSubmit={handleSignUp} className="space-y-5">
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Your Name
+            </label>
+            <input
+              type="text"
+              placeholder="Your name"
+              value={name!}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 dark:focus:ring-indigo-500"
+            />
+          </div>
           <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Email Address

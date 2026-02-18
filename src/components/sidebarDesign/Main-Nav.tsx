@@ -51,7 +51,7 @@ export default function MainNav({
 }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>Navigation</SidebarGroupLabel>
       <SidebarMenu>
         <Collapsible className="mb-2">
           <SidebarMenuItem>

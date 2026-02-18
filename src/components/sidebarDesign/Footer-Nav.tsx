@@ -34,17 +34,19 @@ export default function FooterNav({
     }[];
   };
 }) {
-  const [NameAvatar, setNameAvatar] = useState<string>("");
-
-  useEffect(() => {
-    if (items) {
-      const FirstLetter = items.name[0]?.toUpperCase() || "";
-      setNameAvatar(FirstLetter);
-    }
-  }, [NameAvatar, items]);
-
   const { isMobile } = useSidebar();
   const signOut = useSignOut();
+
+  // Prevent hydration mismatch: render only on client
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  const nameAvatar = items?.name[0]?.toUpperCase() || "";
 
   return (
     <SidebarMenu>
@@ -52,13 +54,13 @@ export default function FooterNav({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size={"lg"}
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={items.avatar} alt={items.name} />
                 <AvatarFallback className="rounded-full bg-blue-500 text-white">
-                  {NameAvatar}
+                  {nameAvatar}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -68,18 +70,20 @@ export default function FooterNav({
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
           >
+            {/* User info at the top */}
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left tet-sm">
+              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={items.avatar} alt={items.name} />
                   <AvatarFallback className="rounded-full bg-blue-500 text-white">
-                    {NameAvatar}
+                    {nameAvatar}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
@@ -88,28 +92,30 @@ export default function FooterNav({
                 </div>
               </div>
             </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
+
+            {/* Sub-menu items */}
             <DropdownMenuGroup>
               {items.items?.map((subItem) => (
                 <a href={subItem.url} key={subItem.url}>
-                  <DropdownMenuItem
-                    key={subItem.title}
-                    className="cursor-pointer"
-                  >
+                  <DropdownMenuItem className="cursor-pointer">
                     {subItem.icon && <subItem.icon />}
                     {subItem.title}
                   </DropdownMenuItem>
                 </a>
               ))}
             </DropdownMenuGroup>
+
             <DropdownMenuSeparator />
+
+            {/* Sign out */}
             <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => {
                 sessionStorage.removeItem("orders");
                 sessionStorage.removeItem("ordersEmail");
                 sessionStorage.removeItem("selectedSite");
-                // resetPageMetric();
                 signOut({ redirectTo: "/sign-in" });
               }}
             >

@@ -310,6 +310,8 @@ export type Database = {
           created_at: string | null
           id: string
           message: string
+          sender_name: string | null
+          sender_role: string | null
           ticket_id: string | null
           user_id: string
         }
@@ -317,6 +319,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           message: string
+          sender_name?: string | null
+          sender_role?: string | null
           ticket_id?: string | null
           user_id: string
         }
@@ -324,6 +328,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           message?: string
+          sender_name?: string | null
+          sender_role?: string | null
           ticket_id?: string | null
           user_id?: string
         }
@@ -342,6 +348,7 @@ export type Database = {
           created_at: string | null
           id: string
           message: string
+          related_order: string | null
           status: string | null
           subject: string
           updated_at: string | null
@@ -351,6 +358,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           message: string
+          related_order?: string | null
           status?: string | null
           subject: string
           updated_at?: string | null
@@ -360,6 +368,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           message?: string
+          related_order?: string | null
           status?: string | null
           subject?: string
           updated_at?: string | null
