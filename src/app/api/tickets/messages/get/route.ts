@@ -24,13 +24,14 @@ export async function POST(req: NextRequest){
         const from = offset;
         const to = offset + CHUNK_SIZE - 1;
 
-        const {data, error} = await worker.from("ticket_messages").select("created_at, message, user_id, sender_name, sender_role").eq("ticket_id", ticket_id).order("created_at", {ascending: true}).range(from, to);
+        const {data, error, count} = await worker.from("ticket_messages").select("created_at, message, user_id, sender_name, sender_role", {count: "exact"}).eq("ticket_id", ticket_id).order("created_at", {ascending: true}).range(from, to);
 
         if(error){
             throw new Error(error.message);
         }
 
-        return NextResponse.json({data}, {status: 200})
+        return NextResponse.json({data, total: count,
+            hasMore: count !== null ? to + 1 < count : false}, {status: 200})
 
     }catch(error:any){
         return NextResponse.json({message: error || "Unknown error"}, {status: 500})

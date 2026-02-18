@@ -1,9 +1,11 @@
 "use client";
 
-import { Tickets } from "lucide-react";
-import { useEffect, useState } from "react";
+import { LoaderCircle, Tickets } from "lucide-react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { SpeedySiteTickets, TicketMessages } from "@/app/api/dataTypes";
 import { useFormStatus } from "react-dom";
+import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
+import { useIsMobile } from "@/components/theme";
 
 interface SendMessageProps<T> {
   message: T;
@@ -14,12 +16,16 @@ export default function Main() {
     useState<SpeedySiteTickets | null>(null);
   const [tickets, setTickets] = useState<SpeedySiteTickets[] | null>(null);
   const [userRole, setUserRole] = useState<"user" | "admin">("user"); // sets user role for ticket dashboard **admin | user**
-  const [activeMessages, setActiveMessages] = useState<TicketMessages[] | null>(
-    null,
-  );
+  const [activeMessages, setActiveMessages] = useState<TicketMessages[]>([]);
+  const [hasMore, setHasMore] = useState<number | null>(null);
 
   const [messageInput, setMessageInput] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
   const { pending } = useFormStatus();
+  const deferredMessages = useDeferredValue(activeMessages);
+
+  const user = useSupabaseUser();
 
   useEffect(() => {
     getTickets();
@@ -28,13 +34,18 @@ export default function Main() {
   useEffect(() => {
     if (!selectedTicket) return;
 
+    setActiveMessages([]);
     getMessages(0);
+    setHasMore(null);
   }, [selectedTicket]);
 
   return (
     <>
       {/* Header */}
-      <section className="px-5 py-2 mt-2">
+      <section
+        className={`
+          px-5 py-2 mt-2`}
+      >
         <div className="flex flex-row items-center justify-between">
           <span className="font-bold flex items-center gap-2 text-[20px] text-primary/80">
             <Tickets size={20} />
@@ -95,19 +106,15 @@ export default function Main() {
                 </div>
 
                 <div className="mt-1 text-xs text-primary/80">
-                  {userRole === "admin" ? (
-                    <> {/* will add sender name here for admins */} </>
-                  ) : (
-                    <span className="flex items-center justify-between">
-                      <p> Created at: {item.created_at?.split("T")[0]}</p>
-                      {item.related_order !== null &&
-                      item.related_order !== undefined ? (
-                        <>Order: {item.related_order.slice(0, 8)}</>
-                      ) : (
-                        <></>
-                      )}
-                    </span>
-                  )}
+                  <span className="flex items-center justify-between">
+                    <p> Created at: {item.created_at?.split("T")[0]}</p>
+                    {item.related_order !== null &&
+                    item.related_order !== undefined ? (
+                      <>Order: {item.related_order.slice(0, 8)}</>
+                    ) : (
+                      <></>
+                    )}
+                  </span>
                 </div>
               </div>
             ))
@@ -115,7 +122,7 @@ export default function Main() {
         </div>
 
         {/* Ticket Details + Messages */}
-        <div className="relative bg-[#f7f7f7] col-span-2 md:col-span-4 flex flex-col h-full md:border-l pl-5">
+        <div className="relative bg-[#f7f7f7] dark:bg-transparent col-span-2 md:col-span-4 flex flex-col h-full md:border-l pl-5">
           {selectedTicket && (
             <div className="space-y-3 h-full">
               {/* Ticket Header */}
@@ -127,8 +134,8 @@ export default function Main() {
 
               {/* Messages */}
               <div className="flex-1 flex flex-col gap-3 mt-4">
-                {activeMessages &&
-                  activeMessages.map((item, i) => {
+                {deferredMessages &&
+                  deferredMessages.map((item, i) => {
                     const date =
                       item.created_at &&
                       new Date(item.created_at).toLocaleString("en-GB", {
@@ -147,7 +154,7 @@ export default function Main() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className="rounded-full bg-blue-300 text-primary/80 px-3 py-1 text-lg font-semibold flex items-center gap-2">
+                            <div className="rounded-full bg-blue-300 dark:text-primary-foreground text-primary/80 px-3 py-1 text-lg font-semibold flex items-center gap-2">
                               {item.sender_name
                                 ? item.sender_name[0].toUpperCase()
                                 : "S"}
@@ -175,32 +182,56 @@ export default function Main() {
                     );
                   })}
               </div>
+
+              {/* display more messages if available */}
+              {hasMore && hasMore > 0 ? (
+                <>
+                  <button
+                    className="mb-5 rounded-sm px-2 py-0.5 hover:bg-primary/10 bg-primary/5 text-primary cursor-pointer text-sm"
+                    onClick={() => getMessages(activeMessages.length)}
+                  >
+                    Display more messages ({hasMore} remaining)
+                  </button>
+                </>
+              ) : (
+                <></>
+              )}
             </div>
           )}
-          {selectedTicket && (
-            <form
-              className="shadow-2xl flex gap-3 z-20 items-end p-2 w-full bg-primary-foreground sticky bottom-1 left-0 border-2 rounded-sm border-primary/20"
-              onSubmit={(e) => {
-                e.preventDefault();
-                sendMessage({ message: messageInput });
-              }}
-            >
-              <textarea
-                name="message"
-                placeholder="Your message..."
-                className=" px-2 w-full py-1 rounded-sm text-sm outline-none"
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                style={{ height: "150px" }}
-              />
-              <button
-                type="submit"
-                disabled={pending}
-                className="bg-blue-400 px-2 py-0.5 rounded-sm cursor-pointer font-medium hover:bg-blue-400/80"
+          {selectedTicket && selectedTicket.status !== "closed" && (
+            <>
+              <form
+                className="shadow-2xl dark:bg-secondary-background dark:text-primary flex gap-3 z-20 items-end p-2 w-full bg-primary-foreground sticky bottom-0 left-0 border-2 rounded-sm border-primary/20"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  sendMessage({ message: messageInput });
+                }}
               >
-                Send
-              </button>
-            </form>
+                <textarea
+                  name="message"
+                  placeholder="Your message..."
+                  className=" px-2 w-full py-1 rounded-sm text-sm outline-none"
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  required
+                  style={{ height: "150px" }}
+                />
+                <button
+                  type="submit"
+                  disabled={pending}
+                  className="bg-blue-400 px-2 py-0.5 rounded-sm cursor-pointer font-medium hover:bg-blue-400/80"
+                >
+                  {loading ? (
+                    <LoaderCircle
+                      size={20}
+                      className="animate-spin text-primary/30 px-2 py-0.5 w-9.5 h-6"
+                    />
+                  ) : (
+                    "Send"
+                  )}
+                </button>
+              </form>
+            </>
           )}
         </div>
       </section>
@@ -269,7 +300,14 @@ export default function Main() {
         throw new Error(body.message || "Unable to fetch messages");
       }
 
-      setActiveMessages(body.data);
+      // Number of messages already loaded
+      const alreadyLoaded = offset + body.data.length;
+      // Remaining messages
+      const remaining = body.total - alreadyLoaded;
+      setHasMore(remaining > 0 ? remaining : 0);
+
+      // Append messages
+      setActiveMessages((prev) => [...prev, ...body.data]);
     } catch (error: any) {
       console.error(error.message);
     }
@@ -280,6 +318,38 @@ export default function Main() {
    * @param param0 message of any type T
    */
   async function sendMessage<T>({ message }: SendMessageProps<T>) {
-    console.log(message);
+    if (!selectedTicket || !selectedTicket.id) return;
+
+    setLoading(true);
+
+    const res = await fetch("/api/tickets/messages/post", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: message, ticket_id: selectedTicket.id }),
+    });
+
+    const body: any = await res.json();
+
+    if (!res.ok) {
+      console.error(body.message || "Failed to send message");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    setMessageInput("");
+
+    // create temp message obj
+    const tempMsg = {
+      created_at: new Date().toISOString(),
+      user_id: user?.id !== undefined ? user.id : "",
+      message: message as string,
+      sender_name: user?.user_metadata.name || "Unknown",
+      sender_role: userRole,
+    };
+
+    setActiveMessages((prev) => [...prev, tempMsg]);
   }
 }

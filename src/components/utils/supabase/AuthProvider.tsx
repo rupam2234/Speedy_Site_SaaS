@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     supabase_client.auth.getUser().then(({ data, error }) => {
       if (error) {
-        console.log("Supabase user fetch error:", error.message);
+        console.log(error.message);
         setUser(null);
       } else {
         setUser(data.user);

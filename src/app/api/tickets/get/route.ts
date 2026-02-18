@@ -46,6 +46,25 @@ export async function GET(){
               });
               
             return NextResponse.json({ tickets, isCached: tickets.isCached, role: data?.role }, { status: 200 });
+        } else if(data?.role === "admin"){
+            // uses redis cache
+            const tickets = await redisCache({
+                key: `tickets:admin:${user.id}`,
+                ttl: 300, // 5 minutes
+                fn: async () => {
+                  const { data, error } = await worker
+                    .from("tickets")
+                    .select("id, subject, status, created_at, updated_at, related_order");
+              
+                  if (error) {
+                    throw new Error(error.message);
+                  }
+              
+                  return data ?? [];
+                },
+              });
+              
+            return NextResponse.json({ tickets, isCached: tickets.isCached, role: data?.role }, { status: 200 });
         }
 
         return NextResponse.json(
