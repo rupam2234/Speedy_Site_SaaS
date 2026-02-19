@@ -1,11 +1,11 @@
 "use client";
 
-import { LoaderCircle, Tickets } from "lucide-react";
+import { LoaderCircle, Tickets, Wrench } from "lucide-react";
 import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { SpeedySiteTickets, TicketMessages } from "@/app/api/dataTypes";
 import { useFormStatus } from "react-dom";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
-import { useIsMobile } from "@/components/theme";
+import { CustomTooltip } from "@/components/theme";
 
 interface SendMessageProps<T> {
   message: T;
@@ -21,9 +21,13 @@ export default function Main() {
 
   const [messageInput, setMessageInput] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [openStatusId, setOpenStatusId] = useState<string | undefined>(
+    undefined,
+  );
 
   const { pending } = useFormStatus();
   const deferredMessages = useDeferredValue(activeMessages);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
 
   const user = useSupabaseUser();
 
@@ -37,14 +41,27 @@ export default function Main() {
     setActiveMessages([]);
     getMessages(0);
     setHasMore(null);
-  }, [selectedTicket]);
+  }, [selectedTicket?.id]);
+
+  useEffect(() => {
+    if (!contextMenuRef.current) return;
+
+    const handleClick = (event: any) => {
+      if (!contextMenuRef.current?.contains(event.target)) {
+        setOpenStatusId(undefined);
+      }
+    };
+
+    window.addEventListener("mousedown", handleClick);
+
+    return () => window.removeEventListener("mousedown", handleClick);
+  });
 
   return (
     <>
       {/* Header */}
       <section
-        className={`
-          px-5 py-2 mt-2`}
+        className={`pt-4 backdrop-blur-md sticky top-0 z-50 px-5 h-15.75 `}
       >
         <div className="flex flex-row items-center justify-between">
           <span className="font-bold flex items-center gap-2 text-[20px] text-primary/80">
@@ -52,18 +69,81 @@ export default function Main() {
             <h2>Tickets</h2>
           </span>
 
-          {userRole === "user" && (
-            <button className="cursor-pointer text-sm bg-primary/20 dark:hover:bg-gray-100/30 dark:hover:text-primary rounded-md hover:bg-secondary-background hover:text-primary-foreground px-2 py-1">
-              Create New Ticket
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {selectedTicket && (
+              <div ref={contextMenuRef} className="relative pt-1.5">
+                <CustomTooltip
+                  content={`${selectedTicket.status !== "closed" ? "Set ticket status" : "Closed tickets can't be updated"}`}
+                  delay={300}
+                  trigger={
+                    <Wrench
+                      size={22}
+                      className="text-primary/60 rounded-full p-1 hover:bg-primary/20 z-30 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenStatusId((prev) =>
+                          prev === selectedTicket.id
+                            ? undefined
+                            : selectedTicket.id,
+                        );
+                      }}
+                    />
+                  }
+                />
+
+                {openStatusId === selectedTicket.id &&
+                  selectedTicket.status !== "closed" && (
+                    <div className="absolute top-full right-0 mt-1 flex flex-col border-2 border-primary/40 text-sm rounded-sm bg-white dark:bg-gray-700 z-40 shadow-md">
+                      {(["open", "pending", "closed"] as const).map(
+                        (status) => {
+                          const isDisabled =
+                            userRole === "user" && status !== "closed";
+
+                          return (
+                            <span
+                              key={status}
+                              className={`px-3 py-1 
+          ${
+            isDisabled
+              ? "opacity-40 cursor-not-allowed"
+              : "hover:bg-primary/10 cursor-pointer"
+          }
+        `}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (isDisabled) return;
+
+                                setOpenStatusId(undefined);
+
+                                setSelectedTicket((prev) =>
+                                  prev ? { ...prev, status } : prev,
+                                );
+
+                                await setTicketStatus({ status });
+                              }}
+                            >
+                              {status}
+                            </span>
+                          );
+                        },
+                      )}
+                    </div>
+                  )}
+              </div>
+            )}
+            {userRole === "user" && (
+              <button className="cursor-pointer text-sm bg-primary/20 dark:hover:bg-gray-100/30 dark:hover:text-primary rounded-md hover:bg-secondary-background hover:text-primary-foreground px-2 py-1">
+                Create New Ticket
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
       {/* Tickets Layout */}
       <section className="relative p-5 grid grid-cols-3 md:grid-cols-6 md:gap-5 gap-3">
         {/* Ticket List */}
-        <div className="sticky top-20 left-0 h-[80vh] overflow-auto col-span-1 md:col-span-2">
+        <div className="sticky top-20 left-0 h-[80vh] overflow-y-auto col-span-1 md:col-span-2">
           {tickets === null ? (
             <div className="mb-3.5 rounded-sm space-y-3 px-2 py-1 animate-pulse">
               {[1, 2, 3].map((_, i) => (
@@ -82,7 +162,7 @@ export default function Main() {
             tickets.map((item, i) => (
               <div
                 key={i}
-                className={`space-y-2 border-2 border-primary/20 cursor-pointer hover:bg-primary/10 rounded-sm mb-3.5 px-2 py-1 ${
+                className={`relative space-y-2 border-2 border-primary/20 cursor-pointer hover:bg-primary/10 rounded-sm mb-3.5 px-2 py-1 ${
                   item.id === selectedTicket?.id ? "bg-primary/5" : ""
                 }`}
                 onClick={() => setSelectedTicket(item)}
@@ -94,12 +174,6 @@ export default function Main() {
                       : item.subject}
                   </span>
 
-                  {/* {userRole === "admin" && item.user_id && (
-                    <span className="text-xs opacity-60 truncate max-w-20">
-                      {item.user_id}
-                    </span>
-                  )} */}
-
                   {statusBadge({
                     status: item.status as "open" | "closed" | "pending",
                   })}
@@ -108,12 +182,6 @@ export default function Main() {
                 <div className="mt-1 text-xs text-primary/80">
                   <span className="flex items-center justify-between">
                     <p> Created at: {item.created_at?.split("T")[0]}</p>
-                    {item.related_order !== null &&
-                    item.related_order !== undefined ? (
-                      <>Order: {item.related_order.slice(0, 8)}</>
-                    ) : (
-                      <></>
-                    )}
                   </span>
                 </div>
               </div>
@@ -351,5 +419,70 @@ export default function Main() {
     };
 
     setActiveMessages((prev) => [...prev, tempMsg]);
+  }
+
+  /**
+   * this sets status to a ticket in client and server
+   * @param param0 set status of the ticket "open" | "closed" | "pending"
+   */
+  async function setTicketStatus({
+    status,
+  }: {
+    status: "open" | "closed" | "pending";
+  }) {
+    if (!selectedTicket) return;
+
+    if (selectedTicket.status === status) return;
+
+    // update ticket status inside tickets (client)
+    setTickets((prev) => {
+      if (!prev) return prev;
+
+      return prev.map((ticket) =>
+        ticket.id === selectedTicket?.id && ticket.status !== "closed"
+          ? { ...ticket, status: status }
+          : ticket,
+      );
+    });
+
+    // add a temporary message
+
+    setActiveMessages((prev) => {
+      if (!prev) return prev;
+
+      if (!user) return prev;
+
+      const newMessage: TicketMessages = {
+        message: `${user?.user_metadata.name} updated the ticket status to ${status}.`,
+        user_id: user?.id,
+        sender_name: user?.user_metadata.name,
+        sender_role: userRole,
+        created_at: new Date().toISOString(),
+      };
+
+      return [...prev, newMessage];
+    });
+
+    // then we will update async in database
+
+    try {
+      const res = await fetch("/api/tickets/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: status, ticket_id: selectedTicket.id }),
+      });
+
+      const body: any = await res.json();
+
+      if (!res.ok) {
+        throw new Error(body.message);
+      }
+
+      console.log(res);
+    } catch (error: any) {
+      console.error(error.message);
+    }
   }
 }

@@ -50,7 +50,7 @@ export async function GET(){
             // uses redis cache
             const tickets = await redisCache({
                 key: `tickets:admin:${user.id}`,
-                ttl: 300, // 5 minutes
+                ttl: 60, // 1 min
                 fn: async () => {
                   const { data, error } = await worker
                     .from("tickets")
