@@ -71,10 +71,6 @@ export default function Testimonials() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 text-center">
-      <h2 className="text-lg sm:text-2xl font-bold text-primary/70">
-        Hear From Oure Legacy Customers
-      </h2>
-
       <div className="flex items-center gap-10">
         {isMobile ? (
           <></>
@@ -150,7 +146,7 @@ export default function Testimonials() {
         )}
       </div>
 
-      <div className="mt-12">
+      {/* <div className="mt-12">
         <a
           href="/reviews"
           target="_blank"
@@ -159,7 +155,7 @@ export default function Testimonials() {
         >
           {isMobile ? <>Read Reviews</> : <>Read More Reviews</>}
         </a>
-      </div>
+      </div> */}
     </div>
   );
 }

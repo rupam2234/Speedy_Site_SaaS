@@ -396,18 +396,11 @@ export default function Home() {
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <a
-                  href="#"
+                  href="/wordpress-optimization"
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:border-primary hover:text-primary hover:shadow-lg hover:shadow-primary/5 transition-all"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                   WordPress Speed Optimization
-                </a>
-                <a
-                  href="#"
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:border-primary hover:text-primary hover:shadow-lg hover:shadow-primary/5 transition-all"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  WordPress Site Overhaul
                 </a>
               </div>
             </div>
@@ -421,7 +414,7 @@ export default function Home() {
       {/* Testimonials */}
       <section
         id="testimonials"
-        className="relative bg-slate-50 py-32 overflow-hidden border-t border-slate-100"
+        className="relative bg-slate-50 py-25 overflow-hidden border-t border-slate-100"
       >
         {/* BLENDING ELEMENT: Subtle Mesh Gradient for depth */}
         <div className="absolute inset-0 pointer-events-none">
@@ -440,7 +433,7 @@ export default function Home() {
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           {/* SECTION HEADER */}
-          <div className="text-center mb-20">
+          <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 mb-6">
               <svg
                 className="w-3 h-3 text-emerald-500"
@@ -461,13 +454,12 @@ export default function Home() {
             <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">
               Trusted by{" "}
               <span className="text-primary italic font-serif">
-                Fast-Moving
-              </span>{" "}
-              Teams
+                Site Owners
+              </span>
             </h2>
             <p className="mt-4 text-slate-500 max-w-xl mx-auto text-lg font-light">
-              See how Speedy.Site helps developers and business owners turn
-              performance data into growth.
+              Over 150 business owners trust us to turn performance data into
+              faster, smoother websites with green Web Vitals.
             </p>
           </div>
 

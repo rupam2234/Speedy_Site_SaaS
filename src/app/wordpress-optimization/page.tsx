@@ -1,10 +1,10 @@
 import { Metadata } from "next";
-import ContactPage from "./main";
+import WPOptimizationService from "./main";
 
 export const metadata: Metadata = {
-  title: "Contact | Speedy Site",
+  title: "WordPress Optimization Service | Speedy Site",
   description:
-    "Contact Speedy Site | a Real User Monitoring (RUM) and WordPress optimization services.",
+    "a WordPress Optimization Service backed by integrated Real User Monitoring system.",
   keywords: [
     "Speedy Site",
     "WordPress optimization",
@@ -16,9 +16,10 @@ export const metadata: Metadata = {
   authors: [{ name: "Speedy Site Team" }],
   creator: "Speedy Site",
   openGraph: {
-    title: "Contact | Speedy Site",
+    title: "WordPress Optimization Service | Speedy Site",
     description:
-      "Reach out to Speedy Site for expert RUM and WordPress optimization services to enhance your website performance.",
+      "a WordPress Optimization Service backed by integrated Real User Monitoring system.",
+    url: "https://speedy.site",
     siteName: "Speedy Site",
     type: "website",
   },
@@ -34,6 +35,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Contact() {
-  return <ContactPage />;
+export default function WPoptimization() {
+  return <WPOptimizationService />;
 }
