@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { jwtVerify } from 'jose';
-import { GetServerSupabase } from '@/lib/db/getUser';
 
 const supabaseAdmin = () => {
   const url = process.env.SUPABASE_URL!;

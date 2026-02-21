@@ -6,6 +6,7 @@ import { SpeedySiteTickets, TicketMessages } from "@/app/api/dataTypes";
 import { useFormStatus } from "react-dom";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { CustomTooltip } from "@/components/theme";
+import { useRouter } from "next/navigation";
 
 interface SendMessageProps<T> {
   message: T;
@@ -30,6 +31,7 @@ export default function Main() {
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
 
   const user = useSupabaseUser();
+  const router = useRouter();
 
   useEffect(() => {
     getTickets();
@@ -103,12 +105,12 @@ export default function Main() {
                             <span
                               key={status}
                               className={`px-3 py-1 
-          ${
-            isDisabled
-              ? "opacity-40 cursor-not-allowed"
-              : "hover:bg-primary/10 cursor-pointer"
-          }
-        `}
+                                ${
+                                  isDisabled
+                                    ? "opacity-40 cursor-not-allowed"
+                                    : "hover:bg-primary/10 cursor-pointer"
+                                }
+                              `}
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 if (isDisabled) return;
@@ -132,7 +134,10 @@ export default function Main() {
               </div>
             )}
             {userRole === "user" && (
-              <button className="cursor-pointer text-sm bg-primary/20 dark:hover:bg-gray-100/30 dark:hover:text-primary rounded-md hover:bg-secondary-background hover:text-primary-foreground px-2 py-1">
+              <button
+                onClick={() => router.push("/account/tickets/new")}
+                className="cursor-pointer text-sm bg-primary/20 dark:hover:bg-gray-100/30 dark:hover:text-primary rounded-md hover:bg-secondary-background hover:text-primary-foreground px-2 py-1"
+              >
                 Create New Ticket
               </button>
             )}

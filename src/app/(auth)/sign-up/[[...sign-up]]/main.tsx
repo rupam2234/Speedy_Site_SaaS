@@ -35,7 +35,10 @@ export default function Main() {
     const { error } = await supabase_client.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: authRedirect, data: { name } },
+      options: {
+        emailRedirectTo: authRedirect,
+        data: { name, userRole: "user" },
+      },
     });
 
     setLoading(false);

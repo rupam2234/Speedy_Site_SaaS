@@ -24,7 +24,7 @@ export default function AuthCallbackClient() {
     }
 
     if (!session) {
-      console.log("No active session yet");
+      console.error("No active session yet");
       router.replace("/sign-in?error=no-session");
       return;
     }
