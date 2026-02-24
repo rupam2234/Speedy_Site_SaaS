@@ -124,15 +124,11 @@ export default function SiteContextProvider({
       }
 
       try {
-        const response = await fetch("/api/orders/fetchOrder", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: userId }),
-        });
+        const response = await fetch("/api/orders/fetchOrder");
 
         if (!response.ok) throw new Error("Failed to fetch orders");
 
-        const { data }: any = await response.json();
+        const { data }: { data: OrderData[] } = await response.json();
 
         if (data?.length > 0) {
           sessionStorage.setItem("orders", JSON.stringify(data));

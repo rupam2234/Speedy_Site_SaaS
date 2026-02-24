@@ -1,18 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
 import { OrderData } from "../../dataTypes";
+import { GetServerSupabase } from "@/lib/db/getUser";
 
 const db = setupDB();
 
-interface FetchOrderBody {
-  user_id: string;
-}
+export async function GET() {
+  const {user} = await GetServerSupabase();
 
-export async function POST(req: NextRequest) {
-  const body = (await req.json()) as FetchOrderBody;
-  const { user_id } = body;
-
-  if (!user_id) {
+  if (!user?.id) {
     return NextResponse.json(
       { message: "Unauthorized: No user ID provided" },
       { status: 401 }
@@ -23,25 +19,22 @@ export async function POST(req: NextRequest) {
     const { data, error } = await db
       .from("orders")
       .select("*")
-      .eq("user_id", user_id);
+      .eq("user_id", user?.id);
 
     if (error) {
-      console.error("DB error:", error);
-      return NextResponse.json(
-        { message: "Failed to fetch orders" },
-        { status: 500 }
-      );
+      throw new Error(error.message || "failed to fetch orders")
     }
 
-    const orders: OrderData[] = (data || []).map((order: any) => ({
-      orderId: order.order_id,
-      orderDate: order.order_date,
-      gsc_token: order.gsc_token,
+    const orders: OrderData[] = (data || []).map((order: OrderData) => ({
       website_name: order.website_name,
       website_address: order.website_address,
       favicon_file: order.favicon_file,
       order_status: order.order_status,
-      user_email: order.user_email,
+      order_id: order.order_id,
+      order_date: order.order_date,
+      usage_by_site: order.usage_by_site,
+      rum_connection: order.rum_connection,
+      user_id: order.user_id
     }));
 
     return NextResponse.json(
@@ -53,10 +46,9 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (err) {
-    console.error("Unexpected error fetching orders:", err);
+  } catch (err:any) {
     return NextResponse.json(
-      { message: "Internal server error" },
+      { message: err.message || "Internal server error" },
       { status: 500 }
     );
   }
