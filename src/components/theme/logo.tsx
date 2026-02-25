@@ -7,7 +7,7 @@ export function SpeedySiteLogo({ isDark }: { isDark: boolean }) {
       {isDark ? (
         <Link href="/" className="cursor-pointer ring-0 focus:ring-0">
           <Image
-            src="/images/Speedy-site-logo-light.png"
+            src="/images/logos/Speedy-site-logo-light.png"
             alt="SpeedySite-logo-dark"
             width={130}
             height={20}
@@ -17,7 +17,7 @@ export function SpeedySiteLogo({ isDark }: { isDark: boolean }) {
       ) : (
         <Link href="/" className="cursor-pointer ring-0 focus:ring-0">
           <Image
-            src="/images/Speedy-site-logo-dark.png"
+            src="/images/logos/Speedy-site-logo-dark.png"
             alt="SpeedySite-logo-light"
             width={130}
             height={20}

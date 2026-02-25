@@ -18,7 +18,6 @@ export default function Main() {
     startDate,
     endDate,
     selectedDevice,
-    plan,
     setCruxData,
   } = useSiteContext();
   const isMobile = useIsMobile();
@@ -382,26 +381,26 @@ export default function Main() {
   }) {
     switch (metric) {
       case "largest_contentful_paint":
-        return value < 2300
-          ? "text-green-300"
+        return value < 2500
+          ? "text-green-400"
           : value < 4000
             ? "text-yellow-300"
             : "text-red-300";
       case "interaction_to_next_paint":
         return value < 200
-          ? "text-green-300"
+          ? "text-green-400"
           : value < 300
             ? "text-yellow-300"
             : "text-red-300";
       case "cumulative_layout_shift":
         return value < 0.1
-          ? "text-green-300"
+          ? "text-green-400"
           : value < 0.25
             ? "text-yellow-300"
             : "text-red-300";
       case "experimental_time_to_first_byte":
         return value < 800
-          ? "text-green-300"
+          ? "text-green-400"
           : value < 1800
             ? "text-yellow-300"
             : "text-red-300";

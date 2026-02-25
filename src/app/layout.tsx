@@ -25,7 +25,7 @@ export default function RootLayout({
           type="image/png"
           sizes="32x32"
           rel="icon"
-          href="/images/speedysite-favicon.png"
+          href="/images/logos/speedysite-favicon.png"
         />
       </head>
       <body

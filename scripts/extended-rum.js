@@ -509,6 +509,33 @@ function handleTTFB(metric) {
 //   }
 // }).observe({ type: "resource", buffered: true });
 
+// origin hit detection
+
+function detectOriginHit(headers) {
+  if (!headers) return true;
+
+  const hdr = Object.fromEntries(
+    Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v])
+  );
+
+  const cacheHeaders = ['cf-cache-status', 'x-cache', 'x-vercel-cache'];
+  for (const h of cacheHeaders) {
+    if (hdr[h]) {
+      const val = hdr[h].toLowerCase();
+      if (val.includes('hit')) return false;
+      if (val.includes('miss')) return true;
+    }
+  }
+
+  const st = hdr['server-timing'];
+  if (st) {
+    const match = st.match(/(?:cfOrigin|origin);dur=(\d+)/i);
+    if (match) return parseInt(match[1], 10) > 0;
+  }
+
+  return true;
+}
+
 function getDeviceType() {
   const w = window.innerWidth;
   return w <= 768 ? "mobile" : w <= 1024 ? "tablet" : "desktop";
@@ -555,7 +582,6 @@ function getDeviceType() {
   }
 })();
 
-// let assetSummarySent = false;
 let isFlushing = false;
 
 function flushMetrics() {
@@ -626,7 +652,27 @@ function flushMetrics() {
     if(worstCLS) batchedData.push(worstCLS);
 
     //aggregate LCP
-    if(worstLCP) batchedData.push(worstLCP)
+    if(worstLCP) batchedData.push(worstLCP);
+
+    // ---- Integrate .doc origin detection ----
+    const resources = performance.getEntriesByType("resource");
+    resources.forEach(entry => {
+      if (!entry.name.endsWith(".doc")) return;
+
+      const serverTiming = entry.serverTiming || [];
+      const headersObj = {};
+      serverTiming.forEach(st => {
+        headersObj[st.name] = st.duration != null ? `dur=${st.duration}` : '';
+      });
+
+      const originHit = detectOriginHit(headersObj);
+
+      batchedData.push({
+        type: "doc-origin-hit",
+        url: entry.name,
+        originHit,
+      });
+    });
 
     // then we prep the payload
     if (batchedData.length > 0) {
