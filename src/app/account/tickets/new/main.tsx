@@ -19,8 +19,8 @@ export default function Main() {
 
   const ticketTypes = ["General", "Technical Support", "Billing"];
 
-  const handleSubmitTicket = useCallback(async () => {
-    await submitTicket();
+  const handleSubmitTicket = useCallback(() => {
+    submitTicket();
   }, []);
 
   useEffect(() => {
@@ -32,8 +32,6 @@ export default function Main() {
       hasFetched.current = true;
     }
   }, []);
-
-  console.log(ticketTitle, message);
 
   return (
     <>
@@ -221,11 +219,12 @@ export default function Main() {
                 >
                   {loading ? "Submitting..." : "Submit Ticket"}
                 </button>
-                {!loading && result && (
+                {!loading && result.message.length > 0 && (
                   <div
-                    className="h-2 text-sm text-primary/80 mt-4 px-2 py-1 rounded-sm"
+                    className="h-auto text-sm text-primary/80 mt-4 px-2 py-1 rounded-sm"
                     style={{
-                      background: result.success ? "#A2CB8B" : "#FFB2B2",
+                      background:
+                        result.success === true ? "#A2CB8B" : "#FFB2B2",
                     }}
                   >
                     {result.message}

@@ -18,3 +18,5 @@ export type SpeedySiteTickets = Database["public"]["Tables"]["tickets"]["Insert"
 
 export type TicketMessages = Database["public"]["Tables"]["ticket_messages"]["Insert"]
 
+export type OriginHits = Database["public"]["Tables"]["rum_origin_hits_agg"]["Insert"]
+

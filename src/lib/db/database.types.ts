@@ -243,6 +243,52 @@ export type Database = {
         }
         Relationships: []
       }
+      rum_origin_hits_agg: {
+        Row: {
+          agg_time: string
+          domain_name: string
+          origin_hit_count: number
+          origin_hit_percentage: number
+          total_origin_events: number
+        }
+        Insert: {
+          agg_time: string
+          domain_name: string
+          origin_hit_count: number
+          origin_hit_percentage: number
+          total_origin_events: number
+        }
+        Update: {
+          agg_time?: string
+          domain_name?: string
+          origin_hit_count?: number
+          origin_hit_percentage?: number
+          total_origin_events?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rum_origin_hits_agg_domain_name_fkey"
+            columns: ["domain_name"]
+            isOneToOne: false
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["website_name"]
+          },
+          {
+            foreignKeyName: "rum_origin_hits_agg_domain_name_fkey"
+            columns: ["domain_name"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["website_name"]
+          },
+          {
+            foreignKeyName: "rum_origin_hits_agg_domain_name_fkey"
+            columns: ["domain_name"]
+            isOneToOne: false
+            referencedRelation: "v_cf_zone_per_site"
+            referencedColumns: ["website_name"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           billing_interval: string | null
@@ -1064,6 +1110,7 @@ export type Database = {
           poor_count: number
         }[]
       }
+      rum_origin_hits_agg_run: { Args: never; Returns: undefined }
       text_to_bytea: { Args: { data: string }; Returns: string }
       third_party_domains: {
         Args: { site_filter?: string; time_range?: string }

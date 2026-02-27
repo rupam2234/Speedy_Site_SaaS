@@ -121,6 +121,8 @@ if ("PerformanceObserver" in window) {
     const entry = list.getEntries()[0];
     if (!entry) return;
 
+
+
     queueEvent({
       type: "navigation-timing",
       navigationType: entry.type, // navigate | reload | back_forward | prerender
@@ -286,7 +288,6 @@ function handleINP(metric) {
 }
 
 function handleLCP(metric) {
-  // latestMetrics.LCP = metric.value;
   const rating = classifyMetric(metric.value, LCPThresholds);
   const resourceEntries = performance.getEntriesByType("resource");
   const isImage =
@@ -339,34 +340,6 @@ function handleLCP(metric) {
       },
     }
   }      
-
-  // queueEvent({
-  //   type: "web-vital",
-  //   siteDomain,
-  //   name: "LCP",
-  //   value: metric.value,
-  //   rating,
-  //   id: metric.id,
-  //   delta: metric.delta,
-  //   attribution: {
-  //     target: metric.attribution?.target,
-  //     resourceLoadDelay: metric.attribution?.resourceLoadDelay,
-  //     resourceLoadDuration: metric.attribution?.resourceLoadDuration,
-  //     elementRenderDelay: metric.attribution?.elementRenderDelay,
-  //     timeToFirstByte: metric.attribution?.timeToFirstByte,
-  //     url: metric.attribution?.url,
-  //     ...(isImage && {
-  //       decodedBodySize: matchedEntry?.decodedBodySize ?? null,
-  //       transferSize: matchedEntry?.transferSize ?? null,
-  //       width: findImage?.width ?? null,
-  //       height: findImage?.height ?? null,
-  //       isLazy:
-  //         findImage?.classList.contains("lazyloaded") ||
-  //         findImage?.classList.contains("lazyload"),
-  //     }),
-  //   },
-  //   // timestamp: Date.now(),
-  // });
 }
 
 function handleFCP(metric) {
@@ -407,138 +380,70 @@ function handleTTFB(metric) {
   });
 }
 
-// function isProblematicDomain(data) {
-//   return (
-//     data.count > 0 &&
-//     (data.averageDuration > 3000 ||
-//       data.maxDuration > 5000 ||
-//       data.averageTTFB > 800 ||
-//       data.maxTTFB > 1500 ||
-//       data.totalTransferSize > 500000)
-//   );
-// }
-
-// function safeTTFB(entry) {
-//   if (
-//     typeof entry.responseStart === "number" &&
-//     typeof entry.fetchStart === "number"
-//   ) {
-//     const ttfb = entry.responseStart - entry.fetchStart;
-//     return ttfb >= 0 && isFinite(ttfb) ? ttfb : null;
-//   }
-//   return null;
-// }
-
-// new PerformanceObserver((list) => {
-//   for (const entry of list.getEntries()) {
-//     const { name, initiatorType } = entry;
-
-//     if (
-//       name.includes("://") &&
-//       !name.includes(location.hostname) &&
-//       ["script", "img", "link", "iframe", "font", "video", "audio"].includes(
-//         initiatorType,
-//       )
-//     ) {
-//       try {
-//         const url = new URL(name);
-//         const domain = url.hostname;
-//         if (!domain) continue;
-
-//         // Initialize if first time
-//         if (!thirdPartyDomainTimings[domain]) {
-//           thirdPartyDomainTimings[domain] = {
-//             count: 0,
-//             totalDuration: 0,
-//             maxDuration: 0,
-//             totalTransferSize: 0,
-//             totalEncodedBodySize: 0,
-//             totalTTFB: 0,
-//             maxTTFB: 0,
-//             countTTFB: 0,
-//           };
-//         }
-
-//         const ttfb = safeTTFB(entry);
-//         const duration = entry.duration || 0;
-//         const transferSize = entry.transferSize || 0;
-//         const encodedSize = entry.encodedBodySize || 0;
-
-//         const domainData = thirdPartyDomainTimings[domain];
-//         domainData.count += 1;
-//         domainData.totalDuration += duration;
-//         domainData.maxDuration = Math.max(domainData.maxDuration, duration);
-//         domainData.totalTransferSize += transferSize;
-//         domainData.totalEncodedBodySize += encodedSize;
-
-//         if (ttfb !== null) {
-//           domainData.totalTTFB += ttfb;
-//           domainData.maxTTFB = Math.max(domainData.maxTTFB, ttfb);
-//           domainData.countTTFB += 1;
-//         }
-
-//         // Calculate averages for filtering
-//         const averageDuration = domainData.totalDuration / domainData.count;
-//         const averageTTFB = domainData.countTTFB
-//           ? domainData.totalTTFB / domainData.countTTFB
-//           : 0;
-
-//         // Create a temporary data object to check if domain is problematic
-//         const checkData = {
-//           count: domainData.count,
-//           averageDuration,
-//           maxDuration: domainData.maxDuration,
-//           totalTransferSize: domainData.totalTransferSize,
-//           averageTTFB,
-//           maxTTFB: domainData.maxTTFB,
-//         };
-
-//         if (isProblematicDomain(checkData)) {
-//           thirdPartyAssetDomains.add(domain);
-//           thirdPartyAssetTypes.add(initiatorType);
-//         } else {
-//           // Remove domain if no longer problematic
-//           thirdPartyAssetDomains.delete(domain);
-//           // Optionally remove types if no domains left for that type (optional)
-//           // You could add logic here if needed
-//         }
-//       } catch (error) {
-//         console.warn(`Invalid URL in resource entry: ${entry.name}`, error);
-//       }
-//     }
-//   }
-// }).observe({ type: "resource", buffered: true });
-
-// origin hit detection
-
-function detectOriginHit(headers) {
-  if (!headers) return true;
-
-  const hdr = Object.fromEntries(
-    Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v])
-  );
-
-  const cacheHeaders = ['cf-cache-status', 'x-cache', 'x-vercel-cache'];
-  for (const h of cacheHeaders) {
-    if (hdr[h]) {
-      const val = hdr[h].toLowerCase();
-      if (val.includes('hit')) return false;
-      if (val.includes('miss')) return true;
-    }
-  }
-
-  const st = hdr['server-timing'];
-  if (st) {
-    const match = st.match(/(?:cfOrigin|origin);dur=(\d+)/i);
-    if (match) return parseInt(match[1], 10) > 0;
-  }
-
-  return true;
-}
-
 function getDeviceType() {
   const w = window.innerWidth;
   return w <= 768 ? "mobile" : w <= 1024 ? "tablet" : "desktop";
+}
+
+function detectOriginHit() {
+  const nav = performance.getEntriesByType("navigation")[0];
+  if (!nav) return { type: "origin-info", detected: false, originHit: null, provider: null };
+
+  const st = nav.serverTiming || [];
+
+  // if cloudflare CDN
+  const cfOrigin = st.find(x => x.name === "cfOrigin");
+  if (cfOrigin) {
+    return {
+      type: "origin-info",
+      detected: true,
+      provider: "cloudflare",
+      originHit: cfOrigin.duration > 0,
+      originDuration: cfOrigin.duration,
+      cacheStatus: null
+    };
+  }
+
+  // generic CDN
+  const genericOrigin = st.find(x => x.name === "origin");
+  if (genericOrigin) {
+    return {
+      type: "origin-info",
+      detected: true,
+      provider: "generic-server-timing",
+      originHit: genericOrigin.duration > 0,
+      originDuration: genericOrigin.duration,
+      cacheStatus: null
+    };
+  }
+
+  // other CDNs
+  const cacheTiming = st.find(x =>
+    ["cache", "cdn-cache", "edgeCache"].includes(x.name)
+  );
+
+  if (cacheTiming?.description) {
+    const status = cacheTiming.description.toUpperCase();
+    const originHit = ["MISS", "REVALIDATED", "EXPIRED", "BYPASS"].includes(status);
+    return {
+      type: "origin-info",
+      detected: true,
+      provider: "generic-cache-status",
+      originHit,
+      originDuration: null,
+      cacheStatus: status
+    };
+  }
+
+  // no CDN 
+  return {
+    type: "origin-info",
+    detected: false,
+    originHit: null,
+    originDuration: null,
+    provider: null,
+    cacheStatus: null
+  };
 }
 
 (function collectClientMeta() {
@@ -654,25 +559,16 @@ function flushMetrics() {
     //aggregate LCP
     if(worstLCP) batchedData.push(worstLCP);
 
-    // ---- Integrate .doc origin detection ----
-    const resources = performance.getEntriesByType("resource");
-    resources.forEach(entry => {
-      if (!entry.name.endsWith(".doc")) return;
+    /**
+     * origin hit detection
+     */
+    const originInfo = detectOriginHit();
+    if (originInfo.originHit === null) {
+      originInfo.originHit = true;
+      originInfo.provider = "primary-server";
+    }
 
-      const serverTiming = entry.serverTiming || [];
-      const headersObj = {};
-      serverTiming.forEach(st => {
-        headersObj[st.name] = st.duration != null ? `dur=${st.duration}` : '';
-      });
-
-      const originHit = detectOriginHit(headersObj);
-
-      batchedData.push({
-        type: "doc-origin-hit",
-        url: entry.name,
-        originHit,
-      });
-    });
+    batchedData.push(originInfo);
 
     // then we prep the payload
     if (batchedData.length > 0) {

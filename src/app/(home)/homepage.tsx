@@ -230,7 +230,7 @@ export default function Home() {
 
       {/* Smooth Transition Features */}
       <section
-        id="flow"
+        id="features"
         className="relative py-32 bg-[#14142e] overflow-hidden"
       >
         {/* Background Decorative Elements */}

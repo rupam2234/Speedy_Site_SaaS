@@ -17,7 +17,7 @@ import {
   BarGraphTabs,
 } from "./index";
 import { InfoIcon } from "lucide-react";
-import { RumWebVitalToolbar } from "@/components/utils";
+import { lazyload, RumWebVitalToolbar } from "@/components/utils";
 
 interface Metric {
   name: string;
@@ -81,8 +81,9 @@ export default function Main() {
   const [contributors, setContributors] = useState<any>();
   const { startDate, endDate } = useSiteContext();
 
-  const hasAnalyzedRef = useRef(false);
   const triggerLazyload = useRef(null);
+  const lazyloadKey = useRef<string | null>(null);
+  const hasRun = useRef(false);
 
   const isMobile = useIsMobile();
 
@@ -110,35 +111,18 @@ export default function Main() {
 
   //#region Effects
   useEffect(() => {
-    if (!selectedSite || !startDate || !endDate) return;
+    const key = `${selectedSite}-${selectedDevice}-${activeMetric}-${startDate}-${endDate}`;
 
-    // run on first load but never run later
-    // later Analysishandler will be called by intersection observer lazyload
-    if (!hasAnalyzedRef.current && activeMetric === "LCP") {
-      hasAnalyzedRef.current = true;
-      AnalysisHandler();
-    }
-  }, [selectedSite, startDate, endDate]);
+    if (lazyloadKey.current === key) return;
 
-  useEffect(() => {
-    if (!triggerLazyload.current) {
-      return;
-    }
+    lazyload({
+      fn: AnalysisHandler,
+      refObj: triggerLazyload,
+      rootMargin: "200px",
+    });
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          AnalysisHandler();
-          observer.disconnect();
-        }
-      },
-      {
-        rootMargin: "300px",
-      },
-    );
-
-    observer.observe(triggerLazyload.current);
-    return () => observer.disconnect(); // lazyload config
+    lazyloadKey.current = key;
+    hasRun.current = false;
   }, [activeMetric, selectedSite, selectedDevice, startDate, endDate]);
 
   useEffect(() => {
@@ -518,6 +502,9 @@ export default function Main() {
   }
 
   async function AnalysisHandler() {
+    if (hasRun.current) return; // prevent duplicate runs
+    hasRun.current = true;
+
     if (activeMetric === "LCP") {
       try {
         setContributors([]);
@@ -616,11 +603,7 @@ export default function Main() {
         endDate: cachedEndDate,
       } = JSON.parse(cache);
 
-      if (
-        cachedStartDate === startDate &&
-        cachedEndDate === endDate &&
-        activeMetric === activeMetric
-      ) {
+      if (cachedStartDate === startDate && cachedEndDate === endDate) {
         setRumDistData(data);
         return;
       }

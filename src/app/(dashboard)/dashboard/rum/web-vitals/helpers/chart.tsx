@@ -17,6 +17,7 @@ import { UniversalTransition } from "echarts/features";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import TooltipIcon from "@/components/theme/customTooltip";
+import { debounce } from "@/components/utils";
 
 echarts.use([
   TitleComponent,
@@ -57,14 +58,6 @@ export function getRanges(metric_key: string) {
   };
 
   return ranges[metric_key] || null;
-}
-
-function debounce(fn: () => void, delay: number) {
-  let timer: ReturnType<typeof setTimeout>;
-  return () => {
-    clearTimeout(timer);
-    timer = setTimeout(fn, delay);
-  };
 }
 
 const RumCwvChart = ({

@@ -67,7 +67,6 @@ export function CountryStripe({ data }: CountryStripeProps) {
                   left: actualIndex * COLUMN_WIDTH,
                   top: 0,
                   paddingLeft: "10px",
-                  //   paddingRight: "4px",
                   width: COLUMN_WIDTH,
                   borderRight: `1px solid ${theme === "light" ? `#dfdfdf` : `#343434`}`,
                 }}

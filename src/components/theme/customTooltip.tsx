@@ -71,7 +71,7 @@ export default function TooltipIcon({
         return {
           top: rect.top + rect.height / 2,
           left: rect.right + spacing,
-          transform: "translateY(-50%)",
+          transform: "translateY(-20%)",
         };
       case "bottom":
         return {
@@ -84,7 +84,7 @@ export default function TooltipIcon({
         return {
           top: rect.top + rect.height / 2,
           left: rect.left - spacing,
-          transform: "translate(-100%, -50%)",
+          transform: "translate(-100%, -20%)",
         };
     }
   };
@@ -96,12 +96,13 @@ export default function TooltipIcon({
       case "top":
         return "bottom-[-8px] left-1/2 -translate-x-1/2 border-x-8 border-t-8 border-t-gray-700";
       case "right":
-        return "left-[-8px] top-1/2 -translate-y-1/2 border-y-8 border-r-8 border-r-gray-700";
+        return "left-[-8px] top-1/5 -translate-y-1/2 border-y-8 border-r-8 border-r-gray-700";
       case "bottom":
         return "top-[-8px] left-1/2 -translate-x-1/2 border-x-8 border-b-8 border-b-gray-700";
       case "left":
+        return "right-[-8px] top-1/5 -translate-y-1/2 border-y-8 border-l-8 border-l-gray-700";
       default:
-        return "right-[-8px] top-1/2 -translate-y-1/2 border-y-8 border-l-8 border-l-gray-700";
+        return "right-[-8px] top-1/5 -translate-y-1/2 border-y-8 border-l-8 border-l-gray-700";
     }
   };
 
