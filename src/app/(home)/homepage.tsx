@@ -242,9 +242,9 @@ export default function Home() {
               The Workflow
             </h2>
             <p className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-tight">
-              From zero data to{" "}
+              Understand your users,{" "}
               <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 to-cyan-400">
-                performance mastery
+                Improve your user experience
               </span>{" "}
               in four steps.
             </p>
@@ -325,11 +325,12 @@ export default function Home() {
                   <div className="grid md:grid-cols-2 gap-12 items-center">
                     <div className="space-y-6">
                       <h3 className="text-3xl font-bold text-white">
-                        See Real User Experience
+                        Monitor Your User Experience
                       </h3>
                       <p className="text-slate-400 text-lg">
-                        Know exactly where users struggle — by device, location,
-                        and page.
+                        Collect privacy first performance and UX data from users
+                        sessions and break it down by device, location, network
+                        connection and page to find issues faster.
                       </p>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50">
@@ -534,26 +535,26 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex-1 rounded-3xl bg-indigo-900/10 border border-indigo-500/20 p-8 md:p-12 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 text-6xl opacity-10 font-black italic">
-                    ROOT CAUSE
-                  </div>
                   <div className="grid md:grid-cols-2 gap-8 relative z-10">
                     <div className="space-y-6">
                       <div>
                         <h3 className="text-3xl font-bold text-white mb-2">
                           Identify What’s Causing It
                         </h3>
-                        <p className="text-indigo-300 font-medium text-lg">
-                          Detect elements responsible for performance
-                          bottlenecks
+                        <p className="text-slate-400 font-medium text-lg">
+                          Monitoring your site isn’t enough on its own.
+                          Speedy.site automatically identifies the worst
+                          responsible DOM elements so you can fix issues faster.
+                          With real user data and precise insights, you spend
+                          less time guessing and more time improving
+                          performance.
                         </p>
                       </div>
                       <ul className="space-y-4">
                         {[
                           "LCP Image Detection",
                           "CWV Contributing Element Detection",
-                          "Distribution by Pages & Connections",
-                          "Cache Monitoring",
+                          "Element detection by page",
                         ].map((item) => (
                           <li
                             key={item}
@@ -699,9 +700,11 @@ export default function Home() {
                         Fix & Track Improvements
                       </h3>
                       <p className="text-slate-400 text-lg">
-                        Ship fixes with confidence and see impact instantly.
-                        Monitor global and local cwv trends and get alerted
-                        before users notice a regression.
+                        Ship fixes with confidence and monitor impact
+                        thoroughly. You can compare (global) core web vital
+                        field data with local RUM trends to spot patterns and
+                        catch potential regressions before your users notice
+                        them.
                       </p>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-center">
@@ -723,7 +726,7 @@ export default function Home() {
                       <div className="relative bg-[#0b0f1a] p-6 rounded-2xl border border-white/10">
                         <div className="flex justify-between items-center mb-6">
                           <div className="text-white font-bold text-sm tracking-tight">
-                            Score Trend
+                            Core Web Vitals' Trend
                           </div>
                           <div className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded">
                             +12% vs last week
@@ -771,13 +774,14 @@ export default function Home() {
           </h2>
 
           <p className="mt-6 text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-            Finding what&apos;s causing bottlenecks is only half the story. We
-            provide the
-            <span className="text-primary font-semibold">
-              {" "}
-              additional guidance and tools{" "}
-            </span>
-            to make improving your page performance effortless.
+            Fixing bottlenecks is just the beginning. To truly stay ahead, you
+            might need help with optimization, smarter cache rules, server load
+            checks, and detailed cache reports — all to keep your site fast,
+            SEO-friendly, and ready for LLM crawlers.
+          </p>
+
+          <p className="mt-6 text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed font-light">
+            Here’s what we’re adding to make that easier…
           </p>
 
           {/* Cards Container */}
