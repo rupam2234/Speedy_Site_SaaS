@@ -8,7 +8,6 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { debounce } from "@/components/utils";
 
 import {
-  TitleComponent,
   TooltipComponent,
   GridComponent,
   ToolboxComponent,
@@ -23,7 +22,6 @@ import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
 
 echarts.use([
-  TitleComponent,
   TooltipComponent,
   GridComponent,
   DatasetComponent,
@@ -117,7 +115,7 @@ export default function OriginPerformanceChart({ data, isLoading }: Props) {
         max: 100,
         splitNumber: 5,
       },
-      grid: { top: 40, bottom: 30, left: 50, right: 40, height: 300 },
+      grid: { top: 40, bottom: 30, left: 40, right: 30, height: 300 },
       series: [
         {
           type: "line",

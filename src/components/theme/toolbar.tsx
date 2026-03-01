@@ -11,7 +11,12 @@ import { ChartScatter, InfoIcon, MonitorSmartphone } from "lucide-react";
 import { useSiteContext } from "../../app/(dashboard)/dashboard/siteContext";
 import { useEffect, useRef, useState } from "react";
 import { SidebarTrigger } from "../ui/sidebar";
-import { useIsMobile, CustomCalendar, CustomTooltip } from ".";
+import {
+  useIsMobile,
+  CustomCalendar,
+  CustomTooltip,
+  DeviceController,
+} from ".";
 
 interface Props {
   /**
@@ -47,12 +52,7 @@ export default function PrimaryToolbar({
   defaultDateRange,
   isSticky,
 }: Props) {
-  const {
-    rumDistribution,
-    setRumDistribution,
-    selectedDevice,
-    setSelectedDevice,
-  } = useSiteContext();
+  const { rumDistribution, setRumDistribution } = useSiteContext();
 
   const isMobile = useIsMobile();
   const [sticky, setIsSticky] = useState<boolean>(false); // this sets border bottom when user is scrolling
@@ -73,7 +73,7 @@ export default function PrimaryToolbar({
   return (
     <div
       ref={headerRef}
-      className="flex flex-col md:flex-row p-5 w-full items-start gap-3 md:justify-between bg-transparent"
+      className={`flex flex-col md:flex-row p-4 w-full items-start gap-3 md:justify-between bg-transparent`}
       style={{
         position: isSticky && !isMobile ? "sticky" : "unset",
         top: 0,
@@ -84,76 +84,10 @@ export default function PrimaryToolbar({
     >
       <div className="flex gap-3 md:items-center items-start flex-col md:flex-row">
         {sticky && !isMobile ? <SidebarTrigger /> : <></>}
-        <div className="p-1.5 dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border rounded-sm">
-          <div className="flex gap-2 w-full items-center px-2">
-            <MonitorSmartphone size={18} className="mr-2" />
-            {enableAllDevices ? (
-              <>
-                {["Desktop", "Mobile", "Tablet", "All"].map((device) => (
-                  <button
-                    key={device}
-                    className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                      selectedDevice === device
-                        ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                        : ``
-                    }`}
-                    onClick={() => setSelectedDevice(device as any)}
-                  >
-                    {device}
-                  </button>
-                ))}
-              </>
-            ) : enableAllDevices === false && disableTablet === false ? (
-              <>
-                {["Desktop", "Mobile", "Tablet"].map((device) => (
-                  <button
-                    key={device}
-                    className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                      selectedDevice === device
-                        ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                        : ``
-                    }`}
-                    onClick={() => setSelectedDevice(device as any)}
-                  >
-                    {device}
-                  </button>
-                ))}
-              </>
-            ) : !enableAllDevices && disableTablet ? (
-              <>
-                {["Desktop", "Mobile"].map((device) => (
-                  <button
-                    key={device}
-                    className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                      selectedDevice === device
-                        ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                        : ``
-                    }`}
-                    onClick={() => setSelectedDevice(device as any)}
-                  >
-                    {device}
-                  </button>
-                ))}
-              </>
-            ) : (
-              <>
-                {["Desktop", "Mobile", "Tablet"].map((device) => (
-                  <button
-                    key={device}
-                    className={`cursor-pointer font-medium px-4 py-1 rounded-sm text-sm ${
-                      selectedDevice === device
-                        ? `text-accent bg-accent-foreground dark:bg-secondary dark:text-primary hover:text-accent`
-                        : ``
-                    }`}
-                    onClick={() => setSelectedDevice(device as any)}
-                  >
-                    {device}
-                  </button>
-                ))}
-              </>
-            )}
-          </div>
-        </div>
+        <DeviceController
+          disableAllDevices={enableAllDevices === false}
+          disableTablet={disableTablet !== undefined && disableTablet}
+        />
         <div className="flex items-center gap-2">
           {enableDistribution ? (
             <>
@@ -204,7 +138,6 @@ export default function PrimaryToolbar({
           )}
         </div>
       </div>
-      {/* forwarding the default date range from user input */}
       <CustomCalendar defaultDateRange={defaultDateRange} />
     </div>
   );

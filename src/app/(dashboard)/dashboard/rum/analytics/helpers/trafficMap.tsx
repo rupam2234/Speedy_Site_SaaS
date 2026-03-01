@@ -26,7 +26,7 @@ export default function TrafficMap({
   const { theme } = useTheme();
 
   return (
-    <div className="w-full h-[350px] bg-transparent relative z-0">
+    <div className="w-full h-87.5 bg-transparent relative z-0">
       <style>{`.leaflet-control-attribution { display: none !important; }`}</style>
       <MapContainer
         // key={geoJsonData ? JSON.stringify(geoJsonData) : "map"}

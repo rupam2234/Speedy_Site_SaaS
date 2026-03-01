@@ -2,7 +2,7 @@ import { useSiteContext } from "../../../siteContext";
 import dynamic from "next/dynamic";
 import React, { useEffect, useMemo } from "react";
 import { FeatureCollection, Geometry } from "geojson";
-import { alpha3ToAlpha2 } from "../visual-traffic-map/countryCodes";
+import { alpha3ToAlpha2 } from "../../../../../../components/countries/countryCodes";
 import styles from "../visual-traffic-map/tooltip.module.css";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { Frown, Info, Meh, Smile } from "lucide-react";

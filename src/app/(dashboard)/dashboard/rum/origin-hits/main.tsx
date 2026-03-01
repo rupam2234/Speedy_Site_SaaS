@@ -1,66 +1,152 @@
 "use client";
 
-import { CustomCalendar, CustomTooltip } from "@/components/theme";
-import { useEffect, useState } from "react";
+import {
+  CustomCalendar,
+  CustomTooltip,
+  DeviceController,
+  PrimaryToolbar,
+  useIsMobile,
+} from "@/components/theme";
+import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
 import { OriginHits } from "@/app/api/dataTypes";
-import { OriginPerformanceChart, OriginStatsOverview } from ".";
+import { OriginPerformanceChart, OriginStatsOverview, UxReport } from ".";
 import { InfoIcon, LoaderCircle } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function Main() {
   const { selectedSite, startDate, endDate } = useSiteContext();
   const [originHitData, setOriginHitData] = useState<OriginHits[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [sticky, setIsSticky] = useState<boolean>(false);
+
+  const isMobile = useIsMobile();
+
+  const headerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!headerRef.current) return;
+      setIsSticky(window.scrollY > 0); // when scrolled more than 0 from top we need sticky header
+    };
+
+    document.addEventListener("scroll", handleScroll, { passive: true });
+    return () => document.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     getOriginHits();
   }, [selectedSite, endDate, startDate]);
 
   return (
-    <div className="p-4 space-y-6">
+    <>
       <div
-        className="flex justify-between flex-col md:flex-row w-full items-start md:items-center gap-3 bg-transparent relative"
-        style={{ zIndex: 50, background: "inherit", top: 0 }}
+        ref={headerRef}
+        className={`flex px-4 py-3 justify-between ${sticky ? "border-b border-primary/10" : ""} flex-col md:flex-row w-full items-start backdrop-blur-sm md:items-center gap-4 relative`}
+        style={{
+          position: "sticky",
+          zIndex: 50,
+          background: "inherit",
+          top: 0,
+        }}
       >
-        <div className="flex items-center gap-1 w-full md:w-auto">
-          <h2 className="font-semibold text-primary/80">Origin Hits</h2>
-          <CustomTooltip
-            content="Origin hits are requests that actually reach your web server instead of being served from a cache. Every origin hit uses server resources like CPU, memory, and bandwidth, which can slow down your site if there are too many. Using a server-side cache (like WP Rocket) reduces some origin hits for repeated visits, but a CDN takes it further by serving content from edge servers closer to users, lowering global server load and improving speed. So, a high origin hit percentage means your server is doing most of the work, while a low percentage shows caching and/or CDN is effectively handling requests."
-            trigger={
-              <InfoIcon
-                size={22}
-                className="rounded-full cursor-pointer p-1 text-primary/60 hover:bg-primary/10"
-              />
-            }
-            side="right"
-            maxWidth="500px"
-          />
-        </div>
+        {sticky ? (
+          <>
+            {sticky && !isMobile ? (
+              <div className="flex items-center gap-2">
+                <SidebarTrigger className="-translate-x-1" />
+                <DeviceController
+                  disableAllDevices={true}
+                  disableTablet={false}
+                />
+              </div>
+            ) : (
+              <></>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* --- CUSTOM SVG ICON --- */}
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-6 h-6"
+              >
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                <line x1="6" y1="6" x2="6.01" y2="6" />
+                <line x1="6" y1="18" x2="6.01" y2="18" />
+
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="2"
+                  fill="currentColor"
+                  className="animate-pulse"
+                />
+              </svg>
+              {/* Decorative Background Glow */}
+              <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full -z-10 opacity-50" />
+            </div>
+
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-xl tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  Origin Hits
+                </h2>
+                <CustomTooltip
+                  content="Origin hits are requests that reach your web server instead of being served from cache. They use server resources (CPU, memory, bandwidth) and can slow your site if too high. Server-side caching (e.g., WP Rocket) reduces repeat hits, while a CDN serves content from edge servers to lower server load and improve speed. A high origin hit rate means your server handles most requests; a low rate means caching/CDN is working effectively."
+                  trigger={
+                    <InfoIcon
+                      size={18}
+                      className="rounded-full cursor-pointer text-primary/40 hover:text-primary/80 transition-colors"
+                    />
+                  }
+                  side="right"
+                  maxWidth="400px"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                Server Load / CDN EFFICIENCY ANALYTICS
+              </p>
+            </div>
+          </div>
+        )}
 
         <CustomCalendar defaultDateRange={30} />
       </div>
 
-      <OriginStatsOverview data={originHitData} isLoading={isLoading} />
+      <div className="p-4 space-y-6">
+        <OriginStatsOverview data={originHitData} isLoading={isLoading} />
 
-      {/* --- Origin Server Hits Section --- */}
-      <div className="relative">
-        <div className="absolute left-0 right-0 w-full space-y-2">
-          {originHitData.length === 0 ? (
-            <div className="h-75 flex items-center justify-center mx-12.5 my-10 bg-primary/5 animate-pulse">
-              <LoaderCircle
-                size={30}
-                className="animate-spin text-primary/20"
+        {/* --- Origin Server Hits Section --- */}
+        <div className="relative h-112.5">
+          <div className="absolute left-0 right-0 w-full space-y-2">
+            {originHitData.length === 0 ? (
+              <div className="h-75 flex items-center justify-center mx-12.5 my-10 bg-primary/5 animate-pulse">
+                <LoaderCircle
+                  size={30}
+                  className="animate-spin text-primary/20"
+                />
+              </div>
+            ) : (
+              <OriginPerformanceChart
+                data={originHitData}
+                isLoading={isLoading}
               />
-            </div>
-          ) : (
-            <OriginPerformanceChart
-              data={originHitData}
-              isLoading={isLoading}
-            />
-          )}
+            )}
+          </div>
+        </div>
+        <div className="relative">
+          <UxReport />
         </div>
       </div>
-    </div>
+    </>
   );
 
   /**

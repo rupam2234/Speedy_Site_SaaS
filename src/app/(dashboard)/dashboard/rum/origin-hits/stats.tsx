@@ -26,32 +26,31 @@ export function OriginStatsOverview({ data, isLoading }: Props) {
   const totalHits = data.reduce((acc, curr) => acc + curr.origin_hit_count, 0);
   const avgHitRate = totalEvents > 0 ? (totalHits / totalEvents) * 100 : 0;
 
-  // Find Peak Traffic Hour
   const peakHour = [...data].sort(
     (a, b) => b.total_origin_events - a.total_origin_events,
   )[0];
 
   const stats = [
     {
-      label: "Total Requests",
+      label: "Total Samples",
       value: totalEvents.toLocaleString(),
       icon: <BarChart3 className="text-blue-500" size={20} />,
-      description: "Total server attempts",
+      description: "Request samples to access a page",
     },
     {
       label: "Origin Hits",
       value: totalHits.toLocaleString(),
       icon: <Activity className="text-orange-500" size={20} />,
-      description: "Requests reaching server",
+      description: "Requests reaching primary server / host",
     },
     {
-      label: "Avg. Hit Rate",
+      label: "Avg. Hit Rate (lower is better)",
       value: `${avgHitRate.toFixed(1)}%`,
       icon: <Zap className="text-yellow-500" size={20} />,
-      description: "Efficiency vs Cache",
+      description: `Meaning ${avgHitRate.toFixed(1)}% of requests hit origin.`,
     },
     {
-      label: "Peak Load",
+      label: "Peak Load (during max requests)",
       value: peakHour
         ? new Date(peakHour.agg_time).toLocaleTimeString([], {
             hour: "2-digit",
@@ -59,7 +58,7 @@ export function OriginStatsOverview({ data, isLoading }: Props) {
           })
         : "N/A",
       icon: <Clock className="text-purple-500" size={20} />,
-      description: `${peakHour?.total_origin_events || 0} reqs at this hour`,
+      description: `Cache efficiency ${100 - peakHour.origin_hit_percentage}% (higher the better)`,
     },
   ];
 
