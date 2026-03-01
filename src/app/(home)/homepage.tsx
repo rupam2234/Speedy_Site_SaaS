@@ -244,7 +244,7 @@ export default function Home() {
             <p className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-tight">
               Understand your users,{" "}
               <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 to-cyan-400">
-                Improve your user experience
+                Improve their experience
               </span>{" "}
               in four steps.
             </p>
