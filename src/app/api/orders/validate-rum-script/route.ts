@@ -19,12 +19,14 @@ export async function POST(req: NextRequest) {
       headers: { "User-Agent": "Mozilla/5.0" },
     });
 
+    if(!response.ok){
+      throw new Error(response.statusText)
+    }
+
     const html = await response.text(); 
 
-    if(!response.ok){throw new Error(html)}
-
     // checks if https://rum.speedy.site/rum.js exists
-    const scriptExists = /<script[^>]*src=["']https:\/\/rum\.speedy\.site\/rum\.js[^"']*["'][^>]*>/i.test(html); 
+    const scriptExists = /<script[^>]+src=["']https:\/\/rum\.speedy\.site\/rum\.js(?:\?[^"']*)?["'][^>]*>/i.test(html);
 
     // update on database
     const { error } = await worker

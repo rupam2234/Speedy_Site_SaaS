@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useSiteContext } from "../../siteContext";
 import { lazyload } from "@/components/utils";
 import { MapChart } from "echarts/charts";

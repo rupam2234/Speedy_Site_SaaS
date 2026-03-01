@@ -240,8 +240,6 @@ export default function Main() {
 
         const status = { isConnected: cfData.found ?? false, key: cfData.key };
 
-        console.log(cfData);
-
         setCloudflareStatus(status);
         setRatelimiter({ key: cfKey, ttl: expiry, value: status });
 

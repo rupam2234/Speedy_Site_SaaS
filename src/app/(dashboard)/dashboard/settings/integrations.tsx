@@ -320,11 +320,10 @@ export default function Integrations({ siteId, cfData, setCfData }: Props) {
     }
 
     const key = selectedSite;
-
     const FIVE_MINUTES = 5 * 60 * 1000;
 
     // rate limiting...
-    const lastCall = getRateLimiter(key);
+    const lastCall: boolean = getRateLimiter(key);
 
     if (lastCall) {
       console.log("API call skipped: still within 5 minutes window");
@@ -343,22 +342,25 @@ export default function Integrations({ siteId, cfData, setCfData }: Props) {
         body: JSON.stringify({ domain: selectedSite }),
       });
 
-      const body: any = await res.json();
-
-      setRatelimiter({ key: key, ttl: FIVE_MINUTES, value: body.scriptExists });
-
-      if (!res.ok) {
-        throw new Error(body.message);
+      let body: any;
+      try {
+        body = await res.json();
+      } catch {
+        throw new Error(body?.message || `API returned status ${res.status}`);
       }
 
+      const scriptExists = body.scriptExists;
+
+      setRatelimiter({ key: key, ttl: FIVE_MINUTES, value: scriptExists });
+
       setRumScript({
-        isAvailable: body.scriptExists,
+        isAvailable: scriptExists,
         loading: false,
         isSet: true,
       });
-    } catch (error) {
+    } catch (error: any) {
       setRumScript({ loading: false, isAvailable: false, isSet: true });
-      console.error(error);
+      console.error(error.message);
     }
   }
 

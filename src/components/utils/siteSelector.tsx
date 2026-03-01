@@ -126,14 +126,19 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
               />
             ) : (
               <div className="flex items-center gap-1">
-                <img
-                  src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon.fav}`}
-                  alt={`${selectedFavicon.site}_logo`}
-                  width={16}
-                  height={16}
-                  className="rounded"
-                  loading="lazy"
-                />
+                {selectedFavicon.fav === null ? (
+                  <></>
+                ) : (
+                  <img
+                    src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon.fav}`}
+                    alt={`${selectedFavicon.site}_logo`}
+                    width={16}
+                    height={16}
+                    className="rounded"
+                    loading="lazy"
+                  />
+                )}
+
                 <span className="truncate">{selectedSite}</span>
               </div>
             )}
@@ -162,14 +167,19 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                   setOpen(false);
                 }}
               >
-                <img
-                  src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${x.favicon_file}`}
-                  alt={`${x.website_name}_logo`}
-                  width={16}
-                  height={16}
-                  className="rounded"
-                  loading="lazy"
-                />
+                {x.favicon_file === null || x.favicon_file === undefined ? (
+                  <></>
+                ) : (
+                  <img
+                    src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${x.favicon_file}`}
+                    alt={`${x.website_name}_logo`}
+                    width={16}
+                    height={16}
+                    className="rounded"
+                    loading="lazy"
+                  />
+                )}
+
                 <p>{x.website_name}</p>
               </div>
             );
