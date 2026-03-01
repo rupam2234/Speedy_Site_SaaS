@@ -127,7 +127,9 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
             ) : (
               <div className="flex items-center gap-1">
                 {selectedFavicon.fav === null ? (
-                  <></>
+                  <div className="w-4 h-4 bg-gray-300 rounded flex items-center justify-center text-xs text-gray-600">
+                    ?
+                  </div>
                 ) : (
                   <img
                     src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon.fav}`}
@@ -168,7 +170,9 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                 }}
               >
                 {x.favicon_file === null || x.favicon_file === undefined ? (
-                  <></>
+                  <div className="w-4 h-4 bg-gray-300 rounded flex items-center justify-center text-xs text-gray-600">
+                    ?
+                  </div>
                 ) : (
                   <img
                     src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${x.favicon_file}`}

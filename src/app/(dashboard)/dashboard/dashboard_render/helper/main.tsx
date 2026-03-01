@@ -8,6 +8,7 @@ import { CruxMetricKey, DailyCruxData } from "@/data-types";
 import { HistrogramBar, RumWebVitalToolbar } from "@/components/utils";
 import { Bookmark, MoveRight } from "lucide-react";
 import { cwv_metrics, DashboardChartContainer } from ".";
+import Link from "next/link";
 
 export default function Main() {
   const [showPrompt, setShowPrompt] = useState(false);
@@ -321,28 +322,49 @@ export default function Main() {
       {/* chart section */}
       <section className="py-6 px-5 space-y-3">
         <div className="flex gap-2 items-center">
-          <div
-            className="w-6 h-6 rounded-[2px]"
-            style={{
-              clipPath: "polygon(0% 100%, 0% 0%, 100% 100%)", // right-angle triangle
-              background:
-                "linear-gradient(to right, #66CC8F 0% 33%, #FFEEA9 33% 66%, #FF9898 66% 100%)",
-            }}
-          />
           <div className="text-xl flex items-center gap-4 font-bold text-primary">
-            {isMobile ? (
-              <h2>CWV Trajectory</h2>
-            ) : (
-              <h2>
-                Trajectory
-                <span className="relative mx-3 inline-flex h-3 w-3">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75 animate-ping"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-300"></span>
-                </span>
-                Live Data
-              </h2>
-            )}
+            <CustomTooltip
+              content={
+                "Field Data comes from the Chrome User Experience Report. It represents the actual performance data Google collects from opted-in Chrome users over a 28-day rolling average. This is the specific data Google uses to determine your Search rankings (SEO)."
+              }
+              trigger={
+                <div className="flex items-center gap-2 px-2 py-1 bg-green-500/10 rounded-full border border-green-500/20">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wider text-green-600 font-black">
+                    Field Data History
+                  </span>
+                </div>
+              }
+              side="right"
+              delay={300}
+            />
           </div>
+          {/* rum CTA button */}
+          <Link
+            href={`/dashboard/rum/web-vitals?site=${selectedSite}`}
+            className="flex items-center gap-2 px-2 py-1 bg-blue-500/10 hover:bg-blue-500/20 rounded-full border border-blue-500/20 transition-all group"
+          >
+            <span className="h-2 w-2 rounded-full bg-blue-500 group-hover:scale-125 transition-transform"></span>
+            <span className="text-[10px] uppercase tracking-wider text-blue-600 font-black flex items-center gap-1">
+              Go to Real User Monitoring
+              <svg
+                className="w-2.5 h-2.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={3}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </span>
+          </Link>
         </div>
         <DashboardChartContainer />
       </section>

@@ -110,7 +110,7 @@ export default function TooltipIcon({
     <>
       <span
         ref={triggerRef}
-        className="inline-flex cursor-pointer"
+        className="inline-flex cursor-help"
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
       >
