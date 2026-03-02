@@ -10,19 +10,8 @@ const CountryTrafficMap = lazy(
   () => import(`../visual-traffic-map/trafficMapContainer`),
 );
 
-const UserHappinessMap = lazy(
-  () => import(`../visual-happiness-map/happinesMap`),
-); // lazyload the component
-
 export function SourceHandler() {
-  const {
-    selectedSite,
-    selectedDevice,
-    startDate,
-    endDate,
-    selectedGeoType,
-    setSelectedGeoType,
-  } = useSiteContext();
+  const { selectedSite, selectedDevice, startDate, endDate } = useSiteContext();
 
   const [activeSource, setActiveSource] = useState<
     "All Traffic" | "LLM Traffic"
@@ -134,7 +123,7 @@ export function SourceHandler() {
             </span>
             <span>Geo Distribution</span>
           </div>
-          <div className="flex gap-4 items-center">
+          {/* <div className="flex gap-4 items-center">
             {["Visitors"].map((x, index) => (
               <button
                 key={index}
@@ -148,7 +137,7 @@ export function SourceHandler() {
                 {x}
               </button>
             ))}
-          </div>
+          </div> */}
         </div>
         <div className="py-8 h-auto md:h-107.5">
           <Suspense
@@ -161,20 +150,18 @@ export function SourceHandler() {
               </div>
             }
           >
-            {selectedGeoType === "Visitors" ? (
-              <CountryTrafficMap
-                trafficData={combinedData}
-                deviceType={
-                  selectedDevice === "Desktop"
-                    ? "desktop"
-                    : selectedDevice === "Mobile"
-                      ? "mobile"
-                      : selectedDevice === "Tablet"
-                        ? "tablet"
-                        : "all"
-                }
-              />
-            ) : null}
+            <CountryTrafficMap
+              trafficData={combinedData}
+              deviceType={
+                selectedDevice === "Desktop"
+                  ? "desktop"
+                  : selectedDevice === "Mobile"
+                    ? "mobile"
+                    : selectedDevice === "Tablet"
+                      ? "tablet"
+                      : "all"
+              }
+            />
           </Suspense>
         </div>
       </div>
@@ -267,27 +254,4 @@ export function SourceHandler() {
     }
     return data;
   }
-
-  // async function fetchUserHappinesGeo() {
-  //   if (!startDate || !endDate || !selectedSite) return;
-
-  //   const res = await fetch("/api/rum/analytics/happiness-geo", {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
-  //     },
-  //     body: JSON.stringify({
-  //       domain: selectedSite,
-  //       start_date: startDate.toISOString().split("T")[0],
-  //       end_date: endDate.toISOString().split("T")[0],
-  //     }),
-  //   });
-  //   if (!res.ok) {
-  //     console.error(res.statusText);
-  //     setHappinessData([]);
-  //   }
-  //   const data: any = await res.json();
-  //   setHappinessData(data.data);
-  // }
 }

@@ -409,7 +409,6 @@ export default function UxReport() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
         },
         body: JSON.stringify({
           domain: selectedSite,
@@ -421,7 +420,7 @@ export default function UxReport() {
       const data: any = await res.json();
       if (!res.ok) {
         setHappinessData([]);
-        throw new Error(data.message || "failed to fetch UX data");
+        throw new Error(data?.message ?? "failed to fetch UX data");
       }
       setHappinessData(data.data);
     } catch (error) {

@@ -38,6 +38,14 @@ export default function Main() {
     getOriginHits();
   }, [selectedSite, endDate, startDate]);
 
+  if (!selectedSite) {
+    return (
+      <div className="flex items-center w-full min-h-[calc(100lvh-100px)] justify-center">
+        <LoaderCircle size={45} className="text-primary/10 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <>
       <div
@@ -118,7 +126,7 @@ export default function Main() {
           </div>
         )}
 
-        <CustomCalendar defaultDateRange={30} />
+        <CustomCalendar defaultDateRange={30} limited={30} />
       </div>
 
       <div className="p-4 space-y-6">

@@ -10,9 +10,14 @@ type Props = {
    * Pass default date range (in days): example: 72, 500
    */
   defaultDateRange?: number;
+
+  /**
+   * Limit will force calender to only allow limited no of date range to select
+   */
+  limited?: number;
 };
 
-export default function CustomCalendar({ defaultDateRange }: Props) {
+export default function CustomCalendar({ defaultDateRange, limited }: Props) {
   const baseDate = new Date();
 
   // if we have default date range: use it
@@ -47,6 +52,31 @@ export default function CustomCalendar({ defaultDateRange }: Props) {
   const start = dates[0];
   const end = dates[1];
 
+  // to disable dates ahead of limited dates (gray dates)
+  const today = new Date();
+
+  const disabledDays =
+    dates.length === 1 && limited
+      ? (date: Date) => {
+          const first = dates[0];
+
+          const minDate = new Date(first);
+          minDate.setDate(first.getDate() - limited);
+
+          const maxDate = new Date(first);
+          maxDate.setDate(first.getDate() + limited);
+
+          // do not allow future beyond today
+          if (maxDate > today) {
+            maxDate.setTime(today.getTime());
+          }
+
+          return date < minDate || date > maxDate;
+        }
+      : undefined;
+
+  // end of gray dates
+
   return (
     <div className="relative w-full max-w-75">
       {/* Trigger */}
@@ -74,6 +104,7 @@ export default function CustomCalendar({ defaultDateRange }: Props) {
             mode="multiple"
             selected={dates}
             numberOfMonths={1}
+            disabled={disabledDays}
             onSelect={(selected) => {
               if (!selected) return;
 
@@ -85,7 +116,7 @@ export default function CustomCalendar({ defaultDateRange }: Props) {
 
               setDates(selected);
 
-              // close after 2nd date
+              // opon selecting 2nd date
               if (selected.length === 2) {
                 setOpen(false);
               }
@@ -96,4 +127,9 @@ export default function CustomCalendar({ defaultDateRange }: Props) {
       )}
     </div>
   );
+}
+
+function getDaysDiff(a: Date, b: Date) {
+  const diff = Math.abs(a.getTime() - b.getTime());
+  return diff;
 }

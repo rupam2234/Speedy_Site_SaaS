@@ -1,7 +1,6 @@
 "use client";
 
 import { OrderData } from "@/app/api/dataTypes";
-import { validatePlan } from "@/components/utils/planValidation/activePlan";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { CruxData, DailyCruxData } from "@/data-types/index";
 import React, {
@@ -31,8 +30,6 @@ type SiteContextType = {
   setExperienceType: (experienceType: "Percentile" | "Distribution") => void;
   rumDistribution: "p50" | "p75" | "p90" | "p95" | "p99";
   setRumDistribution: (rumDist: "p50" | "p75" | "p90" | "p95" | "p99") => void;
-  selectedGeoType: "Visitors" | "UX Experience";
-  setSelectedGeoType: (selectedGeoType: "Visitors" | "UX Experience") => void;
   startDate?: Date;
   endDate?: Date;
   setStartDate: (d?: Date) => void;
@@ -59,8 +56,6 @@ export const SiteContext = createContext<SiteContextType>({
   setExperienceType: () => {},
   rumDistribution: "p75",
   setRumDistribution: () => {},
-  selectedGeoType: "Visitors",
-  setSelectedGeoType: () => {},
   setStartDate: () => {},
   setEndDate: () => {},
   plan: "",
@@ -88,9 +83,6 @@ export default function SiteContextProvider({
   >("p75");
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
-  const [selectedGeoType, setSelectedGeoType] = useState<
-    "Visitors" | "UX Experience"
-  >("Visitors");
   const [plan, setPlan] = useState<string | null>(null);
 
   const user = useSupabaseUser();
@@ -194,8 +186,6 @@ export default function SiteContextProvider({
         setExperienceType,
         rumDistribution,
         setRumDistribution,
-        selectedGeoType,
-        setSelectedGeoType,
         startDate,
         endDate,
         setStartDate,

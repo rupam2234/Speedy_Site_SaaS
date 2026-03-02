@@ -1,4 +1,5 @@
 import { setupDB } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 
 interface Props {
     domain: string;
@@ -8,7 +9,7 @@ interface Props {
 
 const worker = setupDB();
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
 
     const today = new Date();
     const thirty_days_back = new Date(today);
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
     const {domain, startDate = thirty_days_back, endDate= today}: Props = await req.json();
 
     if(!domain){
-        return Response.json({message: "Bad request"}, {status: 400});
+        return NextResponse.json({message: "Bad request"}, {status: 400});
     }
 
     try{
@@ -28,10 +29,10 @@ export async function POST(req: Request) {
             throw new Error(error.message || "Error fetching origin hits");
         }
 
-        return Response.json({data}, {status: 200})
+        return NextResponse.json({data}, {status: 200})
 
     }catch(error:any){
-        return Response.json({message: error.message || "unexpacted error"}, {status: 500})
+        return NextResponse.json({message: error.message || "unexpacted error"}, {status: 500})
     }
 
 }
