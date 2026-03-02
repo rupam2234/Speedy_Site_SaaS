@@ -8,6 +8,7 @@ import {
   VisualMapComponent,
   GeoComponent,
   TooltipComponent,
+  ToolboxComponent,
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import * as echarts from "echarts/core";
@@ -39,6 +40,7 @@ echarts.use([
   TooltipComponent,
   VisualMapComponent,
   CanvasRenderer,
+  ToolboxComponent,
 ]);
 
 const worldEN = rawWorldMap as unknown as any;

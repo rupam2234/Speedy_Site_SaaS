@@ -1,14 +1,11 @@
 "use client";
 
 import { ChartPie, Globe, Loader2Icon } from "lucide-react";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { LLMTrafficSource, TrafficSource } from "../index";
 import { countryDistributionApi, trafficSourceApi } from "../cf-apis/calls";
-
-const CountryTrafficMap = lazy(
-  () => import(`../visual-traffic-map/trafficMapContainer`),
-);
+import CountryTrafficMap from "../visual-traffic-map/trafficMapContainer";
 
 export function SourceHandler() {
   const { selectedSite, selectedDevice, startDate, endDate } = useSiteContext();
@@ -123,21 +120,6 @@ export function SourceHandler() {
             </span>
             <span>Geo Distribution</span>
           </div>
-          {/* <div className="flex gap-4 items-center">
-            {["Visitors"].map((x, index) => (
-              <button
-                key={index}
-                className={`bg-transparent hover:underline decoration-primary/30 underline-offset-4 cursor-pointer ${
-                  selectedGeoType === x ? "underline" : ""
-                }`}
-                onClick={() =>
-                  setSelectedGeoType(x as "Visitors" | "UX Experience")
-                }
-              >
-                {x}
-              </button>
-            ))}
-          </div> */}
         </div>
         <div className="py-8 h-auto md:h-107.5">
           <Suspense

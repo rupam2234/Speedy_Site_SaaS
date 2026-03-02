@@ -1,16 +1,35 @@
 "use client";
 
-import React, { useEffect } from "react";
-import dynamic from "next/dynamic";
+import React, { useEffect, useRef } from "react";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import type { FeatureCollection, Geometry } from "geojson";
-import { alpha2ToAlpha3, alpha3ToAlpha2, CountryStripe } from "..";
-import styles from "./tooltip.module.css";
+import { alpha2ToAlpha3, CountryStripe } from "..";
 import { useSiteContext } from "../../../siteContext";
+import { MapChart } from "echarts/charts";
+import {
+  VisualMapComponent,
+  GeoComponent,
+  TooltipComponent,
+} from "echarts/components";
+import { CanvasRenderer } from "echarts/renderers";
+import * as echarts from "echarts/core";
+import rawWorldMap from "../../../../../../../public/maps/worldMap.json";
 
-const ClientMap = dynamic(() => import("../helpers/trafficMap"), {
-  ssr: false,
-});
+echarts.use([
+  MapChart,
+  GeoComponent,
+  TooltipComponent,
+  VisualMapComponent,
+  CanvasRenderer,
+]);
+
+const worldEN = rawWorldMap as unknown as any;
+
+// Remove Antarctica from GeoJSON
+worldEN.features = worldEN.features.filter(
+  (feature: any) => feature.properties.name !== "Antarctica",
+);
+
+echarts.registerMap("world", worldEN);
 
 type TrafficEntry = {
   device_type: "desktop" | "mobile" | "tablet" | "all";
@@ -23,100 +42,119 @@ type Props = {
 };
 
 export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
-  const [geoJsonData, setGeoJsonData] =
-    React.useState<FeatureCollection<Geometry> | null>(null);
   const { theme } = useTheme();
   const { selectedDevice } = useSiteContext();
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
-  const trafficByCountry: Record<string, number> = React.useMemo(() => {
-    const found = Array.isArray(trafficData)
-      ? trafficData?.find((entry) => entry.device_type === deviceType)
-      : null;
+  const trafficByCountryArray = React.useMemo(() => {
+    if (!Array.isArray(trafficData)) return [];
 
-    if (!found?.country_distribution) return {};
+    const found = trafficData.find((entry) => entry.device_type === deviceType);
+    if (!found?.country_distribution) return [];
 
     try {
       const original = JSON.parse(found.country_distribution) as Record<
         string,
         number
       >;
-      const converted: Record<string, number> = {};
-      for (const [alpha2, count] of Object.entries(original)) {
-        const alpha3 = alpha2ToAlpha3[alpha2.toUpperCase()];
-        if (alpha3) converted[alpha3] = count;
-      }
-
-      return converted;
+      return Object.entries(original)
+        .map(([alpha2, count]) => {
+          const alpha3 = alpha2ToAlpha3[alpha2.toUpperCase()];
+          if (!alpha3) return null; // skip unmapped codes
+          return { code: alpha3, traffic: count };
+        })
+        .filter(Boolean) as { code: string; traffic: number }[];
     } catch {
-      return {};
+      return [];
     }
   }, [deviceType, trafficData]);
 
-  const trafficByCountryArray = Object.entries(trafficByCountry).map(
-    ([code, traffic]) => ({ code, traffic }),
-  );
-
   useEffect(() => {
-    fetch(
-      "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json",
-    )
-      .then((r) => r.json())
-      .then((data: any) => setGeoJsonData(data))
-      .catch((e) => console.error(e));
-  }, []);
+    if (!chartRef.current || trafficByCountryArray.length === 0) return;
 
-  const style = (feature: any) => {
-    const countryCode = feature.id?.toUpperCase();
-    const count = trafficByCountry[countryCode] || 0;
-    return {
-      fillColor: getColor(count),
-      weight: 1,
-      opacity: 1,
-      color: theme === "dark" ? "#222" : "white",
-      fillOpacity: 0.7,
-    };
-  };
+    if (!chartInstanceRef.current) {
+      chartInstanceRef.current = echarts.init(chartRef.current);
+    }
 
-  const onEachFeature = (feature: any, layer: any) => {
-    const countryCodeAlpha3 = feature.id?.toUpperCase();
-    const countryName = feature.properties.name || "Unknown";
-    const count = trafficByCountry[countryCodeAlpha3] || 0;
-    const countryCodeAlpha2 = alpha3ToAlpha2[countryCodeAlpha3] || null;
-    const flagImg = countryCodeAlpha2
-      ? `<img src="https://flagcdn.com/w20/${countryCodeAlpha2}.png"
-          alt="${countryName} flag"
-          style="width:20px; height:14px; margin-right:8px; vertical-align:middle;"
-          onerror="this.style.display='none'" />`
-      : "";
+    const chart = chartInstanceRef.current;
 
-    const tooltipContent = `
-      <div class="${styles.tooltipContainer}">
-        <div style="display: flex; align-items: center; margin-bottom: 4px;">
-          ${flagImg}
-          <strong class="${styles.tooltipCountryName}">${countryName}</strong>
-        </div>
-        <div class="${styles.tooltipVisitors}">
-          Visitors: <span class="${styles.tooltipVisitorsStrong}">${count}</span>
-        </div>
-      </div>
-    `;
-    layer.bindTooltip(tooltipContent, {
-      sticky: true,
-      direction: "auto",
-      opacity: 0.95,
+    const seriesData = worldEN.features.map((feature: any) => {
+      const countryName = feature.properties.name;
+
+      const d = trafficByCountryArray.find((x) => x.code === feature.id);
+
+      return {
+        name: countryName,
+        value: d?.traffic || 0,
+        itemStyle: {
+          areaColor: d
+            ? getColor(d.traffic)
+            : theme === "dark"
+              ? "#6ca3cc"
+              : "#f0f0f0",
+        },
+        orginalData: d || {
+          traffic: 0,
+          code: "NAN",
+        },
+      };
     });
-  };
+
+    const option: echarts.EChartsCoreOption = {
+      series: [
+        {
+          name: "Traffic Data",
+          type: "map",
+          map: "world",
+          roam: false,
+          label: { show: false },
+          itemStyle: {
+            borderColor: theme === "dark" ? "#14142e" : "#BED4CB",
+            areaColor: undefined,
+          },
+          emphasis: {
+            label: { show: false },
+            itemStyle: {
+              areaColor: undefined,
+              borderColor: "#BED4CB",
+            },
+          },
+          data: seriesData,
+        },
+      ],
+      tooltip: {
+        trigger: "item",
+        formatter: (params: any) => {
+          if (!params.data) return params.name;
+          const traffic = params.data.value;
+
+          return `<div style="font-family: sans-serif;"><b>${params.name}</b><br/>Visitors: ${traffic}</div>`;
+        },
+      },
+    };
+
+    chart.setOption(option, { lazyUpdate: true, notMerge: true, silent: true });
+
+    const resizeObserver = new ResizeObserver(() => chart.resize());
+    resizeObserver.observe(chartRef.current);
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [trafficByCountryArray, theme, selectedDevice]);
 
   return (
     <>
       {trafficData && trafficData.length > 0 ? (
         <>
-          <ClientMap
-            key={selectedDevice + theme}
-            geoJsonData={geoJsonData}
-            styleFn={style}
-            onEachFeatureFn={onEachFeature}
-          />
+          <div className="col-span-5 overflow-hidden relative">
+            <div className="absolute inset-0 pointer-events-none from-primary/2 to-transparent z-0" />
+            <div
+              ref={chartRef}
+              style={{ width: "100%", height: "360px" }}
+              className="relative z-10"
+            />
+          </div>
           <CountryStripe
             data={trafficByCountryArray.length > 0 ? trafficByCountryArray : []}
           />
