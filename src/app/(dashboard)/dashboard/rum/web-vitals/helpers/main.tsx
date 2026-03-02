@@ -85,8 +85,6 @@ export default function Main() {
   const lazyloadKey = useRef<string | null>(null);
   const hasRun = useRef(false);
 
-  const isMobile = useIsMobile();
-
   //#region Data manipulation
   const activeSeries = useMemo(() => {
     if (historyData === undefined) return [];
