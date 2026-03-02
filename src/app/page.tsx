@@ -25,7 +25,11 @@ export const metadata: Metadata = {
     "Speedy Site",
   ],
   authors: [{ name: "Speedy Site Team" }],
-  robots: "index, follow",
+
+  robots: {
+    index: true,
+    follow: true,
+  },
 
   alternates: {
     canonical: "/",
@@ -36,8 +40,9 @@ export const metadata: Metadata = {
     description:
       "Get actionable insights to fix bottlenecks and improve site speed.",
     type: "website",
-    url: "https://speedy.site",
+    url: "/",
     siteName: "Speedy Site",
+    locale: "en_US",
     images: [
       {
         url: "/images/social/speedy-site-banner.png",
