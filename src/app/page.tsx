@@ -1,37 +1,61 @@
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
 import HomepageComponent from "./(home)/homepage";
 
+export const viewport: Viewport = {
+  themeColor: "#22c55e",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: "Speedy Site – Website Performance & User Experience Monitoring",
+  metadataBase: new URL("https://speedy.site"),
+
+  title: {
+    default: "Speedy Site – Website Performance & UX Monitoring",
+    template: "%s | Speedy Site",
+  },
   description:
-    "Monitor and optimize your website's speed, performance, and user experience with Speedy Site. Track key metrics, identify bottlenecks, and improve site performance effortlessly.",
+    "Monitor and optimize your website's speed, performance, and user experience. Track key metrics, identify bottlenecks, and improve site performance effortlessly.",
+
   keywords: [
     "website performance",
     "site speed optimization",
     "user experience monitoring",
-    "performance metrics",
-    "website analytics",
     "web performance tools",
     "Speedy Site",
   ],
   authors: [{ name: "Speedy Site Team" }],
-  viewport: "width=device-width, initial-scale=1.0",
   robots: "index, follow",
+
+  alternates: {
+    canonical: "/",
+  },
+
   openGraph: {
     title: "Speedy Site – Website Performance & UX Monitoring",
     description:
-      "Track and optimize your website’s performance and user experience with Speedy Site. Get actionable insights to fix bottlenecks and improve site speed.",
+      "Get actionable insights to fix bottlenecks and improve site speed.",
     type: "website",
-    url: "https://speedysite.com",
-    images: "/images/social/Speedy.site banner.png",
+    url: "https://speedy.site",
+    siteName: "Speedy Site",
+    images: [
+      {
+        url: "/images/social/speedy-site-banner.png",
+        width: 1200,
+        height: 630,
+        alt: "Speedy Site Dashboard Preview",
+      },
+    ],
   },
+
   twitter: {
     card: "summary_large_image",
     title: "Speedy Site – Website Performance & UX Monitoring",
     description:
-      "Optimize your website's speed and user experience with Speedy Site. Monitor performance metrics and resolve issues quickly.",
-    images: "/images/social/Speedy.site banner.png",
+      "Optimize your website's speed and user experience with Speedy Site.",
+    images: ["/images/social/speedy-site-banner.png"],
     site: "@SpeedySite",
+    creator: "@SpeedySite",
   },
 };
 
