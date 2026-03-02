@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as echarts from "echarts/core";
 import {
   TitleComponent,
@@ -74,7 +74,9 @@ const RumCwvChart = ({
 
   const metricRange = getRanges(metric_key);
 
-  const maxValue = data && Math.max(...data?.map((x) => x[1] ?? [])); // this give me the max value of the active matric
+  const maxValue = useMemo(() => {
+    return data && Math.max(...data?.map((x) => x[1] ?? []));
+  }, [data]); // this give me the max value of the active matric
 
   const isMs = ["lcp", "fcp", "inp", "ttfb"].includes(metric_key.toLowerCase());
 

@@ -2,7 +2,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../components/theme/ThemeProvider";
 import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
-import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,10 +32,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <ThemeProvider defaultTheme="light">
-            {children}
-            <Analytics />
-          </ThemeProvider>
+          <ThemeProvider defaultTheme="light">{children}</ThemeProvider>
         </AuthProvider>
       </body>
     </html>

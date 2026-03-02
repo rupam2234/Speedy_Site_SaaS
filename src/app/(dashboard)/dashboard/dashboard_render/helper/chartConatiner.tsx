@@ -124,34 +124,70 @@ export default function DashboardChartContainer() {
                 </div>
               )}
             </div>
-            <div className="flex text-sm flex-col sm:flex-row items-start sm:items-center gap-4 px-2 py-1 bg-white dark:bg-white/80 shadow-sm rounded-full border border-gray-200">
-              <p className="flex items-center gap-1 text-primary/80 dark:text-primary-foreground font-medium">
-                Today&apos;s {activeMetric.acronym.toLowerCase()}:
-                <span className="ml-1 text-primary/80">
-                  {(() => {
-                    const ranges = getColor(
-                      activeMetric.key,
-                      change.latestData as number,
-                    );
-                    return (
-                      <span className={`${ranges}`}>{change.latestData}</span>
-                    );
-                  })()}
-                </span>
-              </p>
+            <div className="flex text-sm flex-col sm:flex-row items-start sm:items-center gap-4 px-3 py-1.5 bg-white dark:bg-slate-900 shadow-sm rounded-full border border-gray-200 dark:border-slate-800">
+              {/* Field Data Expectation Pill */}
+              <CustomTooltip
+                delay={200}
+                side="bottom"
+                content={
+                  <div className="p-3 max-w-70 space-y-3">
+                    <div className="space-y-1.5">
+                      <p className="text-[12px] text-slate-400 uppercase font-black tracking-wider italic">
+                        Why &quot;Expecting&quot;?
+                      </p>
+                      <p className="text-[12px] text-slate-300 leading-normal">
+                        Your official score is currently moving toward this
+                        value. Because of the 28-day lag, recent improvements
+                        take time to fully show up here.
+                      </p>
+                    </div>
+                  </div>
+                }
+                trigger={
+                  <p className="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-medium cursor-help group">
+                    <svg
+                      className="w-3.5 h-3.5 text-blue-500 opacity-70"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                      />
+                    </svg>
+                    Expecting next {activeMetric.acronym.toLowerCase()} of
+                    <span className="font-bold">
+                      {(() => {
+                        const ranges = getColor(
+                          activeMetric.key,
+                          change.latestData as number,
+                        );
+                        return (
+                          <span className={`${ranges} transition-colors`}>
+                            {change.latestData}
+                          </span>
+                        );
+                      })()}
+                    </span>
+                  </p>
+                }
+              />
 
-              <p className="flex items-center gap-2 text-primary/80 dark:text-primary-foreground font-medium">
-                Change this week:
+              {/* Weekly Trend Component */}
+              <p className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
+                Trend this week:
                 <span
                   className={`
-                        px-3 rounded-full text-sm text-white 
-                        ${change.change > 0 ? "bg-red-500" : "bg-green-500"} 
-                        transition-colors duration-300
-                    `}
+                    px-3 py-0.5 rounded-full text-xs font-bold text-white 
+                    ${change.change > 0 ? "bg-red-500" : "bg-green-500"} 
+                    transition-colors duration-300
+                  `}
                 >
-                  {change.change > 0
-                    ? `+ ${change.change.toFixed(2)} %`
-                    : `${change.change.toFixed(2)} %`}
+                  {change.change > 0 ? "↑" : "↓"}{" "}
+                  {Math.abs(change.change).toFixed(2)}%
                 </span>
               </p>
             </div>

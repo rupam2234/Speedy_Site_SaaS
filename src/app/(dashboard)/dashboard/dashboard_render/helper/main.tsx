@@ -8,7 +8,6 @@ import { CruxMetricKey, DailyCruxData } from "@/data-types";
 import { HistrogramBar, RumWebVitalToolbar } from "@/components/utils";
 import { Bookmark, MoveRight } from "lucide-react";
 import { cwv_metrics, DashboardChartContainer } from ".";
-import Link from "next/link";
 
 export default function Main() {
   const [showPrompt, setShowPrompt] = useState(false);
@@ -343,28 +342,73 @@ export default function Main() {
             />
           </div>
           {/* rum CTA button */}
-          <Link
-            href={`/dashboard/rum/web-vitals?site=${selectedSite}`}
-            className="flex items-center gap-2 px-2 py-1 bg-blue-500/10 hover:bg-blue-500/20 rounded-full border border-blue-500/20 transition-all group"
-          >
-            <span className="h-2 w-2 rounded-full bg-blue-500 group-hover:scale-125 transition-transform"></span>
-            <span className="text-[10px] uppercase tracking-wider text-blue-600 font-black flex items-center gap-1">
-              Go to Real User Monitoring
-              <svg
-                className="w-2.5 h-2.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </span>
-          </Link>
+
+          <CustomTooltip
+            content={
+              <div className="flex flex-col gap-3 p-2 max-w-70">
+                <div className="space-y-1">
+                  <p className="text-xs leading-relaxed text-slate-200">
+                    Field Data is delayed by 28 days and only tracks Chrome.
+                    <strong>
+                      {" "}
+                      RUM shows you the broader picture on what&apos;s happening
+                      right now.
+                    </strong>
+                  </p>
+                </div>
+
+                <ul className="space-y-2">
+                  <li className="flex items-start gap-2 text-[11px] text-slate-300">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
+                    <span>
+                      <strong>Live Feedback:</strong> See performance changes
+                      instantly after a deployment.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2 text-[11px] text-slate-300">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
+                    <span>
+                      <strong>Full Coverage:</strong> Track Safari, Firefox, and
+                      iOS users (which Google ignores).
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2 text-[11px] text-slate-300">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
+                    <span>
+                      <strong>Low-Traffic Visibility:</strong> Get data even if
+                      you don&apos;t meet minimum traffic thresholds.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2 text-[11px] text-slate-300">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
+                    <span>
+                      <strong>Debug Mode:</strong> Identify exactly which
+                      elements are causing layout shifts, largest contentful
+                      paint and interection to next paint.
+                    </span>
+                  </li>
+                </ul>
+
+                <a
+                  href={`/dashboard/rum/web-vitals?site=${selectedSite}`}
+                  className="mt-1 w-full text-center bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase py-2 rounded transition-colors shadow-lg"
+                >
+                  Open RUM Dashboard
+                </a>
+              </div>
+            }
+            trigger={
+              <div className="flex items-center gap-2 px-2 py-1 bg-blue-500/10 hover:bg-blue-500/20 rounded-full border border-blue-500/20 transition-all group">
+                <span className="h-2 w-2 rounded-full bg-blue-500 group-hover:scale-125 transition-transform" />
+                <span className="text-[10px] uppercase tracking-wider text-blue-600 font-black flex items-center gap-1">
+                  Why should you use Real User Monitoring?
+                </span>
+              </div>
+            }
+            side="right"
+            maxWidth="400px"
+            delay={300}
+          />
         </div>
         <DashboardChartContainer />
       </section>

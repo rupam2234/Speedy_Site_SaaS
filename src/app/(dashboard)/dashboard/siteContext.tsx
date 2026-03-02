@@ -7,7 +7,6 @@ import React, {
   createContext,
   useContext,
   useState,
-  useCallback,
   useEffect,
   useRef,
 } from "react";
@@ -91,64 +90,61 @@ export default function SiteContextProvider({
     siteFromUrl?: string | null;
   } | null>(null);
 
-  const fetchOrders = useCallback(
-    async (siteFromUrl?: string, userId?: string) => {
-      if (!userId) return;
+  const fetchOrders = async (siteFromUrl?: string, userId?: string) => {
+    if (!userId) return;
 
-      const now = Date.now();
-      const cachedOrders = sessionStorage.getItem("orders");
-      const cachedTime = sessionStorage.getItem("orders-ts");
+    const now = Date.now();
+    const cachedOrders = sessionStorage.getItem("orders");
+    const cachedTime = sessionStorage.getItem("orders-ts");
 
-      if (
-        cachedOrders &&
-        cachedTime &&
-        now - parseInt(cachedTime) < 5 * 60 * 1000
-      ) {
-        const parsedOrders = JSON.parse(cachedOrders);
-        setOrders(parsedOrders);
+    if (
+      cachedOrders &&
+      cachedTime &&
+      now - parseInt(cachedTime) < 5 * 60 * 1000
+    ) {
+      const parsedOrders = JSON.parse(cachedOrders);
+      setOrders(parsedOrders);
+      const defaultSite =
+        siteFromUrl &&
+        parsedOrders.some((o: OrderData) => o.website_name === siteFromUrl)
+          ? siteFromUrl
+          : parsedOrders[0].website_name;
+      setSelectedSite(defaultSite);
+      return; // skip network call
+    }
+
+    try {
+      const response = await fetch("/api/orders/fetchOrder");
+
+      if (!response.ok) throw new Error("Failed to fetch orders");
+
+      const { data }: { data: OrderData[] } = await response.json();
+
+      if (data?.length > 0) {
+        sessionStorage.setItem("orders", JSON.stringify(data));
+        sessionStorage.setItem("orders-ts", Date.now().toString());
+        setOrders(data);
+
         const defaultSite =
           siteFromUrl &&
-          parsedOrders.some((o: OrderData) => o.website_name === siteFromUrl)
+          data.some((o: OrderData) => o.website_name === siteFromUrl)
             ? siteFromUrl
-            : parsedOrders[0].website_name;
+            : data[0].website_name;
         setSelectedSite(defaultSite);
-        return; // skip network call
-      }
-
-      try {
-        const response = await fetch("/api/orders/fetchOrder");
-
-        if (!response.ok) throw new Error("Failed to fetch orders");
-
-        const { data }: { data: OrderData[] } = await response.json();
-
-        if (data?.length > 0) {
-          sessionStorage.setItem("orders", JSON.stringify(data));
-          sessionStorage.setItem("orders-ts", Date.now().toString());
-          setOrders(data);
-
-          const defaultSite =
-            siteFromUrl &&
-            data.some((o: OrderData) => o.website_name === siteFromUrl)
-              ? siteFromUrl
-              : data[0].website_name;
-          setSelectedSite(defaultSite);
-        } else {
-          setOrders([]);
-          setSelectedSite("");
-          sessionStorage.removeItem("orders");
-          sessionStorage.removeItem("orders-ts");
-        }
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-        setOrders(null);
+      } else {
+        setOrders([]);
         setSelectedSite("");
         sessionStorage.removeItem("orders");
         sessionStorage.removeItem("orders-ts");
       }
-    },
-    [],
-  );
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setOrders(null);
+      setSelectedSite("");
+      sessionStorage.removeItem("orders");
+      sessionStorage.removeItem("orders-ts");
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) return;

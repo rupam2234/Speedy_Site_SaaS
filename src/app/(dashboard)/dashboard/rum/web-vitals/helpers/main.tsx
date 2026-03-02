@@ -165,14 +165,19 @@ export default function Main() {
       ttfb: 0,
     };
     const weights = {
-      cls: 0.2,
+      cls: 0.4,
       fcp: 0,
       inp: 0.2,
       lcp: 0.3,
-      ttfb: 0.3,
+      ttfb: 0.1,
     };
 
-    historyData.rum_history_data.forEach((x: any) => {
+    const slicedData =
+      historyData.rum_history_data.length > 7
+        ? historyData.rum_history_data.slice(-7)
+        : historyData.rum_history_data;
+
+    slicedData.forEach((x: any) => {
       ["cls", "fcp", "inp", "lcp", "ttfb"].forEach((key) => {
         const raw = Number(
           x?.[key]?.[selectedDevice.toLowerCase()]?.[rumDistribution],
@@ -317,48 +322,127 @@ export default function Main() {
                 UX Score
               </p>
               <CustomTooltip
-                maxWidth={isMobile ? `` : `500px`} // default width on mobile
                 side="right"
                 trigger={
                   <InfoIcon
                     size={16}
-                    className="text-primary/60 cursor-pointer hover:bg-primary/5 rounded-full"
+                    className="text-primary/60 cursor-pointer hover:bg-primary/5 rounded-full transition-colors"
                   />
                 }
-                content="UX Score summarizes your site’s overall performance 
-                using real-time user experience data. While it’s not the same 
-                as the Core Web Vitals shown in Search Console or PageSpeed 
-                Insights, it relies on the same underlying technology to 
-                collect and analyze data. You can use this data to monitor 
-                website performance in real time and identify bottlenecks 
-                before your Core Web Vitals fall below recommended thresholds."
+                content={
+                  <div className="flex flex-col gap-4 p-1">
+                    <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+                      <div className="p-1.5 bg-green-500/20 rounded-lg text-green-400">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-slate-100 uppercase tracking-tight">
+                          User Experience Score
+                        </span>
+                        <span className="text-[10px] text-green-500 font-medium italic">
+                          Aggregate Performance Health
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                        What it is
+                      </p>
+                      <p className="text-xs leading-relaxed text-slate-300">
+                        A single, weighted metric that summarizes your
+                        site&apos;s overall speed and stability. It translates
+                        technical data (like LCP, INP, and CLS) into a
+                        &quot;health&quot; score based on real visitor
+                        interactions.
+                      </p>
+                    </div>
+
+                    {/* Focused "Why it's useful" */}
+                    <div className="space-y-3">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                        Why it&apos;s useful
+                      </p>
+
+                      <div className="grid gap-4">
+                        <div className="flex items-start gap-2.5">
+                          <div className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
+                          <div className="flex flex-col">
+                            <span className="text-[11px] font-bold text-white">
+                              One-Glance Health Status
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              Instead of monitoring dozens of individual charts,
+                              the UX Score gives you an immediate answer to:
+                              &quot;Is my site performing well for my users
+                              right now?&quot;
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2.5">
+                          <div className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
+                          <div className="flex flex-col">
+                            <span className="text-[11px] font-bold text-white">
+                              Preemptive Safety Net
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              By watching this score, you can catch gradual
+                              performance regressions that haven&apos;t yet
+                              triggered critical SEO failures but are starting
+                              to degrade user experience.
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2.5">
+                          <div className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
+                          <div className="flex flex-col">
+                            <span className="text-[11px] font-bold text-white">
+                              Objective Benchmarking
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              It uses the same industry-standard thresholds
+                              (Good, Needs Improvement, Poor) as Core Web
+                              Vitals, ensuring your internal monitoring stays
+                              aligned with global performance standards.
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
               />
             </span>
 
-            <CustomTooltip
-              content={
-                "Site performance score (0–100%), calculated from all Core Web Vitals metrics."
+            <div
+              className="relative flex items-center justify-center w-12 h-12 rounded-full"
+              style={
+                {
+                  "--xp": `${XpScore}%`,
+                  background: `conic-gradient(#22c55e 0% var(--xp), #e5e7eb var(--xp) 100%)`,
+                  transition: "all 1s ease-in-out",
+                } as React.CSSProperties
               }
-              side="right"
-              trigger={
-                <div
-                  className="relative flex items-center justify-center w-12 h-12 rounded-full"
-                  style={
-                    {
-                      "--xp": `${XpScore}%`,
-                      background: `conic-gradient(#22c55e 0% var(--xp), #e5e7eb var(--xp) 100%)`,
-                      transition: "all 1s ease-in-out",
-                    } as React.CSSProperties
-                  }
-                >
-                  <div className="flex items-center justify-center w-10 h-10 bg-white/80 text-primary/80 dark:text-primary-foreground dark:bg-primary/50 rounded-full">
-                    <span className="text-[12px] font-bold">
-                      {XpScore?.toFixed(0)}
-                    </span>
-                  </div>
-                </div>
-              }
-            />
+            >
+              <div className="flex items-center justify-center w-10 h-10 bg-white/80 text-primary/80 dark:text-primary-foreground dark:bg-primary/50 rounded-full">
+                <span className="text-[12px] font-bold">
+                  {XpScore?.toFixed(0)}
+                </span>
+              </div>
+            </div>
           </div>
           {metrics?.map((x) => (
             <div
