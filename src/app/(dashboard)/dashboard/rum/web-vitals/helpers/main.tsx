@@ -3,11 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { cwv_ranges, scoreMetric } from "../../cwvRanges";
-import {
-  CustomTooltip,
-  LoadingAnimation,
-  useIsMobile,
-} from "@/components/theme";
+import { CustomTooltip, LoadingAnimation } from "@/components/theme";
 import {
   RumCwvChart,
   LCPelements,
