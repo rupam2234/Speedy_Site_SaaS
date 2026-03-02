@@ -15,7 +15,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "incremental": true,
     "plugins": [
       {
@@ -39,8 +39,11 @@
     "src/app/(dashboard)/dashboard/rum/page.tsx.bak",
     "src/app/(dashboard)/dashboard/rum/helpers/ExperienceBar.tsx.bak",
     "scripts/journey.js",
-    ".next/dev/types/**/*.ts"
-, "src/app/(dashboard)/dashboard/rum/web-vitals/helpers/charts/index.js", "src/app/account/subscription/index.js", "src/app/(auth)/auth/callback/page_backup.tsx"  ],
+    ".next/dev/types/**/*.ts",
+    "src/app/(dashboard)/dashboard/rum/web-vitals/helpers/charts/index.js",
+    "src/app/account/subscription/index.js",
+    "src/app/(auth)/auth/callback/page_backup.tsx"
+  ],
   "exclude": [
     "node_modules"
   ]
