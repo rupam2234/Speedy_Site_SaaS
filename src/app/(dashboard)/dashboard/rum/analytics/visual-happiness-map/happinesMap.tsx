@@ -8,6 +8,7 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { Frown, Info, Meh, Smile } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
 import TooltipIcon from "@/components/theme/customTooltip";
+import Image from "next/image";
 
 const ClientMap = dynamic(() => import("../helpers/trafficMap"), {
   ssr: false,
@@ -190,7 +191,7 @@ export default function UserHappinessMap({
       <div className={styles.tooltipContainer}>
         <div style={{ display: "flex", alignItems: "center", marginBottom: 4 }}>
           {countryCodeAlpha3 && (
-            <img
+            <Image
               src={`https://flagcdn.com/w20/${countryCode?.toLowerCase()}.png`}
               alt={`${countryName} flag`}
               style={{ width: 20, height: 14, marginRight: 8 }}

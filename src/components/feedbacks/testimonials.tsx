@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 const testimonials = [
   {
@@ -85,7 +86,7 @@ export default function ServiceTestimonials() {
 
               <div>
                 <div className="flex items-center gap-3 mb-6">
-                  <img
+                  <Image
                     src={t.image}
                     alt={t.name}
                     className="w-10 h-10 rounded-full object-cover border border-white/10"
@@ -107,7 +108,7 @@ export default function ServiceTestimonials() {
 
                 <div className="space-y-3">
                   <h5 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
-                    "{t.headline}"
+                    &quot;{t.headline}&quot;
                   </h5>
                   <p className="text-sm text-slate-400 leading-relaxed font-light italic opacity-80 group-hover:opacity-100 transition-opacity">
                     {t.message}

@@ -4,7 +4,6 @@ import {
   CustomCalendar,
   CustomTooltip,
   DeviceController,
-  PrimaryToolbar,
   useIsMobile,
 } from "@/components/theme";
 import { useEffect, useRef, useState } from "react";
@@ -143,10 +142,7 @@ export default function Main() {
                 />
               </div>
             ) : (
-              <OriginPerformanceChart
-                data={originHitData}
-                isLoading={isLoading}
-              />
+              <OriginPerformanceChart data={originHitData} />
             )}
           </div>
         </div>

@@ -226,115 +226,127 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
               </thead>
               <tbody>
                 {cf_configs &&
-                  cf_configs.map((x) => (
-                    <tr
-                      className="border-b last:border-b-0 border-primary/20"
-                      key={x.id}
-                    >
-                      <td className="px-4.5 py-4">
-                        <input
-                          type="checkbox"
-                          className="h-3 w-3 rounded border-primary/40"
-                        />
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <span>{x.description}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        {x.last_updated.split("T")[0]}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span>
-                          {x.action_parameters.edge_ttl.mode
-                            .replace("_", " ")
-                            .replace(/^\w/, (c) => c.toUpperCase())}{" "}
-                          / {x.action_parameters.edge_ttl.default / 3600} Hours
-                        </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        {x.action_parameters.browser_ttl.mode
-                          .replace("_", " ")
-                          .replace(/^\w/, (c) => c.toUpperCase())}{" "}
-                        {x.action_parameters.browser_ttl.mode ===
-                        "override_origin"
-                          ? `/ ${
-                              x.action_parameters.browser_ttl?.default! / 3600
-                            } Hours`
-                          : ""}
-                      </td>
-                      <td className="px-4 py-4 font-medium">
-                        {x.enabled ? (
-                          <span className="text-green-500">Enabled</span>
-                        ) : (
-                          <span className="text-orange-500">Disabled</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <button
-                          className="text-primary/80 hover:bg-primary/20 w-6 rounded-sm p-0.5 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation(); // to prevent immediate closure
-                            setOpenRowId(openRowId === x.id ? null : x.id);
-                            selectData(x.id);
-                          }}
-                        >
-                          ⋮
-                        </button>
+                  cf_configs.map((x) => {
+                    // Pre-calculate edge and browser TTL hours safely
+                    const edgeHours =
+                      x.action_parameters.edge_ttl.default / 3600;
+                    const browserHours =
+                      x.action_parameters.browser_ttl?.default != null
+                        ? x.action_parameters.browser_ttl.default / 3600
+                        : 0;
 
-                        {openRowId === x.id && (
-                          <div className="absolute right-9 mt-2 w-32 border [&_li]:dark:hover:bg-primary/20 [&_li]:hover:bg-primary/20 bg-primary-foreground dark:bg-secondary-background shadow-lg z-10">
-                            <ul className="text-sm text-primary/80">
-                              <li
-                                className="px-4 py-2 cursor-pointer"
-                                onClick={() =>
-                                  setEditRowId(editRowId === x.id ? null : x.id)
-                                }
-                              >
-                                Edit
-                              </li>
-                              <li
-                                className="px-4 py-2 cursor-pointer"
-                                onClick={toggleRule}
-                              >
-                                {cf_configs[0].enabled ? "Disable" : "Enable"}
-                              </li>
-                              <li className="px-4 py-2 text-red-500 font-medium ">
-                                {!confirming ? (
-                                  <button
-                                    className="w-full cursor-pointer text-right"
-                                    onClick={() => setConfirming(true)}
-                                  >
-                                    Delete
-                                  </button>
-                                ) : (
-                                  <div className="flex justify-center items-center gap-2">
-                                    <button
-                                      className="flex-1 cursor-pointer px-1 py-0.5 text-[12px] bg-muted text-foreground rounded"
-                                      onClick={() => setConfirming(false)}
-                                    >
-                                      Cancel
-                                    </button>
+                    // Capitalize mode strings
+                    const edgeMode = x.action_parameters.edge_ttl.mode
+                      .replace("_", " ")
+                      .replace(/^\w/, (c) => c.toUpperCase());
+                    const browserMode = x.action_parameters.browser_ttl.mode
+                      .replace("_", " ")
+                      .replace(/^\w/, (c) => c.toUpperCase());
 
-                                    <button
-                                      className="flex-1 cursor-pointer px-1 py-0.5 text-[12px] bg-red-600 text-white rounded"
-                                      onClick={() => {
-                                        deleteRule(selectedData[0].id);
-                                        setConfirming(false);
-                                      }}
-                                    >
-                                      Confirm
-                                    </button>
-                                  </div>
-                                )}
-                              </li>
-                            </ul>
+                    return (
+                      <tr
+                        className="border-b last:border-b-0 border-primary/20"
+                        key={x.id}
+                      >
+                        <td className="px-4.5 py-4">
+                          <input
+                            type="checkbox"
+                            className="h-3 w-3 rounded border-primary/40"
+                          />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <span>{x.description}</span>
                           </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-4">
+                          {x.last_updated.split("T")[0]}
+                        </td>
+                        <td className="px-4 py-4">
+                          <span>
+                            {edgeMode} / {edgeHours} Hours
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          {browserMode}{" "}
+                          {x.action_parameters.browser_ttl.mode ===
+                          "override_origin"
+                            ? `/ ${browserHours} Hours`
+                            : ""}
+                        </td>
+                        <td className="px-4 py-4 font-medium">
+                          {x.enabled ? (
+                            <span className="text-green-500">Enabled</span>
+                          ) : (
+                            <span className="text-orange-500">Disabled</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <button
+                            className="text-primary/80 hover:bg-primary/20 w-6 rounded-sm p-0.5 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation(); // prevent immediate closure
+                              setOpenRowId(openRowId === x.id ? null : x.id);
+                              selectData(x.id);
+                            }}
+                          >
+                            ⋮
+                          </button>
+
+                          {openRowId === x.id && (
+                            <div className="absolute right-9 mt-2 w-32 border [&_li]:dark:hover:bg-primary/20 [&_li]:hover:bg-primary/20 bg-primary-foreground dark:bg-secondary-background shadow-lg z-10">
+                              <ul className="text-sm text-primary/80">
+                                <li
+                                  className="px-4 py-2 cursor-pointer"
+                                  onClick={() =>
+                                    setEditRowId(
+                                      editRowId === x.id ? null : x.id,
+                                    )
+                                  }
+                                >
+                                  Edit
+                                </li>
+                                <li
+                                  className="px-4 py-2 cursor-pointer"
+                                  onClick={toggleRule}
+                                >
+                                  {cf_configs[0].enabled ? "Disable" : "Enable"}
+                                </li>
+                                <li className="px-4 py-2 text-red-500 font-medium">
+                                  {!confirming ? (
+                                    <button
+                                      className="w-full cursor-pointer text-right"
+                                      onClick={() => setConfirming(true)}
+                                    >
+                                      Delete
+                                    </button>
+                                  ) : (
+                                    <div className="flex justify-center items-center gap-2">
+                                      <button
+                                        className="flex-1 cursor-pointer px-1 py-0.5 text-[12px] bg-muted text-foreground rounded"
+                                        onClick={() => setConfirming(false)}
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        className="flex-1 cursor-pointer px-1 py-0.5 text-[12px] bg-red-600 text-white rounded"
+                                        onClick={() => {
+                                          deleteRule(selectedData[0].id);
+                                          setConfirming(false);
+                                        }}
+                                      >
+                                        Confirm
+                                      </button>
+                                    </div>
+                                  )}
+                                </li>
+                              </ul>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
             {editRowId !== null && (

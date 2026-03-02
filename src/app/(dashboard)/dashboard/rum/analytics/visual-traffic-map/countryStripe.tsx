@@ -4,6 +4,7 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import TooltipIcon from "@/components/theme/customTooltip";
 import { useMemo, useState } from "react";
 import { alpha3ToAlpha2 } from "..";
+import Image from "next/image";
 
 type CountryData = {
   code: string;
@@ -18,7 +19,7 @@ export function CountryStripe({ data }: CountryStripeProps) {
   const { theme } = useTheme();
 
   const COLUMN_WIDTH = 90; // px
-  const [windowWidth, _] = useState<number>(852); // in px
+  const [windowWidth] = useState<number>(852); // in pixel
   const [scrollLeft, setScrollLeft] = useState<number>(0); // default left position in px
 
   const leftIndex = Math.floor(scrollLeft / COLUMN_WIDTH);
@@ -103,7 +104,7 @@ export function CountryStripe({ data }: CountryStripeProps) {
     if (!alpha2) return null;
 
     return (
-      <img
+      <Image
         src={`https://flagcdn.com/w${size}/${alpha2}.png`}
         alt={`${alpha3} flag`}
         width={size}

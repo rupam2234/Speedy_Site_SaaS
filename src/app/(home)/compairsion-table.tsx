@@ -55,7 +55,7 @@ export default function ComparisonTable() {
         <tbody className="text-white/90">
           {tableData.map((x, idx) => (
             <tr
-              key={x.itemName}
+              key={idx}
               className="group border-b border-white/5 hover:bg-white/2 transition-colors"
             >
               {/* Feature Name */}

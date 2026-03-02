@@ -170,7 +170,7 @@ export default function Main() {
             </h2>
             <MoveRight />
             {(() => {
-              let p = activeDailyCrux.status;
+              const p = activeDailyCrux.status;
               const borderColor =
                 p === "Passing"
                   ? "border-green-300"

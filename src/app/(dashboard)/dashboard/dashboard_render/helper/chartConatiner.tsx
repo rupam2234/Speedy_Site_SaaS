@@ -3,7 +3,6 @@
 import {
   CoreWebVitalChart,
   cwv_metrics,
-  CWVMetric,
   DistributionChart,
   getColor,
 } from "../helper";
@@ -12,6 +11,7 @@ import { ArrowRight, InfoIcon } from "lucide-react";
 import { CustomTooltip } from "@/components/theme";
 import { useIsMobile } from "@/components/theme/use-mobile";
 import { useSiteContext } from "../../siteContext";
+import { CWVMetric } from "./cwvMetrics";
 
 export default function DashboardChartContainer() {
   const {

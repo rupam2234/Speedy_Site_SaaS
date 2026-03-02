@@ -17,8 +17,6 @@ export default function LCPelements({ contributors }: LCPelementProps) {
     ? Math.ceil(contributors.length / itemsPerPage)
     : 0;
 
-  let activeItems;
-
   function prevPage() {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
   }
@@ -27,7 +25,7 @@ export default function LCPelements({ contributors }: LCPelementProps) {
     setCurrentPage((prev) => Math.min(prev + 1, totalpages));
   }
 
-  activeItems = contributors.slice(
+  const activeItems = contributors.slice(
     (currentPage - 1) * itemsPerPage,
     itemsPerPage * currentPage,
   );

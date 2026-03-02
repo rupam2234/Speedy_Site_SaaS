@@ -171,7 +171,7 @@ export default function Main() {
             siteId={siteData?.order_id}
             cfData={cloudflareStatus}
             setCfData={() => {
-              setCloudflareStatus;
+              // setCloudflareStatus;
               sessionStorage.removeItem(`${selectedSite}-cloudflare-status`);
             }}
           />

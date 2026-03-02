@@ -13,7 +13,6 @@ interface Props {
 export async function SubscriptionCreated({
   stripeCustomerId,
   billingCycleEnd,
-  plan,
 }: Props) {
   const baseAddress = process.env?.NEXT_PUBLIC_PROD_BASE_URL;
   const planExpiresAt = new Date(billingCycleEnd)

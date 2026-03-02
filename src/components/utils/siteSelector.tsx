@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ArrowRight, CirclePlus, PlusCircle } from "lucide-react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { AddNewWebsite, CustomTooltip } from "../theme";
+import Image from "next/image";
 
 export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
   const { selectedSite, setSelectedSite, orders, setCollapsed } =
@@ -114,7 +115,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                 content={selectedSite}
                 side="right"
                 trigger={
-                  <img
+                  <Image
                     src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon.fav}`}
                     alt={`${selectedFavicon.site}_logo`}
                     width={16}
@@ -131,7 +132,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                     ?
                   </div>
                 ) : (
-                  <img
+                  <Image
                     src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon.fav}`}
                     alt={`${selectedFavicon.site}_logo`}
                     width={16}
@@ -174,7 +175,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                     ?
                   </div>
                 ) : (
-                  <img
+                  <Image
                     src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${x.favicon_file}`}
                     alt={`${x.website_name}_logo`}
                     width={16}

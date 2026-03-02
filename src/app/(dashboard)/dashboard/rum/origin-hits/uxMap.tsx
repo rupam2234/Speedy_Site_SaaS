@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useSiteContext } from "../../siteContext";
 import { lazyload } from "@/components/utils";
 import { MapChart } from "echarts/charts";
@@ -19,8 +19,6 @@ import {
   CheckCircle2,
   Users,
   Activity,
-  BookmarkIcon,
-  Lightbulb,
   DatabaseIcon,
 } from "lucide-react";
 import { alpha3ToAlpha2 } from "@/components/countries/countryCodes";
@@ -387,9 +385,9 @@ export default function UxReport() {
               <p className="text-[15px">
                 Happiness is an imaginary measure of{" "}
                 <strong>core web vitals</strong> means when core web vitals are
-                good we call it "happy" user experience and when they&apos;re
-                not, it&apos;s "unhappy". The UX is measured through core web
-                vitals, which is why{" "}
+                good we call it &quot;happy&quot; user experience and when
+                they&apos;re not, it&apos;s &quot;unhappy&quot;. The UX is
+                measured through core web vitals, which is why{" "}
                 <strong>fixing web vital issues, along with CDN</strong> can
                 improve your page&apos;s experience across most regions and you
                 will know it here real-time.
@@ -423,8 +421,8 @@ export default function UxReport() {
         throw new Error(data?.message ?? "failed to fetch UX data");
       }
       setHappinessData(data.data);
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error(error.message);
     }
   }
 

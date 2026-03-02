@@ -1,4 +1,4 @@
-import { LcpImageMetric } from "@/app/(dashboard)/dashboard/rum/lcp-images";
+import { LcpImageMetric } from "@/app/(dashboard)/dashboard/rum/lcp-images/main";
 import { NextRequest, NextResponse } from "next/server";
 
 interface Props {
@@ -117,9 +117,8 @@ export async function POST(req: NextRequest) {
     let suggestions;
     try {
       suggestions = JSON.parse(cleaned);
-    } catch (parseError) {
-      // console.error("Failed to parse AI JSON:", cleaned);
-      throw new Error("AI response could not be parsed as JSON");
+    } catch (error: any) {
+      throw new Error(error.message ?? "AI response could not be parsed as JSON");
     }
 
     return NextResponse.json(suggestions);

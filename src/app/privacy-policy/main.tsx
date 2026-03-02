@@ -291,8 +291,8 @@ const Main = () => {
                     <div className="bg-emerald-50 p-6 rounded-xl max-w-sm">
                       <p className="text-sm text-emerald-800 font-medium">
                         Privacy updates: We may update this policy periodically.
-                        Check the "Effective Date" at the top for the latest
-                        revision.
+                        Check the &quot;Effective Date&quot; at the top for the
+                        latest revision.
                       </p>
                     </div>
                   </div>

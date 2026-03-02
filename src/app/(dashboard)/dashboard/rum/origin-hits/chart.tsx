@@ -37,10 +37,9 @@ echarts.use([
 
 interface Props {
   data: OriginHits[];
-  isLoading: boolean;
 }
 
-export default function OriginPerformanceChart({ data, isLoading }: Props) {
+export default function OriginPerformanceChart({ data }: Props) {
   const { selectedSite } = useSiteContext();
 
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);

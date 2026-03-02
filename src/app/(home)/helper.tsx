@@ -3,6 +3,7 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { FeatureCore } from "./homepage";
+import Image from "next/image";
 
 interface Props {
   feature: FeatureCore;
@@ -31,7 +32,7 @@ export default function FeatureBlock({ feature, reversed = false }: Props) {
         className="flex-1"
       >
         {feature.image && (
-          <img
+          <Image
             src={feature.image}
             alt={feature.title}
             className="w-auto h-auto rounded-sm shadow"

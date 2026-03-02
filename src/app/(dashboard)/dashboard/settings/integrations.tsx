@@ -382,7 +382,7 @@ export default function Integrations({ siteId, cfData, setCfData }: Props) {
         throw new Error(body.message);
       }
 
-      setCfData && setCfData({ isConnected: false, key: "" });
+      setCfData?.({ isConnected: false, key: "" });
     } catch (error) {
       console.error(error);
     }

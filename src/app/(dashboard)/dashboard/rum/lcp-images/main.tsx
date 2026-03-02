@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Performancetab, SuggestionsToggle } from ".";
 import { cwv_ranges } from "../cwvRanges";
+import Image from "next/image";
 
 // Custom Badge component
 const Badge = ({
@@ -259,7 +260,7 @@ export default function Main() {
                               : "border-primary/5 hover:bg-primary/5"
                           }`}
                         >
-                          <img
+                          <Image
                             src={metric.image_url}
                             alt={`LCP image ${index}`}
                             className="w-10 h-10 rounded-sm border object-cover shrink-0"
@@ -322,7 +323,7 @@ export default function Main() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <div className="overflow-hidden rounded-sm border">
-                          <img
+                          <Image
                             src={selectedImage.image_url}
                             alt="Selected LCP image"
                             className="w-full h-48 object-contain bg-primary/20 dark:bg-secondary-background"
@@ -481,7 +482,7 @@ export default function Main() {
                             onClick={() => setSelectedImage(metric)}
                           >
                             <div className="relative">
-                              <img
+                              <Image
                                 src={metric.image_url}
                                 alt={`LCP image ${index}`}
                                 className="object-cover rounded-sm border w-10 h-10"
@@ -548,7 +549,7 @@ export default function Main() {
                       <div className="grid grid-cols-4 gap-6">
                         <div className="col-span-1 md:col-span-2 space-y-3">
                           <div className="overflow-hidden rounded-sm border">
-                            <img
+                            <Image
                               src={selectedImage.image_url}
                               alt="Selected LCP image"
                               className="w-full h-48 object-contain bg-primary/20 dark:bg-secondary-background"

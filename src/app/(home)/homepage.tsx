@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ReactNode } from "react";
 import SiteHeader from "./header";
 import Link from "next/link";
-import { ComparisonTable, FeatureBlock, Testimonials } from "./index";
+import { ComparisonTable, Testimonials } from "./index";
 import { SiteFooter } from "@/components/theme";
 import { ArrowRight } from "lucide-react";
 
@@ -14,95 +14,95 @@ export interface FeatureCore {
   image?: string;
 }
 
-const features: FeatureCore[] = [
-  {
-    title: "Audience Share by UX Quality",
-    desc: (
-      <div className="space-y-4">
-        <p className="text-lg text-gray-600">
-          Gain a comprehensive view of user experience across devices, users,
-          and geographic locations to quickly identify opportunities to improve.
-        </p>
-        <p className="text-lg text-gray-600">
-          Streamlined traffic data featuring{" "}
-          <span className="bg-amber-300">LLM-based traffic sources</span> and
-          user happiness insights classified by geographic location.
-        </p>
-        <p>
-          Monitor your top landing pages&apos; performance and traffic sources,
-          and ensure they stay optimized using a single, unified script
-          configuration.
-        </p>
-      </div>
-    ),
-    image: "/images/overview.png",
-  },
-  {
-    title: "Catch Poor Page Experiences Early",
-    desc: (
-      <div className="space-y-4">
-        <p className="text-lg text-gray-600">
-          Google Search Console highlights sample pages with serious experience
-          issues. It&apos;s a helpful starting point but not the whole story.
-        </p>
-        <p className="text-lg text-gray-600">
-          A healthy website delivers great content and a great experience across
-          all popular pages, not just few.
-          <span className="bg-blue-200">
-            Page Group can classify page experience across all traffic-driving
-            pages
-          </span>{" "}
-          — whether they&apos;re new, niche, or top-performers — so you can
-          monitor and improve UX site-wide.
-        </p>
-      </div>
-    ),
-    image: "/images/page-groups.png",
-  },
-  {
-    title: "Monitor Web Vitals & Major Contributors",
-    desc: (
-      <>
-        <div className="space-y-4">
-          <p className="text-lg text-gray-600">
-            When fixing your website performance, waiting for web vitals reports
-            can slow you down. Track them daily instead to{" "}
-            <span className="bg-green-300">
-              gain deeper insights into your page&apos;s web vitals
-            </span>{" "}
-            and easily identify the root causes of performance issues.
-          </p>
-          <p className="text-lg text-gray-600">
-            Understand precisely what&apos;s causing page experience issues
-            accross all devices and user segment, without the overhead of
-            building or maintaining your own system.
-          </p>
-        </div>
-      </>
-    ),
-    image: "/images/web-vitals.png",
-  },
-  {
-    title: "Centralized Insights into Unoptimized Images",
-    desc: (
-      <div className="space-y-4">
-        <p className="text-lg text-gray-600">
-          Images account for ~50–70% of a typical web page&apos;s total weight.
-          When left unoptimized they are often the LCP elements, causes layout
-          shift when not sized properly and even in some cases slow images that
-          are blocking in nature can delay interactivity.
-        </p>
-        <p className="text-lg text-gray-600">
-          LCP Sense is a most appearing image detector on your site and group
-          them into LCP contributing classes (Good, Average and Poor) along with
-          size (bytes) & size (width and height) for you to quickly identify and
-          fix images that are not performing well.
-        </p>
-      </div>
-    ),
-    image: "/images/lcp-images.png",
-  },
-];
+// const features: FeatureCore[] = [
+//   {
+//     title: "Audience Share by UX Quality",
+//     desc: (
+//       <div className="space-y-4">
+//         <p className="text-lg text-gray-600">
+//           Gain a comprehensive view of user experience across devices, users,
+//           and geographic locations to quickly identify opportunities to improve.
+//         </p>
+//         <p className="text-lg text-gray-600">
+//           Streamlined traffic data featuring{" "}
+//           <span className="bg-amber-300">LLM-based traffic sources</span> and
+//           user happiness insights classified by geographic location.
+//         </p>
+//         <p>
+//           Monitor your top landing pages&apos; performance and traffic sources,
+//           and ensure they stay optimized using a single, unified script
+//           configuration.
+//         </p>
+//       </div>
+//     ),
+//     image: "/images/overview.png",
+//   },
+//   {
+//     title: "Catch Poor Page Experiences Early",
+//     desc: (
+//       <div className="space-y-4">
+//         <p className="text-lg text-gray-600">
+//           Google Search Console highlights sample pages with serious experience
+//           issues. It&apos;s a helpful starting point but not the whole story.
+//         </p>
+//         <p className="text-lg text-gray-600">
+//           A healthy website delivers great content and a great experience across
+//           all popular pages, not just few.
+//           <span className="bg-blue-200">
+//             Page Group can classify page experience across all traffic-driving
+//             pages
+//           </span>{" "}
+//           — whether they&apos;re new, niche, or top-performers — so you can
+//           monitor and improve UX site-wide.
+//         </p>
+//       </div>
+//     ),
+//     image: "/images/page-groups.png",
+//   },
+//   {
+//     title: "Monitor Web Vitals & Major Contributors",
+//     desc: (
+//       <>
+//         <div className="space-y-4">
+//           <p className="text-lg text-gray-600">
+//             When fixing your website performance, waiting for web vitals reports
+//             can slow you down. Track them daily instead to{" "}
+//             <span className="bg-green-300">
+//               gain deeper insights into your page&apos;s web vitals
+//             </span>{" "}
+//             and easily identify the root causes of performance issues.
+//           </p>
+//           <p className="text-lg text-gray-600">
+//             Understand precisely what&apos;s causing page experience issues
+//             accross all devices and user segment, without the overhead of
+//             building or maintaining your own system.
+//           </p>
+//         </div>
+//       </>
+//     ),
+//     image: "/images/web-vitals.png",
+//   },
+//   {
+//     title: "Centralized Insights into Unoptimized Images",
+//     desc: (
+//       <div className="space-y-4">
+//         <p className="text-lg text-gray-600">
+//           Images account for ~50–70% of a typical web page&apos;s total weight.
+//           When left unoptimized they are often the LCP elements, causes layout
+//           shift when not sized properly and even in some cases slow images that
+//           are blocking in nature can delay interactivity.
+//         </p>
+//         <p className="text-lg text-gray-600">
+//           LCP Sense is a most appearing image detector on your site and group
+//           them into LCP contributing classes (Good, Average and Poor) along with
+//           size (bytes) & size (width and height) for you to quickly identify and
+//           fix images that are not performing well.
+//         </p>
+//       </div>
+//     ),
+//     image: "/images/lcp-images.png",
+//   },
+// ];
 
 const extraFeatures: FeatureCore[] = [
   {
@@ -122,10 +122,10 @@ const extraFeatures: FeatureCore[] = [
     desc: (
       <>
         <p>
-          Improve your site's TTFB worldwide by leveraging Cloudflare’s CDN with
-          advanced configurations. Track cache hit rates automatically, receive
-          instant alerts, and ensure consistent high performance across your top
-          regions.
+          Improve your site&apos;s TTFB worldwide by leveraging
+          Cloudflare&apos;s CDN with advanced configurations. Track cache hit
+          rates automatically, receive instant alerts, and ensure consistent
+          high performance across your top regions.
         </p>
       </>
     ),
@@ -301,9 +301,9 @@ export default function Home() {
                       <div className="pl-4 text-slate-300">
                         src={" "}
                         <span className="text-indigo-400">
-                          "https://rum.speedy.site/rum.js?v=
+                          &quot;https://rum.speedy.site/rum.js?v=
                           <span className="text-slate-300">(V)</span>&id=
-                          <span className="text-slate-300">(ID)</span>"
+                          <span className="text-slate-300">(ID)</span>&quot;
                         </span>
                         <span className="text-emerald-400">defer</span>
                         <span className="text-indigo-400">{">"}</span>
@@ -726,7 +726,7 @@ export default function Home() {
                       <div className="relative bg-[#0b0f1a] p-6 rounded-2xl border border-white/10">
                         <div className="flex justify-between items-center mb-6">
                           <div className="text-white font-bold text-sm tracking-tight">
-                            Core Web Vitals' Trend
+                            Core Web Vitals&apos; Trend
                           </div>
                           <div className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded">
                             +12% vs last week
@@ -870,9 +870,9 @@ export default function Home() {
 
               <div className="p-8 rounded-3xl bg-slate-50 border border-slate-100 relative group">
                 <p className="text-slate-600 leading-relaxed italic">
-                  "Extending the same DNA, Speedy Site now empowers you with
-                  actionable insights, real-time metrics, and historical data to
-                  deliver a seamless user experience."
+                  &quot;Extending the same DNA, Speedy Site now empowers you
+                  with actionable insights, real-time metrics, and historical
+                  data to deliver a seamless user experience.&quot;
                 </p>
                 {/* Subtle DNA-style icon decoration */}
                 <div className="absolute -right-4 -top-4 opacity-10 group-hover:rotate-12 transition-transform duration-700">

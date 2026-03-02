@@ -1,4 +1,3 @@
-import { CruxData } from "@/data-types/cruxData";
 import { NextRequest, NextResponse } from "next/server";
 
 interface Props {

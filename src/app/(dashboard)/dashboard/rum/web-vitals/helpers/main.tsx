@@ -598,6 +598,7 @@ export default function Main() {
     if (cache !== null) {
       const {
         data,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         metric: activeMetric,
         startDate: cachedStartDate,
         endDate: cachedEndDate,

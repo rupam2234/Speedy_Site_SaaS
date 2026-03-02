@@ -128,8 +128,3 @@ export default function CustomCalendar({ defaultDateRange, limited }: Props) {
     </div>
   );
 }
-
-function getDaysDiff(a: Date, b: Date) {
-  const diff = Math.abs(a.getTime() - b.getTime());
-  return diff;
-}

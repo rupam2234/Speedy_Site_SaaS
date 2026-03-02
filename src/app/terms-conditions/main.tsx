@@ -230,7 +230,7 @@ const Main = () => {
                       11. Limitation of Liability
                     </h2>
                     <p className="text-slate-300 text-sm leading-relaxed mb-4 uppercase">
-                      To the maximum extent permitted by law, Speedy.Site's
+                      To the maximum extent permitted by law, Speedy.Site&apos;s
                       total liability shall not exceed the total amount paid by
                       you in the preceding 3 months.
                     </p>

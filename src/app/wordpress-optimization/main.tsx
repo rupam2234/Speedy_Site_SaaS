@@ -116,11 +116,12 @@ export default function WPOptimizationService() {
                 Why Speedy Site WP optimization service is the Right Choice
               </h2>
               <p className="text-slate-400 font-light max-w-3xl mx-auto text-lg">
-                Most "optimization" services just install a few plugins and
-                leave. We analyze your real user experience with our integrated
-                RUM system, find out bottlenecks, provide you full site analysis
-                data. There's more! We optimize your cache setup, optimize codes
-                and unload bloats to ensure your site hits peak performance.
+                Most &quot;optimization&quot; services just install a few
+                plugins and leave. We analyze your real user experience with our
+                integrated RUM system, find out bottlenecks, provide you full
+                site analysis data. There&apos;s more! We optimize your cache
+                setup, optimize codes and unload bloats to ensure your site hits
+                peak performance.
               </p>
             </div>
 

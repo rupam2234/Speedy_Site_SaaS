@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { ChartScatter, InfoIcon, MonitorSmartphone } from "lucide-react";
+import { ChartScatter, InfoIcon } from "lucide-react";
 import { useSiteContext } from "../../app/(dashboard)/dashboard/siteContext";
 import { useEffect, useRef, useState } from "react";
 import { SidebarTrigger } from "../ui/sidebar";

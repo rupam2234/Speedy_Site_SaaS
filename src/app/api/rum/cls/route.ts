@@ -10,9 +10,9 @@ interface ReqProps {
 }
 
 export async function POST(request: NextRequest) {
-  let today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
 
-  let past30days = new Date();
+  const past30days = new Date();
   past30days.setDate(past30days.getDate() - 30);
 
   const {
