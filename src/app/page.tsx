@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
   title: {
     default: "Speedy Site – Website Performance & UX Monitoring",
-    template: "%s | Speedy Site",
+    template: "%s",
   },
   description:
     "Monitor and optimize your website's speed, performance, and user experience. Track key metrics, identify bottlenecks, and improve site performance effortlessly.",

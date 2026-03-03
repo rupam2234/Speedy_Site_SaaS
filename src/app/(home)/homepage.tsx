@@ -182,16 +182,17 @@ export default function Home() {
           </div>
 
           {/* 4. THE GRADIENT HEADING */}
-          <h1 className="text-5xl md:text-7xl font-extrabold leading-[1.1] tracking-tight text-transparent bg-clip-text bg-linear-to-b from-white via-white to-white/50">
-            Fix Core Web Vitals <br />
+          <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.1] tracking-tight text-transparent bg-clip-text bg-linear-to-b from-white via-white to-white/50">
+            Optimize Core Web Vitals <br />
             <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 to-purple-400">
-              Before They Hurt Your Rankings
+              Improve Crawl Efficiency for Search and AI Systems
             </span>
           </h1>
 
           <p className="mt-8 max-w-3xl mx-auto text-lg md:text-xl text-slate-400 leading-relaxed font-light">
-            See real user performance across devices, regions, pinpoint Core Web
-            Vitals bottlenecks instantly, and fix what’s hurting your rankings.
+            See real-user performance across devices and regions, identify Core
+            Web Vitals bottlenecks instantly, and fix issues before they impact
+            UX, search rankings, or AI discoverability.
           </p>
 
           {/* 5. INTERACTIVE BUTTONS */}
