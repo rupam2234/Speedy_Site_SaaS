@@ -319,7 +319,7 @@ const RumCwvChart = ({
           </span>
         </div>
         <span className="font-medium px-2 py-1 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">
-          Active Distribution:
+          Active Percentile:
           <strong className="ml-1 uppercase">
             {rumDistribution ? rumDistribution : ""}
           </strong>
@@ -342,7 +342,7 @@ const RumCwvChart = ({
                         ? `TTFB is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
                         : ""
             }
-            side="right"
+            side="top"
             trigger={
               <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
                 Good
@@ -385,7 +385,7 @@ const RumCwvChart = ({
                         ? `TTFB is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
                         : ""
             }
-            side="right"
+            side="top"
             trigger={
               <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
                 Needs Improvement
@@ -431,7 +431,7 @@ const RumCwvChart = ({
                         ? `TTFB is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
                         : ""
             }
-            side="right"
+            side="top"
             trigger={
               <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
                 Poor

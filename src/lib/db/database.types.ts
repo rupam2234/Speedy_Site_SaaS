@@ -584,7 +584,7 @@ export type Database = {
         }[]
       }
       analyze_inp_by_device: {
-        Args: { domain_filter?: string; time_range?: string }
+        Args: { domain_filter?: string }
         Returns: {
           affected_element: string
           avg_inp_value: number
@@ -599,7 +599,7 @@ export type Database = {
         }[]
       }
       analyze_lcp_by_device: {
-        Args: { domain_filter: string; time_range?: string }
+        Args: { domain_filter: string }
         Returns: {
           avg_element_render_delay: number
           avg_lcp_value: number
@@ -1087,7 +1087,7 @@ export type Database = {
         Returns: undefined
       }
       rum_cls: {
-        Args: { p_domain_name: string; p_from: string; p_to: string }
+        Args: { p_domain_name: string }
         Returns: {
           cls_timestamp: number
           cls_value: number
@@ -1096,16 +1096,12 @@ export type Database = {
           largest_shift_target: string
         }[]
       }
-      rum_distributions_by_metric: {
-        Args: {
-          p_domain_name: string
-          p_end: string
-          p_metric_name: string
-          p_start: string
-        }
+      rum_distributions_all_metrics: {
+        Args: { p_domain_name: string; p_end: string; p_start: string }
         Returns: {
           device_type: string
           good_count: number
+          metric: string
           needs_improvement_count: number
           poor_count: number
         }[]
@@ -1139,7 +1135,7 @@ export type Database = {
         }[]
       }
       ttfb_contributors: {
-        Args: { p_date_from: string; p_date_to: string; p_domain: string }
+        Args: { p_domain: string }
         Returns: {
           browser: string
           city: string

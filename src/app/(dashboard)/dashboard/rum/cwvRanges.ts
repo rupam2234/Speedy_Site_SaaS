@@ -6,7 +6,12 @@ export const cwv_ranges = {
   ttfb: [800, 1800],
 };
 
-// to normalize web vitals values
+/**
+ * To normalize CWV ranges
+ * @param value the cwv value
+ * @param range the range [2500, 4000] for LCP
+ * @returns normalized score
+ */
 export function scoreMetric(value: number, range: number[]) {
   const [good, poor] = range;
 

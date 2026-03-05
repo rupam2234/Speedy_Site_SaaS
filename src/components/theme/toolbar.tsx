@@ -43,6 +43,16 @@ interface Props {
    * Enable sticky toolbar, default: false
    */
   isSticky?: boolean;
+
+  /**
+   * Limit will force calender to only allow limited no of date range to select
+   */
+  limited?: number;
+
+  /**
+   *  disable or enable calender
+   */
+  disableCalender?: boolean;
 }
 
 export default function PrimaryToolbar({
@@ -51,6 +61,8 @@ export default function PrimaryToolbar({
   disableTablet,
   defaultDateRange,
   isSticky,
+  limited,
+  disableCalender,
 }: Props) {
   const { rumDistribution, setRumDistribution } = useSiteContext();
 
@@ -138,7 +150,11 @@ export default function PrimaryToolbar({
           )}
         </div>
       </div>
-      <CustomCalendar defaultDateRange={defaultDateRange} />
+      {disableCalender ? (
+        <></>
+      ) : (
+        <CustomCalendar defaultDateRange={defaultDateRange} limited={limited} />
+      )}
     </div>
   );
 }

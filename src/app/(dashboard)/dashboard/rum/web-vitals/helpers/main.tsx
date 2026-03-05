@@ -10,10 +10,9 @@ import {
   CLSelements,
   INPelements,
   TTFBelements,
-  BarGraphTabs,
 } from "./index";
 import { InfoIcon } from "lucide-react";
-import { lazyload, RumWebVitalToolbar } from "@/components/utils";
+import { cachedData, lazyload, RumWebVitalToolbar } from "@/components/utils";
 
 interface Metric {
   name: string;
@@ -65,9 +64,10 @@ const RUM_CAPS: Record<MetricKey, { min: number; max: number }> = {
 };
 
 export default function Main() {
-  const { selectedSite, selectedDevice, rumDistribution } = useSiteContext();
+  const { selectedSite, selectedDevice, rumDistribution, startDate, endDate } =
+    useSiteContext();
   const [historyData, setRumHistoryData] = useState<any>();
-  const [rumDistData, setRumDistData] = useState<any>(); // distribution data
+  const [distData, setDistData] = useState<any>();
   const [activeMetric, setActiveMetric] = useState<
     "LCP" | "CLS" | "INP" | "TTFB" | "FCP"
   >("LCP");
@@ -75,71 +75,30 @@ export default function Main() {
   const [sideBarObj, setSidebarObj] = useState<SidebarData>();
   const [XpScore, setXpScore] = useState<number | null>();
   const [contributors, setContributors] = useState<any>();
-  const { startDate, endDate } = useSiteContext();
 
   const triggerLazyload = useRef(null);
   const lazyloadKey = useRef<string | null>(null);
   const hasRun = useRef(false);
 
-  //#region Data manipulation
-  const activeSeries = useMemo(() => {
-    if (historyData === undefined) return [];
-
-    const metricKey = activeMetric.toLowerCase() as MetricKey;
-
-    return historyData.rum_history_data.map((x: any) => {
-      const raw = Number(
-        x?.[metricKey]?.[selectedDevice.toLowerCase()]?.[rumDistribution],
-      );
-
-      const capped = winsorize(
-        raw,
-        RUM_CAPS[metricKey].min,
-        RUM_CAPS[metricKey].max,
-      );
-
-      return [x.day, Number(capped.toFixed(2))];
-    });
-  }, [historyData, activeMetric, selectedDevice, rumDistribution]);
-  //#endregion
-
-  //#region Effects
-  useEffect(() => {
-    const key = `${selectedSite}-${selectedDevice}-${activeMetric}-${startDate}-${endDate}`;
-
-    if (lazyloadKey.current === key) return;
-
-    lazyload({
-      fn: AnalysisHandler,
-      refObj: triggerLazyload,
-      rootMargin: "200px",
-    });
-
-    lazyloadKey.current = key;
-    hasRun.current = false;
-  }, [activeMetric, selectedSite, selectedDevice, startDate, endDate]);
-
   useEffect(() => {
     if (!selectedSite) return;
 
-    if (startDate !== undefined && endDate !== undefined) {
-      getRumHistory({
-        startDate: startDate?.toISOString().split("T")[0],
-        endDate: endDate?.toISOString().split("T")[0],
-      }); // get history chart data
+    const sDate = startDate?.toISOString().split("T")[0];
+    const eDate = endDate?.toISOString().split("T")[0];
+
+    if (startDate !== undefined || endDate !== undefined) {
+      Promise.all([
+        getRumHistory({
+          startDate: sDate,
+          endDate: eDate,
+        }),
+        getDistribution({
+          startDate: sDate,
+          endDate: eDate,
+        }),
+      ]);
     }
   }, [selectedSite, startDate, endDate]);
-
-  useEffect(() => {
-    if (!selectedSite) return;
-
-    if (startDate !== undefined && endDate !== undefined) {
-      getDistribution({
-        startDate: startDate?.toISOString().split("T")[0],
-        endDate: endDate?.toISOString().split("T")[0],
-      }); // get distribution data
-    }
-  }, [selectedSite, startDate, endDate, activeMetric]);
 
   useEffect(() => {
     if (!historyData) return;
@@ -174,7 +133,7 @@ export default function Main() {
     slicedData.forEach((x: any) => {
       ["cls", "fcp", "inp", "lcp", "ttfb"].forEach((key) => {
         const raw = Number(
-          x?.[key]?.[selectedDevice.toLowerCase()]?.[rumDistribution],
+          x?.[key]?.[selectedDevice?.toLowerCase()]?.[rumDistribution],
         );
 
         const capped = winsorize(
@@ -219,6 +178,21 @@ export default function Main() {
     setXpScore(xp * 100);
   }, [historyData, selectedDevice, rumDistribution]);
 
+  useEffect(() => {
+    const key = `${selectedSite}-${activeMetric}`;
+
+    if (lazyloadKey.current === key) return;
+
+    lazyload({
+      fn: AnalysisHandler,
+      refObj: triggerLazyload,
+      rootMargin: "200px",
+    });
+
+    lazyloadKey.current = key;
+    hasRun.current = false;
+  }, [activeMetric, selectedSite]);
+
   const filteredContributors = useMemo(() => {
     if (!contributors) return [];
 
@@ -226,7 +200,7 @@ export default function Main() {
 
     switch (activeMetric) {
       case "LCP":
-        return contributors.metrics?.filter((x: any) => {
+        return contributors?.filter((x: any) => {
           if (x.device_type !== selectedDevice) return false;
           if (seen.has(x.element_target)) return false;
           if (x.avg_lcp_value <= cwv_ranges.lcp[0]) return false;
@@ -236,8 +210,8 @@ export default function Main() {
         });
 
       case "CLS":
-        return contributors.clsData?.filter((x: any) => {
-          if (x.device_type !== selectedDevice.toLowerCase()) return false;
+        return contributors?.filter((x: any) => {
+          if (x.device_type !== selectedDevice?.toLowerCase()) return false;
           if (x.cls_value <= 0.1) return false;
 
           if (seen.has(x.largest_shift_target)) return false;
@@ -247,7 +221,7 @@ export default function Main() {
         });
 
       case "INP":
-        return contributors.metrics?.filter((x: any) => {
+        return contributors?.filter((x: any) => {
           if (x.device_type !== selectedDevice.toLowerCase()) return false;
           if (x.avg_inp_value <= 200) return false;
 
@@ -270,13 +244,12 @@ export default function Main() {
         return [];
     }
   }, [activeMetric, contributors, selectedDevice]);
-  //#endregion
 
   const { selectedDist, totalEvents } = useMemo(() => {
     const selectedDist =
-      rumDistData?.data.filter(
-        (x: any) => x.device_type === selectedDevice.toLowerCase(),
-      ) ?? [];
+      distData?.data
+        .filter((x: any) => x.device_type === selectedDevice?.toLowerCase())
+        .filter((metric: any) => metric.metric === activeMetric) ?? [];
 
     const totalEvents =
       selectedDist.length > 0
@@ -286,7 +259,27 @@ export default function Main() {
         : 0;
 
     return { selectedDist, totalEvents };
-  }, [rumDistData, selectedDevice, startDate, endDate]);
+  }, [distData, selectedDevice, startDate, endDate]);
+
+  const activeSeries = useMemo(() => {
+    if (historyData === undefined) return [];
+
+    const metricKey = activeMetric?.toLowerCase() as MetricKey;
+
+    return historyData.rum_history_data.map((x: any) => {
+      const raw = Number(
+        x?.[metricKey]?.[selectedDevice?.toLowerCase()]?.[rumDistribution],
+      );
+
+      const capped = winsorize(
+        raw,
+        RUM_CAPS[metricKey].min,
+        RUM_CAPS[metricKey].max,
+      );
+
+      return [x.day, Number(capped.toFixed(2))];
+    });
+  }, [historyData, activeMetric, selectedDevice, rumDistribution]);
 
   if (!selectedSite) {
     return (
@@ -309,7 +302,7 @@ export default function Main() {
         <div className="md:col-span-2 border border-primary/10 max-h-fit rounded-sm text-primary dark:bg-secondary-background/20 bg-transparent">
           {/* Metric list placeholder */}
           <div
-            className={`bg-primary/5 cursor-help h-fit p-4 space-y-3 border-b border-primary/10`}
+            className={`bg-primary/5 h-fit p-4 space-y-3 border-b border-primary/10`}
           >
             <span className="flex items-center gap-2">
               <p className="text-sm font-semibold text-primary dark:text-primary/80">
@@ -418,6 +411,7 @@ export default function Main() {
                     </div>
                   </div>
                 }
+                maxWidth="400px"
               />
             </span>
 
@@ -438,57 +432,64 @@ export default function Main() {
               </div>
             </div>
           </div>
-          {metrics?.map((x) => (
-            <div
-              onClick={() => {
-                setActiveMetric(
-                  x.key as "LCP" | "CLS" | "INP" | "TTFB" | "FCP",
-                );
-              }}
-              key={x.key}
-              className={` ${activeMetric === x.key ? "bg-primary/10" : "bg-primary/5"} p-4 space-y-3 border-b border-primary/10 cursor-pointer`}
-            >
-              <p className="text-sm font-medium text-primary dark:text-primary/80">
-                {x.name}
-              </p>
-              <p className="text-[13px] font-sans">
-                <span>Average: </span>
-                {x.key === "LCP" ? (
-                  <span
-                    className={`${Number(sideBarObj?.lcp) <= cwv_ranges.lcp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.lcp) > cwv_ranges.lcp[0] && Number(sideBarObj?.lcp) < cwv_ranges.lcp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
-                  >
-                    {(Number(sideBarObj?.lcp) / 1000).toFixed(2)} Sec
-                  </span>
-                ) : x.key === "CLS" ? (
-                  <span
-                    className={`${Number(sideBarObj?.cls) <= cwv_ranges.cls[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.cls) > cwv_ranges.cls[0] && Number(sideBarObj?.cls) < cwv_ranges.cls[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
-                  >
-                    {Number(sideBarObj?.cls).toFixed(4)}
-                  </span>
-                ) : x.key === "FCP" ? (
-                  <span
-                    className={`${Number(sideBarObj?.fcp) <= cwv_ranges.fcp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.fcp) > cwv_ranges.fcp[0] && Number(sideBarObj?.fcp) < cwv_ranges.fcp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
-                  >
-                    {(Number(sideBarObj?.fcp) / 1000).toFixed(2)} Sec
-                  </span>
-                ) : x.key === "INP" ? (
-                  <span
-                    className={`${Number(sideBarObj?.inp) <= cwv_ranges.inp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.inp) > cwv_ranges.inp[0] && Number(sideBarObj?.inp) < cwv_ranges.inp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
-                  >
-                    {Number(sideBarObj?.inp).toFixed(0)}
-                  </span>
-                ) : x.key === "TTFB" ? (
-                  <span
-                    className={`${Number(sideBarObj?.ttfb) <= cwv_ranges.ttfb[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.ttfb) > cwv_ranges.ttfb[0] && Number(sideBarObj?.ttfb) < cwv_ranges.ttfb[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
-                  >
-                    {(Number(sideBarObj?.ttfb) / 1000).toFixed(2)} Sec
-                  </span>
-                ) : (
-                  `--`
-                )}
-              </p>
-            </div>
-          ))}
+
+          {!metrics || !sideBarObj ? (
+            Array.from({ length: 5 }).map((_, i) => <MetricSkeleton key={i} />)
+          ) : (
+            <>
+              {metrics?.map((x) => (
+                <div
+                  onClick={() => {
+                    setActiveMetric(
+                      x.key as "LCP" | "CLS" | "INP" | "TTFB" | "FCP",
+                    );
+                  }}
+                  key={x.key}
+                  className={` ${activeMetric === x.key ? "bg-primary/10" : "bg-primary/5"} p-4 space-y-3 border-b border-primary/10 cursor-pointer`}
+                >
+                  <p className="text-sm font-medium text-primary dark:text-primary/80">
+                    {x.name}
+                  </p>
+                  <p className="text-[13px] font-sans">
+                    <span>Average: </span>
+                    {x.key === "LCP" ? (
+                      <span
+                        className={`${Number(sideBarObj?.lcp) <= cwv_ranges.lcp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.lcp) > cwv_ranges.lcp[0] && Number(sideBarObj?.lcp) < cwv_ranges.lcp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
+                      >
+                        {(Number(sideBarObj?.lcp) / 1000).toFixed(2)} Sec
+                      </span>
+                    ) : x.key === "CLS" ? (
+                      <span
+                        className={`${Number(sideBarObj?.cls) <= cwv_ranges.cls[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.cls) > cwv_ranges.cls[0] && Number(sideBarObj?.cls) < cwv_ranges.cls[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
+                      >
+                        {Number(sideBarObj?.cls).toFixed(4)}
+                      </span>
+                    ) : x.key === "FCP" ? (
+                      <span
+                        className={`${Number(sideBarObj?.fcp) <= cwv_ranges.fcp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.fcp) > cwv_ranges.fcp[0] && Number(sideBarObj?.fcp) < cwv_ranges.fcp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
+                      >
+                        {(Number(sideBarObj?.fcp) / 1000).toFixed(2)} Sec
+                      </span>
+                    ) : x.key === "INP" ? (
+                      <span
+                        className={`${Number(sideBarObj?.inp) <= cwv_ranges.inp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.inp) > cwv_ranges.inp[0] && Number(sideBarObj?.inp) < cwv_ranges.inp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
+                      >
+                        {Number(sideBarObj?.inp).toFixed(0)}
+                      </span>
+                    ) : x.key === "TTFB" ? (
+                      <span
+                        className={`${Number(sideBarObj?.ttfb) <= cwv_ranges.ttfb[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.ttfb) > cwv_ranges.ttfb[0] && Number(sideBarObj?.ttfb) < cwv_ranges.ttfb[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
+                      >
+                        {(Number(sideBarObj?.ttfb) / 1000).toFixed(2)} Sec
+                      </span>
+                    ) : (
+                      `--`
+                    )}
+                  </p>
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         {/* Main Content */}
@@ -497,7 +498,7 @@ export default function Main() {
             <div className="w-full space-y-2">
               <RumCwvChart
                 data={activeSeries}
-                metric_key={activeMetric.toLowerCase()}
+                metric_key={activeMetric?.toLowerCase()}
                 shares={selectedDist.length > 0 ? selectedDist[0] : null}
                 total_events={totalEvents}
               />
@@ -505,20 +506,19 @@ export default function Main() {
           </div>
 
           {/* distributions accross various tabs */}
-          <BarGraphTabs activeMetric={activeMetric} />
+          {/* <BarGraphTabs activeMetric={activeMetric} /> */}
 
           {/* Breakdown/Details placeholder */}
-          <div ref={triggerLazyload} className="px-2 mt-2 md:mt-7 py-4">
-            {filteredContributors === undefined ||
-            filteredContributors.length === 0 ? (
+          <div
+            ref={triggerLazyload}
+            className="px-2 min-h-96 mt-2 md:mt-7 py-4"
+          >
+            {filteredContributors === undefined ? (
               <></>
             ) : activeMetric === "LCP" ? (
               <LCPelements contributors={filteredContributors} />
             ) : activeMetric === "CLS" ? (
-              <CLSelements
-                contributors={filteredContributors}
-                selectedSite={selectedSite}
-              />
+              <CLSelements contributors={filteredContributors} />
             ) : activeMetric === "INP" ? (
               <INPelements contributors={filteredContributors} />
             ) : activeMetric === "TTFB" ? (
@@ -533,118 +533,203 @@ export default function Main() {
   );
 
   async function getRumHistory({ startDate, endDate }: getRumHistoryProps) {
-    const cache_key = `rum-history:${selectedSite}`;
-    const cached = localStorage.getItem(cache_key);
+    const cache_key = `rum-history:${selectedSite}-${startDate}-${endDate}`;
 
-    if (cached !== null) {
-      try {
-        const {
-          startDate: cachedStart,
-          endDate: cachedEnd,
-          data,
-        } = JSON.parse(cached);
+    try {
+      const { response } = await cachedData({
+        key: cache_key,
+        fn: getRumHistoryData,
+        session_Storage: false,
+        ttl: 1000 * 60 * 5, // 5 minutes
+      });
 
-        // Only reuse if range matches
-        if (cachedStart === startDate && cachedEnd === endDate) {
-          setRumHistoryData(data);
-          return;
-        }
-      } catch {
-        localStorage.removeItem(cache_key);
+      // console.log(`data cached? ${isCached}`);
+      setRumHistoryData(response);
+    } catch (error: any) {
+      console.error(error.message);
+    }
+
+    async function getRumHistoryData() {
+      const res = await fetch("/api/rum/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain: selectedSite,
+          date_from: startDate,
+          date_to: endDate,
+        }),
+      });
+
+      const body: any = await res.json();
+
+      if (!res.ok) {
+        throw new Error(body.message);
       }
+
+      return body;
+    }
+  }
+
+  async function getDistribution({ startDate, endDate }: getRumHistoryProps) {
+    const cacheKey = `rum_dist:${selectedSite}-${startDate}-${endDate}`;
+
+    try {
+      const { response } = await cachedData({
+        fn: getDist,
+        key: cacheKey,
+        session_Storage: true,
+        ttl: 5 * 60 * 1000,
+      });
+
+      setDistData(response);
+    } catch (error: any) {
+      console.error(error.message);
     }
 
-    const res = await fetch("/api/rum/history", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        domain: selectedSite,
-        date_from: startDate,
-        date_to: endDate,
-      }),
-    });
+    async function getDist() {
+      const res = await fetch("/api/rum/distributions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          site: selectedSite,
+          startDate,
+          endDate,
+        }),
+      });
 
-    if (!res.ok) {
-      console.error(`Error fetching web vital history: ${res.status}`);
-      return;
+      const data: any = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+
+      return data;
     }
-
-    const data = await res.json();
-    setRumHistoryData(data);
-
-    // Overwrites previous cache automatically
-    localStorage.setItem(
-      cache_key,
-      JSON.stringify({ startDate, endDate, data }),
-    );
   }
 
   async function AnalysisHandler() {
     if (hasRun.current) return; // prevent duplicate runs
-    hasRun.current = true;
 
     if (activeMetric === "LCP") {
       try {
         setContributors([]);
+        const key = `lcp-elements:${selectedSite}`;
 
-        const res = await fetch("/api/rum/lcp", {
+        const { response } = await cachedData({
+          fn: geLcpElements,
+          key: key,
+          session_Storage: false,
+          ttl: 5 * 50 * 1000,
+        });
+        setContributors(response.data);
+      } catch (error: any) {
+        console.error(error.message);
+      }
+
+      async function geLcpElements() {
+        const res = await fetch("/api/rum/elements/lcp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             domain_name: selectedSite,
-            date_range: "7days",
           }),
         });
 
-        const body = await res.json();
+        const body: any = await res.json();
 
-        setContributors(body);
-      } catch (error) {
-        console.error("Failed to fetch distribution:", error);
+        if (!res.ok) {
+          throw new Error(body.message);
+        }
+
+        return body;
       }
     } else if (activeMetric === "CLS") {
       try {
         setContributors([]);
+        const key = `cls-elements:${selectedSite}`;
 
-        const res = await fetch("/api/rum/cls", {
+        const { response } = await cachedData({
+          fn: getClsElements,
+          key: key,
+          session_Storage: false,
+          ttl: 5 * 60 * 1000,
+        });
+
+        setContributors(response.data);
+      } catch (error) {
+        console.error("Failed to fetch distribution:", error);
+      }
+
+      async function getClsElements() {
+        const res = await fetch("/api/rum/elements/cls", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             domain: selectedSite,
-            dateFrom: startDate,
-            dateTo: endDate,
           }),
         });
 
-        const body = await res.json();
+        const body: any = await res.json();
 
-        setContributors(body);
-      } catch (error) {
-        console.error("Failed to fetch distribution:", error);
+        if (!res.ok) {
+          throw new Error(body.message);
+        }
+        return body;
       }
     } else if (activeMetric === "INP") {
       try {
         setContributors([]);
+        const key = `inp-elements:${selectedSite}`;
 
-        const res = await fetch("/api/rum/inp", {
+        const { response } = await cachedData({
+          fn: getInpElements,
+          key: key,
+          session_Storage: false,
+          ttl: 5 * 60 * 1000,
+        });
+
+        setContributors(response.data);
+      } catch (error) {
+        console.error("Failed to fetch distribution:", error);
+      }
+
+      async function getInpElements() {
+        const res = await fetch("/api/rum/elements/inp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             domain_name: selectedSite,
-            date_range: "7days",
           }),
         });
 
-        const body = await res.json();
+        const body: any = await res.json();
 
-        setContributors(body);
-      } catch (error) {
-        console.error("Failed to fetch distribution:", error);
+        if (!res.ok) {
+          throw new Error(body.message);
+        }
+
+        return body;
       }
     } else if (activeMetric === "TTFB") {
       try {
         setContributors([]);
-        const res = await fetch("/api/rum/ttfb", {
+
+        const key = `ttfb-breakdown:${selectedSite}`;
+
+        const { response } = await cachedData({
+          fn: getTtfbAnalysis,
+          key: key,
+          session_Storage: false,
+          ttl: 5 * 60 * 1000,
+        });
+
+        setContributors(response.data);
+      } catch (error: any) {
+        console.error(error.message ?? "Failed to fetch ttfb analysis");
+      }
+
+      async function getTtfbAnalysis() {
+        const res = await fetch("/api/rum/elements/ttfb", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -656,59 +741,29 @@ export default function Main() {
 
         const body: any = await res.json();
 
-        setContributors(body.TTFBdata);
-      } catch (error) {
-        console.error("Failed to fetch distribution:", error);
+        if (!res.ok) {
+          throw new Error(body.message);
+        }
+
+        return body;
       }
     }
+
+    hasRun.current = true;
   }
 
+  //handles bad data or unrealstick bumps
   function winsorize(value: number, min: number, max: number): number {
-    //handles bad data or unrealstick bumps
     if (isNaN(value)) return value;
     return Math.min(Math.max(value, min), max);
   }
 
-  async function getDistribution({ startDate, endDate }: getRumHistoryProps) {
-    const cache_key = `rum_distributions:${activeMetric} - ${selectedSite}`;
-    const cache = localStorage.getItem(cache_key);
-
-    if (cache !== null) {
-      const {
-        data,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        metric: activeMetric,
-        startDate: cachedStartDate,
-        endDate: cachedEndDate,
-      } = JSON.parse(cache);
-
-      if (cachedStartDate === startDate && cachedEndDate === endDate) {
-        setRumDistData(data);
-        return;
-      }
-    }
-
-    const res = await fetch("/api/rum/distributions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        site: selectedSite,
-        metric: activeMetric,
-        startDate: startDate,
-        endDate: endDate,
-      }),
-    });
-
-    if (!res.ok) {
-      console.error(res.statusText);
-      return;
-    }
-
-    const data = await res.json();
-    setRumDistData(data);
-    localStorage.setItem(
-      cache_key,
-      JSON.stringify({ data, activeMetric, startDate, endDate }),
+  function MetricSkeleton() {
+    return (
+      <div className="bg-primary/5 p-4 space-y-3 border-b border-primary/10 animate-pulse">
+        <div className="h-4 w-24 bg-primary/20 rounded" />
+        <div className="h-4 w-32 bg-primary/20 rounded" />
+      </div>
     );
   }
 }

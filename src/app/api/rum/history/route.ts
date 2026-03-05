@@ -27,16 +27,13 @@ export async function POST(req: Request) {
       });
 
     if (rum_history_error) {
-      return Response.json(
-        { error: rum_history_error.message },
-        { status: 500 },
-      );
+      throw new Error(rum_history_error.message ?? "Error fetching rum history data")
     }
 
     return Response.json({ rum_history_data }, { status: 200 });
   } catch (err: any) {
     return Response.json(
-      { error: err.message || "Unexpected error" },
+      { message: err.message || "Unexpected error" },
       { status: 500 },
     );
   }

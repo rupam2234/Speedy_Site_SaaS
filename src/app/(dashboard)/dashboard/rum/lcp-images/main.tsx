@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Performancetab, SuggestionsToggle } from ".";
 import { cwv_ranges } from "../cwvRanges";
 import Image from "next/image";
+import { cachedData } from "@/components/utils";
 
 // Custom Badge component
 const Badge = ({
@@ -59,12 +60,6 @@ const Badge = ({
   );
 };
 
-type RefObj = {
-  domain: string;
-  startDate: Date;
-  endDate: Date;
-};
-
 export interface LcpImageMetric {
   period: string;
   domain_name: string;
@@ -95,30 +90,20 @@ export default function Main() {
   const [sortBy, setSortBy] = useState<"avg_lcp" | "occurrence">("avg_lcp");
   const [filterText, setFilterText] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { selectedSite, startDate, endDate, selectedDevice } = useSiteContext();
+  const { selectedSite, selectedDevice } = useSiteContext();
 
   const isMobile = useIsMobile();
 
-  const ref = useRef<RefObj | null>(null); // to prevent unnecessary the lcp image api call
+  const ref = useRef<string | null>(null); // to prevent unnecessary the lcp image api call
 
   useEffect(() => {
-    if (!selectedSite || !startDate || !endDate) return;
+    if (!selectedSite) return;
 
-    const current: RefObj = {
-      domain: selectedSite,
-      startDate: startDate,
-      endDate: endDate,
-    };
-
-    if (
-      current.domain !== ref.current?.domain ||
-      current.startDate !== ref.current.startDate ||
-      current.endDate !== ref.current.endDate
-    ) {
+    if (selectedSite !== ref.current) {
       fetchLcpImages();
-      ref.current = current;
+      ref.current = selectedSite;
     }
-  }, [selectedSite, endDate]);
+  }, [selectedSite]);
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return "";
@@ -263,8 +248,10 @@ export default function Main() {
                           <Image
                             src={metric.image_url}
                             alt={`LCP image ${index}`}
-                            className="w-10 h-10 rounded-sm border object-cover shrink-0"
+                            className="rounded-sm border object-cover shrink-0"
                             loading="lazy"
+                            width={40}
+                            height={40}
                           />
 
                           <div className="flex-1 min-w-0">
@@ -326,7 +313,9 @@ export default function Main() {
                           <Image
                             src={selectedImage.image_url}
                             alt="Selected LCP image"
-                            className="w-full h-48 object-contain bg-primary/20 dark:bg-secondary-background"
+                            className="object-contain bg-primary/20 dark:bg-secondary-background"
+                            width={300}
+                            height={192}
                           />
                         </div>
 
@@ -412,13 +401,14 @@ export default function Main() {
               enableDistribution={false}
               enableAllDevices={false}
               disableTablet={false}
+              disableCalender
             />
             <div className="flex flex-col gap-6 p-5 min-h-screen">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center text-primary/80 gap-2">
                   <Images />
                   <h1 className="text-xl font-bold">Critical Images</h1> |
-                  {lcpImageData.length > 0 ? (
+                  {lcpImageData?.length > 0 ? (
                     <div className="bg-primary/5 dark:bg-orange-300/60 w-19 h-5 rounded-3xl border font-medium border-primary/30 text-[10px] text-center py-0.5">
                       {lcpImageData.length} images
                     </div>
@@ -485,8 +475,10 @@ export default function Main() {
                               <Image
                                 src={metric.image_url}
                                 alt={`LCP image ${index}`}
-                                className="object-cover rounded-sm border w-10 h-10"
+                                className="object-cover rounded-sm border"
                                 loading="lazy"
+                                width={40}
+                                height={40}
                               />
                             </div>
 
@@ -548,11 +540,15 @@ export default function Main() {
                     <>
                       <div className="grid grid-cols-4 gap-6">
                         <div className="col-span-1 md:col-span-2 space-y-3">
-                          <div className="overflow-hidden rounded-sm border">
+                          <div className="overflow-hidden flex items-center justify-center rounded-sm border">
                             <Image
                               src={selectedImage.image_url}
                               alt="Selected LCP image"
-                              className="w-full h-48 object-contain bg-primary/20 dark:bg-secondary-background"
+                              className="object-contain bg-primary/20 dark:bg-secondary-background"
+                              width={0}
+                              height={0}
+                              sizes="100vw"
+                              style={{ width: "auto", height: "192px" }}
                             />
                           </div>
                           <div className="bg-transparent">
@@ -655,30 +651,35 @@ export default function Main() {
   async function fetchLcpImages() {
     setIsLoading(true);
 
-    try {
+    const key = `lcp-images:${selectedSite}`;
+
+    const { response } = await cachedData({
+      fn: fetchImages,
+      key: key,
+      session_Storage: true,
+      ttl: 5 * 60 * 1000,
+    });
+
+    setRawLcpImageData(response.data);
+
+    setIsLoading(false);
+
+    async function fetchImages() {
       const res = await fetch("/api/rum/lcp-images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain: selectedSite,
-          startDate: startDate?.toISOString().split("T")[0],
-          endDate: endDate?.toISOString().split("T")[0],
         }),
       });
 
-      if (res.ok) {
-        const data: any = await res.json();
-        const metrics: LcpImageMetric[] = data.metrics || [];
-        setRawLcpImageData(metrics);
-      } else {
-        setRawLcpImageData([]);
-        throw Error(res.statusText);
+      const body: any = await res.json();
+
+      if (!res.ok) {
+        throw new Error(body.message);
       }
-    } catch (error) {
-      console.error(error);
-      setRawLcpImageData([]);
-    } finally {
-      setIsLoading(false);
+
+      return body;
     }
   }
 

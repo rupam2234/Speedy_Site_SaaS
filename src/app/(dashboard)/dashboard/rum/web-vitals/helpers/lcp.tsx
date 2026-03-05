@@ -1,259 +1,216 @@
 "use client";
 
-import TooltipIcon from "@/components/theme/customTooltip";
-import { Code2, FileQuestion, Image, ImageOff } from "lucide-react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { useState } from "react";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  ExternalLink,
+  ImageIcon,
+  Type,
+  CopyCheckIcon,
+} from "lucide-react";
+import { toast } from "sonner";
 
-interface LCPelementProps {
-  contributors: any;
-}
+const getVitalStatus = (ms: number) => {
+  if (ms <= 2500) return { color: "text-emerald-500", label: "Good" };
+  if (ms <= 4000)
+    return { color: "text-amber-500", label: "Needs Improvement" };
+  return { color: "text-[#ff6467]", label: "Poor" };
+};
 
-export default function LCPelements({ contributors }: LCPelementProps) {
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState(3);
+export default function LCPelements({
+  contributors,
+}: {
+  contributors: Contributor[];
+}) {
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [rows, setRows] = useState(5);
 
-  const totalpages = contributors
-    ? Math.ceil(contributors.length / itemsPerPage)
-    : 0;
-
-  function prevPage() {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-  }
-
-  function nextPage() {
-    setCurrentPage((prev) => Math.min(prev + 1, totalpages));
-  }
-
-  const activeItems = contributors.slice(
-    (currentPage - 1) * itemsPerPage,
-    itemsPerPage * currentPage,
+  const filtered = useMemo(
+    () =>
+      contributors.filter(
+        (c) =>
+          c.element_target.toLowerCase().includes(search.toLowerCase()) ||
+          c.page_url.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [contributors, search],
   );
 
+  const totalPages = Math.ceil(filtered.length / rows) || 1;
+  const activeItems = filtered.slice((page - 1) * rows, page * rows);
+
   return (
-    <div className="divide-y divide-gray-200 dark:divide-primary/5">
-      <div className="flex justify-between pb-2 items-center mb-3">
-        <p className="font-semibold text-sm">Contributing Elements</p>
-        <div className="flex gap-6 items-center">
-          <div className="flex items-center text-sm">
-            <label>Items per page</label>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="py-0.5 ml-2 text-sm outline-0 cursor-pointer"
-            >
-              {[3, 5, 10, 20].map((n) => (
-                <option
-                  className="dark:text-primary dark:bg-secondary-background/80"
-                  key={n}
-                  value={n}
-                >
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center justify-end gap-2">
+    <div className="w-full text-[13px] text-foreground/80 font-sans">
+      {/* Search & Pagination Header */}
+      <div className="flex items-center justify-between py-3 border-b border-primary/5">
+        <div className="flex items-center gap-3 flex-1">
+          <Search size={14} className="text-muted-foreground" />
+          <input
+            placeholder="Filter worse elements or URLs..."
+            className="bg-transparent outline-none w-full max-w-xs"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+        <div className="flex items-center gap-6 text-muted-foreground">
+          <select
+            value={rows}
+            onChange={(e) => setRows(Number(e.target.value))}
+            className="bg-transparent outline-none cursor-pointer hover:text-foreground"
+          >
+            {[5, 10, 20].map((n) => (
+              <option key={n} value={n}>
+                {n} rows
+              </option>
+            ))}
+          </select>
+          <div className="flex items-center gap-2">
             <button
-              onClick={prevPage}
-              className="px-2 dark:text-white bg-primary/20 hover:bg-primary/40 text-primary-foreground cursor-pointer rounded-[2px] text-sm"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="disabled:opacity-20 hover:text-foreground transition-colors"
             >
-              Prev
+              <ChevronLeft size={18} />
             </button>
-            <span className="text-sm">
-              {currentPage} of {totalpages} pages
+            <span className="font-mono tabular-nums">
+              {page}/{totalPages}
             </span>
             <button
-              onClick={nextPage}
-              className="px-2 dark:text-white bg-primary/20 hover:bg-primary/40 text-primary-foreground cursor-pointer rounded-[2px] text-sm"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="disabled:opacity-20 hover:text-foreground transition-colors"
             >
-              Next
+              <ChevronRight size={18} />
             </button>
           </div>
         </div>
       </div>
-      {activeItems &&
-        activeItems?.map((x: any, i: number) => {
-          const type = classifyElement(x);
+
+      {/* Table Body */}
+      <div className="divide-y divide-primary/5">
+        {activeItems.map((item, i) => {
+          const lcpVital = getVitalStatus(item.avg_lcp_value);
 
           return (
-            <div key={i} className="flex items-center justify-between py-3">
-              <div className="flex items-start gap-2">
-                <div className="mt-1 text-primary/40">
-                  {type === "image" ? (
-                    <Image size={16} />
-                  ) : type === "text" ? (
-                    <p className="font-black w-4">T</p>
-                  ) : type === "div" ? (
-                    <Code2 size={16} />
-                  ) : type === "background-image" ? (
-                    <ImageOff size={16} />
-                  ) : type === "other" ? (
-                    <FileQuestion size={16} />
-                  ) : (
-                    <div className="bg-primary/5 rounded-sm w-4 h-4"></div>
-                  )}
+            <div key={i} className="py-5 group">
+              <div className="flex items-start gap-8">
+                {/* 1. The Value */}
+                <div className="w-20 shrink-0">
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">
+                    LCP
+                  </div>
+                  <div
+                    className={`text-xl font-mono font-bold leading-none ${lcpVital.color}`}
+                  >
+                    {(item.avg_lcp_value / 1000).toFixed(2)}s
+                  </div>
+                  <div className="text-[10px] mt-2 font-medium opacity-50 uppercase tracking-tighter">
+                    {item.device_type}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-primary/80">
-                    {x.element_target}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {x.page_url.includes("fbclid") ? (
-                      <span className="truncate block md:w-2/5 w-56">
-                        {x.page_url}
-                      </span>
+
+                {/* 2. The Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    {item.image_url ? (
+                      <ImageIcon
+                        size={14}
+                        className="text-muted-foreground/60"
+                      />
                     ) : (
-                      (x.page_url.replace(/\/$/, "") ?? "—")
+                      <Type size={14} className="text-muted-foreground/60" />
                     )}
-                  </p>
-                  {type === "image" || type === "background-image" ? (
-                    <p className="text-[12px] text-primary/60">
-                      <span className="font-semibold">Image address:</span>{" "}
+                    <code className="bg-muted/50 px-1.5 py-0.5 rounded text-[12px] font-mono truncate max-w-xl border border-primary/5">
+                      {item.element_target}
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(item.element_target);
+                        toast.success("Copied", {
+                          duration: 2500,
+                          style: { background: "#53a94a", color: "#f8f3e1" },
+                          icon: <CopyCheckIcon size={16} />,
+                        });
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded transition-all"
+                    >
+                      <Copy size={12} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <span className="truncate max-w-75">{item.page_url}</span>
+                    {item.image_url && (
                       <Link
-                        className="underline hover:underline-none decoration-dotted underline-offset-2 cursor-pointer"
-                        href={x.image_url ? x.image_url : ""}
+                        href={item.image_url}
                         target="_blank"
-                        rel="nofollow"
+                        className="hover:text-primary flex items-center gap-1"
                       >
-                        {x.image_url?.length > 50
-                          ? x.image_url.slice(0, 50) + "…"
-                          : x.image_url}
+                        <ExternalLink size={11} /> source
                       </Link>
-                    </p>
-                  ) : (
-                    <></>
-                  )}
-                  {x.poor_count ? (
-                    <p className="text-primary/60 text-[12px]">
-                      Captured {x.poor_count} times
-                    </p>
-                  ) : (
-                    <p></p>
-                  )}
+                    )}
+                    <span className="text-[11px] tabular-nums">
+                      ({item.occurrence_count} samples)
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2 text-xs font-medium">
-                {(() => {
-                  const s = getTimingStatus(x.avg_resource_load_delay);
-                  return (
-                    <TooltipIcon
-                      content={`Element load delay: ${s.label}`}
-                      side="left"
-                      trigger={
-                        <div
-                          className={`flex items-center gap-1 px-2 py-0.75 rounded-md border ${getPillDesign(s.status)}`}
-                        >
-                          ⏳
-                          {x.avg_resource_load_delay
-                            ? `${(x.avg_resource_load_delay / 1000).toFixed(2)}s`
-                            : "—"}
-                        </div>
-                      }
-                    />
-                  );
-                })()}
-
-                {(() => {
-                  const s = getTimingStatus(x.avg_resource_load_duration);
-                  return (
-                    <TooltipIcon
-                      content={`Resource load duration: ${s.label}`}
-                      side="left"
-                      trigger={
-                        <div
-                          className={`flex items-center gap-1 px-2 py-0.75 rounded-md border ${getPillDesign(s.status)}`}
-                        >
-                          ⚡
-                          {x.avg_resource_load_duration
-                            ? `${(x.avg_resource_load_duration / 1000).toFixed(2)}s`
-                            : "—"}
-                        </div>
-                      }
-                    />
-                  );
-                })()}
-
-                {(() => {
-                  const s = getTimingStatus(x.avg_element_render_delay);
-                  return (
-                    <TooltipIcon
-                      content={`Element render delay: ${s.label}`}
-                      side="left"
-                      trigger={
-                        <div
-                          className={`flex items-center gap-1 px-2 py-0.75 rounded-md border ${getPillDesign(s.status)}`}
-                        >
-                          🎨
-                          {x.avg_element_render_delay
-                            ? `${(x.avg_element_render_delay / 1000).toFixed(2)}s`
-                            : "—"}
-                        </div>
-                      }
-                    />
-                  );
-                })()}
+                {/* 3. The Breakdown */}
+                <div className="hidden md:flex gap-6 shrink-0 border-l border-primary/5 pl-8">
+                  <MetricItem
+                    label="Delay"
+                    val={item.avg_resource_load_delay}
+                  />
+                  <MetricItem
+                    label="Load"
+                    val={item.avg_resource_load_duration}
+                  />
+                  <MetricItem
+                    label="Render"
+                    val={item.avg_element_render_delay}
+                  />
+                </div>
               </div>
             </div>
           );
         })}
+      </div>
     </div>
   );
+}
 
-  function classifyElement(item: any) {
-    const selector = item.element_target;
+function MetricItem({ label, val }: { label: string; val: number | null }) {
+  const color = !val
+    ? "text-muted-foreground/20"
+    : val > 500
+      ? "text-rose-400"
+      : "text-foreground/70";
+  return (
+    <div className="flex flex-col w-12">
+      <span className="text-[10px] font-bold text-muted-foreground/50 uppercase mb-1">
+        {label}
+      </span>
+      <span className={`font-mono text-[12px] font-bold ${color}`}>
+        {val ? `${(val / 1000).toFixed(2)}s` : "—"}
+      </span>
+    </div>
+  );
+}
 
-    if (
-      selector.includes("img") ||
-      selector.includes("wp-block-image") ||
-      selector.includes("figure")
-    )
-      return "image";
-
-    if (!selector.includes("img") && item.image_url) {
-      return "background-image";
-    }
-
-    if (
-      selector.includes("h1") ||
-      selector.includes("h2") ||
-      selector.includes("h3") ||
-      selector.includes("p") ||
-      selector.includes("span") ||
-      selector.includes("text")
-    ) {
-      return "text";
-    }
-
-    if (selector.includes("div")) {
-      return "div";
-    }
-
-    return "other";
-  }
-
-  function getTimingStatus(value: number | null | undefined) {
-    if (!value || value <= 0) return { label: "No data", status: "none" };
-
-    const v = value;
-
-    if (v < 200) return { label: "Good", status: "good" };
-    if (v < 600) return { label: "Needs improvement", status: "ni" };
-    return { label: "Poor", status: "poor" };
-  }
-
-  function getPillDesign(status: string) {
-    if (status === "none")
-      return "border-gray-300/40 bg-gray-100/40 dark:bg-gray-500/20 text-gray-700 dark:text-gray-300";
-    else if (status === "good")
-      return "border-green-300/40 bg-green-100/40 dark:bg-green-500/20 text-green-700 dark:text-green-300";
-    else if (status === "ni")
-      return "border-yellow-300/40 bg-yellow-100/40 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300";
-    else if (status === "poor")
-      return "border-red-300/40 bg-red-100/40 dark:bg-red-500/20 text-red-700 dark:text-red-300";
-  }
+interface Contributor {
+  device_type: string;
+  element_target: string;
+  page_url: string;
+  image_url: string | null;
+  occurrence_count: number;
+  avg_lcp_value: number;
+  avg_resource_load_delay: number | null;
+  avg_resource_load_duration: number | null;
+  avg_element_render_delay: number | null;
 }

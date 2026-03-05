@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
-import { ConnectionStackBars, UrlStackBar } from "./charts";
+import { UrlStackBar } from "./charts";
 import { useIsMobile } from "@/components/theme/use-mobile";
+import { LoaderCircleIcon } from "lucide-react";
 
 interface Props {
   activeMetric: "LCP" | "CLS" | "INP" | "TTFB" | "FCP";
@@ -60,46 +61,61 @@ export default function BarGraphTabs({ activeMetric }: Props) {
   }, [selectedSite, selectedDevice, startDate, endDate, activeMetric]);
 
   return (
-    <div className="p-2 mt-2 md:mt-7" ref={tabRef}>
+    <div className="mt-4 md:mt-7" ref={tabRef}>
       {/* Tab Headers */}
-      <div className="flex items-center">
-        <h3 className="font-semibold text-[16px] mr-3">Distribution by:</h3>
-        {["url", "connection"].map((tab) => (
-          <span
-            key={tab}
-            className={`border-x rounded-tl-sm rounded-tr-sm border-t text-sm cursor-pointer border-primary/10 font-medium capitalize px-4 ${
-              activeTab === tab
-                ? "bg-primary/10 text-primary/80 dark:text-white"
-                : "text-primary"
-            }`}
-            onClick={() => setActivetab(tab as unknown as tabTypes)}
-          >
-            {tab}
-          </span>
-        ))}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <h3 className="text-sm font-semibold text-primary/70 uppercase tracking-wider">
+          Distribution by
+        </h3>
+
+        <div className="flex bg-primary/5 p-1 rounded-md border border-primary/10">
+          {["url", "connection"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActivetab(tab as unknown as tabTypes)}
+              className={`px-4 py-1 text-sm font-medium capitalize transition-all rounded-lg ${
+                activeTab === tab
+                  ? "bg-white dark:bg-primary/20 text-primary shadow-sm"
+                  : "text-primary/60 hover:text-primary"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab Content */}
-      <div className="border rounded-sm border-primary/10 px-4 py-2">
+      <div className="border min-h-80 rounded-lg border-primary/10  dark:bg-transparent overflow-hidden">
         {isloading && activeTab === "url" ? (
-          <div className="animate-pulse bg-primary/10 h-117" />
-        ) : activeTab === "connection" ? (
-          connectionData && connectionData.length > 0 ? (
-            <ConnectionStackBars data={connectionData} />
-          ) : (
-            <div className="bg-primary/10 h-117 flex items-center justify-center">
-              No data available
-            </div>
-          )
-        ) : activeTab === "url" ? (
-          pageWiseData && pageWiseData.length > 0 ? (
-            <UrlStackBar activeMetric={activeMetric} data={pageWiseData} />
-          ) : (
-            <div className="bg-primary/10 h-117 flex items-center justify-center">
-              No data available
-            </div>
-          )
-        ) : null}
+          <div className="flex items-center justify-center w-full">
+            <LoaderCircleIcon
+              size={45}
+              className="text-primary/30 animate-spin"
+            />
+          </div>
+        ) : (
+          <div className="p-4">
+            {activeTab === "connection" ? (
+              connectionData?.length > 0 ? (
+                // <ConnectionStackBars data={connectionData} />
+                <div className="h-60"></div>
+              ) : (
+                <LoaderCircleIcon
+                  size={25}
+                  className="flex items-center justify-center text-primary/30 animate-spin"
+                />
+              )
+            ) : pageWiseData?.length > 0 ? (
+              <UrlStackBar activeMetric={activeMetric} data={pageWiseData} />
+            ) : (
+              <LoaderCircleIcon
+                size={25}
+                className="flex items-center justify-center text-primary/30 animate-spin"
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
