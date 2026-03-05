@@ -99,6 +99,8 @@ const DeviceIcon = ({ type }: { type: string }) => {
   }
 };
 
+// main component
+
 export default function CLSElements({
   contributors,
 }: {
