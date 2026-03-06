@@ -111,6 +111,7 @@ export type Database = {
           degradation_policy: string
           plan: string
           price: number
+          site_limit: number | null
           usage_limit: number
         }
         Insert: {
@@ -118,6 +119,7 @@ export type Database = {
           degradation_policy?: string
           plan: string
           price?: number
+          site_limit?: number | null
           usage_limit: number
         }
         Update: {
@@ -125,6 +127,7 @@ export type Database = {
           degradation_policy?: string
           plan?: string
           price?: number
+          site_limit?: number | null
           usage_limit?: number
         }
         Relationships: []

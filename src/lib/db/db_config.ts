@@ -41,3 +41,4 @@ class DB {
 
 export const setupDB = DB.setupDB;
 export const setupAnonDB = DB.setupAnonDB;
+

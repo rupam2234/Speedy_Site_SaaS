@@ -105,23 +105,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // // Insert job queue
-    // const { error: jobQueueError } = await worker.from("crux_jobs").insert({
-    //   user_id,
-    //   urls: [],
-    //   domain: orderData.website_name,
-    // });
-
-    // if (jobQueueError) {
-    //   return NextResponse.json(
-    //     {
-    //       error: "Failed to insert job queue for URL processing",
-    //       details: jobQueueError.message,
-    //     },
-    //     { status: 500 }
-    //   );
-    // }
-
     return NextResponse.json(
       {
         message: "Order data inserted successfully",

@@ -18,6 +18,7 @@ export async function POST(req: Request) {
 
     // Fetch the favicon image from the given URL
     const response = await fetch(imageUrl);
+    
     if (!response.ok) {
       return NextResponse.json(
         { error: "Failed to fetch image" },

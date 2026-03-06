@@ -4,6 +4,7 @@ import { OrderData } from "@/app/api/dataTypes";
 import { useEffect, useState } from "react";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
 import { useRouter } from "next/navigation";
+import { cachedData } from "../utils";
 
 interface Props {
   setDisplay: ({ display }: { display: boolean }) => void;
@@ -17,7 +18,8 @@ type Steps =
   | "upload failed"
   | "creating order"
   | "error"
-  | "done";
+  | "done"
+  | "Site limit reached";
 
 export function AddNewWebsite({ setDisplay }: Props) {
   const [isProcessing, setProcessing] = useState<boolean>(false);
@@ -40,7 +42,7 @@ export function AddNewWebsite({ setDisplay }: Props) {
 
   return (
     <>
-      <div className="fixed top-1/2 left-1/2 z-50 w-9/10 h-auto md:w-200 md:h-auto px-4 py-10 border-2 border-primary/20 bg-white dark:bg-secondary-background dark:border-2 dark:border-white/50 shadow-lg rounded-md transform -translate-x-1/2 -translate-y-1/2">
+      <div className="fixed top-1/2 left-1/2 z-19990 w-9/10 h-auto md:w-200 md:h-auto px-4 py-10 border-2 border-primary/20 bg-white dark:bg-secondary-background dark:border-2 dark:border-white/50 shadow-lg rounded-md transform -translate-x-1/2 -translate-y-1/2">
         <div
           className="absolute top-3 right-3 hover:bg-primary/5 rounded-full cursor-pointer px-2 py-0.5 text-sm"
           onClick={() => setDisplay({ display: false })}
@@ -122,6 +124,18 @@ export function AddNewWebsite({ setDisplay }: Props) {
     setError(null);
     setSuccess(null);
 
+    // checks website limit
+    const limit = await checkSiteLimit();
+
+    if (limit?.reachedLimit) {
+      appendLog("Site limit reached");
+      setError(
+        "You have reached site limit. Either upgrade your plan or delete a site",
+      );
+      return;
+    }
+    //
+
     appendLog("validating");
     const cleanDomain = extractRootDomain(input?.trim());
 
@@ -166,106 +180,6 @@ export function AddNewWebsite({ setDisplay }: Props) {
     setProcessing(false);
   }
 
-  function extractRootDomain(value: string): string | null {
-    try {
-      if (!/^https?:\/\//i.test(value)) {
-        value = "https://" + value;
-      }
-
-      const url = new URL(value);
-      const hostname = url.hostname;
-
-      if (
-        hostname === "localhost" ||
-        /^[\d.]+$/.test(hostname) || // IP address
-        !hostname.includes(".") ||
-        hostname.endsWith(".") ||
-        hostname.startsWith(".")
-      ) {
-        return null;
-      }
-
-      return hostname; // keeps 'www' and subdomains
-    } catch {
-      return null;
-    }
-  }
-
-  async function uploadFavicon(
-    faviconFile: string,
-    domain: string,
-  ): Promise<string | null> {
-    if (!faviconFile) return null;
-
-    try {
-      const res = await fetch("/api/favicons/upload_favicon", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ imageUrl: faviconFile, domain: domain }),
-      });
-
-      if (!res.ok) {
-        // Handle non-2xx responses
-        const errorBody: any = await res.json();
-        console.error(
-          "Favicon upload failed:",
-          errorBody.message || res.statusText,
-        );
-        return null;
-      }
-
-      const body: any = await res.json();
-      return body.url || null; // Ensure we always return null if url is not present
-    } catch (err) {
-      console.error("Error during favicon upload:", err);
-      return null;
-    }
-  }
-
-  function appendLog(stage: Steps) {
-    const logs = document.getElementById("log");
-
-    const log = `${new Date().toLocaleTimeString()}: ${stage}\n`;
-    if (logs) {
-      logs.textContent = logs?.textContent + log;
-    }
-  }
-
-  async function getFavicon(domain: string): Promise<string | null> {
-    if (!domain) {
-      return null;
-    }
-
-    try {
-      const res = await fetch("/api/favicons/fetch_single", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ website: domain }),
-      });
-
-      if (!res.ok) {
-        // Handle non-2xx responses
-        const errorBody: any = await res.json();
-        console.error(
-          "Favicon fetch failed:",
-          errorBody.message || res.statusText,
-        );
-        return null;
-      }
-
-      const body: any = await res.json();
-      // Safely access nested property
-      return body.faviconData?.favicon || null;
-    } catch (err) {
-      console.error("Error during favicon fetch:", err);
-      return null;
-    }
-  }
-
   async function addOrder(
     uploadedFavicon: string | null,
     domain: string,
@@ -281,22 +195,154 @@ export function AddNewWebsite({ setDisplay }: Props) {
       favicon_file: uploadedFavicon,
     };
 
-    const res = await fetch("/api/orders/newOrder", {
+    const key = `orders`;
+
+    const { response } = await cachedData({
+      fn: fetchNewOrders,
+      session_Storage: true,
+      ttl: 5 * 60 * 1000,
+      key: key,
+    });
+
+    async function fetchNewOrders() {
+      const res = await fetch("/api/orders/newOrder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderData: orderData, user_id: user?.id }),
+      });
+
+      const body: any = await res.json();
+
+      if (!res.ok) {
+        throw new Error(body.message);
+      }
+
+      sessionStorage.removeItem("orders");
+      sessionStorage.removeItem("orders-ts");
+
+      return { status: res.status, body: body };
+    }
+
+    return response;
+  }
+}
+
+function extractRootDomain(value: string): string | null {
+  try {
+    if (!/^https?:\/\//i.test(value)) {
+      value = "https://" + value;
+    }
+
+    const url = new URL(value);
+    const hostname = url.hostname;
+
+    if (
+      hostname === "localhost" ||
+      /^[\d.]+$/.test(hostname) || // IP address
+      !hostname.includes(".") ||
+      hostname.endsWith(".") ||
+      hostname.startsWith(".")
+    ) {
+      return null;
+    }
+
+    return hostname; // keeps 'www' and subdomains
+  } catch {
+    return null;
+  }
+}
+
+async function getFavicon(domain: string): Promise<string | null> {
+  if (!domain) {
+    return null;
+  }
+
+  try {
+    const res = await fetch("/api/favicons/fetch_single", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ orderData: orderData, user_id: user?.id }),
+      body: JSON.stringify({ website: domain }),
     });
 
-    const body = await res.json();
-
-    if (res.ok) {
-      // clear cached sites from sessionstorage
-      sessionStorage.removeItem("orders");
-      sessionStorage.removeItem("orders-ts");
-      return { status: res.status, body: body };
+    if (!res.ok) {
+      // Handle non-2xx responses
+      const errorBody: any = await res.json();
+      console.error(
+        "Favicon fetch failed:",
+        errorBody.message || res.statusText,
+      );
+      return null;
     }
-    return { status: res.status, body: body };
+
+    const body: any = await res.json();
+    // Safely access nested property
+    return body.faviconData?.favicon || null;
+  } catch (err) {
+    console.error("Error during favicon fetch:", err);
+    return null;
   }
+}
+
+function appendLog(stage: Steps) {
+  const logs = document.getElementById("log");
+
+  const log = `${new Date().toLocaleTimeString()}: ${stage}\n`;
+  if (logs) {
+    logs.textContent = logs?.textContent + log;
+  }
+}
+
+async function uploadFavicon(
+  faviconFile: string,
+  domain: string,
+): Promise<string | null> {
+  if (!faviconFile) return null;
+
+  try {
+    const res = await fetch("/api/favicons/upload_favicon", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ imageUrl: faviconFile, domain: domain }),
+    });
+
+    if (!res.ok) {
+      // Handle non-2xx responses
+      const errorBody: any = await res.json();
+      console.error(
+        "Favicon upload failed:",
+        errorBody.message || res.statusText,
+      );
+      return null;
+    }
+
+    const body: any = await res.json();
+    return body.url || null; // Ensure we always return null if url is not present
+  } catch (err) {
+    console.error("Error during favicon upload:", err);
+    return null;
+  }
+}
+
+async function checkSiteLimit() {
+  const res = await fetch("/api/orders/site-limit", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const body: any = await res.json();
+
+  if (!res.ok) {
+    console.error(body.message);
+    return;
+  }
+
+  return { reachedLimit: body.reachedLimit };
 }
