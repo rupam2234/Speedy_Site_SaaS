@@ -1,0 +1,5 @@
+export {default as Main} from "./main"
+export {ComparisonSlider} from "./comparisonSlider"
+export {ResultCard} from "./resultCard"
+export {DropZone} from "./dropZone"
+export {default as ImageOptimizer} from "./imageOptimization"

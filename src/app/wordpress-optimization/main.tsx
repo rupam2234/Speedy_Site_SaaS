@@ -28,7 +28,6 @@ export default function WPOptimizationService() {
     <>
       <SiteHeader enableNav={false} />
       <div className="bg-[#0a0a0c] text-white min-h-screen font-sans">
-        {/* 1. HERO: The Modern Service Entry */}
         <section className="relative pt-32 pb-24 overflow-hidden border-b border-white/5">
           <div
             className="absolute inset-0 opacity-10 pointer-events-none"

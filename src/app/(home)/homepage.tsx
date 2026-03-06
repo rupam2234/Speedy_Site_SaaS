@@ -147,10 +147,8 @@ const extraFeatures: FeatureCore[] = [
 export default function Home() {
   return (
     <main className="bg-white text-gray-900 w-full overflow-x-hidden">
-      {/* Navigation */}
       <SiteHeader enableNav={true} />
 
-      {/* Hero Section */}
       <section className="relative overflow-hidden bg-[#14142e] py-32 text-white">
         {/* 1. THE RANDOM DOTTED BACKGROUND LAYER */}
         <div

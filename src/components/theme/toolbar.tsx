@@ -85,7 +85,7 @@ export default function PrimaryToolbar({
   return (
     <div
       ref={headerRef}
-      className={`flex flex-col md:flex-row p-4 w-full items-start gap-3 md:justify-between bg-transparent`}
+      className={`flex flex-col md:flex-row px-5 py-4 w-full items-start gap-3 md:justify-between bg-transparent`}
       style={{
         position: isSticky && !isMobile ? "sticky" : "unset",
         top: 0,

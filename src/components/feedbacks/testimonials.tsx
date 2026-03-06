@@ -90,6 +90,8 @@ export default function ServiceTestimonials() {
                     src={t.image}
                     alt={t.name}
                     className="w-10 h-10 rounded-full object-cover border border-white/10"
+                    width={0}
+                    height={0}
                   />
                   <div>
                     <h4 className="font-bold text-white text-sm leading-tight">

@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import { useSiteContext } from "../../siteContext";
-import { Images, Filter } from "lucide-react";
+import { Images, Filter, Search } from "lucide-react";
 import {
   LoadingAnimation,
   PrimaryToolbar,
@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Performancetab, SuggestionsToggle } from ".";
+import { ImageOptimizerLite, Performancetab } from ".";
 import { cwv_ranges } from "../cwvRanges";
 import Image from "next/image";
 import { cachedData } from "@/components/utils";
@@ -378,7 +378,9 @@ export default function Main() {
                       </div>
 
                       <div className="border p-4 rounded-sm">
-                        <SuggestionsToggle selectedImage={selectedImage} />
+                        <ImageOptimizerLite
+                          imageUrl={selectedImage.image_url}
+                        />
                       </div>
                     </div>
                   ) : isLoading ? (
@@ -403,30 +405,35 @@ export default function Main() {
               disableTablet={false}
               disableCalender
             />
+
             <div className="flex flex-col gap-6 p-5 min-h-screen">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex items-center text-primary/80 gap-2">
-                  <Images />
-                  <h1 className="text-xl font-bold">Critical Images</h1> |
-                  {lcpImageData?.length > 0 ? (
-                    <div className="bg-primary/5 dark:bg-orange-300/60 w-19 h-5 rounded-3xl border font-medium border-primary/30 text-[10px] text-center py-0.5">
-                      {lcpImageData.length} images
-                    </div>
-                  ) : (
-                    <div className="w-19 h-5 rounded-3xl bg-primary/20 animate-pulse" />
-                  )}
-                  responsible for largest contentful paint
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-100 dark:border-zinc-800/50">
+                {/* Left: Title & Context */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-xl font-semibold tracking-tight text-primary">
+                      Critical Images
+                    </h1>
+                    <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+                    <span className="text-xs bg-red-200 rounded-md border border-red-400 px-2 py-0.5 font-medium dark:text-primary-foreground/80 text-primary/80 tabular-nums">
+                      {lcpImageData?.length || 0} Assets
+                    </span>
+                  </div>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Images responsible for your Largest Contentful Paint (LCP).
+                  </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                  <div className="relative">
-                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                {/* Right: Minimalist Toolbar */}
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                  <div className="relative flex-1 md:flex-none group">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-zinc-900 dark:group-focus-within:text-zinc-100 transition-colors" />
                     <Input
                       type="text"
                       placeholder="Search images..."
                       value={filterText}
                       onChange={(e) => setFilterText(e.target.value)}
-                      className="w-full md:w-64 pl-10 border border-primary/10 focus-visible:border-primary/10 ring-0 focus-visible:ring-0"
+                      className="h-9 w-full md:w-64 pl-9 bg-zinc-50/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 rounded-md text-sm focus-visible:ring-1 focus-visible:ring-zinc-400 focus-visible:border-zinc-400 transition-all placeholder:text-zinc-400"
                     />
                   </div>
 
@@ -436,13 +443,18 @@ export default function Main() {
                       setSortBy(value as "avg_lcp" | "occurrence")
                     }
                   >
-                    <SelectTrigger className="w-48 cursor-pointer border border-primary/10 focus-visible:border-primary/10 ring-0 focus-visible:ring-0">
-                      <SelectValue />
+                    <SelectTrigger className="h-9 w-37.5 bg-zinc-50/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 rounded-md text-xs font-medium text-zinc-600 dark:text-zinc-400 focus:ring-1 focus:ring-zinc-400">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-3 h-3 opacity-60" />
+                        <SelectValue />
+                      </div>
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="avg_lcp">Sort by Avg LCP</SelectItem>
-                      <SelectItem value="occurrence">
-                        Sort by Occurrences
+                    <SelectContent className="rounded-md border-zinc-200 dark:border-zinc-800 shadow-xl">
+                      <SelectItem value="avg_lcp" className="text-xs">
+                        Sort by LCP
+                      </SelectItem>
+                      <SelectItem value="occurrence" className="text-xs">
+                        Sort by Frequency
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -523,7 +535,7 @@ export default function Main() {
                                 </div>
 
                                 <span className="border shadow-sm border-primary/10 rounded-2xl px-2 font-medium">
-                                  {formatFileSize(metric.avg_transfer_size)}
+                                  {formatFileSize(metric.avg_decoded_body_size)}
                                 </span>
                               </div>
                             </div>
@@ -623,7 +635,9 @@ export default function Main() {
                           </div>
                         </div>
                         <div className="col-span-1 md:col-span-2 border p-4 rounded-sm">
-                          <SuggestionsToggle selectedImage={selectedImage} />
+                          <ImageOptimizerLite
+                            imageUrl={selectedImage.image_url}
+                          />
                         </div>
                       </div>
                     </>

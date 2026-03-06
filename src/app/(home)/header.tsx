@@ -34,17 +34,16 @@ export default function SiteHeader({ enableNav }: { enableNav: boolean }) {
       href: "/wordpress-optimization",
     },
     {
-      title: "Site Overhaul",
-      desc: "Legacy full-service speed rebuild.",
+      title: "Speedy Pixel",
+      desc: "Convert and optimize images instantly to improve site speed",
       icon: <Rocket size={18} className="text-purple-600" />,
-      href: "#speedy",
+      href: "/pixel",
     },
   ];
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100">
       <div className="mx-auto max-w-7xl flex items-center justify-between px-6 py-4">
-        {/* LOGO */}
         <div className="text-xl font-bold text-indigo-600 hover:opacity-90 transition-opacity">
           <SpeedySiteLogo isDark={false} />
         </div>
