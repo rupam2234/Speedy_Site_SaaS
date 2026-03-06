@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useSiteContext } from "../../siteContext";
-import { lazyload } from "@/components/utils";
+import { cachedData } from "@/components/utils";
 import { MapChart } from "echarts/charts";
 import {
   VisualMapComponent,
@@ -13,7 +13,7 @@ import {
 import { CanvasRenderer } from "echarts/renderers";
 import * as echarts from "echarts/core";
 import rawWorldMap from "../../../../../../public/maps/worldMap.json";
-import { CustomTooltip, useTheme } from "@/components/theme";
+import { CustomTooltip, DeviceController, useTheme } from "@/components/theme";
 import {
   InfoIcon,
   AlertCircle,
@@ -54,9 +54,7 @@ echarts.registerMap("world", worldEN);
 
 export default function UxReport() {
   const [userHappinessData, setHappinessData] = useState<HappinessData[]>([]);
-  const { selectedSite, startDate, endDate, selectedDevice } = useSiteContext();
-  const userHappinessRef = useRef<string | null>(null);
-  const lazyElementRef = useRef(null);
+  const { selectedSite, selectedDevice } = useSiteContext();
 
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
@@ -68,18 +66,8 @@ export default function UxReport() {
   const { theme } = useTheme();
 
   useEffect(() => {
-    const key = `${selectedSite}-${startDate}-${endDate}`;
-
-    if (userHappinessRef.current === key) {
-      return;
-    }
-
-    lazyload({
-      fn: fetchUserHappinesGeo,
-      refObj: lazyElementRef,
-      rootMargin: "200px",
-    });
-  }, [selectedSite, startDate, endDate]);
+    fetchUserHappinesGeo();
+  }, [selectedSite]);
 
   useEffect(() => {
     if (!chartRef.current || userHappinessData.length === 0) return;
@@ -224,32 +212,35 @@ export default function UxReport() {
     <>
       <div className="w-full">
         {/* Header */}
-        <div className="flex items-center mb-6 gap-4 w-full group">
-          <Activity size={34} className="text-primary/80" />
+        <div className="flex items-center mb-6 justify-between w-full group">
+          <div className="flex items-center gap-4">
+            <Activity size={34} className="text-primary/80" />
 
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <h2 className="font-bold text-xl tracking-tighter bg-linear-to-br from-primary via-primary to-primary/50 bg-clip-text text-transparent">
-                UX Impact Analysis
-              </h2>
-              <CustomTooltip
-                content="Global UX shows user experience based on RUM Web Vitals. UX differences are strongly linked to edge cache effectiveness and origin load. 100% origin relience or lack of edge cache tends to result in greater dispersion."
-                trigger={
-                  <div className="p-1 rounded-full hover:bg-primary/10 transition-colors cursor-help">
-                    <InfoIcon
-                      size={16}
-                      className="text-primary/40 hover:text-primary/80"
-                    />
-                  </div>
-                }
-                side="right"
-                maxWidth="400px"
-              />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-xl tracking-tighter bg-linear-to-br from-primary via-primary to-primary/50 bg-clip-text text-transparent">
+                  UX Impact Analysis
+                </h2>
+                <CustomTooltip
+                  content="Global UX shows user experience based on RUM Web Vitals. UX differences are strongly linked to edge cache effectiveness and origin load. 100% origin relience or lack of edge cache tends to result in greater dispersion."
+                  trigger={
+                    <div className="p-1 rounded-full hover:bg-primary/10 transition-colors cursor-help">
+                      <InfoIcon
+                        size={16}
+                        className="text-primary/40 hover:text-primary/80"
+                      />
+                    </div>
+                  }
+                  side="right"
+                  maxWidth="400px"
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-widest opacity-80">
+                Page Speedy Impact & User Experience Across Globe
+              </p>
             </div>
-            <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-widest opacity-80">
-              User Experience Across Globe
-            </p>
           </div>
+          <DeviceController disableAllDevices disableTablet={false} />
         </div>
 
         <div className="grid grid-cols-7 gap-4">
@@ -348,32 +339,22 @@ export default function UxReport() {
           </div>
 
           {/* Map Chart (Right) */}
-          <div
-            ref={lazyElementRef}
-            className="col-span-5 overflow-hidden relative"
-          >
+          <div className="col-span-5 overflow-hidden relative">
             <div className="absolute md:block hidden top-1 right-1 px-2 py-0.5 text-sm text-primary/80">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <DatabaseIcon
                   size={25}
-                  className="bg-blue-100 text-blue-600 p-1 rounded-md"
+                  className="text-primary/80 fill-primary/20 p-1 rounded-md"
                 />
                 <p>
+                  Weekly geographical UX data for{" "}
                   <span className="font-medium text-foreground">
                     {selectedSite}
                   </span>{" "}
-                  data for{" "}
+                  on{" "}
                   <span className="capitalize font-medium">
                     {selectedDevice.toLowerCase()}
                   </span>{" "}
-                  from{" "}
-                  <span className="font-medium">
-                    {startDate?.toLocaleDateString()}
-                  </span>{" "}
-                  to{" "}
-                  <span className="font-medium">
-                    {endDate?.toLocaleDateString()}
-                  </span>
                 </p>
               </div>
             </div>
@@ -402,9 +383,18 @@ export default function UxReport() {
   );
 
   async function fetchUserHappinesGeo() {
-    if (!startDate || !endDate || !selectedSite) return;
+    if (!selectedSite) return;
 
-    try {
+    const key = `ux:${selectedSite}`;
+
+    const { response } = await cachedData({
+      fn: getUxData,
+      key: key,
+      session_Storage: true,
+      ttl: 5 * 60 * 1000,
+    });
+
+    async function getUxData() {
       const res = await fetch("/api/rum/analytics/happiness-geo", {
         method: "POST",
         headers: {
@@ -412,20 +402,21 @@ export default function UxReport() {
         },
         body: JSON.stringify({
           domain: selectedSite,
-          start_date: startDate.toISOString().split("T")[0],
-          end_date: endDate.toISOString().split("T")[0],
         }),
       });
 
       const data: any = await res.json();
+
       if (!res.ok) {
-        setHappinessData([]);
         throw new Error(data?.message ?? "failed to fetch UX data");
       }
-      setHappinessData(data.data);
-    } catch (error: any) {
-      console.error(error.message);
+
+      return data.data;
     }
+
+    console.log(response);
+
+    setHappinessData(response);
   }
 
   /**

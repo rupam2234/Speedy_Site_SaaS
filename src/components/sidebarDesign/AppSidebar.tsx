@@ -76,8 +76,8 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "Analytics",
-            url: `/dashboard/rum/analytics?site=${selectedSite}`,
+            title: "UX Heatmap",
+            url: `/dashboard/rum/ux-heatmap?site=${selectedSite}`,
           },
           {
             title: "Web Vitals",
@@ -86,6 +86,10 @@ export default function AppSidebar({
           {
             title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
+          },
+          {
+            title: "Analytics",
+            url: `/dashboard/rum/analytics?site=${selectedSite}`,
           },
           {
             title: "Origin Hits",
