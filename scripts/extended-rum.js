@@ -48,8 +48,6 @@ const latestMetrics = {
   INP: null,
 };
 
-const geo = window.__GEO_INFO__;
-
 let maxCustomEntry = null;
 let webVitalsINP = null;
 
@@ -60,7 +58,6 @@ const elementSummaryCache = new WeakMap();
 
 function summarizeElement(el) {
   if (!el || !el.tagName) {
-    console.debug("summarizeElement: Invalid or null element", el);
     return "(unknown)";
   }
   if (elementSummaryCache.has(el)) {
@@ -98,7 +95,6 @@ function summarizeElement(el) {
   }
 
   if (!currentEl || !currentEl.tagName) {
-    console.debug("summarizeElement: No significant element found", el);
     return "(unknown)";
   }
 
@@ -136,13 +132,8 @@ if ("PerformanceObserver" in window) {
         responseStart: entry.responseStart,
         responseEnd: entry.responseEnd,
         domInteractive: entry.domInteractive,
-        // domComplete: entry.domComplete,
         loadEventEnd: entry.loadEventEnd,
-        // transferSize: entry.transferSize,
-        // encodedBodySize: entry.encodedBodySize,
-        // decodedBodySize: entry.decodedBodySize,
       },
-      // timestamp: Date.now(),
     });
 
     navTimingQueued = true;
@@ -180,11 +171,7 @@ function initializeWebVitals() {
         ) {
           if (!maxCustomEntry || entry.duration > maxCustomEntry.duration) {
             maxCustomEntry = entry;
-            console.debug("Updated maxCustomEntry:", {
-              duration: entry.duration,
-              eventType: entry.name,
-              target: summarizeElement(entry.target),
-            });
+            
           }
         }
       }
@@ -203,7 +190,6 @@ function initializeWebVitals() {
       type: "error",
       message: "PerformanceObserver or 'event' entry type not supported",
       siteDomain,
-      // timestamp: Date.now(),
     });
   }
 }
@@ -213,7 +199,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (unsent) {
     navigator.sendBeacon(CONFIG.API_URL, unsent);
     localStorage.removeItem("unsentMetrics");
-    console.debug("Retried unsent metrics from localStorage");
   }
 });
 
@@ -224,7 +209,6 @@ window.addEventListener("popstate", () => {
   maxCustomEntry = null;
   webVitalsINP = null;
   latestMetrics.INP = null;
-  console.debug("Reset INP data for SPA navigation");
 });
 
 function classifyMetric(value, thresholds) {
@@ -234,18 +218,14 @@ function classifyMetric(value, thresholds) {
 }
 
 function queueEvent(event) {
-  console.debug("Queuing event:", event);
   if (batchedData.length >= CONFIG.MAX_EVENTS_PER_SESSION) {
     console.warn("Event queue limit reached; flushing early.");
     flushMetrics();
   }
   batchedData.push(event);
-  // batchedData.push({ ...event, sessionId }); // adds session id into the event -> currently unnecessary
 }
 
 function handleCLS(metric) {
-  // latestMetrics.CLS = metric.value;
-
   if(!worstCLS || metric.value > worstCLS.value){
     worstCLS = {
       type: "web-vital",
@@ -253,38 +233,17 @@ function handleCLS(metric) {
       name: "CLS",
       value: metric.value,
       rating: classifyMetric(metric.value, CLSThresholds),
-      id: metric.id,
-      delta: metric.delta,
       attribution: {
         largestShiftTarget: metric.attribution?.largestShiftTarget,
         largestShiftTime: metric.attribution?.largestShiftTime,
       },
     }
   }
-  // queueEvent({
-  //   type: "web-vital",
-  //   siteDomain,
-  //   name: "CLS",
-  //   value: metric.value,
-  //   rating,
-  //   id: metric.id,
-  //   delta: metric.delta,
-  //   attribution: {
-  //     largestShiftTarget: metric.attribution?.largestShiftTarget,
-  //     largestShiftTime: metric.attribution?.largestShiftTime,
-  //   },
-  //   // timestamp: Date.now(),
-  // });
 }
 
 function handleINP(metric) {
   webVitalsINP = metric;
   latestMetrics.INP = metric.value;
-  console.debug("Web Vitals INP updated:", {
-    value: metric.value,
-    id: metric.id,
-    attribution: metric.attribution,
-  });
 }
 
 function handleLCP(metric) {
@@ -319,8 +278,6 @@ function handleLCP(metric) {
       name: "LCP",
       value: metric.value,
       rating,
-      id: metric.id,
-      delta: metric.delta,
       attribution: {
         target: metric.attribution?.target,
         resourceLoadDelay: metric.attribution?.resourceLoadDelay,
@@ -343,7 +300,6 @@ function handleLCP(metric) {
 }
 
 function handleFCP(metric) {
-  // latestMetrics.FCP = metric.value;
   const rating = classifyMetric(metric.value, FCPThresholds);
   queueEvent({
     type: "web-vital",
@@ -351,15 +307,11 @@ function handleFCP(metric) {
     name: "FCP",
     value: metric.value,
     rating,
-    id: metric.id,
-    delta: metric.delta,
     attribution: {},
-    // timestamp: Date.now(),
   });
 }
 
 function handleTTFB(metric) {
-  // latestMetrics.TTFB = metric.value;
   const rating = classifyMetric(metric.value, TTFBThresholds);
   const navEntry = performance.getEntriesByType("navigation")[0];
   queueEvent({
@@ -368,15 +320,12 @@ function handleTTFB(metric) {
     name: "TTFB",
     value: metric.value,
     rating,
-    id: metric.id,
-    delta: metric.delta,
     attribution: {
       dnsLookup: navEntry?.domainLookupEnd - navEntry?.domainLookupStart,
       tcpConnection: navEntry?.connectEnd - navEntry?.connectStart,
       responseStart: navEntry?.responseStart,
       requestStart: navEntry?.requestStart,
     },
-    // timestamp: Date.now(),
   });
 }
 
@@ -462,29 +411,6 @@ function detectOriginHit() {
     userAgent: navigator.userAgent,
     language: navigator.language,
   });
-
-  if (geo) {
-    const { country, region, city, timezone, continent, org } = geo;
-    queueEvent({
-      type: "geo-info",
-      siteDomain,
-      country,
-      region,
-      city,
-      timezone,
-      continent,
-      org,
-      timestamp: Date.now(),
-    });
-  } else {
-    console.warn("No __GEO_INFO__ found on window");
-    queueEvent({
-      type: "geo-info",
-      siteDomain,
-      message: "No geo data available",
-      timestamp: Date.now(),
-    });
-  }
 })();
 
 let isFlushing = false;
@@ -494,8 +420,6 @@ function flushMetrics() {
   isFlushing = true;
 
   try {
-
-    // aggregate INP
     if (latestMetrics.INP || maxCustomEntry) {
       let inpAttribution = {};
       if (maxCustomEntry && maxCustomEntry.target) {
@@ -511,9 +435,16 @@ function flushMetrics() {
           presentationDelay: 0,
         };
       } else if (webVitalsINP && webVitalsINP.attribution) {
-        inpAttribution = webVitalsINP.attribution;
+        const attr = webVitalsINP.attribution;
+
+        inpAttribution = {
+          target: summarizeElement(attr.target),
+          interactionType: attr.interactionType,
+          inputDelay: attr.inputDelay,
+          processingDuration: attr.processingDuration,
+          presentationDelay: attr.presentationDelay,
+        };
       } else {
-        console.debug("No valid INP attribution available");
         inpAttribution = { target: "(unknown)", eventType: "unknown" };
       }
 
@@ -527,7 +458,6 @@ function flushMetrics() {
         inpDelta = maxCustomEntry.duration;
         inpId = sessionId;
       } else {
-        console.debug("No INP data available to queue");
         return;
       }
 
@@ -538,19 +468,10 @@ function flushMetrics() {
         name: "INP",
         value: inpValue,
         rating,
-        id: inpId,
-        delta: inpDelta,
         attribution: inpAttribution,
-        // timestamp: Date.now(),
       });
 
-      console.debug("INP event queued:", {
-        value: inpValue,
-        attribution: inpAttribution,
-        source: webVitalsINP ? "web-vitals" : "custom",
-      });
     } else {
-      console.debug("No INP data available for queuing");
     }
 
     // aggregate CLS
