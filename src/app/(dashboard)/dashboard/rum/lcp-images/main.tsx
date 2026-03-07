@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { ImageOptimizerLite, Performancetab } from ".";
 import { cwv_ranges } from "../cwvRanges";
 import Image from "next/image";
-import { cachedData } from "@/components/utils";
+import { cachedData, cleanExpiredCache } from "@/components/utils";
 
 // Custom Badge component
 const Badge = ({
@@ -677,6 +677,8 @@ export default function Main() {
     setRawLcpImageData(response.data);
 
     setIsLoading(false);
+    // clean up silently
+    cleanExpiredCache({ prefix: "lcp-images", session_Storage: true });
 
     async function fetchImages() {
       const res = await fetch("/api/rum/lcp-images", {

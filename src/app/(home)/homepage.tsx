@@ -14,96 +14,6 @@ export interface FeatureCore {
   image?: string;
 }
 
-// const features: FeatureCore[] = [
-//   {
-//     title: "Audience Share by UX Quality",
-//     desc: (
-//       <div className="space-y-4">
-//         <p className="text-lg text-gray-600">
-//           Gain a comprehensive view of user experience across devices, users,
-//           and geographic locations to quickly identify opportunities to improve.
-//         </p>
-//         <p className="text-lg text-gray-600">
-//           Streamlined traffic data featuring{" "}
-//           <span className="bg-amber-300">LLM-based traffic sources</span> and
-//           user happiness insights classified by geographic location.
-//         </p>
-//         <p>
-//           Monitor your top landing pages&apos; performance and traffic sources,
-//           and ensure they stay optimized using a single, unified script
-//           configuration.
-//         </p>
-//       </div>
-//     ),
-//     image: "/images/overview.png",
-//   },
-//   {
-//     title: "Catch Poor Page Experiences Early",
-//     desc: (
-//       <div className="space-y-4">
-//         <p className="text-lg text-gray-600">
-//           Google Search Console highlights sample pages with serious experience
-//           issues. It&apos;s a helpful starting point but not the whole story.
-//         </p>
-//         <p className="text-lg text-gray-600">
-//           A healthy website delivers great content and a great experience across
-//           all popular pages, not just few.
-//           <span className="bg-blue-200">
-//             Page Group can classify page experience across all traffic-driving
-//             pages
-//           </span>{" "}
-//           — whether they&apos;re new, niche, or top-performers — so you can
-//           monitor and improve UX site-wide.
-//         </p>
-//       </div>
-//     ),
-//     image: "/images/page-groups.png",
-//   },
-//   {
-//     title: "Monitor Web Vitals & Major Contributors",
-//     desc: (
-//       <>
-//         <div className="space-y-4">
-//           <p className="text-lg text-gray-600">
-//             When fixing your website performance, waiting for web vitals reports
-//             can slow you down. Track them daily instead to{" "}
-//             <span className="bg-green-300">
-//               gain deeper insights into your page&apos;s web vitals
-//             </span>{" "}
-//             and easily identify the root causes of performance issues.
-//           </p>
-//           <p className="text-lg text-gray-600">
-//             Understand precisely what&apos;s causing page experience issues
-//             accross all devices and user segment, without the overhead of
-//             building or maintaining your own system.
-//           </p>
-//         </div>
-//       </>
-//     ),
-//     image: "/images/web-vitals.png",
-//   },
-//   {
-//     title: "Centralized Insights into Unoptimized Images",
-//     desc: (
-//       <div className="space-y-4">
-//         <p className="text-lg text-gray-600">
-//           Images account for ~50–70% of a typical web page&apos;s total weight.
-//           When left unoptimized they are often the LCP elements, causes layout
-//           shift when not sized properly and even in some cases slow images that
-//           are blocking in nature can delay interactivity.
-//         </p>
-//         <p className="text-lg text-gray-600">
-//           LCP Sense is a most appearing image detector on your site and group
-//           them into LCP contributing classes (Good, Average and Poor) along with
-//           size (bytes) & size (width and height) for you to quickly identify and
-//           fix images that are not performing well.
-//         </p>
-//       </div>
-//     ),
-//     image: "/images/lcp-images.png",
-//   },
-// ];
-
 const extraFeatures: FeatureCore[] = [
   {
     title: "Integrated Optimization Assistance",
@@ -138,6 +48,47 @@ const extraFeatures: FeatureCore[] = [
           Real User Monitoring shouldn&apos;t come at the cost of user privacy.
           Our RUM tracks only performance attributes, no cookies, no profiling,
           just the metrics you need to fix performance issues with confidence.
+        </p>
+      </>
+    ),
+  },
+  {
+    title: "Server Hits & Impact",
+    desc: (
+      <>
+        <p>
+          Your web server plays a critical role in overall performance. When it
+          experiences bottlenecks under consistent load, your Core Web Vitals
+          can be directly affected. Speedy Site monitors server hits as a key
+          reference point to understand how server performance impacts your web
+          vitals.
+        </p>
+      </>
+    ),
+  },
+  {
+    title: "Region Based Web Vitals",
+    desc: (
+      <>
+        <p>
+          We help you visualize real user experience across different regions
+          using Core Web Vitals. See how weekly performance data from real
+          visitors varies by location. This little utility is a great help in
+          determining whether your site would benefit from using a CDN.
+        </p>
+      </>
+    ),
+  },
+  {
+    title: "Weekly Performance Analysis",
+    desc: (
+      <>
+        <p>
+          We deliver weekly performance insights and recommendations directly to
+          your email or Slack, so you don&apos;t have to constantly monitor your
+          site. If we detect recurring bottlenecks or performance issues,
+          you&apos;ll receive proactive alerts along with actionable suggestions
+          to resolve them.
         </p>
       </>
     ),
@@ -780,7 +731,7 @@ export default function Home() {
           </p>
 
           <p className="mt-6 text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-            Here’s what we’re adding to make that easier…
+            Here&apos;s what we&apos;re adding to make that easier…
           </p>
 
           {/* Cards Container */}
@@ -900,14 +851,25 @@ export default function Home() {
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">
                 Looking for legacy services?
               </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <a
-                  href="/wordpress-optimization"
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:border-primary hover:text-primary hover:shadow-lg hover:shadow-primary/5 transition-all"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  WordPress Speed Optimization
-                </a>
+              <div className="flex items-center justify-center gap-4">
+                <div className="flex flex-wrap justify-center gap-4">
+                  <a
+                    href="/wordpress-optimization"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:border-primary hover:text-primary hover:shadow-lg hover:shadow-primary/5 transition-all"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    WordPress Speed Optimization
+                  </a>
+                </div>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <a
+                    href="/pixel"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:border-primary hover:text-primary hover:shadow-lg hover:shadow-primary/5 transition-all"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    Speedy Image Optimization
+                  </a>
+                </div>
               </div>
             </div>
           </div>

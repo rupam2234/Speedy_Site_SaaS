@@ -6,6 +6,7 @@ import { useSiteContext } from "../../siteContext";
 import { OriginHits } from "@/app/api/dataTypes";
 import { OriginPerformanceChart, OriginStatsOverview } from ".";
 import { InfoIcon, LoaderCircle } from "lucide-react";
+import { cachedData, cleanExpiredCache } from "@/components/utils";
 
 export default function Main() {
   const { selectedSite, startDate, endDate } = useSiteContext();
@@ -15,7 +16,7 @@ export default function Main() {
   const headerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    getOriginHits();
+    cachedOriginHits();
   }, [selectedSite, endDate, startDate]);
 
   if (!selectedSite) {
@@ -112,36 +113,48 @@ export default function Main() {
   /**
    * get origin hits per website
    */
-  async function getOriginHits() {
+  async function cachedOriginHits() {
     if (!selectedSite || !startDate || !endDate) return;
 
+    const s = startDate.toISOString().split("T")[0];
+    const e = endDate.toISOString().split("T")[0];
+
+    const key = `origin-hits:${selectedSite}-${s}-${e}`;
+
     setIsLoading(true);
-    try {
-      const res = await fetch("/api/server-hits/get", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          domain: selectedSite,
-          startDate: startDate,
-          endDate: endDate,
-        }),
-      });
+    const { response } = await cachedData({
+      fn: fetchOriginHits,
+      key: key,
+      session_Storage: false,
+      ttl: 5 * 60 * 1000,
+    });
 
-      const body: any = await res.json();
+    setOriginHitData(response);
+    setIsLoading(false);
 
-      if (!res.ok) {
-        setOriginHitData([]);
-        throw new Error(body.message);
-      }
+    // clean up expired cache
+    cleanExpiredCache({ prefix: "origin-hits", session_Storage: false });
+  }
 
-      setOriginHitData(body.data || []);
-    } catch (error) {
-      console.error(error);
-      setOriginHitData([]);
-    } finally {
-      setIsLoading(false);
+  async function fetchOriginHits() {
+    const res = await fetch("/api/server-hits/get", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        domain: selectedSite,
+        startDate: startDate,
+        endDate: endDate,
+      }),
+    });
+
+    const body: any = await res.json();
+
+    if (!res.ok) {
+      throw new Error(body.message);
     }
+
+    return body.data;
   }
 }

@@ -9,7 +9,9 @@ import React, {
   useState,
   useEffect,
   useRef,
+  useCallback,
 } from "react";
+import { useSearchParams } from "next/navigation";
 
 type SiteContextType = {
   selectedSite: string;
@@ -67,100 +69,151 @@ export default function SiteContextProvider({
   children: React.ReactNode;
 }) {
   const [orders, setOrders] = useState<OrderData[] | null>(null);
-  const [selectedSite, setSelectedSite] = useState("");
-  const [dailyCrux, setDailyCrux] = useState<any | null>(null);
+
+  const [selectedSite, setSelectedSite] = useState<string>("");
+
+  const [hydrated, setHydrated] = useState(false);
+
+  const [dailyCrux, setDailyCrux] = useState<DailyCruxData | null>(null);
   const [cruxData, setCruxData] = useState<CruxData[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<
     "Desktop" | "Mobile" | "Tablet" | "All"
   >("Desktop");
+
   const [collapsed, setCollapsed] = useState<boolean>(false);
+
   const [experienceType, setExperienceType] = useState<
     "Percentile" | "Distribution"
   >("Percentile");
+
   const [rumDistribution, setRumDistribution] = useState<
     "p50" | "p75" | "p90" | "p95" | "p99"
   >("p75");
+
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+
   const [plan, setPlan] = useState<string | null>(null);
 
   const user = useSupabaseUser();
+
+  const searchParams = useSearchParams();
+
   const fetchCalledRef = useRef<{
     userId?: string;
     siteFromUrl?: string | null;
   } | null>(null);
 
-  const fetchOrders = async (siteFromUrl?: string, userId?: string) => {
-    if (!userId) return;
-
-    const now = Date.now();
-    const cachedOrders = sessionStorage.getItem("orders");
-    const cachedTime = sessionStorage.getItem("orders-ts");
-
-    if (
-      cachedOrders &&
-      cachedTime &&
-      now - parseInt(cachedTime) < 5 * 60 * 1000
-    ) {
-      const parsedOrders = JSON.parse(cachedOrders);
-      setOrders(parsedOrders);
-      const defaultSite =
-        siteFromUrl &&
-        parsedOrders.some((o: OrderData) => o.website_name === siteFromUrl)
-          ? siteFromUrl
-          : parsedOrders[0].website_name;
-      setSelectedSite(defaultSite);
-      return; // skip network call
+  // Restore selected site after mount (hydration safe)
+  useEffect(() => {
+    const stored = sessionStorage.getItem("selected-site");
+    if (stored) {
+      setSelectedSite(stored);
     }
+    setHydrated(true);
+  }, []);
 
-    try {
-      const response = await fetch("/api/orders/fetchOrder");
+  // Persist selected site
+  useEffect(() => {
+    if (selectedSite) {
+      sessionStorage.setItem("selected-site", selectedSite);
+    }
+  }, [selectedSite]);
 
-      if (!response.ok) throw new Error("Failed to fetch orders");
+  const fetchOrders = useCallback(
+    async (siteFromUrl?: string, userId?: string) => {
+      if (!userId) return;
 
-      const { data }: { data: OrderData[] } = await response.json();
+      const now = Date.now();
 
-      if (data?.length > 0) {
-        sessionStorage.setItem("orders", JSON.stringify(data));
-        sessionStorage.setItem("orders-ts", Date.now().toString());
-        setOrders(data);
+      const cachedOrders = sessionStorage.getItem("orders");
+      const cachedTime = sessionStorage.getItem("orders-ts");
 
-        const defaultSite =
-          siteFromUrl &&
-          data.some((o: OrderData) => o.website_name === siteFromUrl)
-            ? siteFromUrl
-            : data[0].website_name;
-        setSelectedSite(defaultSite);
-      } else {
-        setOrders([]);
+      if (
+        cachedOrders &&
+        cachedTime &&
+        now - parseInt(cachedTime) < 5 * 60 * 1000
+      ) {
+        const parsedOrders: OrderData[] = JSON.parse(cachedOrders);
+
+        setOrders(parsedOrders);
+
+        setSelectedSite((prev) => {
+          if (prev || !hydrated) return prev;
+
+          if (
+            siteFromUrl &&
+            parsedOrders.some((o) => o.website_name === siteFromUrl)
+          ) {
+            return siteFromUrl;
+          }
+
+          return parsedOrders[0]?.website_name || "";
+        });
+
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/orders/fetchOrder");
+
+        if (!response.ok) throw new Error("Failed to fetch orders");
+
+        const { data }: { data: OrderData[] } = await response.json();
+
+        if (data?.length > 0) {
+          sessionStorage.setItem("orders", JSON.stringify(data));
+          sessionStorage.setItem("orders-ts", Date.now().toString());
+
+          setOrders(data);
+
+          setSelectedSite((prev) => {
+            if (prev || !hydrated) return prev;
+
+            if (siteFromUrl && data.some((o) => o.website_name === siteFromUrl))
+              return siteFromUrl;
+
+            return data[0].website_name;
+          });
+        } else {
+          setOrders([]);
+          setSelectedSite("");
+
+          sessionStorage.removeItem("orders");
+          sessionStorage.removeItem("orders-ts");
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+
+        setOrders(null);
         setSelectedSite("");
+
         sessionStorage.removeItem("orders");
         sessionStorage.removeItem("orders-ts");
       }
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      setOrders(null);
-      setSelectedSite("");
-      sessionStorage.removeItem("orders");
-      sessionStorage.removeItem("orders-ts");
-    }
-  };
+    },
+    [hydrated],
+  );
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !hydrated) return;
 
-    const siteFromUrl = new URL(window.location.href).searchParams.get("site");
+    const siteFromUrl = searchParams.get("site");
 
     if (
       fetchCalledRef.current?.userId === user.id &&
       fetchCalledRef.current?.siteFromUrl === siteFromUrl
     ) {
-      return; // already fetched
+      return;
     }
 
     fetchOrders(siteFromUrl ?? "", user.id);
-    fetchCalledRef.current = { userId: user.id, siteFromUrl };
-  }, [user?.id, fetchOrders]);
+
+    fetchCalledRef.current = {
+      userId: user.id,
+      siteFromUrl,
+    };
+  }, [user?.id, hydrated, searchParams, fetchOrders]);
 
   return (
     <SiteContext.Provider

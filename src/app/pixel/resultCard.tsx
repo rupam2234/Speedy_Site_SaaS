@@ -9,6 +9,7 @@ interface ConversionResult {
   format: string;
   size: number;
   url: string;
+  name: string;
   savings: number;
   loadingTime: number; // estimated in ms for 3G
 }
@@ -88,7 +89,7 @@ export function ResultCard({ result, originalSize }: ResultCardProps) {
 
       <a
         href={result.url}
-        download={`optimized-image.${result.format}`}
+        download={`${result.name.split(".")[0]}-optimized.${result.format}`}
         className={cn(
           "flex items-center justify-center gap-2 w-full py-3 rounded-xl font-medium transition-all group",
           isSmaller

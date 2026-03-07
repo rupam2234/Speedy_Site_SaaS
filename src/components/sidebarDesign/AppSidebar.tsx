@@ -76,8 +76,8 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "UX Heatmap",
-            url: `/dashboard/rum/ux-heatmap?site=${selectedSite}`,
+            title: "UX Map",
+            url: `/dashboard/rum/ux-distributions?site=${selectedSite}`,
           },
           {
             title: "Web Vitals",

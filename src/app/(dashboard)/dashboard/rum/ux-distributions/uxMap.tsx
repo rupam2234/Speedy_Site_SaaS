@@ -219,10 +219,10 @@ export default function UxReport() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-xl tracking-tighter bg-linear-to-br from-primary via-primary to-primary/50 bg-clip-text text-transparent">
-                  UX Impact Analysis
+                  UX Distributions
                 </h2>
                 <CustomTooltip
-                  content="Global UX shows user experience based on RUM Web Vitals. UX differences are strongly linked to edge cache effectiveness and origin load. 100% origin relience or lack of edge cache tends to result in greater dispersion."
+                  content="We start with global UX because it shows you current status of user experience on your site based on real user web vitals. Region based UX report quickly exposes your worst performing regions and gives you a idea where to start fixing. UX differences are strongly linked with web vitals and CDN / cache effectiveness. Bad web vitals or lack of edge cache often leads region experiencing bad user experience."
                   trigger={
                     <div className="p-1 rounded-full hover:bg-primary/10 transition-colors cursor-help">
                       <InfoIcon
@@ -236,7 +236,7 @@ export default function UxReport() {
                 />
               </div>
               <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-widest opacity-80">
-                Page Speedy Impact & User Experience Across Globe
+                Page Speed Impact & User Experience Across Globe
               </p>
             </div>
           </div>
@@ -339,43 +339,45 @@ export default function UxReport() {
           </div>
 
           {/* Map Chart (Right) */}
-          <div className="col-span-5 overflow-hidden relative">
-            <div className="absolute md:block hidden top-1 right-1 px-2 py-0.5 text-sm text-primary/80">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <DatabaseIcon
-                  size={25}
-                  className="text-primary/80 fill-primary/20 p-1 rounded-md"
-                />
+          <div className="col-span-5 relative flex flex-col bg-transparent dark:bg-secondary-background overflow-hidden rounded-xl border">
+            <div className="absolute top-3 right-3 z-20 hidden md:block">
+              <div className="flex items-center gap-2 rounded-full bg-background/50 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm border shadow-sm">
+                <DatabaseIcon size={16} className="text-primary" />
                 <p>
                   Weekly geographical UX data for{" "}
-                  <span className="font-medium text-foreground">
+                  <span className="font-semibold text-foreground">
                     {selectedSite}
                   </span>{" "}
                   on{" "}
-                  <span className="capitalize font-medium">
+                  <span className="font-semibold capitalize text-foreground">
                     {selectedDevice.toLowerCase()}
-                  </span>{" "}
+                  </span>
                 </p>
               </div>
             </div>
-            <div className="absolute inset-0 pointer-events-none from-primary/2 to-transparent z-0" />
+
+            <div className="absolute z-0 pointer-events-none" />
             <div
               ref={chartRef}
-              style={{ width: "100%", height: "640px" }}
-              className="relative z-10"
+              className="relative z-10 w-full min-h-100 lg:min-h-140"
             />
-            <div className="absolute bottom-0 left-0 px-2 py-1 text-sm text-primary/80 flex  gap-1">
-              <p className="text-[15px">
-                Happiness is an imaginary measure of{" "}
-                <strong>core web vitals</strong> means when core web vitals are
-                good we call it &quot;happy&quot; user experience and when
-                they&apos;re not, it&apos;s &quot;unhappy&quot;. The UX is
-                measured through core web vitals, which is why{" "}
-                <strong>fixing web vital issues, along with CDN</strong> can
-                improve your page&apos;s experience across most regions and you
-                will know it here real-time.
+            <figcaption className="relative z-20 mt-auto border-t px-4 py-3">
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  &quot;Happiness&quot;
+                </span>{" "}
+                is an aggregate measure of{" "}
+                <strong className="text-foreground">Core Web Vitals</strong>.
+                When vitals are optimal, we define the experience as
+                &quot;happy.&quot; Improving
+                <strong className="text-foreground">
+                  {" "}
+                  Web Vital issues and CDN{" "}
+                </strong>
+                configurations will boost performance across global regions in
+                real-time.
               </p>
-            </div>
+            </figcaption>
           </div>
         </div>
       </div>
@@ -413,8 +415,6 @@ export default function UxReport() {
 
       return data.data;
     }
-
-    console.log(response);
 
     setHappinessData(response);
   }

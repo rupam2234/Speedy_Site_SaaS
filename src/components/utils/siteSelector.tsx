@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
 import { ArrowRight, CirclePlus, PlusCircle } from "lucide-react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { AddNewWebsite, CustomTooltip } from "../theme";
@@ -14,25 +13,11 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
   const [displayModal, setDisplayModal] = React.useState<boolean>(false);
 
   const selectorRef = React.useRef<HTMLDivElement | null>(null);
-  const pathname = usePathname();
 
   // Only update collapsed if it actually changes
   React.useEffect(() => {
     setCollapsed(collapsed);
   }, [collapsed, setCollapsed]);
-
-  // Auto-select best-matching site only once
-  React.useEffect(() => {
-    if (!orders?.length || selectedSite) return;
-
-    const siteFromPath = pathname.split("/")[2]; // e.g. /dashboard/[site]
-    const match = orders.find((o) => o.website_name === siteFromPath);
-    const siteToSelect = match?.website_name || orders[0]?.website_name;
-
-    if (siteToSelect) {
-      setSelectedSite(siteToSelect);
-    }
-  }, [orders, pathname, selectedSite, setSelectedSite]);
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -51,11 +36,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
     };
   }, []);
 
-  // Memoize derived data to prevent re-renders
-  const selectedOrder = React.useMemo(
-    () => orders?.find((o) => o.website_name === selectedSite),
-    [orders, selectedSite],
-  );
+  const selectedOrder = orders?.find((o) => o.website_name === selectedSite);
 
   const selectedFavicon = {
     fav: selectedOrder?.favicon_file,

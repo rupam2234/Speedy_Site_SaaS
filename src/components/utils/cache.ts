@@ -10,6 +10,11 @@ interface CacheResult<T> {
     isCached: boolean;
 }
 
+interface CleanCache {
+    prefix: string, 
+    session_Storage: boolean
+}
+
 /**
  * caches data into session / local storage with a TTL
  * @param key cache key ---> use a prefix ex: `rum-cache:${key}`, the prefix later helps safe clean up of unsued cache in batch
@@ -54,4 +59,37 @@ export async function cachedData<T>({key, fn, ttl, session_Storage}: Props<T>): 
 
     // retrun the new data
     return {response: response, isCached: false}
+}
+
+/**
+ * Silently cleans expired cache entries with a specific prefix
+ */
+export function cleanExpiredCache({prefix, session_Storage = false}: CleanCache) {
+    const storage = session_Storage ? sessionStorage : localStorage;
+
+    try {
+        const now = Date.now();
+
+        for (let i = storage.length - 1; i >= 0; i--) {
+            const key = storage.key(i);
+            if (!key || !key.startsWith(prefix)) continue;
+
+            try {
+                const raw = storage.getItem(key);
+                if (!raw) continue;
+
+                const parsed = JSON.parse(raw);
+
+                if (!parsed.expiry || now >= parsed.expiry) {
+                    storage.removeItem(key);
+                }
+
+            } catch {
+                // corrupted cache → remove
+                storage.removeItem(key);
+            }
+        }
+    } catch {
+        // silently fail (storage access errors etc)
+    }
 }
