@@ -1,31 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { jwtVerify } from 'jose';
+import { newUserSignup } from '../../emails/newSignUp';
 
 const supabaseAdmin = () => {
   const url = process.env.SUPABASE_URL!;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
   return createClient(url, key);
 };
-
-async function verifyToken(token: string) {
-  const jwtSecret = process.env.SUPABASE_JWT_SECRET!;
-  const supabaseUrl = process.env.SUPABASE_URL!;
-  const encoder = new TextEncoder();
-  const secret = encoder.encode(jwtSecret);
-  const { payload } = await jwtVerify(token, secret, {
-    issuer: `${supabaseUrl}/auth/v1`,
-    audience: 'authenticated',
-  });
-  return payload;
-}
-
-function isInSubscriptionPeriod(subscription: any): boolean {
-  const now = new Date();
-  const start = subscription.period_starts_at ? new Date(subscription.period_starts_at) : null;
-  const end = subscription.period_ends_at ? new Date(subscription.period_ends_at) : null;
-  return start !== null && end !== null && now >= start && now <= end;
-}
 
 export async function GET(req: NextRequest) {
   const supabase = supabaseAdmin();
@@ -59,9 +41,15 @@ export async function GET(req: NextRequest) {
         id: userId,
         email: payload.email || null,
       });
+
       if (insertProfileError) {
         return NextResponse.json({ message: 'Failed to create profile', error: insertProfileError.message }, { status: 500 });
       }
+
+      // if all good send new user message to admin
+
+      const metaData = payload.user_metadata as any;
+      await newUserSignup({userEmail: payload.email as string ?? "unknown", userName: metaData.name as string ?? "unknown name"})
     }
 
     // SUBSCRIPTION CHECK / CREATE
@@ -121,7 +109,25 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ message: 'Request allowed', subscription });
   } catch (err: any) {
-    // console.error('Error in API route:', err);
     return NextResponse.json({ message: 'Unauthorized', error: err.message }, { status: 401 });
   }
+}
+
+async function verifyToken(token: string) {
+  const jwtSecret = process.env.SUPABASE_JWT_SECRET!;
+  const supabaseUrl = process.env.SUPABASE_URL!;
+  const encoder = new TextEncoder();
+  const secret = encoder.encode(jwtSecret);
+  const { payload } = await jwtVerify(token, secret, {
+    issuer: `${supabaseUrl}/auth/v1`,
+    audience: 'authenticated',
+  });
+  return payload;
+}
+
+function isInSubscriptionPeriod(subscription: any): boolean {
+  const now = new Date();
+  const start = subscription.period_starts_at ? new Date(subscription.period_starts_at) : null;
+  const end = subscription.period_ends_at ? new Date(subscription.period_ends_at) : null;
+  return start !== null && end !== null && now >= start && now <= end;
 }
