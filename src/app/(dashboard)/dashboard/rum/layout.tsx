@@ -17,41 +17,29 @@ export default function RumLayout({ children }: RumLayoutProps) {
   useEffect(() => {
     if (!user?.id || plan !== null) return; // already fetched
 
-    const key = `${user.id}-plan`;
-
-    const fetchAndCachePlan = async () => {
-      // Check sessionStorage first
-      const cached = sessionStorage.getItem(key);
-      if (cached) {
-        setPlan(cached);
-        return;
-      }
-
+    const fetchAndSetPlan = async () => {
       try {
         const activePlan: any = await validatePlan(user.id);
-        const planValue = activePlan?.data?.[0]?.plan ?? "Free";
+        const planValue = activePlan?.[0]?.plan ?? "Free";
         setPlan(planValue);
-        sessionStorage.setItem(key, planValue);
       } catch (err) {
         console.error("Failed to fetch plan:", err);
         setPlan("Free");
-        sessionStorage.setItem(key, "Free");
       }
     };
 
-    fetchAndCachePlan();
+    fetchAndSetPlan();
   }, [user?.id, plan, setPlan]);
 
   // Show nothing until plan is loaded
   if (plan === null) return null;
 
-  if (!selectedSite) {
-    <NoSiteSelected />;
-  }
+  // No site selected
+  if (!selectedSite) return <NoSiteSelected />;
 
-  if (selectedSite && plan === "Free") {
-    return <Fallback />;
-  }
+  // Selected site, free plan
+  if (plan === "Free") return <Fallback />;
 
+  // Selected site and paid plan
   return <>{children}</>;
 }

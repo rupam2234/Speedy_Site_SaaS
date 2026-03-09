@@ -49,6 +49,8 @@ export async function POST(req: Request) {
       /*** SUBSCRIPTION CREATED ***/
       case "customer.subscription.created": {
         const subscription = event.data.object as Stripe.Subscription;
+      
+        // Determine plan
         const priceId = subscription.items.data[0].price.id;
         const activeplan =
           priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
@@ -58,34 +60,58 @@ export async function POST(req: Request) {
               : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
                 ? "Agency"
                 : "Free";
+      
         const billingCycleEnd = new Date(
-          subscription.billing_cycle_anchor * 1000,
+          subscription.billing_cycle_anchor * 1000
         ).toISOString();
-
+      
+        // Fetch existing subscription to get user_id
+        const { data: existing } = await worker
+          .from("subscriptions")
+          .select("user_id")
+          .eq("stripe_customer_id", subscription.customer as string)
+          .single();
+      
+        // Get safe UUID
+        const userId =
+          existing?.user_id ?? subscription.metadata?.user_id ?? null;
+      
+        if (!userId) {
+          console.warn(
+            "No valid UUID for user_id; skipping subscription upsert for customer:",
+            subscription.customer
+          );
+          break; // Stop processing if we don't have a valid UUID
+        }
+      
         const { error } = await worker
           .from("subscriptions")
-          .update({
-            stripe_subscription_status: subscription.status,
-            stripe_subscription_id: subscription.id,
-            period_starts_at: new Date(
-              subscription.start_date * 1000,
-            ).toISOString(),
-            period_ends_at: subscription.billing_cycle_anchor
-              ? billingCycleEnd
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            status: "active",
-            plan: activeplan,
-          })
-          .eq("stripe_customer_id", subscription.customer as string);
-
+          .upsert(
+            {
+              user_id: userId,
+              stripe_subscription_status: subscription.status,
+              stripe_subscription_id: subscription.id,
+              stripe_customer_id: subscription.customer as string,
+              period_starts_at: new Date(subscription.start_date * 1000).toISOString(),
+              period_ends_at: subscription.billing_cycle_anchor
+                ? billingCycleEnd
+                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              status: "active",
+              plan: activeplan,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "stripe_subscription_id" }
+          );
+      
         console.log("SUBSCRIPTION CREATED UPDATE:", error ?? "success");
-
+      
+        // Send subscription created email
         await SubscriptionCreated({
           stripeCustomerId: subscription.customer as string,
           plan: activeplan,
           billingCycleEnd: billingCycleEnd,
         });
-
+      
         break;
       }
 

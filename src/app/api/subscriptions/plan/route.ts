@@ -37,30 +37,15 @@ export async function POST(req: NextRequest) {
       .eq("user_id", user_id);
 
     if (error) {
-      return NextResponse.json(
-        { message: "Unable to find active plan" },
-        { status: 400 }
-      );
+      throw new Error(error.message ?? "failed to fetch subscription data");
     }
 
     if (!data || data.length === 0) {
-      return NextResponse.json(
-        { message: "No active subscription found for user" },
-        { status: 404 }
-      );
+      throw new Error("No active subscription found for user")
     }
 
-    return NextResponse.json(
-      { message: "Plan acquired", data },
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "private, no-store",
-        },
-      }
-    );
+    return NextResponse.json({data}, {status: 200});
   } catch (error: any) {
-    return NextResponse.json({ message: error }, { status: 500 });
+    return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }
