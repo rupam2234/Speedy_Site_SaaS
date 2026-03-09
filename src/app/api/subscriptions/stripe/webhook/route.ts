@@ -1,257 +1,14 @@
-// import { sendRenewalSuccessEmail } from "@/app/api/emails/renewalSuccess";
-// import { SubscriptionCreated } from "@/app/api/emails/subscriptionCreated";
-// import { setupDB } from "@/lib/db";
-// import { headers } from "next/headers";
-// import Stripe from "stripe";
-
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-//   apiVersion: "2025-08-27.basil",
-// }); // updated
-
-// const worker = setupDB();
-
-// export async function POST(req: Request) {
-//   const body = await req.text();
-//   const signature = (await headers()).get("stripe-signature");
-
-//   let event: Stripe.Event;
-
-//   try {
-//     event = stripe.webhooks.constructEvent(
-//       body,
-//       signature!,
-//       process.env.STRIPE_WEBHOOK_SECRET!,
-//     );
-//   } catch (error: any) {
-//     console.error("Signature validation failed:", error.message);
-//     return new Response("invalid signature", { status: 400 });
-//   }
-
-//   try {
-//     switch (event.type) {
-//       /*** CHECKOUT SESSION COMPLETED ***/
-//       case "checkout.session.completed": {
-//         const session = event.data.object as Stripe.Checkout.Session;
-//         const userId = session.metadata?.user_id;
-
-//         await worker
-//           .from("subscriptions")
-//           .update({
-//             stripe_subscription_status: "session completed",
-//             stripe_customer_id: session.customer as string,
-//             stripe_session_id: session.id,
-//           })
-//           .eq("user_id", userId as string);
-
-//         break;
-//       }
-
-//       /*** SUBSCRIPTION CREATED ***/
-//       case "customer.subscription.created": {
-//         const subscription = event.data.object as Stripe.Subscription;
-//         const priceId = subscription.items.data[0].price.id;
-//         const activeplan =
-//           priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
-//             ? "Basic"
-//             : priceId === "price_1SHfnpFudyIXBfXkLekhIkoM"
-//               ? "Pro"
-//               : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
-//                 ? "Agency"
-//                 : "Free";
-//         const billingCycleEnd = new Date(
-//           subscription.billing_cycle_anchor * 1000,
-//         ).toISOString();
-
-//         const { error } = await worker
-//           .from("subscriptions")
-//           .update({
-//             stripe_subscription_status: subscription.status,
-//             stripe_subscription_id: subscription.id,
-//             period_starts_at: new Date(
-//               subscription.start_date * 1000,
-//             ).toISOString(),
-//             period_ends_at: subscription.billing_cycle_anchor
-//               ? billingCycleEnd
-//               : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-//             status: "active",
-//             plan: activeplan,
-//           })
-//           .eq("stripe_customer_id", subscription.customer as string);
-
-//         console.log("SUBSCRIPTION CREATED UPDATE:", error ?? "success");
-
-//         await SubscriptionCreated({
-//           stripeCustomerId: subscription.customer as string,
-//           plan: activeplan,
-//           billingCycleEnd: billingCycleEnd,
-//         });
-
-//         break;
-//       }
-
-//       /*** CUSTOMER CANCELED SUBSCRIPTION ***/
-//       case "customer.subscription.deleted": {
-//         const subscription = event.data.object as Stripe.Subscription;
-
-//         const { error } = await worker
-//           .from("subscriptions")
-//           .update({
-//             status: "canceled",
-//             stripe_subscription_status: "canceled",
-//           })
-//           .eq("stripe_subscription_id", subscription.id);
-
-//         console.log("SUBSCRIPTION DELETED UPDATE:", error ?? "success");
-//         break;
-//       }
-
-//       /*** PAYMENT FAILED ***/
-//       case "invoice.payment_failed": {
-//         const invoice = event.data.object as Stripe.Invoice;
-
-//         const { error } = await worker
-//           .from("subscriptions")
-//           .update({
-//             status: "paused",
-//             stripe_subscription_status: "past due",
-//           })
-//           .eq("stripe_customer_id", invoice.customer as string);
-
-//         console.log("PAYMENT UPDATE FAILED:", error ?? "success");
-//         break;
-//       }
-
-//       /** AUTOMATIC RENEWALS */
-//       case "invoice.payment_succeeded": {
-//         const invoice = event.data.object as Stripe.Invoice;
-
-//         // Only reset usage on real subscription renewals
-//         // this will only reset usage on monthly renewal, 
-//         // not upgrades (reseting on upgrade can allow people additional quota, revenue leakage)
-//         if (invoice.billing_reason !== "subscription_cycle") { 
-//           break;
-//         }
-
-//         if (!invoice.period_start || !invoice.period_end) {
-//           break;
-//         }
-
-//         const periodStart = new Date(invoice.period_start * 1000).toISOString();
-//         const periodEnd = new Date(invoice.period_end * 1000).toISOString();
-
-//         const { error } = await worker
-//           .from("subscriptions")
-//           .update({
-//             status: "active",
-//             stripe_subscription_status: "active",
-//             updated_at: new Date().toISOString(),
-//             current_usage: 0, // resets the usage
-//             period_starts_at: periodStart,
-//             period_ends_at: periodEnd,
-//           })
-//           .eq("stripe_customer_id", invoice.customer as string);
-
-//         if (error) {
-//           console.log("Subscription update failed: ", error);
-//         }
-
-//         // send email
-//         await sendRenewalSuccessEmail({
-//           stripeCustomerId: invoice.customer as string,
-//         });
-
-//         break;
-//       }
-
-//       /** CUSTOMER UPDATE */
-//       case "customer.subscription.updated": {
-//         const subscription = event.data.object as Stripe.Subscription;
-
-//         // Determine period start
-//         const periodStart = new Date(subscription.start_date * 1000);
-
-//         // Determine period end
-//         let periodEnd: Date;
-
-//         // Grab the first price item
-//         const price = subscription.items.data[0].price;
-//         const recurring = price.recurring;
-
-//         if (recurring) {
-//           // Use subscription.billing_cycle_anchor if available
-//           if (subscription.billing_cycle_anchor) {
-//             periodEnd = new Date(subscription.billing_cycle_anchor * 1000);
-//           } else {
-//             // Fallback: calculate from interval
-//             periodEnd = new Date(periodStart);
-//             const intervalCount = recurring.interval_count ?? 1;
-//             if (recurring.interval === "month") {
-//               periodEnd.setMonth(periodEnd.getMonth() + intervalCount);
-//             } else if (recurring.interval === "year") {
-//               periodEnd.setFullYear(periodEnd.getFullYear() + intervalCount);
-//             } else {
-//               // unknown interval fallback
-//               periodEnd.setMonth(periodEnd.getMonth() + 1);
-//             }
-//           }
-//         } else {
-//           // Non-recurring / free / lifetime subscription
-//           periodEnd = new Date(periodStart);
-//           periodEnd.setFullYear(periodEnd.getFullYear() + 100); // or null in DB
-//         }
-
-//         const { error } = await worker
-//           .from("subscriptions")
-//           .update({
-//             status: "active",
-//             stripe_subscription_status: subscription.status,
-//             period_starts_at: periodStart.toISOString(),
-//             period_ends_at: periodEnd.toISOString(),
-//             updated_at: new Date().toISOString(),
-//           })
-//           .eq("stripe_customer_id", subscription.customer as string);
-
-//         if (!error) {
-//           // Optional: send renewal email for free plans
-//           await sendRenewalSuccessEmail({
-//             stripeCustomerId: subscription.customer as string,
-//           });
-//         } else {
-//           console.log("Subscription update failed:", error);
-//         }
-
-//         break;
-//       }
-//     }
-//   } catch (error: any) {
-//     console.error("Webhook DB error:", error);
-//     return new Response(error, { status: 500 });
-//   }
-
-//   return new Response("subscription process complete", { status: 200 });
-// }
-
+import { sendRenewalSuccessEmail } from "@/app/api/emails/renewalSuccess";
+import { SubscriptionCreated } from "@/app/api/emails/subscriptionCreated";
+import { setupDB } from "@/lib/db";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 
-import { setupDB } from "@/lib/db";
-import { sendRenewalSuccessEmail } from "@/app/api/emails/renewalSuccess";
-import { SubscriptionCreated } from "@/app/api/emails/subscriptionCreated";
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
-});
+}); // updated
 
-const db = setupDB();
-
-/**
- * Stripe price → plan mapping
- */
-const PLAN_MAP: Record<string, string> = {
-  price_1SHfk8FudyIXBfXkozoK2jmm: "Basic",
-  price_1SHfnpFudyIXBfXkLekhIkoM: "Pro",
-  price_1SHfpXFudyIXBfXkVPU9bgrP: "Agency",
-};
+const worker = setupDB();
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -259,166 +16,146 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event;
 
-  /**
-   * Verify Stripe webhook signature
-   */
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature!,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET!,
     );
-  } catch (err: any) {
-    console.error("Stripe webhook signature failed:", err.message);
-    return new Response("Invalid signature", { status: 400 });
+  } catch (error: any) {
+    console.error("Signature validation failed:", error.message);
+    return new Response("invalid signature", { status: 400 });
   }
 
   try {
     switch (event.type) {
-
-      /**
-       * CHECKOUT COMPLETED
-       * Save Stripe IDs
-       */
+      /*** CHECKOUT SESSION COMPLETED ***/
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-
         const userId = session.metadata?.user_id;
 
-        if (!userId) break;
-
-        await db
+        await worker
           .from("subscriptions")
           .update({
+            stripe_subscription_status: "session completed",
             stripe_customer_id: session.customer as string,
-            stripe_subscription_id: session.subscription as string,
             stripe_session_id: session.id,
-            stripe_subscription_status: "checkout_completed",
-            updated_at: new Date().toISOString(),
           })
-          .eq("user_id", userId);
+          .eq("user_id", userId as string);
 
         break;
       }
 
-      /**
-       * SUBSCRIPTION CREATED
-       */
+      /*** SUBSCRIPTION CREATED ***/
       case "customer.subscription.created": {
         const subscription = event.data.object as Stripe.Subscription;
-
-        const item = subscription.items.data[0];
-        const priceId = item.price.id;
-
-        const plan = PLAN_MAP[priceId] ?? "Free";
-
-        const periodStart = new Date(
-          item.current_period_start * 1000
+        const priceId = subscription.items.data[0].price.id;
+        const activeplan =
+          priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
+            ? "Basic"
+            : priceId === "price_1SHfnpFudyIXBfXkLekhIkoM"
+              ? "Pro"
+              : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
+                ? "Agency"
+                : "Free";
+        const billingCycleEnd = new Date(
+          subscription.billing_cycle_anchor * 1000,
         ).toISOString();
 
-        const periodEnd = new Date(
-          item.current_period_end * 1000
-        ).toISOString();
-
-        const { error } = await db
+        const { error } = await worker
           .from("subscriptions")
           .update({
-            stripe_subscription_id: subscription.id,
             stripe_subscription_status: subscription.status,
+            stripe_subscription_id: subscription.id,
+            period_starts_at: new Date(
+              subscription.start_date * 1000,
+            ).toISOString(),
+            period_ends_at: subscription.billing_cycle_anchor
+              ? billingCycleEnd
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             status: "active",
-            plan,
-            period_starts_at: periodStart,
-            period_ends_at: periodEnd,
-            updated_at: new Date().toISOString(),
+            plan: activeplan,
           })
           .eq("stripe_customer_id", subscription.customer as string);
 
-        console.log("Subscription created:", error ?? "success");
+        console.log("SUBSCRIPTION CREATED UPDATE:", error ?? "success");
 
         await SubscriptionCreated({
           stripeCustomerId: subscription.customer as string,
-          billingCycleEnd: periodEnd,
+          plan: activeplan,
+          billingCycleEnd: billingCycleEnd,
         });
 
         break;
       }
 
-      /**
-       * SUBSCRIPTION UPDATED
-       */
-      case "customer.subscription.updated": {
+      /*** CUSTOMER CANCELED SUBSCRIPTION ***/
+      case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
 
-        const item = subscription.items.data[0];
-
-        const periodStart = new Date(
-          item.current_period_start * 1000
-        ).toISOString();
-
-        const periodEnd = new Date(
-          item.current_period_end * 1000
-        ).toISOString();
-
-        const { error } = await db
+        const { error } = await worker
           .from("subscriptions")
           .update({
-            stripe_subscription_status: subscription.status,
-            status: subscription.status === "active" ? "active" : "paused",
-            period_starts_at: periodStart,
-            period_ends_at: periodEnd,
-            updated_at: new Date().toISOString(),
+            status: "canceled",
+            stripe_subscription_status: "canceled",
           })
           .eq("stripe_subscription_id", subscription.id);
 
-        if (error) {
-          console.log("Subscription update failed:", error);
-        }
-
+        console.log("SUBSCRIPTION DELETED UPDATE:", error ?? "success");
         break;
       }
 
-      /**
-       * PAYMENT SUCCESS (RENEWAL)
-       */
+      /*** PAYMENT FAILED ***/
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+
+        const { error } = await worker
+          .from("subscriptions")
+          .update({
+            status: "paused",
+            stripe_subscription_status: "past due",
+          })
+          .eq("stripe_customer_id", invoice.customer as string);
+
+        console.log("PAYMENT UPDATE FAILED:", error ?? "success");
+        break;
+      }
+
+      /** AUTOMATIC RENEWALS */
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
 
-        /**
-         * Prevent usage reset on upgrades
-         */
-        if (
-          invoice.billing_reason !== "subscription_cycle" &&
-          invoice.billing_reason !== "subscription_create"
-        ) {
+        // Only reset usage on real subscription renewals
+        // this will only reset usage on monthly renewal, 
+        // not upgrades (reseting on upgrade can allow people additional quota, revenue leakage)
+        if (invoice.billing_reason !== "subscription_cycle") { 
           break;
         }
 
-        if (!invoice.period_start || !invoice.period_end) break;
+        if (!invoice.period_start || !invoice.period_end) {
+          break;
+        }
 
-        const periodStart = new Date(
-          invoice.period_start * 1000
-        ).toISOString();
+        const periodStart = new Date(invoice.period_start * 1000).toISOString();
+        const periodEnd = new Date(invoice.period_end * 1000).toISOString();
 
-        const periodEnd = new Date(
-          invoice.period_end * 1000
-        ).toISOString();
-
-        const { error } = await db
+        const { error } = await worker
           .from("subscriptions")
           .update({
             status: "active",
             stripe_subscription_status: "active",
-            current_usage: 0,
+            updated_at: new Date().toISOString(),
+            current_usage: 0, // resets the usage
             period_starts_at: periodStart,
             period_ends_at: periodEnd,
-            updated_at: new Date().toISOString(),
           })
           .eq("stripe_customer_id", invoice.customer as string);
 
         if (error) {
-          console.log("Renewal update failed:", error);
+          console.log("Subscription update failed: ", error);
         }
 
+        // send email
         await sendRenewalSuccessEmail({
           stripeCustomerId: invoice.customer as string,
         });
@@ -426,50 +163,71 @@ export async function POST(req: Request) {
         break;
       }
 
-      /**
-       * PAYMENT FAILED
-       */
-      case "invoice.payment_failed": {
-        const invoice = event.data.object as Stripe.Invoice;
-
-        const { error } = await db
-          .from("subscriptions")
-          .update({
-            status: "paused",
-            stripe_subscription_status: "past_due",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("stripe_customer_id", invoice.customer as string);
-
-        console.log("Payment failed:", error ?? "success");
-
-        break;
-      }
-
-      /**
-       * SUBSCRIPTION CANCELED
-       */
-      case "customer.subscription.deleted": {
+      /** CUSTOMER UPDATE */
+      case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
 
-        const { error } = await db
+        // Determine period start
+        const periodStart = new Date(subscription.start_date * 1000);
+
+        // Determine period end
+        let periodEnd: Date;
+
+        // Grab the first price item
+        const price = subscription.items.data[0].price;
+        const recurring = price.recurring;
+
+        if (recurring) {
+          // Use subscription.billing_cycle_anchor if available
+          if (subscription.billing_cycle_anchor) {
+            periodEnd = new Date(subscription.billing_cycle_anchor * 1000);
+          } else {
+            // Fallback: calculate from interval
+            periodEnd = new Date(periodStart);
+            const intervalCount = recurring.interval_count ?? 1;
+            if (recurring.interval === "month") {
+              periodEnd.setMonth(periodEnd.getMonth() + intervalCount);
+            } else if (recurring.interval === "year") {
+              periodEnd.setFullYear(periodEnd.getFullYear() + intervalCount);
+            } else {
+              // unknown interval fallback
+              periodEnd.setMonth(periodEnd.getMonth() + 1);
+            }
+          }
+        } else {
+          // Non-recurring / free / lifetime subscription
+          periodEnd = new Date(periodStart);
+          periodEnd.setFullYear(periodEnd.getFullYear() + 100); // or null in DB
+        }
+
+        const { error } = await worker
           .from("subscriptions")
           .update({
-            status: "canceled",
-            stripe_subscription_status: "canceled",
+            status: "active",
+            stripe_subscription_status: subscription.status,
+            period_starts_at: periodStart.toISOString(),
+            period_ends_at: periodEnd.toISOString(),
             updated_at: new Date().toISOString(),
           })
-          .eq("stripe_subscription_id", subscription.id);
+          .eq("stripe_customer_id", subscription.customer as string);
 
-        console.log("Subscription canceled:", error ?? "success");
+        if (!error) {
+          // Optional: send renewal email for free plans
+          await sendRenewalSuccessEmail({
+            stripeCustomerId: subscription.customer as string,
+          });
+        } else {
+          console.log("Subscription update failed:", error);
+        }
 
         break;
       }
     }
-  } catch (err: any) {
-    console.error("Stripe webhook DB error:", err);
-    return new Response("Webhook handler failed", { status: 500 });
+  } catch (error: any) {
+    console.error("Webhook DB error:", error);
+    return new Response(error, { status: 500 });
   }
 
-  return new Response("Webhook processed", { status: 200 });
+  return new Response("subscription process complete", { status: 200 });
 }
+
