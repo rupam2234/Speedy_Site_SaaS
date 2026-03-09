@@ -7,7 +7,7 @@ const worker = setupDB();
 interface Props {
   stripeCustomerId: string;
   billingCycleEnd: string;
-  plan: "Basic" | "Pro" | "Agency" | "Free";
+  plan?: "Basic" | "Pro" | "Agency" | "Free";
 }
 
 export async function SubscriptionCreated({
