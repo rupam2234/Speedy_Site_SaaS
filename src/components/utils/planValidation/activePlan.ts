@@ -1,4 +1,4 @@
-import { cachedData } from "../cache";
+import { cachedData, cleanExpiredCache } from "../cache";
 
 export async function validatePlan(userId: string) {
   const cacheKey = `user-plan-${userId}`;
@@ -35,6 +35,8 @@ export async function validatePlan(userId: string) {
   // );
 
   const {response} = await cachedData({fn: fetchPlan, key: cacheKey, session_Storage: true, ttl: 2 * 60 * 1000});
+
+  cleanExpiredCache({ prefix: "user-plan-", session_Storage: true })
 
   async function fetchPlan() {
     const res = await fetch("/api/subscriptions/plan", {

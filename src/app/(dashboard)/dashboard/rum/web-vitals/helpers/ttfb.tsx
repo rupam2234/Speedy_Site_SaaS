@@ -9,9 +9,7 @@ import {
   Activity,
   Zap,
 } from "lucide-react";
-import TTFBPages from "./ttfb_components/ttfbPages";
-import TTFBbyNetwork from "./ttfb_components/network";
-import TTFBbyCountry from "./ttfb_components/country";
+import { TTFBbyCountry, TTFBbyNetwork, TTFBPages } from ".";
 
 // Logic to determine TTFB Health based on Core Web Vitals
 const getTtfbStatus = (ms: number) => {
