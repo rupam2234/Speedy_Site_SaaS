@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const { domain }: Props = await req.json();
 
     // 1. Normalize the URL
-    let url = domain.startsWith("http") ? domain : `https://${domain}`;
+    const url = domain.startsWith("http") ? domain : `https://${domain}`;
 
     // 2. Apply Cache Bypass: Add a unique timestamp as a query parameter
     // This forces WP Rocket/Cloudflare to bypass their page cache.
