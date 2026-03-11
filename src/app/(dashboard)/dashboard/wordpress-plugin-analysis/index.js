@@ -1,5 +1,4 @@
 export {default as Main} from "./main"
 export {default as CompanionPlugin} from "./companionPlugin"
 export {HowItWorks} from "./howItWorks"
-export {default as PluginScan} from "./pluginScanForm"
 export {default as AnalysisDashboard} from "./analysis"

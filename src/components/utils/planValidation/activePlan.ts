@@ -23,8 +23,6 @@ export async function validatePlan(userId: string) {
     return body.data;
   }
 
-  console.log(response)
-
   return response;
 }
 

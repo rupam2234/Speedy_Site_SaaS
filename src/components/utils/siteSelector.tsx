@@ -5,6 +5,7 @@ import { ArrowRight, CirclePlus, PlusCircle } from "lucide-react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { AddNewWebsite, CustomTooltip } from "../theme";
 import Image from "next/image";
+import { createPortal } from "react-dom";
 
 export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
   const { selectedSite, setSelectedSite, orders, setCollapsed } =
@@ -69,11 +70,13 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
           )}
         </div>
 
-        {displayModal && (
-          <AddNewWebsite
-            setDisplay={({ display }) => setDisplayModal(display)}
-          />
-        )}
+        {displayModal &&
+          createPortal(
+            <AddNewWebsite
+              setDisplay={({ display }) => setDisplayModal(display)}
+            />,
+            document.body,
+          )}
       </>
     );
   }
@@ -180,9 +183,13 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
         </div>
       )}
 
-      {displayModal && (
-        <AddNewWebsite setDisplay={({ display }) => setDisplayModal(display)} />
-      )}
+      {displayModal &&
+        createPortal(
+          <AddNewWebsite
+            setDisplay={({ display }) => setDisplayModal(display)}
+          />,
+          document.body,
+        )}
     </div>
   );
 }

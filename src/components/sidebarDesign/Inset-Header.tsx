@@ -6,7 +6,7 @@ import { SidebarTrigger } from "../ui/sidebar";
 
 export default function SidebarInsetHeader() {
   return (
-    <header className="sticky top-0 flex h-16 shrink-0 items-center bg-primary-foreground dark:bg-secondary-background gap-2 border-b">
+    <header className="sticky z-50 top-0 flex h-16 shrink-0 items-center bg-primary-foreground dark:bg-secondary-background gap-2 border-b">
       <div className="flex items-center gap-1 px-3">
         <SidebarTrigger className="ring-0 focus-within:ring-0 border-0" />
         <Separator orientation="vertical" className="mr-2 h-4" />
