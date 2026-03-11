@@ -108,6 +108,10 @@ export default function AppSidebar({
             url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
           },
           {
+            title: "WP Plugin Analysis",
+            url: `/dashboard/wordpress-plugin-analysis?site=${selectedSite}`,
+          },
+          {
             title: "Cloudflare Lab",
             url: `/dashboard/cloudflare?site=${selectedSite}`,
           },

@@ -23,8 +23,8 @@ export default function Main() {
   useEffect(() => {
     const fetchPlan = async () => {
       if (user?.id) {
-        const activePlan: any = await validatePlan(user?.id);
-        setPlan(activePlan?.data[0]?.plan);
+        const activePlan = await validatePlan(user?.id);
+        setPlan(activePlan?.[0]?.plan);
         setLoadingPlanCheck(false);
       }
     };

@@ -3,7 +3,6 @@
 import { OrderData } from "@/app/api/dataTypes";
 import { useEffect, useState } from "react";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
-import { useRouter } from "next/navigation";
 import { cachedData } from "../utils";
 
 interface Props {
@@ -27,7 +26,6 @@ export function AddNewWebsite({ setDisplay }: Props) {
   const [success, setSuccess] = useState<string | null>(null);
   const [input, setInput] = useState<string>("");
   const user = useSupabaseUser();
-  const router = useRouter();
 
   useEffect(() => {
     if (!success) return;
@@ -38,85 +36,90 @@ export function AddNewWebsite({ setDisplay }: Props) {
     }, 5000);
 
     return () => clearTimeout(redirect);
-  }, [success, router]);
+  }, [success, setDisplay]);
 
   return (
-    <>
-      <div className="fixed top-1/2 left-1/2 z-19990 w-9/10 h-auto md:w-200 md:h-auto px-4 py-10 border-2 border-primary/20 bg-white dark:bg-secondary-background dark:border-2 dark:border-white/50 shadow-lg rounded-md transform -translate-x-1/2 -translate-y-1/2">
-        <div
-          className="absolute top-3 right-3 hover:bg-primary/5 rounded-full cursor-pointer px-2 py-0.5 text-sm"
-          onClick={() => setDisplay({ display: false })}
-        >
-          X
-        </div>
-        <h3>Add a new website</h3>
-        <p className="text-sm text-primary/60">
-          Enter the primary domain you want to track to enable UX and
-          performance and experience monitoring.
-        </p>
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-[#141414]/80 backdrop-blur-sm">
+      <div className="bg-white dark:bg-secondary-background border border-[#141414] w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-[16px_16px_0px_0px_rgba(20,20,20,1)]">
+        <div className="p-6 border-b border-[#141414] flex justify-between items-center bg-[#141414] text-[#E4E3E0]">
+          <h3 className="font-bold uppercase tracking-widest text-sm">
+            Add New Website
+          </h3>
 
-        <form
-          className="add-website-form mt-5 flex gap-2 items-center"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleAddWebsite();
-          }}
-        >
-          <input
-            type="text"
-            required
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="www.speedy.site"
-            className="border-2 border-primary/30 rounded-sm text-primary outline-none px-2 py-0.5 text-sm w-2/5"
-            disabled={isProcessing}
-          />
           <button
-            className="bg-green-300 border-2 rounded-sm text-sm px-2 py-0.5 cursor-pointe text-primary dark:text-primary-foreground hover:bg-green-500"
-            disabled={isProcessing}
+            onClick={() => setDisplay({ display: false })}
+            className="opacity-50 hover:opacity-100 transition-opacity"
           >
-            Add site
+            ✕
           </button>
-        </form>
-
-        {error ? (
-          <p className="h-1.5 text-red-500 font-medium mt-0.5 text-xs">
-            {error}
-          </p>
-        ) : (
-          <p className="h-1.5"></p>
-        )}
-
-        <div className="mt-5">
-          <h4 className="font-medium text-primary/80">Progress:</h4>
-          <pre
-            className="text-black dark:text-amber-300"
-            id="log"
-            style={{
-              padding: "6px",
-              fontFamily: "monospace",
-              fontSize: 12,
-              width: "100%",
-              height: "150px",
-              marginTop: "10px",
-              overflowY: "scroll",
-              border: "2px solid #cfd1d5",
-              borderRadius: "4px",
-            }}
-          />
         </div>
 
-        {success !== null ? (
-          <p className="text-sm mt-2 text-green-500 font-medium capitalize">
-            {success}{" "}
-            <span className="text-primary/80">refreshing the page...</span>
+        <div className="p-8 overflow-y-auto flex-1">
+          <p className="text-sm text-primary/60 mb-6">
+            Enter the primary domain you want to track to enable UX, performance
+            and experience monitoring.
           </p>
-        ) : (
-          <p></p>
-        )}
-        <p></p>
+
+          <form
+            className="flex gap-3 items-center mb-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAddWebsite();
+            }}
+          >
+            <input
+              type="text"
+              required
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="www.speedy.site"
+              disabled={isProcessing}
+              className="border border-[#141414]/30 rounded-sm px-3 py-2 text-sm w-full max-w-xs outline-none focus:border-[#141414]"
+            />
+
+            <button
+              disabled={isProcessing}
+              className="bg-green-300 border border-[#141414] px-4 py-2 text-xs font-bold uppercase tracking-wide hover:bg-green-500 transition-all"
+            >
+              Add Site
+            </button>
+          </form>
+
+          {error && (
+            <p className="text-red-500 font-medium text-xs mb-4">{error}</p>
+          )}
+
+          <div className="mt-6">
+            <h4 className="font-bold uppercase text-xs mb-2 text-primary/80">
+              Progress
+            </h4>
+
+            <pre
+              id="log"
+              className="text-black dark:text-amber-300 bg-gray-50 p-4 border border-[#141414]/20 rounded-sm text-xs font-mono h-40 overflow-y-auto"
+            />
+          </div>
+
+          {success !== null && (
+            <p className="text-sm mt-4 text-green-500 font-medium capitalize">
+              {success}
+              <span className="text-primary/80 ml-2">
+                refreshing the page...
+              </span>
+            </p>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-[#141414] flex justify-end">
+          <button
+            onClick={() => setDisplay({ display: false })}
+            className="px-6 py-3 border border-[#141414] uppercase font-bold text-xs tracking-widest hover:bg-[#141414] hover:text-[#E4E3E0] transition-all"
+          >
+            Close
+          </button>
+        </div>
       </div>
-    </>
+    </div>
   );
 
   async function handleAddWebsite() {
