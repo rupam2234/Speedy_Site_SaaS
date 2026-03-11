@@ -3,22 +3,42 @@
 import JSZip from "jszip";
 import { FileArchive } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HowItWorks } from ".";
+import { useSiteContext } from "../siteContext";
+import { cachedData } from "@/components/utils";
 
 export default function ConnectionPlugin({ onClose }: { onClose: () => void }) {
-  const [secretKey] = useState(() => {
-    if (typeof window !== "undefined") {
-      const savedKey = localStorage.getItem("plugin_analysis_key");
-      if (savedKey) return savedKey;
-      const newKey =
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-      localStorage.setItem("plugin_analysis_key", newKey);
-      return newKey;
-    }
-    return "";
-  });
+  const { selectedSite } = useSiteContext();
+  const [secretKey, setSecretKey] = useState<string>("");
+
+  useEffect(() => {
+    if (!selectedSite) return;
+
+    const fetchSecret = async () => {
+      const key = `plugin_analysis_secret:${selectedSite}`;
+
+      const { response } = await cachedData({
+        fn: wpSecret,
+        key: key,
+        session_Storage: false,
+        ttl: 1440 * 60 * 1000, // 1 day
+      });
+
+      if (!response) {
+        const newKey =
+          Math.random().toString(36).substring(2, 15) +
+          Math.random().toString(36).substring(2, 15);
+
+        await saveWpSecret(newKey); // save into database
+        setSecretKey(newKey);
+      } else {
+        setSecretKey(response);
+      }
+    };
+
+    fetchSecret();
+  }, [selectedSite]);
 
   const phpCode = `<?php
   /**
@@ -151,20 +171,6 @@ export default function ConnectionPlugin({ onClose }: { onClose: () => void }) {
         <div className="p-8 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <HowItWorks />
-            {/* <div className=" p-6 border border-dashed border-[#141414]/20 rounded-sm flex flex-col justify-center">
-              <h4 className="font-bold uppercase text-xs mb-4 flex items-center gap-2">
-                <Shield size={14} /> Your Secret Key
-              </h4>
-              <p className="text-xs font-mono break-all text-primary dark:text-black p-4 border border-[#141414]/20 mb-4 shadow-sm">
-                {secretKey}
-              </p>
-              <p className="text-[10px] leading-relaxed opacity-60 italic">
-                This key is unique to this plugin file. You must paste this key
-                into the <strong>Speedy Auditor</strong> settings page in your
-                WordPress dashboard after activating the plugin. That saves this
-                key for you to use during plugin analysis.
-              </p>
-            </div> */}
             <div className="relative mt-8 group">
               <div className=" flex gap-2">
                 <button
@@ -205,5 +211,41 @@ export default function ConnectionPlugin({ onClose }: { onClose: () => void }) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  }
+
+  async function wpSecret() {
+    if (!selectedSite) return;
+
+    const res = await fetch("/api/wordpress/wp-secret", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domain: selectedSite }),
+    });
+
+    const body: any = await res.json();
+
+    if (!res.ok) {
+      console.error(body.message ?? "failed to fetch secret");
+    }
+
+    return body.data;
+  }
+
+  async function saveWpSecret(secret: string) {
+    if (!selectedSite) return;
+
+    const res = await fetch("/api/wordpress/wp-secret", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domain: selectedSite, secret: secret }),
+    });
+
+    const body: any = await res.json();
+
+    if (!res.ok) {
+      console.error(body.message ?? "failed to save secret");
+    }
+
+    return;
   }
 }

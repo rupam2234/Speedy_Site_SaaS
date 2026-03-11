@@ -20,3 +20,5 @@ export type TicketMessages = Database["public"]["Tables"]["ticket_messages"]["In
 
 export type OriginHits = Database["public"]["Tables"]["rum_origin_hits_agg"]["Insert"]
 
+export type WordPress_key = Database["public"]["Tables"]["wp_key"]["Insert"]
+

@@ -425,6 +425,49 @@ export type Database = {
         }
         Relationships: []
       }
+      wp_key: {
+        Row: {
+          created_at: string
+          domain: string | null
+          id: number
+          wp_secret: string | null
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          id?: number
+          wp_secret?: string | null
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          id?: number
+          wp_secret?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wp_key_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: true
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["website_name"]
+          },
+          {
+            foreignKeyName: "wp_key_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["website_name"]
+          },
+          {
+            foreignKeyName: "wp_key_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: true
+            referencedRelation: "v_cf_zone_per_site"
+            referencedColumns: ["website_name"]
+          },
+        ]
+      }
     }
     Views: {
       cloudflare_kv_tracking: {
