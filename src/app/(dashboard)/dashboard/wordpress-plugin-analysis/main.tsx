@@ -34,14 +34,31 @@ export default function Main() {
       return;
     }
 
-    const key = localStorage.getItem("plugin_analysis_key");
+    const key = localStorage.getItem(`plugin_analysis_secret:${selectedSite}`);
+
     if (key) {
-      handleScans(key, selectedSite);
+      try {
+        const parsed = JSON.parse(key);
+        const secret = parsed.data?.wp_secret;
+        if (secret) {
+          handleScans(secret, selectedSite); // trigger scan
+        } else {
+          setError(
+            "Scan key not found. Please click 'Connected' to re-enter your key.",
+          );
+          setShowCompanion(true);
+        }
+      } catch (err) {
+        setError(
+          "Scan key is corrupted. Please click 'Connected' to re-enter your key.",
+        );
+        setShowCompanion(true);
+      }
     } else {
       setError(
         "Scan key not found. Please click 'Connected' to re-enter your key.",
       );
-      setShowCompanion(true); // Re-open companion to let them enter key if missing
+      setShowCompanion(true);
     }
   };
 

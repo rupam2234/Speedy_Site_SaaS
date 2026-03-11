@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { HowItWorks } from ".";
 import { useSiteContext } from "../siteContext";
-import { cachedData } from "@/components/utils";
+import { cachedData, cleanExpiredCache } from "@/components/utils";
 
 export default function ConnectionPlugin({ onClose }: { onClose: () => void }) {
   const { selectedSite } = useSiteContext();
@@ -14,6 +14,11 @@ export default function ConnectionPlugin({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (!selectedSite) return;
+
+    cleanExpiredCache({
+      prefix: "plugin_analysis_secret",
+      session_Storage: false,
+    }); // cleanup expired keys
 
     const fetchSecret = async () => {
       const key = `plugin_analysis_secret:${selectedSite}`;
