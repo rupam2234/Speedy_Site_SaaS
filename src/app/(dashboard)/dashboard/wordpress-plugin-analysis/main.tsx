@@ -48,9 +48,10 @@ export default function Main() {
           );
           setShowCompanion(true);
         }
-      } catch (err) {
+      } catch (err: any) {
         setError(
-          "Scan key is corrupted. Please click 'Connected' to re-enter your key.",
+          err.message ??
+            "Scan key is corrupted. Please click 'Connected' to re-enter your key.",
         );
         setShowCompanion(true);
       }
