@@ -1,5 +1,7 @@
 import { AlertTriangle, Cpu, Info, RefreshCw } from "lucide-react";
 import { PluginAnalysis } from "./types";
+import { useMemo } from "react";
+import { useSiteContext } from "../siteContext";
 
 interface PluginAnalysisProps {
   analysisResult: PluginAnalysis[];
@@ -10,6 +12,17 @@ export default function AnalysisDashboard({
   analysisResult,
   loading,
 }: PluginAnalysisProps) {
+  const { selectedSite } = useSiteContext();
+
+  // plugins with higher impact score than 4
+  const impactfulPlugins = useMemo(() => {
+    return (
+      (analysisResult.filter((x) => x.impactScore > 4).length /
+        analysisResult.length) *
+      100
+    );
+  }, [selectedSite]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-40">
@@ -34,30 +47,22 @@ export default function AnalysisDashboard({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-6 border border-primary/20 bg-primary-foreground dark:bg-secondary-background">
               <p className="text-[12px] uppercase mb-1">Detected Plugins</p>
-              <p className="text-4xl font-bold">{analysisResult.length}</p>
+              <p className="text-4xl text-primary/80 font-bold">
+                {analysisResult.length}
+              </p>
             </div>
             <div className="p-6 border border-primary/20 bg-primary-foreground dark:bg-secondary-background">
-              <p className="text-[12px] uppercase mb-1">Risk Level</p>
+              <p className="text-[12px] uppercase mb-1">Weight Level</p>
               <p
-                className={`text-4xl font-bold ${
-                  analysisResult.some((a) => a.impactLevel === "Critical")
-                    ? "text-red-600"
-                    : analysisResult.some((a) => a.impactLevel === "High")
-                      ? "text-orange-600"
-                      : "text-green-600"
-                }`}
+                className={`text-4xl uppercase font-bold ${impactfulPlugins > 90 ? "text-[#ff6467]" : impactfulPlugins > 40 ? "text-[#FCBF49]" : "text-[#53a94a]"}`}
               >
-                {analysisResult.some((a) => a.impactLevel === "Critical")
-                  ? "CRITICAL"
-                  : analysisResult.some((a) => a.impactLevel === "High")
-                    ? "HIGH"
-                    : "STABLE"}
+                {impactfulPlugins}% heavy
               </p>
             </div>
             <div className="p-6 border border-primary/20 bg-primary-foreground dark:bg-secondary-background">
               <p className="text-[12px] uppercase  mb-1">Audit Type</p>
-              <p className="text-4xl font-bold uppercase tracking-tighter">
-                DEEP
+              <p className="text-4xl font-bold text-primary/80 uppercase tracking-tighter">
+                FULL SCAN
               </p>
             </div>
           </div>

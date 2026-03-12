@@ -8,7 +8,7 @@ import { HowItWorks } from ".";
 import { useSiteContext } from "../siteContext";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 
-export default function ConnectionPlugin({ onClose }: { onClose: () => void }) {
+export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
   const { selectedSite } = useSiteContext();
   const [secretKey, setSecretKey] = useState<string>("");
 
@@ -24,7 +24,7 @@ export default function ConnectionPlugin({ onClose }: { onClose: () => void }) {
       const key = `plugin_analysis_secret:${selectedSite}`;
 
       const { response } = await cachedData({
-        fn: wpSecret,
+        fn: () => wpSecret(selectedSite),
         key: key,
         session_Storage: false,
         ttl: 1440 * 60 * 1000, // 1 day
@@ -35,7 +35,7 @@ export default function ConnectionPlugin({ onClose }: { onClose: () => void }) {
           Math.random().toString(36).substring(2, 15) +
           Math.random().toString(36).substring(2, 15);
 
-        await saveWpSecret(newKey); // save into database
+        await saveWpSecret(newKey, selectedSite); // save into database
         setSecretKey(newKey);
       } else {
         setSecretKey(response);
@@ -179,7 +179,7 @@ export default function ConnectionPlugin({ onClose }: { onClose: () => void }) {
             <div className="relative mt-8 group">
               <div className=" flex gap-2">
                 <button
-                  onClick={handleDownload}
+                  onClick={() => handleDownload(phpCode)}
                   className="border border-[#141414] p-2 hover:bg-[#141414] hover:text-[#E4E3E0] dark:hover:text-[#E4E3E0] dark:text-black text-primary transition-all flex items-center gap-2 text-[10px] font-mono uppercase"
                   title="Download as .zip file"
                 >
@@ -202,55 +202,55 @@ export default function ConnectionPlugin({ onClose }: { onClose: () => void }) {
       </motion.div>
     </div>
   );
+}
 
-  async function handleDownload() {
-    const zip = new JSZip();
-    const folder = zip.folder("speedy-site-plugin-auditor");
-    folder?.file("speedy-site-plugin-auditor.php", phpCode);
-    const content = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(content);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "speedy-site-plugin-auditor.zip";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+async function saveWpSecret(secret: string, domain: string) {
+  if (!domain) return;
+
+  const res = await fetch("/api/wordpress/wp-secret", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ domain: domain, secret: secret }),
+  });
+
+  const body: any = await res.json();
+
+  if (!res.ok) {
+    console.error(body.message ?? "failed to save secret");
   }
 
-  async function wpSecret() {
-    if (!selectedSite) return;
+  return;
+}
 
-    const res = await fetch("/api/wordpress/wp-secret", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ domain: selectedSite }),
-    });
+export async function wpSecret(domain: string) {
+  if (!domain) return;
 
-    const body: any = await res.json();
+  const res = await fetch("/api/wordpress/wp-secret", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ domain: domain }),
+  });
 
-    if (!res.ok) {
-      console.error(body.message ?? "failed to fetch secret");
-    }
+  const body: any = await res.json();
 
-    return body.data;
+  if (!res.ok) {
+    console.error(body.message ?? "failed to fetch secret");
   }
 
-  async function saveWpSecret(secret: string) {
-    if (!selectedSite) return;
+  return body.data;
+}
 
-    const res = await fetch("/api/wordpress/wp-secret", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ domain: selectedSite, secret: secret }),
-    });
-
-    const body: any = await res.json();
-
-    if (!res.ok) {
-      console.error(body.message ?? "failed to save secret");
-    }
-
-    return;
-  }
+async function handleDownload(phpCode: string) {
+  const zip = new JSZip();
+  const folder = zip.folder("speedy-site-plugin-auditor");
+  folder?.file("speedy-site-plugin-auditor.php", phpCode);
+  const content = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(content);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "speedy-site-plugin-auditor.zip";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

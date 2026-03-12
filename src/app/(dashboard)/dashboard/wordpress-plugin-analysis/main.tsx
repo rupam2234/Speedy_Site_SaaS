@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AnalysisDashboard, CompanionPlugin } from ".";
+import { useEffect, useRef, useState } from "react";
+import { AnalysisDashboard, ConnectionPlugin, wpSecret } from ".";
 import { ArrowRight, Loader2Icon, Search, Sparkles, Play } from "lucide-react";
 import { useSiteContext } from "../siteContext";
 import { PluginAnalysis } from "./types";
@@ -18,16 +18,17 @@ export default function Main() {
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<PluginAnalysis[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const siteRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!selectedSite) return;
     setResult([]);
     cleanExpiredCache({ prefix: `wp-plugins`, session_Storage: true });
-    checkPlugin(selectedSite);
+    checkPluginConnection(selectedSite); // check connection
   }, [selectedSite]);
 
   // Function to handle the "Run Analysis" click
-  const handleRunAnalysis = () => {
+  const handleRunAnalysis = async () => {
     setError(null);
     if (!selectedSite) {
       setError("Please select a domain first.");
@@ -43,23 +44,26 @@ export default function Main() {
         if (secret) {
           handleScans(secret, selectedSite); // trigger scan
         } else {
-          setError(
-            "Scan key not found. Please click 'Connected' to re-enter your key.",
-          );
-          setShowCompanion(true);
+          setError("Scan key not found. Please reconnect your plugin.");
         }
       } catch (err: any) {
-        setError(
-          err.message ??
-            "Scan key is corrupted. Please click 'Connected' to re-enter your key.",
-        );
-        setShowCompanion(true);
+        setError(err.message ?? "Scan key is corrupted. Reconnect.");
       }
     } else {
-      setError(
-        "Scan key not found. Please click 'Connected' to re-enter your key.",
-      );
-      setShowCompanion(true);
+      // try fetching from db
+
+      if (siteRef.current === selectedSite) {
+        return;
+      }
+
+      const secret = await wpSecret(selectedSite);
+      siteRef.current = selectedSite;
+
+      if (secret) {
+        handleScans(secret, selectedSite);
+      } else {
+        setError("Scan key not found. Please reconnect your plugin.");
+      }
     }
   };
 
@@ -108,17 +112,20 @@ export default function Main() {
               className={`${
                 pluginStatus.isConnected
                   ? "bg-green-600/10 text-green-600 border border-green-600/20"
-                  : "bg-primary text-primary-foreground"
+                  : "text-primary/40"
               } inline-flex items-center cursor-pointer justify-center gap-2 whitespace-nowrap rounded-lg px-5 py-2.5 text-sm font-medium transition-colors hover:opacity-80 focus:outline-none`}
             >
               {pluginStatus.loading ? (
-                <Loader2Icon size={16} className="animate-spin" />
+                <Loader2Icon size={18} className="animate-spin" />
               ) : pluginStatus.isConnected ? (
                 <>Connected</>
               ) : (
-                <>
-                  <ArrowRight size={16} /> Connect
-                </>
+                !pluginStatus.loading &&
+                !pluginStatus.isConnected && (
+                  <>
+                    <ArrowRight size={16} /> Connect
+                  </>
+                )
               )}
             </button>
           </div>
@@ -130,14 +137,14 @@ export default function Main() {
       </div>
 
       {showCompanion && !pluginStatus.isConnected && (
-        <CompanionPlugin onClose={() => setShowCompanion(false)} />
+        <ConnectionPlugin onClose={() => setShowCompanion(false)} />
       )}
 
       <AnalysisDashboard analysisResult={result} loading={loading} />
     </div>
   );
 
-  async function checkPlugin(domain: string) {
+  async function checkPluginConnection(domain: string) {
     setPluginStatus({ isConnected: false, loading: true });
     try {
       const res = await fetch("/api/wordpress/check-connection", {
