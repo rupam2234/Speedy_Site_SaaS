@@ -53,7 +53,7 @@ export default function AnalysisDashboard({
               <p
                 className={`text-4xl uppercase font-bold ${impactfulPlugins > 90 ? "text-[#ff6467]" : impactfulPlugins > 40 ? "text-[#FCBF49]" : "text-[#53a94a]"}`}
               >
-                {impactfulPlugins}% heavy
+                {impactfulPlugins.toFixed(0)}% heavy
               </p>
             </div>
             <div className="p-6 border border-primary/20 bg-primary-foreground dark:bg-secondary-background">

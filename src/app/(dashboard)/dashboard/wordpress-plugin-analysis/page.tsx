@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function WPpluginAnalysis() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<></>}>
       <div className="p-5">
         <Main />
       </div>
