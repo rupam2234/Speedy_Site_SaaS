@@ -16,12 +16,12 @@ export default function AnalysisDashboard({
 
   // plugins with higher impact score than 4
   const impactfulPlugins = useMemo(() => {
-    return (
-      (analysisResult.filter((x) => x.impactScore > 4).length /
-        analysisResult.length) *
-      100
-    );
-  }, [selectedSite]);
+    const total = analysisResult?.length || 0;
+    if (!total) return 0;
+
+    const impactful = analysisResult.filter((p) => p.impactScore > 4).length;
+    return (impactful / total) * 100;
+  }, [analysisResult]);
 
   if (loading) {
     return (
