@@ -12,8 +12,6 @@ export default function AnalysisDashboard({
   analysisResult,
   loading,
 }: PluginAnalysisProps) {
-  const { selectedSite } = useSiteContext();
-
   // plugins with higher impact score than 4
   const impactfulPlugins = useMemo(() => {
     const total = analysisResult?.length || 0;
