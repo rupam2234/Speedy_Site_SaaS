@@ -16,7 +16,6 @@ interface MetricTrendProps {
 const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
   const { selectedDevice } = useSiteContext();
 
-  // 1. Need enough data to establish a pattern
   if (!data || data.length < 15) {
     return (
       <div className="p-4 flex items-center gap-2 text-slate-400 text-[12px]">
@@ -55,12 +54,13 @@ const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
       : (sorted[mid - 1] + sorted[mid]) / 2;
   }
 
+  // mean of absolute deviation
   function getMAD(values: number[], med: number) {
     const deviations = values.map((v) => Math.abs(v - med));
     return median(deviations);
   }
 
-  // Use the full 14 days to determine what "normal" variation looks like
+  // full 14 days to determine what "normal" variation looks like
   const historicalMedian = median(allHistoricalValues);
   const MAD = getMAD(allHistoricalValues, historicalMedian);
 
@@ -81,7 +81,6 @@ const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
 
   const anomalyDirection = latest > historicalMedian ? "spike" : "drop";
 
-  // --- TREND LOGIC ---
   const avgPrev = average(prevValues);
   const avgLast = average(lastValues);
   const diff =
@@ -122,12 +121,12 @@ const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
           className={`text-[11px] font-black uppercase px-2 py-0.5 rounded shrink-0
           ${
             isAnomaly
-              ? "bg-amber-50 text-amber-600"
+              ? "bg-amber-50/80 text-amber-600"
               : isStable
-                ? "bg-slate-100 text-slate-500"
+                ? "bg-slate-100/80 text-slate-500"
                 : isImprovement
-                  ? "bg-emerald-50 text-emerald-600"
-                  : "bg-rose-50 text-rose-600"
+                  ? "bg-emerald-50/80 text-emerald-600"
+                  : "bg-rose-50/80 text-rose-600"
           }`}
         >
           {isAnomaly
@@ -137,7 +136,7 @@ const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
               : `${absDiff}% ${isImprovement ? "Improved" : "Declined"}`}
         </div>
 
-        <p className="text-slate-700 text-[12px] font-medium leading-relaxed">
+        <p className="text-primary/80 text-[12px] font-medium leading-relaxed">
           {generateSentence()}
         </p>
       </div>
@@ -158,8 +157,8 @@ const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
     }
 
     return isImprovement
-      ? `${device} ${metric} improved by ${absDiff}% compared to the previous week.`
-      : `${device} ${metric} worsened by ${absDiff}% compared to the previous week.`;
+      ? `${device} ${metric} improved compared to the previous week.`
+      : `${device} ${metric} worsened compared to the previous week.`;
   }
 };
 
