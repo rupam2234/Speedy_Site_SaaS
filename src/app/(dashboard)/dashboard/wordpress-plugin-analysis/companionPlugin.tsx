@@ -177,14 +177,22 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <HowItWorks />
             <div className="relative mt-8 group">
-              <div className=" flex gap-2">
+              <div className="flex gap-2">
                 <button
                   onClick={() => handleDownload(phpCode)}
-                  className="border border-[#141414] p-2 hover:bg-[#141414] hover:text-[#E4E3E0] dark:hover:text-[#E4E3E0] dark:text-black text-primary transition-all flex items-center gap-2 text-[10px] font-mono uppercase"
-                  title="Download as .zip file"
+                  disabled={!secretKey}
+                  className="border border-[#141414] p-2 hover:bg-[#141414] hover:text-[#E4E3E0]
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                            dark:hover:text-[#E4E3E0] dark:text-black text-primary
+                            transition-all flex items-center gap-2 text-[10px] font-mono uppercase"
+                  title={
+                    !secretKey
+                      ? "Preparing plugin..."
+                      : "Download WordPress plugin"
+                  }
                 >
                   <FileArchive size={14} />
-                  Download Plugin (.zip)
+                  {secretKey ? "Download Plugin" : "Preparing Plugin..."}
                 </button>
               </div>
             </div>
