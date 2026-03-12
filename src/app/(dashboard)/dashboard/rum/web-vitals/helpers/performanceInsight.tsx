@@ -84,7 +84,7 @@ const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
   // --- TREND LOGIC ---
   const avgPrev = average(prevValues);
   const avgLast = average(lastValues);
-  let diff =
+  const diff =
     avgPrev === 0
       ? avgLast > 0
         ? 100
