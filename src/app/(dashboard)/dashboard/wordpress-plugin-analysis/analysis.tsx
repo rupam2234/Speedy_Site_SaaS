@@ -1,7 +1,6 @@
 import { AlertTriangle, Cpu, Info, RefreshCw } from "lucide-react";
 import { PluginAnalysis } from "./types";
 import { useMemo } from "react";
-import { useSiteContext } from "../siteContext";
 
 interface PluginAnalysisProps {
   analysisResult: PluginAnalysis[];
