@@ -4,6 +4,14 @@ export default {
 	async fetch(request, env) {
 		const url = new URL(request.url);
 
+		// WebSocket Endpoint for  Dashboard
+		if(url.pathname === "/realtime"){
+			const id = env.REALTIME_HUB.idFromName('global-hub');
+			const stub = env.REALTIME_HUB.get(id);
+			return stub.fetch(request);
+		}
+
+		// endpoint for data collection from collection script aka RUM
 		if (url.pathname === '/collect' && request.method === 'POST') {
 			if (!env.MY_DURABLE_OBJECT) {
 				return new Response('Durable Object not bound', { status: 500 });
@@ -23,14 +31,74 @@ export default {
 	},
 };
 
+export class RealtimeHub extends DurableObject {
+	constructor(state, env){
+		super(state, env);
+		this.sessions = new Set();
+	}
+
+	async fetch(request) {
+
+		// If it's a internal "ping" from shards
+		if (request.method === 'POST') {
+			const data = await request.json();
+			this.broadcast(data);
+			return new Response('OK');
+		}
+
+		// Dashboard connecting via WebSocket
+		if (request.headers.get('Upgrade') === 'websocket') {
+
+			const pair = new WebSocketPair();
+			const [client, server] = Object.values(pair);
+
+			// Connection limit protection
+			if (this.sessions.size >= 2000) {
+				server.close(1013, "Too many connections");
+				return new Response(null, { status: 101, webSocket: client });
+			}
+
+			server.accept();
+			this.sessions.add(server);
+
+			const cleanup = () => this.sessions.delete(server);
+
+			server.addEventListener('close', cleanup);
+			server.addEventListener('error', cleanup);
+
+			return new Response(null, { status: 101, webSocket: client });
+		}
+
+		return new Response('Expected Upgrade: websocket', { status: 426 });
+	}
+
+	broadcast(data) {
+		const message = JSON.stringify(data);
+
+		for (const session of this.sessions) {
+			try {
+				if (session.readyState === 1) {
+					session.send(message);
+				} else {
+					this.sessions.delete(session);
+				}
+			} catch {
+				this.sessions.delete(session);
+			}
+		}
+	}
+}
+
 export class MyDurableObject extends DurableObject {
 	constructor(state, env) {
 		super(state, env);
 		this.state = state;
 		this.env = env;
+		this.recentTimestamps = [];
 	}
 
 	async fetch(request) {
+		// await this.state.storage.delete('buffer'); // temp cleanup
 
 		if (request.method !== 'POST') {
 			return new Response('Method Not Allowed', { status: 405 });
@@ -52,6 +120,22 @@ export class MyDurableObject extends DurableObject {
 			}
 
 			/* ----------------------------
+			   REQUEST RATE TRACKING
+			-----------------------------*/
+
+			// let timestamps = await this.state.storage.get('timestamps');
+
+			// if (!Array.isArray(timestamps)) timestamps = [];
+
+			const now = Date.now();
+			this.recentTimestamps.push(now);
+
+			// Only keep timestamps from the last 60 seconds
+			const oneMinuteAgo = now - 60000;
+			this.recentTimestamps = this.recentTimestamps.filter(t => t > oneMinuteAgo);
+
+			const requestsLastMinute = this.recentTimestamps.length;
+			/* ----------------------------
 			   GEO DATA FROM CLOUDFLARE
 			-----------------------------*/
 
@@ -66,43 +150,52 @@ export class MyDurableObject extends DurableObject {
 				org: cf.asOrganization ?? null
 			};
 
-			/* ----------------------------
-			   REQUEST RATE TRACKING
-			-----------------------------*/
+			// Notify the BroadcastHub (Only send 10% of traffic to the map)
 
-			let timestamps = await this.state.storage.get('timestamps');
-
-			if (!Array.isArray(timestamps)) timestamps = [];
-
-			const now = Date.now();
-
-			timestamps.push(now);
-
-			if (timestamps.length > 20) timestamps.shift();
-
-			await this.state.storage.put('timestamps', timestamps);
-
-			const requestsLastMinute =
-				timestamps.filter((t) => now - t < 60000).length;
-
-			let bufferThreshold = 3;
-
-			if (requestsLastMinute > 30) bufferThreshold = 20;
-			else if (requestsLastMinute > 15) bufferThreshold = 10;
-
-			/* ----------------------------
-			   LOAD BUFFER
-			-----------------------------*/
-
-			let buffer = await this.state.storage.get('buffer');
-
-			if (!Array.isArray(buffer)) buffer = [];
-
-			/* ----------------------------
-			   NORMALIZED PAYLOAD
-			-----------------------------*/
+			const chance = requestsLastMinute > 30 
+			? 0.05 
+			: requestsLastMinute > 15 
+				? 0.1 
+				: 1;
 
 			const events = data.data ?? [];
+
+			const realTimeVitalsData = {}; // we vitals data for web socket 
+
+			events.forEach((event) => {
+				if (event.type === "web-vital") {
+				switch (event.name) {
+					case "LCP":
+					realTimeVitalsData.LCP = event.value || null;
+					break;
+					case "CLS":
+					realTimeVitalsData.CLS = event.value || null;
+					break;
+					case "INP":
+					realTimeVitalsData.INP = event.value || null;
+					break;
+					case "TTFB":
+					realTimeVitalsData.TTFB = event.value || null;
+					break;
+				}
+				}
+			});
+
+			if (Math.random() < chance) {  
+				this.sendToHub({
+					type: 'visitor',
+					domain: domain,
+					// sending longitude, latitude only for realtime tracking, not storing them in db
+					...{...geo, latitude: cf.latitude ?? null,
+						longitude: cf.longitude ?? null},
+					...realTimeVitalsData,
+					timestamp: Date.now()
+				});
+			 }
+			
+			/* ----------------------------
+			NORMALIZED PAYLOAD
+			-----------------------------*/
 
 			// add geo-info event
 			const geoEvent = {
@@ -112,27 +205,26 @@ export class MyDurableObject extends DurableObject {
 				siteDomain: data.siteDomain ?? null
 			};
 
-			events.unshift(geoEvent); // add at start of events
+			events.unshift(geoEvent);
 
 			// Optimize navigation timings
 			const optimizedEvents = events.map((event) => {
-			if (event.type === "navigation-timing" && event.raw) {
-				const r = event.raw;
-				const safe = (v) => (typeof v === "number" && v >= 0 ? v : null);
+				if (event.type === "navigation-timing" && event.raw) {
+					const r = event.raw;
+					const safe = (v) => (typeof v === "number" && v >= 0 ? v : null);
 
-				return {
-				...event,
-				raw: {
-					ttfb: safe(r.responseStart - r.requestStart),
-					domReady: safe(r.domInteractive - r.startTime),
-					loadTime: safe(r.loadEventEnd - r.startTime)
+					return {
+						...event,
+						raw: {
+							ttfb: safe(r.responseStart - r.requestStart),
+							domReady: safe(r.domInteractive - r.startTime),
+							loadTime: safe(r.loadEventEnd - r.startTime)
+						}
+					};
 				}
-				};
-			}
-			return event;
+				return event;
 			});
 
-			// Final payload
 			const payload = {
 				session_id: data.sessionId ?? null,
 				domain_name: data.siteDomain ?? null,
@@ -142,22 +234,39 @@ export class MyDurableObject extends DurableObject {
 				created_at: new Date().toISOString()
 			};
 
-			buffer.push(payload);
-
 			/* ----------------------------
-			   FLUSH DECISION
+			SAFE BUFFER WRITE
 			-----------------------------*/
 
-			const approxSize = buffer.length * 2000; // faster than stringify
+			let bufferThreshold = 3;
 
-			const shouldFlush =
-				buffer.length >= bufferThreshold ||
-				approxSize > 400000;
+			if (requestsLastMinute > 30) bufferThreshold = 20;
+			else if (requestsLastMinute > 15) bufferThreshold = 10;
+
+			let buffer;
+			let shouldFlush = false;
+
+			await this.state.storage.transaction(async (txn) => {
+
+				buffer = await txn.get('buffer');
+
+				if (!Array.isArray(buffer)) buffer = [];
+
+				buffer.push(payload);
+
+				const approxSize = buffer.length * 2000;
+
+				shouldFlush =
+					buffer.length >= bufferThreshold ||
+					approxSize > 400000;
+
+				if (!shouldFlush) {
+					await txn.put('buffer', buffer);
+				}
+
+			});
 
 			if (!shouldFlush) {
-
-				await this.state.storage.put('buffer', buffer);
-
 				return new Response('Data buffered', { status: 202 });
 			}
 
@@ -194,6 +303,16 @@ export class MyDurableObject extends DurableObject {
 
 		try {
 
+			// SANITIZE: Forcing every object to have the exact same keys
+			const cleanBuffer = buffer.map(item => ({
+				session_id: item.session_id ?? null,
+				domain_name: item.domain_name ?? null,
+				current_page: item.current_page ?? null,
+				previous_page: item.previous_page ?? null,
+				events: item.events ?? [],
+				created_at: item.created_at ?? new Date().toISOString()
+			}));
+
 			const res = await fetch(
 				`${this.env.SUPABASE_URL}/rest/v1/rum_metrics`,
 				{
@@ -204,7 +323,7 @@ export class MyDurableObject extends DurableObject {
 						'Content-Type': 'application/json',
 						Prefer: 'return=minimal'
 					},
-					body: JSON.stringify(buffer)
+					body: JSON.stringify(cleanBuffer)
 				}
 			);
 
@@ -274,6 +393,19 @@ export class MyDurableObject extends DurableObject {
 		}
 
 		return { valid: true };
+	}
+
+	// Helper to send data to the central hub
+	sendToHub(payload) {
+		const id = this.env.REALTIME_HUB.idFromName('global-hub');
+		const hub = this.env.REALTIME_HUB.get(id);
+		// Fire and forget
+		this.state.waitUntil(
+			hub.fetch('http://hub/broadcast', {
+				method: 'POST',
+				body: JSON.stringify(payload)
+			})
+		);
 	}
 }
 

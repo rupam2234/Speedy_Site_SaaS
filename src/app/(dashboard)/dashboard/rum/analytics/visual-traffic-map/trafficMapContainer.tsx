@@ -108,6 +108,7 @@ export default function CountryTrafficMap({ deviceType, trafficData }: Props) {
           type: "map",
           map: "world",
           roam: false,
+          zoom: 1.25,
           label: { show: false },
           itemStyle: {
             borderColor: theme === "dark" ? "#14142e" : "#BED4CB",
