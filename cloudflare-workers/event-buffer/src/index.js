@@ -12,7 +12,7 @@ export default {
 		}
 
 		// endpoint for data collection from collection script aka RUM
-		if (url.pathname === '/collect' && request.method === 'POST') {
+		if (url.pathname === '/collect') {
 			if (!env.MY_DURABLE_OBJECT) {
 				return new Response('Durable Object not bound', { status: 500 });
 			}
@@ -100,8 +100,21 @@ export class MyDurableObject extends DurableObject {
 	async fetch(request) {
 		// await this.state.storage.delete('buffer'); // temp cleanup
 
+		// Handle preflight requests
+		if (request.method === 'OPTIONS') {
+			const origin = request.headers.get('Origin') || '';
+			return new Response(null, {
+			  headers: {
+				'Access-Control-Allow-Origin': origin,
+				'Access-Control-Allow-Methods': 'POST, OPTIONS',
+				'Access-Control-Allow-Headers': 'Content-Type',
+				'Access-Control-Allow-Credentials': 'true',
+			  },
+			});
+		}
+
 		if (request.method !== 'POST') {
-			return new Response('Method Not Allowed', { status: 405 });
+			return corsResponse('Method Not Allowed', request, 405);
 		}
 
 		try {
@@ -116,7 +129,7 @@ export class MyDurableObject extends DurableObject {
 			const { valid, reason } = await this.validateDomain(domain);
 
 			if (!valid) {
-				return new Response(reason, { status: 403 });
+				return corsResponse(reason, request, 403);
 			}
 
 			/* ----------------------------
@@ -267,7 +280,7 @@ export class MyDurableObject extends DurableObject {
 			});
 
 			if (!shouldFlush) {
-				return new Response('Data buffered', { status: 202 });
+				return corsResponse('Data buffered', request, 202)
 			}
 
 			/* ----------------------------
@@ -277,21 +290,15 @@ export class MyDurableObject extends DurableObject {
 			const res = await this.flushToSupabase(buffer);
 
 			if (res.ok) {
-
 				await this.state.storage.delete('buffer');
-
-				return new Response('Batch inserted', { status: 202 });
+				return corsResponse('Batch inserted', request, 202);
 			}
 
 			await this.state.storage.put('buffer', buffer);
-
-			return new Response('Supabase insert failed', { status: 500 });
-
+			return corsResponse('Supabase insert failed', request, 500);
 		} catch (err) {
-
 			console.error('Handler error:', err);
-
-			return new Response('Invalid data', { status: 400 });
+			return corsResponse('Invalid data', request, 400)
 		}
 	}
 
@@ -403,10 +410,24 @@ export class MyDurableObject extends DurableObject {
 		this.state.waitUntil(
 			hub.fetch('http://hub/broadcast', {
 				method: 'POST',
-				body: JSON.stringify(payload)
+				body: JSON.stringify({
+					...payload,
+					id: (payload.session_id || 'anon') + Date.now()
+				})
 			})
 		);
 	}
+}
+
+function corsResponse(body, request, status = 200) {
+	const origin = request.headers.get('Origin') || '';
+	return new Response(body, {
+	  status,
+	  headers: {
+		'Access-Control-Allow-Origin': origin,
+		'Access-Control-Allow-Credentials': 'true',
+	  },
+	});
 }
 
 // backup

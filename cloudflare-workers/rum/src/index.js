@@ -6,13 +6,13 @@ export default {
 		const url = new URL(request.url);
 
 		if (url.pathname === '/rum.js' && url.hostname === 'rum.speedy.site') {
-
 			return new Response(script, {
 				headers: {
-					'Content-Type': 'application/javascript; charset=utf-8',
+					'Content-Type': 'application/javascript',
 					'Cache-Control': 'public, max-age=86400',
-					'Access-Control-Allow-Origin': '*',
-					'X-Content-Type-Options': 'nosniff'
+					// 'Access-Control-Allow-Origin': origin,  // echo origin
+          			// 'Access-Control-Allow-Credentials': 'true',
+					// 'X-Content-Type-Options': 'nosniff'
 				},
 			});
 		}

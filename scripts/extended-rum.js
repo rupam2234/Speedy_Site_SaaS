@@ -195,9 +195,30 @@ function initializeWebVitals() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const unsent = localStorage.getItem("unsentMetrics");
-  if (unsent) {
-    navigator.sendBeacon(CONFIG.API_URL, unsent);
+  const raw = localStorage.getItem("unsentMetrics");
+  if (!raw) return;
+
+  try {
+    const { payload, timestamp } = JSON.parse(raw);
+
+    // Only retry if less than 30 seconds old
+    if (Date.now() - timestamp < 30000) {
+
+      const success = navigator.sendBeacon(
+        CONFIG.API_URL,
+        new Blob([payload], { type: "application/json" })
+      );
+
+      if (success) {
+        localStorage.removeItem("unsentMetrics");
+      }
+
+    } else {
+      // expired retry window
+      localStorage.removeItem("unsentMetrics");
+    }
+
+  } catch {
     localStorage.removeItem("unsentMetrics");
   }
 });
@@ -206,6 +227,9 @@ initializeWebVitals();
 
 // Reset INP data on SPA navigation
 window.addEventListener("popstate", () => {
+  previousPage = currentPage;
+  currentPage = location.pathname + location.search;
+
   maxCustomEntry = null;
   webVitalsINP = null;
   latestMetrics.INP = null;
@@ -425,11 +449,12 @@ function checkMetricsReady() {
 }
 
 let isFlushing = false;
+let hasFlushed = false;
 
 function flushMetrics() {
-  if (isFlushing) return;
+  if (isFlushing || hasFlushed) return;  
   isFlushing = true;
-
+  hasFlushed = true;
   try {
     if (latestMetrics.INP || maxCustomEntry) {
       let inpAttribution = {};
@@ -459,15 +484,12 @@ function flushMetrics() {
         inpAttribution = { target: "(unknown)", eventType: "unknown" };
       }
 
-      let inpValue, inpDelta, inpId;
+      let inpValue;
+
       if (webVitalsINP) {
         inpValue = webVitalsINP.value;
-        inpDelta = webVitalsINP.delta;
-        inpId = webVitalsINP.id;
       } else if (maxCustomEntry) {
         inpValue = maxCustomEntry.duration;
-        inpDelta = maxCustomEntry.duration;
-        inpId = sessionId;
       } else {
         return;
       }
@@ -532,11 +554,27 @@ function flushMetrics() {
             })
             .catch((error) => {
               console.error("Failed to send metrics via fetch:", error);
-              localStorage.setItem("unsentMetrics", payload);
+              if (payload.length < 50000) { // avoids filling it with large payloads
+                localStorage.setItem(
+                  "unsentMetrics",
+                  JSON.stringify({
+                    payload,
+                    timestamp: Date.now()
+                  })
+                );
+              }        
             });
         } catch (error) {
           console.error("Fetch error:", error);
-          localStorage.setItem("unsentMetrics", payload);
+          if (payload.length < 50000) { // avoids filling it with large payloads
+            localStorage.setItem(
+              "unsentMetrics",
+              JSON.stringify({
+                payload,
+                timestamp: Date.now()
+              })
+            );
+          }
         }
       }
       if (success) {
@@ -544,14 +582,8 @@ function flushMetrics() {
       }
     }
   } finally {
-    
     isFlushing = false;
-    
-    // Clear the arrays so we don't send duplicate data if the user 
-    // comes back to the tab and then leaves again
     batchedData.length = 0; 
-
-    // clean up
     worstCLS = null;
     worstLCP = null;
   }
@@ -560,16 +592,16 @@ function flushMetrics() {
 setTimeout(() => {
   const isReady = checkMetricsReady();
   if(isReady && !isFlushing) flushMetrics();
-}, 10000); // 10s after page load
+}, 15000);  // 15s after page load
 
-// iOS Safari and modern browsers
+// // iOS Safari and modern browsers
 window.addEventListener("pagehide", flushMetrics);
 
-// Android/Chrome and most browsers
+// // Android/Chrome and most browsers
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") flushMetrics();
 });
 
 // Legacy fallback
-window.addEventListener("beforeunload", flushMetrics);
+// window.addEventListener("beforeunload", flushMetrics);
 

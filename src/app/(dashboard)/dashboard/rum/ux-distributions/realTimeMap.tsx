@@ -160,25 +160,38 @@ export default function RealtimeUxMap() {
     );
 
     socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      try {
+        const data = JSON.parse(event.data);
 
-      if (data.type === "visitor" && data.domain === selectedSite) {
-        const newVisitor: RealtimeVisitor = {
-          ...data,
-          // Ensure coordinates are numbers
-          latitude: parseFloat(data.latitude),
-          longitude: parseFloat(data.longitude),
-        };
+        if (data.type === "visitor" && data.domain === selectedSite) {
+          // Fallback ID if worker doesn't send one
+          const visitorId = data.id || Math.random().toString(36).substr(2, 9);
 
-        setVisitors((prev) => {
-          // Keep only the last 50 visitors to prevent memory lag
-          const filtered = prev.filter((v) => Date.now() - v.timestamp < 60000);
-          return [...filtered, newVisitor];
-        });
+          const newVisitor: RealtimeVisitor = {
+            ...data,
+            id: visitorId,
+            // Ensure coordinates exist before parsing
+            latitude: data.latitude ? parseFloat(data.latitude) : 0,
+            longitude: data.longitude ? parseFloat(data.longitude) : 0,
+          };
 
-        setTimeout(() => {
-          setVisitors((prev) => prev.filter((v) => v.id !== newVisitor.id));
-        }, 60000);
+          setVisitors((prev) => {
+            // Check for duplicates to prevent "double pulsing"
+            if (prev.find((v) => v.id === newVisitor.id)) return prev;
+
+            const filtered = prev.filter(
+              (v) => Date.now() - v.timestamp < 60000,
+            );
+            return [...filtered, newVisitor];
+          });
+
+          // Auto-remove after 60 seconds
+          setTimeout(() => {
+            setVisitors((prev) => prev.filter((v) => v.id !== visitorId));
+          }, 60000);
+        }
+      } catch (err) {
+        console.error("WebSocket message error:", err);
       }
     };
 
@@ -193,7 +206,7 @@ export default function RealtimeUxMap() {
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-primary/10 pb-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">
-                Active Visitors
+                Active Users
               </span>
               <div className="flex flex-col items-end">
                 <span className="text-2xl font-bold font-mono">
@@ -298,8 +311,10 @@ export default function RealtimeUxMap() {
 
           <figcaption className="border-t px-4 py-3 bg-background/20 backdrop-blur-xs">
             <p className="text-[14px] text-muted-foreground flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-green-500"></span>
-              Pulse colors represent real-time Core Web Vital health.
+              During high-traffic periods, UX pulses shown on the dashboard may
+              be reduced by a small percentage to protect dashboard performance.
+              This does not affect the actual data collection used to measure
+              Web Vitals.
             </p>
           </figcaption>
         </div>
