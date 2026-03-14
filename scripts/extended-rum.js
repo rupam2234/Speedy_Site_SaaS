@@ -413,6 +413,17 @@ function detectOriginHit() {
   });
 })();
 
+function checkMetricsReady() {
+  // this checks for completion of vitals data to send on page unload, tab shift or page change
+  if (
+    worstCLS !== null &&
+    worstLCP !== null &&
+    (webVitalsINP !== null || maxCustomEntry === null)
+  ) {
+    return true
+  }
+}
+
 let isFlushing = false;
 
 function flushMetrics() {
@@ -471,7 +482,6 @@ function flushMetrics() {
         attribution: inpAttribution,
       });
 
-    } else {
     }
 
     // aggregate CLS
@@ -498,18 +508,22 @@ function flushMetrics() {
         siteDomain,
         currentPage,
         previousPage,
-        data: batchedData,
+        data: [...batchedData],
       });
 
       let success = false;
+
       if (navigator.sendBeacon) {
-        success = navigator.sendBeacon(CONFIG.API_URL, payload);
+
+        const blob = new Blob([payload], { type: 'application/json' }); //backup: type: 'application/json'
+
+        success = navigator.sendBeacon(CONFIG.API_URL, blob);
       }
       if (!success) {
         try {
           fetch(CONFIG.API_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json" }, //backup: "Content-Type": "application/json"
             body: payload,
             keepalive: true,
           })
@@ -530,13 +544,32 @@ function flushMetrics() {
       }
     }
   } finally {
+    
     isFlushing = false;
     
+    // Clear the arrays so we don't send duplicate data if the user 
+    // comes back to the tab and then leaves again
+    batchedData.length = 0; 
+
     // clean up
     worstCLS = null;
     worstLCP = null;
   }
 }
 
+setTimeout(() => {
+  const isReady = checkMetricsReady();
+  if(isReady && !isFlushing) flushMetrics();
+}, 10000); // 10s after page load
+
+// iOS Safari and modern browsers
+window.addEventListener("pagehide", flushMetrics);
+
+// Android/Chrome and most browsers
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flushMetrics();
+});
+
+// Legacy fallback
 window.addEventListener("beforeunload", flushMetrics);
 

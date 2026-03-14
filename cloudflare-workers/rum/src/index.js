@@ -9,8 +9,10 @@ export default {
 
 			return new Response(script, {
 				headers: {
-					'Content-Type': 'application/javascript',
-					'Cache-Control': 'public, max-age=31536000, immutable',
+					'Content-Type': 'application/javascript; charset=utf-8',
+					'Cache-Control': 'public, max-age=86400',
+					'Access-Control-Allow-Origin': '*',
+					'X-Content-Type-Options': 'nosniff'
 				},
 			});
 		}

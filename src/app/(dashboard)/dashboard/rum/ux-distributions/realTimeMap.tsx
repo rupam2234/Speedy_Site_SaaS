@@ -31,7 +31,6 @@ worldEN.features = worldEN.features.filter(
 );
 echarts.registerMap("world", worldEN);
 
-// 1. Updated Interface based on your new data structure
 interface RealtimeVisitor {
   id: string;
   country: string;
@@ -71,37 +70,6 @@ export default function RealtimeUxMap() {
       return "#f59e0b"; // Yellow (Average)
     return "#22c55e"; // Green (Good)
   };
-
-  useEffect(() => {
-    const socket = new WebSocket(
-      "wss://event-buffer.thespeedysite.workers.dev/realtime",
-    );
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === "visitor" && data.domain === selectedSite) {
-        const newVisitor: RealtimeVisitor = {
-          ...data,
-          // Ensure coordinates are numbers
-          latitude: parseFloat(data.latitude),
-          longitude: parseFloat(data.longitude),
-        };
-
-        setVisitors((prev) => {
-          // Keep only the last 50 visitors to prevent memory lag
-          const filtered = prev.filter((v) => Date.now() - v.timestamp < 60000);
-          return [...filtered, newVisitor];
-        });
-
-        setTimeout(() => {
-          setVisitors((prev) => prev.filter((v) => v.id !== newVisitor.id));
-        }, 60000);
-      }
-    };
-
-    return () => socket.close();
-  }, [selectedSite]);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -186,13 +154,36 @@ export default function RealtimeUxMap() {
     return () => resizeObserver.disconnect();
   }, [visitors, theme]);
 
-  // Logic for the sidebar Top Regions and Stats
-  // const alphacode2toCountry: Record<string, string> = Object.fromEntries(
-  //   Object.entries(countryNameToAlpha2).map(([country, code]) => [
-  //     code,
-  //     country,
-  //   ]),
-  // );
+  useEffect(() => {
+    const socket = new WebSocket(
+      "wss://event-buffer.thespeedysite.workers.dev/realtime",
+    );
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "visitor" && data.domain === selectedSite) {
+        const newVisitor: RealtimeVisitor = {
+          ...data,
+          // Ensure coordinates are numbers
+          latitude: parseFloat(data.latitude),
+          longitude: parseFloat(data.longitude),
+        };
+
+        setVisitors((prev) => {
+          // Keep only the last 50 visitors to prevent memory lag
+          const filtered = prev.filter((v) => Date.now() - v.timestamp < 60000);
+          return [...filtered, newVisitor];
+        });
+
+        setTimeout(() => {
+          setVisitors((prev) => prev.filter((v) => v.id !== newVisitor.id));
+        }, 60000);
+      }
+    };
+
+    return () => socket.close();
+  }, [selectedSite]);
 
   return (
     <div className="w-full">
@@ -229,6 +220,12 @@ export default function RealtimeUxMap() {
                 <div className="w-2 h-2 rounded-full bg-red-500" />
                 <span className="text-[9px] font-bold uppercase text-muted-foreground">
                   Slow
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="text-[9px] font-bold uppercase text-muted-foreground">
+                  Insufficient Data
                 </span>
               </div>
             </div>
