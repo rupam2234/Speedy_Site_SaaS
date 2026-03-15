@@ -13,6 +13,8 @@
 # testing
 /coverage
 
+/public/engine-base64.txt
+
 # next.js
 /.next/
 /out/

@@ -33,6 +33,7 @@ echarts.registerMap("world", worldEN);
 
 interface RealtimeVisitor {
   id: string;
+  session: string;
   country: string;
   city: string;
   region: string;
@@ -40,6 +41,9 @@ interface RealtimeVisitor {
   longitude: number;
   timestamp: number;
   domain: string;
+  currentPage: string;
+  previousPage: string;
+  device: string;
   TTFB?: number;
   CLS?: number;
   LCP?: number;
@@ -53,6 +57,7 @@ export default function RealtimeUxMap() {
   const [visitors, setVisitors] = useState<RealtimeVisitor[]>([]);
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
+  const [activeUsers, setActiveUsers] = useState<number>(0);
 
   const getVitalsColor = (v: RealtimeVisitor) => {
     if (!v.LCP || !v.CLS || !v.INP || !v.TTFB) return "#3b82f6"; // Default blue
@@ -80,9 +85,10 @@ export default function RealtimeUxMap() {
 
     const chart = chartInstanceRef.current;
 
-    // 3. Prepare data with colors based on metrics
+    //Prepare data with colors based on metrics
     const scatterData = visitors.map((v) => ({
       name: `${v.city}, ${v.country}`,
+      activeDevice: v.device,
       value: [v.longitude, v.latitude, 1],
       itemStyle: { color: getVitalsColor(v) }, // Individual dot color
       metrics: {
@@ -105,7 +111,8 @@ export default function RealtimeUxMap() {
           return `
             <div style="padding: 4px">
               <b style="font-size: 14px">${params.name}</b><br/>
-              <div style="margin-top: 8px; display: grid; gap: 4px; font-size: 11px; font-family: monospace">
+              <span style="font-size: 11px">Device: ${params.data.activeDevice}</span>
+            <div style="margin-top: 8px; display: grid; gap: 4px; font-size: 11px; font-family: monospace">
                 <span>TTFB: <b style="color: ${params.color}">${m.ttfb ?? "n/a"} ms</b></span>
                 <span>LCP: <b style="color: ${params.color}">${m.lcp ?? "n/a"} ms</b></span>
                 <span>INP: <b style="color: ${params.color}">${m.inp ?? "n/a"} ms</b></span>
@@ -198,6 +205,16 @@ export default function RealtimeUxMap() {
     return () => socket.close();
   }, [selectedSite]);
 
+  useEffect(() => {
+    const uniqueUsers = new Set<string>();
+
+    for (let i = 0; i < visitors.length; i++) {
+      uniqueUsers.add(visitors[i].session);
+    }
+
+    setActiveUsers(uniqueUsers.size);
+  }, [visitors]);
+
   return (
     <div className="w-full">
       <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
@@ -210,7 +227,7 @@ export default function RealtimeUxMap() {
               </span>
               <div className="flex flex-col items-end">
                 <span className="text-2xl font-bold font-mono">
-                  {visitors.length}
+                  {activeUsers}
                 </span>
               </div>
             </div>
@@ -274,13 +291,16 @@ export default function RealtimeUxMap() {
                             })}
                           </span>
                         </div>
-                        <div className="flex gap-3 text-[10px] font-mono">
-                          <span style={{ color: getVitalsColor(v) }}>
-                            LCP: {v.LCP?.toFixed(0)}ms
-                          </span>
-                          <span className="text-muted-foreground/60">
-                            TTFB: {v.TTFB?.toFixed(0)}ms
-                          </span>
+                        <div className="space-y-2 text-[10px] font-mono max-w-full">
+                          <div className="font-medium text-primary/80 truncate">
+                            current page:{" "}
+                            {v.currentPage === "/"
+                              ? "home page"
+                              : v.currentPage}
+                          </div>
+                          <div className="font-medium text-primary/80 leading-1">
+                            coming from: {v.previousPage}
+                          </div>
                         </div>
                       </div>
                     ))

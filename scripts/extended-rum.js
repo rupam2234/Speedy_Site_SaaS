@@ -10,7 +10,7 @@ import {
 } from "web-vitals/attribution";
 
 const CONFIG = {
-  API_URL: "https://event-buffer.thespeedysite.workers.dev/collect",
+  API_URL: "https://buffer.speedy.site/collect",
   COOKIE_MAX_AGE: 2592000, // 30 days
   MAX_EVENTS_PER_SESSION: 100,
   FCP_THRESHOLDS: [1800, 3000],
@@ -194,34 +194,34 @@ function initializeWebVitals() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const raw = localStorage.getItem("unsentMetrics");
-  if (!raw) return;
+// document.addEventListener("DOMContentLoaded", () => {
+//   const raw = localStorage.getItem("unsentMetrics");
+//   if (!raw) return;
 
-  try {
-    const { payload, timestamp } = JSON.parse(raw);
+//   try {
+//     const { payload, timestamp } = JSON.parse(raw);
 
-    // Only retry if less than 30 seconds old
-    if (Date.now() - timestamp < 30000) {
+//     // Only retry if less than 30 seconds old
+//     if (Date.now() - timestamp < 30000) {
 
-      const success = navigator.sendBeacon(
-        CONFIG.API_URL,
-        new Blob([payload], { type: "application/json" })
-      );
+//       const success = navigator.sendBeacon(
+//         CONFIG.API_URL,
+//         new Blob([payload], { type: "application/json" })
+//       );
 
-      if (success) {
-        localStorage.removeItem("unsentMetrics");
-      }
+//       if (success) {
+//         localStorage.removeItem("unsentMetrics");
+//       }
 
-    } else {
-      // expired retry window
-      localStorage.removeItem("unsentMetrics");
-    }
+//     } else {
+//       // expired retry window
+//       localStorage.removeItem("unsentMetrics");
+//     }
 
-  } catch {
-    localStorage.removeItem("unsentMetrics");
-  }
-});
+//   } catch {
+//     localStorage.removeItem("unsentMetrics");
+//   }
+// });
 
 initializeWebVitals();
 
@@ -448,12 +448,10 @@ function checkMetricsReady() {
   }
 }
 
-let isFlushing = false;
 let hasFlushed = false;
 
 function flushMetrics() {
-  if (isFlushing || hasFlushed) return;  
-  isFlushing = true;
+  if (hasFlushed) return;  
   hasFlushed = true;
   try {
     if (latestMetrics.INP || maxCustomEntry) {
@@ -537,15 +535,14 @@ function flushMetrics() {
 
       if (navigator.sendBeacon) {
 
-        const blob = new Blob([payload], { type: 'application/json' }); //backup: type: 'application/json'
-
+        const blob = new Blob([payload], { type: 'application/json' });
         success = navigator.sendBeacon(CONFIG.API_URL, blob);
       }
       if (!success) {
         try {
           fetch(CONFIG.API_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" }, //backup: "Content-Type": "application/json"
+            headers: { "Content-Type": "application/json" },
             body: payload,
             keepalive: true,
           })
@@ -554,35 +551,31 @@ function flushMetrics() {
             })
             .catch((error) => {
               console.error("Failed to send metrics via fetch:", error);
-              if (payload.length < 50000) { // avoids filling it with large payloads
-                localStorage.setItem(
-                  "unsentMetrics",
-                  JSON.stringify({
-                    payload,
-                    timestamp: Date.now()
-                  })
-                );
-              }        
+              // if (payload.length < 50000) { // avoids filling it with large payloads
+              //   localStorage.setItem(
+              //     "unsentMetrics",
+              //     JSON.stringify({
+              //       payload,
+              //       timestamp: Date.now()
+              //     })
+              //   );
+              // }        
             });
         } catch (error) {
           console.error("Fetch error:", error);
-          if (payload.length < 50000) { // avoids filling it with large payloads
-            localStorage.setItem(
-              "unsentMetrics",
-              JSON.stringify({
-                payload,
-                timestamp: Date.now()
-              })
-            );
-          }
+          // if (payload.length < 50000) { // avoids filling it with large payloads
+          //   localStorage.setItem(
+          //     "unsentMetrics",
+          //     JSON.stringify({
+          //       payload,
+          //       timestamp: Date.now()
+          //     })
+          //   );
+          // }
         }
-      }
-      if (success) {
-        batchedData.length = 0;
       }
     }
   } finally {
-    isFlushing = false;
     batchedData.length = 0; 
     worstCLS = null;
     worstLCP = null;
@@ -590,18 +583,24 @@ function flushMetrics() {
 }
 
 setTimeout(() => {
-  const isReady = checkMetricsReady();
-  if(isReady && !isFlushing) flushMetrics();
-}, 15000);  // 15s after page load
+  if (document.visibilityState === "visible") {
+    const isReady = checkMetricsReady();
+    if (isReady) flushMetrics();
+  }
+}, 15000);  // flush after 15 seconds of page load
 
-// // iOS Safari and modern browsers
-window.addEventListener("pagehide", flushMetrics);
-
-// // Android/Chrome and most browsers
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") flushMetrics();
+// iOS Safari and modern browsers
+window.addEventListener("pagehide", () => {
+  if (!hasFlushed) flushMetrics();
 });
 
-// Legacy fallback
+// Android/Chrome and most browsers
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && !hasFlushed) {
+    flushMetrics();
+  }
+});
+
+// fallback
 // window.addEventListener("beforeunload", flushMetrics);
 
