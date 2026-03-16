@@ -8,8 +8,10 @@ import {
 } from "@/components/theme";
 import { InfoIcon } from "lucide-react";
 import { useSiteContext } from "../../siteContext";
-import { overviewApi } from "./cf-apis/calls";
+import { overviewApi, trafficSourceApi } from "./cf-apis/calls";
 import { SourceHandler } from ".";
+import { cachedData, cleanExpiredCache } from "@/components/utils";
+import { llm_sources } from "./traffic-sources/llmDomains";
 
 type overviewMetrics = {
   date_collected: string;
@@ -26,6 +28,7 @@ type overviewMetrics = {
 export default function Main() {
   const { selectedSite, selectedDevice, startDate, endDate } = useSiteContext();
   const [overvewMetrics, setOverviewMetrics] = useState<overviewMetrics[]>([]);
+  const [originalTrafficData, setOriginalTrafficData] = useState<any[]>([]);
   const [totalMetricsOverview, setTotalMetricOverview] = useState<
     { label: string; value: string; note: string }[]
   >([]);
@@ -35,7 +38,42 @@ export default function Main() {
       return;
     }
 
-    fetchOverview();
+    const keyPrefixs = ["traffic-sources", "analytics-overview"];
+
+    // clean up previous caches
+    keyPrefixs.forEach((x) =>
+      cleanExpiredCache({ prefix: x, session_Storage: false }),
+    );
+
+    const cacheOverviewData = async () => {
+      const key = `analytics-overview:${selectedSite}`;
+
+      const { response } = await cachedData({
+        fn: fetchOverview,
+        key: key,
+        session_Storage: false,
+        ttl: 5 * 60 * 1000,
+      });
+
+      setOverviewMetrics(response);
+    };
+
+    const cacheTrafficSource = async () => {
+      const key = `traffic-sources:${selectedSite}`;
+
+      const { response } = await cachedData({
+        fn: getTrafficSource,
+        key: key,
+        session_Storage: false,
+        ttl: 5 * 60 * 1000,
+      });
+
+      setOriginalTrafficData(response || []);
+    };
+
+    // call both fetches
+    cacheOverviewData();
+    cacheTrafficSource();
   }, [selectedSite, startDate, endDate]);
 
   useEffect(() => {
@@ -48,9 +86,18 @@ export default function Main() {
                 metric.device_type.toLowerCase() ===
                 selectedDevice.toLowerCase(),
             );
-      calculateOverviewStats(filteredMetrics);
+
+      const filteredOriginalData =
+        selectedDevice === "All"
+          ? originalTrafficData
+          : originalTrafficData.filter(
+              (x) =>
+                x.device_type.toLowerCase() === selectedDevice.toLowerCase(),
+            );
+
+      calculateOverviewStats(filteredMetrics, filteredOriginalData);
     }
-  }, [overvewMetrics, selectedDevice]);
+  }, [overvewMetrics, originalTrafficData, selectedDevice]);
 
   if (!selectedSite) {
     return (
@@ -106,29 +153,50 @@ export default function Main() {
           </section>
         )}
 
-        {/* Traffic View */}
-        <SourceHandler />
+        <SourceHandler originalTrafficData={originalTrafficData} />
       </div>
     </>
   );
 
+  /**
+   *
+   * @returns overview data of analytics page
+   */
   async function fetchOverview() {
-    try {
-      const res: any = await overviewApi({
-        startDate: startDate?.toISOString().split("T")[0] as string,
-        endDate: endDate?.toISOString().split("T")[0] as string,
-        domain: selectedSite,
-      });
-      if (res && Array.isArray(res)) {
-        setOverviewMetrics(res);
-      }
-    } catch (error: any) {
-      console.error("Failed to fetch overview metrics:", error);
-      setOverviewMetrics([]);
+    const res: any = await overviewApi({
+      startDate: startDate?.toISOString().split("T")[0] as string,
+      endDate: endDate?.toISOString().split("T")[0] as string,
+      domain: selectedSite,
+    });
+
+    if (!res) {
+      throw new Error(res.message);
     }
+
+    return res;
   }
 
-  function calculateOverviewStats(metrics: overviewMetrics[]) {
+  /**
+   *
+   * @returns traffic sources including device type and domain name
+   */
+  async function getTrafficSource() {
+    if (!startDate || !endDate || !selectedSite) return;
+
+    const data: any = await trafficSourceApi({
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+      domain: selectedSite,
+      key: "secret_for_speedy_site",
+    });
+
+    return data;
+  }
+
+  function calculateOverviewStats(
+    metrics: overviewMetrics[],
+    originalTrafficData: any[],
+  ) {
     let total_pageviews = 0;
     let total_sessions = 0;
     let total_bounce_rate = 0;
@@ -152,11 +220,18 @@ export default function Main() {
         ? (avg_pageview_per_session * (100 - aggregate_bounce_rate)) / 100
         : 0;
 
-    const realistic_recovery_factor = 0.2; // 20% of bounce improvement is achievable
-    const pages_lost_to_bounce =
-      total_pageviews > 0 ? (aggregate_bounce_rate / 100) * total_pageviews : 0;
+    const llmFiltered = originalTrafficData.filter((item: any) =>
+      llm_sources.some((llm) =>
+        item.referral_domain?.toLowerCase().includes(llm),
+      ),
+    );
 
-    const recoverable_pages = pages_lost_to_bounce * realistic_recovery_factor;
+    const llm_pageviews = llmFiltered.reduce(
+      (acc, index) => acc + index.count,
+      0,
+    );
+
+    const llm_traffic_percentage = (llm_pageviews / total_pageviews) * 100;
 
     const stats = [
       {
@@ -185,9 +260,9 @@ export default function Main() {
         note: "The engagement score shows how much visitors actually stick around and explore your site. 0.1–0.3 is typical, and anything above 0.5 is strong engagement.",
       },
       {
-        label: "Recoverable Pages (Bounce)",
-        value: recoverable_pages.toFixed(0),
-        note: "This gives a potential estimation on when engagement is increased and bounce rate is reduced by 20%, the pageviews that could be recovered.",
+        label: "LLM Traffic %",
+        value: llm_traffic_percentage.toFixed(2),
+        note: "At the age of GEO, driving a major share of traffic from LLM-powered discovery is crucial. This denotes your LLM traffic share for the selected website.",
       },
     ];
 

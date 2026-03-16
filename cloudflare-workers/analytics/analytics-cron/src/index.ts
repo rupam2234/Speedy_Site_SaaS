@@ -9,8 +9,7 @@ interface Env {
 export async function fetchAnalyticsFromSupabase(env: Env, targetDate?: string) {
 	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
-	// const date = targetDate || new Date(Date.now() - 86400000).toISOString().split('T')[0];
-	const date = targetDate || new Date().toISOString().split('T')[0]; // Current day for hourly updates
+	const date = targetDate || new Date().toISOString().split('T')[0]; 
 
 	const { data, error } = await supabase.rpc('get_daily_web_metrics', {
 		target_date: date,

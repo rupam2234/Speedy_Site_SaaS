@@ -4,16 +4,19 @@ import { ChartPie, Globe, Loader2Icon } from "lucide-react";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { LLMTrafficSource, TrafficSource } from "../index";
-import { countryDistributionApi, trafficSourceApi } from "../cf-apis/calls";
+import { countryDistributionApi } from "../cf-apis/calls";
 import CountryTrafficMap from "../visual-traffic-map/trafficMapContainer";
 
-export function SourceHandler() {
+interface SourceHandlerProps {
+  originalTrafficData: any[];
+}
+
+export function SourceHandler({ originalTrafficData }: SourceHandlerProps) {
   const { selectedSite, selectedDevice, startDate, endDate } = useSiteContext();
 
   const [activeSource, setActiveSource] = useState<
     "All Traffic" | "LLM Traffic"
   >("All Traffic");
-  const [originalTrafficData, setOriginalTrafficData] = useState<any[]>([]);
   const [countryDist, setCountryDist] = useState<any>([]);
   const [combinedData, setCombinedData] = useState<any>({});
 
@@ -25,13 +28,9 @@ export function SourceHandler() {
 
     const observer = new IntersectionObserver(
       (entries: IntersectionObserverEntry[]) => {
-        entries.forEach((entry) => {
+        entries.forEach(async (entry) => {
           if (!entry.isIntersecting) {
             return;
-          }
-
-          if (entry.target === trafficSourceRef.current) {
-            getTrafficSource();
           }
 
           if (entry.target === trafficCountryRef.current) {
@@ -149,25 +148,6 @@ export function SourceHandler() {
       </div>
     </section>
   );
-
-  async function getTrafficSource() {
-    if (!startDate || !endDate || !selectedSite) return;
-
-    try {
-      const data: any = await trafficSourceApi({
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
-        domain: selectedSite,
-        key: "secret_for_speedy_site",
-      });
-
-      // store data directly
-      setOriginalTrafficData(data || []);
-    } catch (error) {
-      console.error("Failed to fetch traffic source:", error);
-      setOriginalTrafficData([]);
-    }
-  }
 
   async function fetchCountryDistribution() {
     if (!startDate || !endDate || !selectedSite) return;

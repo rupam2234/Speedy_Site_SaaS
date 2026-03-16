@@ -12,7 +12,7 @@ import {
 import { CanvasRenderer } from "echarts/renderers";
 import * as echarts from "echarts/core";
 import rawWorldMap from "../../../../../../public/maps/worldMap.json";
-import { useTheme } from "@/components/theme";
+import { CustomTooltip, useTheme } from "@/components/theme";
 import { cwv_ranges } from "../cwvRanges";
 
 echarts.use([
@@ -26,9 +26,11 @@ echarts.use([
 ]);
 
 const worldEN = rawWorldMap as unknown as any;
+
 worldEN.features = worldEN.features.filter(
   (feature: any) => feature.properties.name !== "Antarctica",
 );
+
 echarts.registerMap("world", worldEN);
 
 interface RealtimeVisitor {
@@ -85,7 +87,7 @@ export default function RealtimeUxMap() {
 
     const chart = chartInstanceRef.current;
 
-    //Prepare data with colors based on metrics
+    // prepare data with colors based on metrics
     const scatterData = visitors.map((v) => ({
       name: `${v.city}, ${v.country}`,
       activeDevice: v.device,
@@ -291,17 +293,50 @@ export default function RealtimeUxMap() {
                             })}
                           </span>
                         </div>
-                        <div className="space-y-2 text-[10px] font-mono max-w-full">
-                          <div className="font-medium text-primary/80 truncate">
-                            current page:{" "}
-                            {v.currentPage === "/"
-                              ? "home page"
-                              : v.currentPage}
-                          </div>
-                          <div className="font-medium text-primary/80 leading-1">
-                            coming from: {v.previousPage}
-                          </div>
-                        </div>
+                        <CustomTooltip
+                          trigger={
+                            <div className="flex items-center gap-2 text-[10px] font-mono max-w-full">
+                              <span style={{ color: getVitalsColor(v) }}>
+                                {`${v.LCP !== undefined ? `LCP: ${v.LCP?.toFixed(0)} ms` : ``}`}
+                              </span>
+                              <span className="text-muted-foreground/60">
+                                {`${v.CLS !== undefined ? `CLS: ${v.CLS?.toFixed(3)}` : ``}`}
+                              </span>
+                              <span className="text-muted-foreground/60">
+                                {`${v.INP !== undefined ? `INP: ${v.INP?.toFixed(0)}ms` : ``}`}
+                              </span>
+                            </div>
+                          }
+                          side="right"
+                          maxWidth="450px"
+                          content={
+                            <div className="relative pl-6 space-y-4">
+                              <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-slate-200" />
+
+                              <div className="relative">
+                                <div className="absolute -left-5.25 mt-1.5 w-3 h-3 rounded-full border-2 border-slate-300 bg-white" />
+                                <div className="text-xs text-slate-300">
+                                  Coming from
+                                </div>
+                                <div className="text-xs font-medium truncate text-slate-200">
+                                  {v.previousPage}
+                                </div>
+                              </div>
+
+                              <div className="relative">
+                                <div className="absolute -left-5.25 mt-1.5 w-3 h-3 rounded-full border-2 border-slate-300 bg-white shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                                <div className="text-xs text-slate-300">
+                                  Viewing now
+                                </div>
+                                <div className="text-xs font-medium truncate text-slate-200">
+                                  {v.currentPage === "/"
+                                    ? "home page"
+                                    : v.currentPage}
+                                </div>
+                              </div>
+                            </div>
+                          }
+                        />
                       </div>
                     ))
                 )}

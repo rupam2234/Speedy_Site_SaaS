@@ -2,43 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
+import { llm_sources } from "./llmDomains";
 
 interface LLMTrafficSourceProps {
   activeDevice: string;
   originalTrafficData: any[];
 }
-
-const llm_sources = [
-  "chatgpt",
-  "chat.openai.com",
-  "openai.com",
-  "perplexity.ai",
-  "gemini.google.com",
-  "bard.google.com",
-  "claude.ai",
-  "grok.x.ai",
-  "bing.com/chat",
-  "bing.com/copilotsearch",
-  "copilot.microsoft.com",
-  "kimi.moonshot.cn",
-  "poe.com",
-  "cohere.com",
-  "anthropic.com",
-  "phind.com",
-  "you.com",
-  "neeva.com",
-  "x.ai",
-  "huggingface.co",
-  "mistral.ai",
-  "reka.ai",
-  "ora.sh",
-  "tabnine.com",
-  "deepmind.com",
-  "meta.ai",
-  "llama.meta.com",
-  "ai21.com",
-  "cognition.labs",
-];
 
 export default function LLMTrafficSource({
   activeDevice,
