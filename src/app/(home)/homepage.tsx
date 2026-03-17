@@ -7,6 +7,8 @@ import Link from "next/link";
 import { ComparisonTable, Testimonials } from "./index";
 import { SiteFooter } from "@/components/theme";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
+import AutomatedImageSlider from "./automatedSlider";
 
 export interface FeatureCore {
   title: string;
@@ -53,28 +55,14 @@ const extraFeatures: FeatureCore[] = [
     ),
   },
   {
-    title: "Server Hits & Impact",
+    title: "Image Assistance",
     desc: (
       <>
         <p>
-          Your web server plays a critical role in overall performance. When it
-          experiences bottlenecks under consistent load, your Core Web Vitals
-          can be directly affected. Speedy Site monitors server hits as a key
-          reference point to understand how server performance impacts your web
-          vitals.
-        </p>
-      </>
-    ),
-  },
-  {
-    title: "Region Based Web Vitals",
-    desc: (
-      <>
-        <p>
-          We help you visualize real user experience across different regions
-          using Core Web Vitals. See how weekly performance data from real
-          visitors varies by location. This little utility is a great help in
-          determining whether your site would benefit from using a CDN.
+          Images are pivotal in page performance and maintaining web vitals as
+          they are highly linked to LCPs. Speedy Site automatically captures
+          slow loading images across your website and provide you with utilities
+          to optimize them.
         </p>
       </>
     ),
@@ -93,6 +81,19 @@ const extraFeatures: FeatureCore[] = [
       </>
     ),
   },
+  {
+    title: "WordPress Plugin Audit",
+    desc: (
+      <>
+        <p>
+          WordPress plugins are exceptional in extending custom features unless
+          they silently drains your site resources and performance. Our WP
+          Plugin Audit helps you catch plugin footprints on both backend &
+          frontend to avoid using slow plugins.
+        </p>
+      </>
+    ),
+  },
 ];
 
 export default function Home() {
@@ -100,77 +101,48 @@ export default function Home() {
     <main className="bg-white text-gray-900 w-full overflow-x-hidden">
       <SiteHeader enableNav={true} />
 
-      <section className="relative overflow-hidden bg-[#14142e] py-32 text-white">
-        {/* 1. THE RANDOM DOTTED BACKGROUND LAYER */}
+      {/* --- SECTION 1: HERO --- */}
+      <section className="relative overflow-hidden bg-[#f5f6f0] py-24 lg:py-32 text-slate-900">
         <div
-          className="absolute inset-0 pointer-events-none opacity-40"
+          className="absolute inset-0 pointer-events-none opacity-[0.4]"
           style={{
-            backgroundImage: `
-              radial-gradient(circle, #6366f1 1.2px, transparent 1.2px), 
-              radial-gradient(circle, #a855f7 1px, transparent 1px),
-              radial-gradient(circle, #ffffff 0.8px, transparent 0.8px)
-            `,
-            backgroundSize: "89px 89px, 53px 53px, 31px 31px",
-            backgroundPosition: "0 0, 20px 40px, 10px 10px",
-            maskImage:
-              "radial-gradient(circle at center, black, transparent 60%)",
-            WebkitMaskImage:
-              "radial-gradient(circle at center, black, transparent 60%)",
+            backgroundImage: `radial-gradient(#cbd5e1 1px, transparent 1px)`,
+            backgroundSize: "32px 32px",
+            maskImage: "linear-gradient(to bottom, white, transparent)",
+            WebkitMaskImage: "linear-gradient(to bottom, white, transparent)",
           }}
         />
 
-        {/* 2. AMBIENT GLOW ORBS (The "Standout" factor) */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px]" />
-
         <div className="relative z-10 mx-auto max-w-6xl px-6 text-center">
-          {/* 3. SHIMMER BADGE */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-indigo-300 mb-8 backdrop-blur-sm">
-            <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-ping" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-bold text-indigo-600 mb-8 shadow-sm">
+            <span className="flex h-2 w-2 rounded-full bg-indigo-500" />
             Real-Time Performance Monitoring
           </div>
 
-          {/* 4. THE GRADIENT HEADING */}
-          <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.1] tracking-tight text-transparent bg-clip-text bg-linear-to-b from-white via-white to-white/50">
+          <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.15] tracking-tight text-slate-900">
             Optimize Core Web Vitals <br />
-            <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 to-purple-400">
-              Improve Crawl Efficiency for Search and AI Systems
+            <span className="text-indigo-600">
+              Improve Crawl Efficiency for Search and AI
             </span>
           </h1>
 
-          <p className="mt-8 max-w-3xl mx-auto text-lg md:text-xl text-slate-400 leading-relaxed font-light">
+          <p className="mt-8 max-w-2xl mx-auto text-lg md:text-xl text-slate-600 leading-relaxed font-normal">
             See real-user performance across devices and regions, identify Core
             Web Vitals bottlenecks instantly, and fix issues before they impact
             UX, search rankings, or AI discoverability.
           </p>
 
-          {/* 5. INTERACTIVE BUTTONS */}
-          <div className="mt-12 flex flex-col sm:flex-row justify-center gap-5">
+          <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
             <a
               href="#features"
-              className="group relative px-8 py-4 bg-indigo-600 rounded-xl font-bold transition-all hover:bg-indigo-500 hover:shadow-[0_0_30px_-5px_rgba(79,70,229,0.6)]"
+              className="px-8 py-4 bg-slate-900 text-white rounded-xl font-bold transition-all hover:bg-indigo-600 shadow-md"
             >
-              <span className="flex items-center gap-2">
-                See How It Works
-                <svg
-                  className="w-4 h-4 transition-transform group-hover:translate-x-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7l5 5m0 0l-5 5m5-5H6"
-                  />
-                </svg>
-              </span>
+              See How It Works
             </a>
 
             <a
               href="#pricing"
-              className="px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-bold backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/20"
+              className="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold transition-all hover:bg-slate-50 shadow-sm"
             >
               Start Free Today
             </a>
@@ -178,526 +150,158 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Smooth Transition Features */}
-      <section
-        id="features"
-        className="relative py-32 bg-[#14142e] overflow-hidden"
-      >
-        {/* Background Decorative Elements */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none"></div>
-
+      {/* --- SECTION 2: WORKFLOW --- */}
+      <section id="features" className="relative py-24 bg-[#f5f6f0]">
         <div className="max-w-6xl mx-auto px-6 relative">
           <div className="max-w-2xl mb-20">
-            <h2 className="text-indigo-400 font-semibold tracking-widest uppercase text-sm mb-4">
+            <h2 className="text-indigo-600 font-bold tracking-widest uppercase text-sm mb-4">
               The Workflow
             </h2>
-            <p className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-tight">
+            <p className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Understand your users,{" "}
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 to-cyan-400">
-                Improve their experience
-              </span>{" "}
-              in four steps.
+              <span className="text-slate-400">Improve their experience.</span>
             </p>
           </div>
 
           <div className="relative">
-            {/* The Animated Connecting Line (Hidden on Mobile) */}
-            <div className="hidden md:block absolute left-6.75 top-0 w-0.5 h-full bg-linear-to-b from-indigo-500 via-blue-500 to-emerald-500 opacity-30"></div>
+            <div className="hidden md:block absolute left-6.75 top-0 w-0.5 h-full bg-slate-200"></div>
 
             <div className="space-y-32">
-              {/* Step 1: Install */}
               <div className="relative flex flex-col md:flex-row gap-12 group">
                 <div className="flex-none relative">
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black text-xl z-10 relative shadow-[0_0_20px_rgba(79,70,229,0.4)]">
+                  <div className="w-14 h-14 rounded-2xl bg-white border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xl z-10 relative shadow-sm">
                     1
                   </div>
                 </div>
-                <div className="flex-1">
-                  <div className="grid md:grid-cols-2 gap-12 items-center">
-                    <div className="space-y-4">
-                      <h3 className="text-3xl font-bold text-white">
-                        Install in Minutes
-                      </h3>
-                      <p className="text-slate-400 text-lg leading-relaxed">
-                        Getting started is as simple as adding a snippet. No
-                        infrastructure overhead, no complex config.
-                      </p>
-                      <div className="flex flex-wrap gap-3 pt-2">
-                        {[
-                          "Short script",
-                          "Validate connection",
-                          "Instant data",
-                        ].map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm font-medium"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    {/* Pure CSS Code Block Visual */}
-                    <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl backdrop-blur-sm font-mono text-sm shadow-2xl">
-                      <div className="flex gap-1.5 mb-4">
-                        <div className="w-3 h-3 rounded-full bg-red-500/20"></div>
-                        <div className="w-3 h-3 rounded-full bg-amber-500/20"></div>
-                        <div className="w-3 h-3 rounded-full bg-emerald-500/20"></div>
-                      </div>
-                      <div className="text-indigo-400">
-                        &lt;script <span className="text-cyan-400">async</span>
-                        &gt;
-                      </div>
-                      <div className="pl-4 text-slate-300">
-                        src={" "}
-                        <span className="text-indigo-400">
-                          &quot;https://rum.speedy.site/rum.js?v=
-                          <span className="text-slate-300">(V)</span>&id=
-                          <span className="text-slate-300">(ID)</span>&quot;
+                <div className="flex-1 grid md:grid-cols-2 gap-12 items-center">
+                  <div className="space-y-4">
+                    <h3 className="text-3xl font-bold text-slate-900">
+                      Install in Minutes
+                    </h3>
+                    <p className="text-slate-600 text-lg leading-relaxed">
+                      Getting started is as simple as adding a snippet. No
+                      infrastructure overhead, no complex config.
+                    </p>
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      {[
+                        "Configure script",
+                        "Instant Validation",
+                        "Collect UX & Web Vitals data",
+                      ].map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-3 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold"
+                        >
+                          {tag}
                         </span>
-                        <span className="text-emerald-400">defer</span>
-                        <span className="text-indigo-400">{">"}</span>
-                      </div>
-                      <div className="text-indigo-400">&lt;/script&gt;</div>
+                      ))}
                     </div>
+                  </div>
+                  <div className="bg-slate-900 p-6 rounded-2xl font-mono text-sm shadow-xl">
+                    <div className="text-indigo-300">
+                      &lt;script <span className="text-emerald-400">defer</span>
+                      &gt;
+                    </div>
+                    <div className="pl-4 text-slate-300">
+                      src=&quot;https://rum.speedy.site/rum.js&quot;
+                    </div>
+                    <div className="text-indigo-300">&lt;/script&gt;</div>
                   </div>
                 </div>
               </div>
 
-              {/* Step 2: See Experience */}
               <div className="relative flex flex-col md:flex-row gap-12 group">
                 <div className="flex-none relative">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-xl z-10 relative">
+                  <div className="w-14 h-14 rounded-2xl bg-white border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xl z-10 relative">
                     2
                   </div>
                 </div>
-                <div className="flex-1">
-                  <div className="grid md:grid-cols-2 gap-12 items-center">
-                    <div className="space-y-6">
-                      <h3 className="text-3xl font-bold text-white">
-                        Monitor Your User Experience
-                      </h3>
-                      <p className="text-slate-400 text-lg">
-                        Collect privacy first performance and UX data from users
-                        sessions and break it down by device, location, network
-                        connection and page to find issues faster.
-                      </p>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50">
-                          <span className="text-slate-300">Poor LCP Users</span>
-                          <span className="text-red-400 font-bold">7%</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50">
-                          <span className="text-slate-300">Mobile Latency</span>
-                          <span className="text-amber-400 font-bold">
-                            +1.2s
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="relative p-1 rounded-3xl bg-linear-to-br from-blue-500/20 to-transparent">
-                      <div className="bg-[#0b0f1a] rounded-[22px] p-4 md:p-6 border border-white/5 shadow-inner overflow-hidden">
-                        {/* Header */}
-                        <div className="flex justify-between items-center mb-6">
-                          <div className="flex gap-2">
-                            <div className="px-2 py-1 rounded bg-white/10 text-[10px] text-white font-medium border border-white/10">
-                              LCP Timeline
-                            </div>
-                            <div className="hidden sm:block text-[9px] text-slate-500 mt-1">
-                              LCP measures render time of the largest image...
-                            </div>
-                          </div>
-                          <div className="text-[10px] bg-white/5 px-2 py-1 rounded text-slate-400 border border-white/5">
-                            P75
-                          </div>
-                        </div>
-
-                        <div className="flex gap-6">
-                          {/* Sidebar Metrics */}
-                          <div className="hidden md:flex flex-col gap-4 w-28 border-r border-white/5 pr-4">
-                            <div>
-                              <div className="text-[10px] text-slate-500 mb-1">
-                                UX Score
-                              </div>
-                              <div className="relative w-10 h-10 flex items-center justify-center">
-                                <svg className="absolute inset-0 w-full h-full -rotate-90">
-                                  <circle
-                                    cx="20"
-                                    cy="20"
-                                    r="18"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="3"
-                                    className="text-slate-800"
-                                  />
-                                  <circle
-                                    cx="20"
-                                    cy="20"
-                                    r="18"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="3"
-                                    strokeDasharray="100"
-                                    strokeDashoffset="15"
-                                    className="text-emerald-500"
-                                  />
-                                </svg>
-                                <span className="text-[10px] font-bold text-white">
-                                  89
-                                </span>
-                              </div>
-                            </div>
-                            <div className="space-y-3">
-                              <div>
-                                <div className="text-[9px] text-slate-400">
-                                  Largest Paint
-                                </div>
-                                <div className="text-[10px] text-emerald-400 font-bold">
-                                  1.95s
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-[9px] text-slate-400">
-                                  Layout Shift
-                                </div>
-                                <div className="text-[10px] text-amber-400 font-bold">
-                                  0.110
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Main Chart Area */}
-                          <div className="flex-1">
-                            <div className="relative h-32 w-full">
-                              {/* Simple Wave SVG */}
-                              <svg
-                                viewBox="0 0 400 100"
-                                className="w-full h-full overflow-visible"
-                              >
-                                {/* Grid Line */}
-                                <line
-                                  x1="0"
-                                  y1="20"
-                                  x2="400"
-                                  y2="20"
-                                  stroke="currentColor"
-                                  strokeDasharray="4 4"
-                                  className="text-emerald-500/30"
-                                />
-
-                                {/* Area Fill */}
-                                <path
-                                  d="M0,80 Q50,20 100,70 T200,40 T300,60 T400,20 V100 H0 Z"
-                                  fill="url(#chartGradient)"
-                                  opacity="0.2"
-                                />
-
-                                {/* Line Path */}
-                                <path
-                                  d="M0,80 Q50,20 100,70 T200,40 T300,60 T400,20"
-                                  fill="none"
-                                  stroke="#6366f1"
-                                  strokeWidth="2"
-                                />
-
-                                {/* Dots */}
-                                <circle
-                                  cx="50"
-                                  cy="20"
-                                  r="3"
-                                  className="fill-amber-500 shadow-lg"
-                                />
-                                <circle
-                                  cx="200"
-                                  cy="40"
-                                  r="3"
-                                  className="fill-white"
-                                />
-                                <circle
-                                  cx="400"
-                                  cy="20"
-                                  r="3"
-                                  className="fill-amber-500"
-                                />
-
-                                <defs>
-                                  <linearGradient
-                                    id="chartGradient"
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="1"
-                                  >
-                                    <stop offset="0%" stopColor="#6366f1" />
-                                    <stop
-                                      offset="100%"
-                                      stopColor="transparent"
-                                    />
-                                  </linearGradient>
-                                </defs>
-                              </svg>
-                            </div>
-
-                            {/* Bottom Status Bars */}
-                            <div className="mt-6 grid grid-cols-3 gap-2">
-                              <div className="space-y-1">
-                                <div className="text-[9px] text-slate-400 flex justify-between">
-                                  <span>Good</span>
-                                  <span className="text-white">77%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                  <div className="h-full w-[77%] bg-emerald-500"></div>
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="text-[9px] text-slate-400 flex justify-between">
-                                  <span>Needs</span>
-                                  <span className="text-white">16%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                  <div className="h-full w-[16%] bg-amber-500"></div>
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="text-[9px] text-slate-400 flex justify-between">
-                                  <span>Poor</span>
-                                  <span className="text-white">7%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                  <div className="h-full w-[7%] bg-red-500"></div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                <div className="flex-1 grid md:grid-cols-2 gap-12 items-center">
+                  <div className="space-y-6">
+                    <h3 className="text-3xl font-bold text-slate-900">
+                      Monitor Experience
+                    </h3>
+                    <p className="text-slate-600 text-lg">
+                      Collect privacy-first performance and UX data and break it
+                      down by device and region to find issues faster.
+                    </p>
+                    <p className="text-slate-600 text-lg">
+                      Weekly UX analysis report to understand the trajectory of
+                      crucial performance metrices.
+                    </p>
                   </div>
+                  <Image
+                    src={"/images/homepage/ux-analytics.png"}
+                    alt="ux-analytics"
+                    width={650}
+                    height={350}
+                    className="mt-15 shadow-xl rounded-sm"
+                  />
                 </div>
               </div>
 
-              {/* Step 3: Identify (The Power Section) */}
               <div className="relative flex flex-col md:flex-row gap-12 group">
                 <div className="flex-none relative">
-                  <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-fuchsia-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl z-10 relative">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black text-xl z-10 relative shadow-md">
                     3
                   </div>
                 </div>
-                <div className="flex-1 rounded-3xl bg-indigo-900/10 border border-indigo-500/20 p-8 md:p-12 relative overflow-hidden">
-                  <div className="grid md:grid-cols-2 gap-8 relative z-10">
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-3xl font-bold text-white mb-2">
-                          Identify What’s Causing It
-                        </h3>
-                        <p className="text-slate-400 font-medium text-lg">
-                          Monitoring your site isn’t enough on its own.
-                          Speedy.site automatically identifies the worst
-                          responsible DOM elements so you can fix issues faster.
-                          With real user data and precise insights, you spend
-                          less time guessing and more time improving
-                          performance.
-                        </p>
-                      </div>
-                      <ul className="space-y-4">
-                        {[
-                          "LCP Image Detection",
-                          "CWV Contributing Element Detection",
-                          "Element detection by page",
-                        ].map((item) => (
-                          <li
-                            key={item}
-                            className="flex items-center gap-3 text-white font-medium"
-                          >
-                            <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/40 text-emerald-400 text-[10px]">
-                              ✔
-                            </div>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="bg-black/40 rounded-2xl border border-white/5 p-5 space-y-4 backdrop-blur-sm">
-                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                          Contributing Elements
-                        </div>
-                        <div className="text-[9px] text-slate-600 font-medium">
-                          1 of 3 items
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        {/* Row 1: Text Element */}
-                        <div className="flex items-start justify-between group">
-                          <div className="flex gap-3">
-                            <div className="mt-1 text-slate-500 text-xs font-bold">
-                              T
-                            </div>
-                            <div>
-                              <div className="text-[10px] font-mono text-indigo-300 break-all leading-tight max-w-45">
-                                div.card-body &gt; div.entry-content &gt; p
-                              </div>
-                              <div className="text-[9px] text-slate-500 mt-1">
-                                /how-to-make-cleaner
-                              </div>
-                              <div className="text-[8px] text-slate-600 mt-0.5 italic">
-                                Captured 1 times
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-1 items-end">
-                            <div className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[9px] text-amber-500 flex items-center gap-1">
-                              <span>⏳</span> 0.50s
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Row 2: Video/Image Element */}
-                        <div className="flex items-start justify-between pt-3 border-t border-white/5">
-                          <div className="flex gap-3">
-                            <div className="mt-1 text-slate-500">
-                              <svg
-                                className="w-3 h-3"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                />
-                              </svg>
-                            </div>
-                            <div>
-                              <div className="text-[10px] font-mono text-indigo-300 leading-tight">
-                                video.raptive-player-video
-                              </div>
-                              <div className="text-[9px] text-slate-500 mt-1">
-                                /privacy-policy
-                              </div>
-                              <div className="text-[8px] text-slate-600 mt-0.5 truncate max-w-30">
-                                Address: https://cdn.jwplayer.com/v2...
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-1 justify-end max-w-25">
-                            <div className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[9px] text-emerald-400 flex items-center gap-1">
-                              <span>⏳</span> 0.01s
-                            </div>
-                            <div className="px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-[9px] text-rose-400 flex items-center gap-1">
-                              <span>⚡</span> 0.89s
-                            </div>
-                            <div className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[9px] text-emerald-400 flex items-center gap-1">
-                              <span>🎨</span> 0.02s
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Row 3: Image Element */}
-                        <div className="flex items-start justify-between pt-3 border-t border-white/5">
-                          <div className="flex gap-3">
-                            <div className="mt-1 text-slate-500">
-                              <svg
-                                className="w-3 h-3"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                />
-                              </svg>
-                            </div>
-                            <div>
-                              <div className="text-[10px] font-mono text-indigo-300 leading-tight">
-                                #attachment_1509 &gt; img
-                              </div>
-                              <div className="text-[9px] text-slate-500 mt-1">
-                                /bbq-chicken-nachos
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-1">
-                            <div className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[9px] text-amber-500 flex items-center gap-1">
-                              <span>🎨</span> 0.48s
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                <div className="grid md:grid-cols-2 gap-8 relative z-10">
+                  <div className="space-y-6">
+                    <h3 className="text-3xl font-bold text-slate-900">
+                      Identify & Fix
+                    </h3>
+                    <p className="text-slate-600 text-lg leading-relaxed">
+                      Automatically identifies the specific DOM elements
+                      responsible for / related to UX issues and performance
+                      bottlenecks on pages accross your site. Guess less and
+                      invest more time fixing issues.
+                    </p>
+                    <ul className="space-y-3">
+                      {[
+                        "LCP Image / fonts Detection",
+                        "Elements related to CLS",
+                        "INP element hints",
+                        "Network and devices related to poor TTFB",
+                        "Bottleneck breakdown by page",
+                      ].map((item) => (
+                        <li
+                          key={item}
+                          className="flex items-center gap-3 text-slate-700 font-semibold text-sm"
+                        >
+                          <span className="text-emerald-500">✔</span> {item}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
+                  <Image
+                    src={"/images/homepage/problematic-elements.png"}
+                    alt="problematic-elements"
+                    width={650}
+                    height={350}
+                    className="mt-15 shadow-xl rounded-sm"
+                  />
                 </div>
               </div>
 
-              {/* Step 4: Fix & Track */}
               <div className="relative flex flex-col md:flex-row gap-12 group">
                 <div className="flex-none relative">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center text-white font-black text-xl z-10 relative shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                  <div className="w-14 h-14 rounded-2xl bg-white border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xl z-10 relative">
                     4
                   </div>
                 </div>
-                <div className="flex-1">
-                  <div className="grid md:grid-cols-2 gap-12 items-center">
-                    <div className="space-y-6">
-                      <h3 className="text-3xl font-bold text-white">
-                        Fix & Track Improvements
-                      </h3>
-                      <p className="text-slate-400 text-lg">
-                        Ship fixes with confidence and monitor impact
-                        thoroughly. You can compare (global) core web vital
-                        field data with local RUM trends to spot patterns and
-                        catch potential regressions before your users notice
-                        them.
-                      </p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-center">
-                          <div className="text-2xl mb-1">📅</div>
-                          <div className="text-xs text-slate-400 font-bold uppercase tracking-tight">
-                            Weekly Summaries
-                          </div>
-                        </div>
-                        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-center">
-                          <div className="text-2xl mb-1">🔔</div>
-                          <div className="text-xs text-slate-400 font-bold uppercase tracking-tight">
-                            Real-time Alerts
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="relative group">
-                      <div className="absolute -inset-1 bg-linear-to-r from-emerald-500 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition"></div>
-                      <div className="relative bg-[#0b0f1a] p-6 rounded-2xl border border-white/10">
-                        <div className="flex justify-between items-center mb-6">
-                          <div className="text-white font-bold text-sm tracking-tight">
-                            Core Web Vitals&apos; Trend
-                          </div>
-                          <div className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded">
-                            +12% vs last week
-                          </div>
-                        </div>
-                        {/* Simplified Trend Line with SVG */}
-                        <svg
-                          viewBox="0 0 100 30"
-                          className="w-full h-24 stroke-emerald-500 stroke-2 fill-none overflow-visible"
-                        >
-                          <path d="M0,25 Q15,25 30,15 T60,18 T100,2" />
-                          <circle
-                            cx="100"
-                            cy="2"
-                            r="3"
-                            className="fill-emerald-400 animate-pulse"
-                          />
-                        </svg>
-                      </div>
-                    </div>
+                <div className="flex-1 grid md:grid-cols-2 gap-12 items-center">
+                  <div className="space-y-6">
+                    <h3 className="text-3xl font-bold text-slate-900">
+                      Real-Time Geo & Performance Insights
+                    </h3>
+                    <p className="text-slate-600 text-lg leading-relaxed">
+                      Measure user experience by location, optimize speed and
+                      save bandwidth with caching, and monitor web vitals &
+                      performance live.
+                    </p>
                   </div>
+                  <AutomatedImageSlider />
                 </div>
               </div>
             </div>

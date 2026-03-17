@@ -82,7 +82,7 @@ export default function SidebarInsetHeader() {
       >
         <Bell
           size={20}
-          className="fill-amber-50 dark:fill-secondary-background text-primary/30"
+          className="dark:fill-secondary-background text-primary/30"
         />
 
         {notifcations.length > 0 && (
@@ -96,7 +96,7 @@ export default function SidebarInsetHeader() {
             <div
               ref={dropdownRef}
               onMouseDown={(e) => e.stopPropagation()}
-              className="absolute max-w-1/2 md:w-87.5 overflow-y-scroll top-13 h-auto md:h-135 right-22 z-50 p-4 bg-slate-600 text-primary-foreground dark:text-primary text-sm rounded-sm shadow"
+              className="fixed max-w-1/2 md:w-87.5 overflow-y-scroll top-13 h-auto md:h-auto max-h-87.5 right-22 z-50 p-4 bg-slate-600 text-primary-foreground dark:text-primary text-sm rounded-sm shadow"
               style={{ scrollbarWidth: "none" }}
             >
               <p>Notifications</p>
