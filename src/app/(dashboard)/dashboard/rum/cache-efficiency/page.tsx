@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { Main } from ".";
 
 export const metadata: Metadata = {
-  title: "Origin Hits",
+  title: "Cache Efficiency",
   description:
     "Real-time and historical origin server hits for your site, aggregated from real user monitoring data.",
   keywords: [
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Speedy Site" }],
   robots: "index, follow",
   openGraph: {
-    title: "Origin Hits",
+    title: "Cache Efficiency",
     description:
       "View origin hit percentages for all your monitored sites in real-time.",
     url: "https://speedy.site/origin-hits",
@@ -34,16 +34,12 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Origin Hits",
+    title: "Cache Efficiency",
     description: "View origin server hit percentages for your monitored sites.",
     images: ["https://your-saas-domain.com/og-image.png"],
   },
 };
 
-export default function OriginHits() {
-  return (
-    <>
-      <Main />
-    </>
-  );
+export default function CacheEfficiency() {
+  return <Main />;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { OriginHits } from "@/app/api/dataTypes";
+import { CacheEfficiency } from "@/app/api/dataTypes";
 import { useSiteContext } from "../../siteContext";
 import { useEffect, useRef } from "react";
 import * as echarts from "echarts/core";
@@ -36,7 +36,7 @@ echarts.use([
 ]);
 
 interface Props {
-  data: OriginHits[];
+  data: CacheEfficiency[];
 }
 
 export default function OriginPerformanceChart({ data }: Props) {
@@ -217,7 +217,7 @@ export default function OriginPerformanceChart({ data }: Props) {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full overflow-x-hidden">
+    <div ref={containerRef} className="w-full mb-10 overflow-x-hidden">
       <div ref={chartRef} className="w-full h-95" />
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import {
   LoadingAnimation,
   PrimaryToolbar,
@@ -12,6 +12,7 @@ import { overviewApi, trafficSourceApi } from "./cf-apis/calls";
 import { SourceHandler } from ".";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 import { llm_sources } from "./traffic-sources/llmDomains";
+import Image from "next/image";
 
 type overviewMetrics = {
   date_collected: string;
@@ -30,7 +31,7 @@ export default function Main() {
   const [overvewMetrics, setOverviewMetrics] = useState<overviewMetrics[]>([]);
   const [originalTrafficData, setOriginalTrafficData] = useState<any[]>([]);
   const [totalMetricsOverview, setTotalMetricOverview] = useState<
-    { label: string; value: string; note: string }[]
+    { label: string; value: string; note: string | ReactNode }[]
   >([]);
 
   useEffect(() => {
@@ -262,7 +263,29 @@ export default function Main() {
       {
         label: "LLM Traffic %",
         value: llm_traffic_percentage.toFixed(2),
-        note: "At the age of GEO, driving a major share of traffic from LLM-powered discovery is crucial. This denotes your LLM traffic share for the selected website.",
+        note:
+          llm_traffic_percentage > 2 ? (
+            "At the age of GEO, driving a major share of traffic from LLM-powered discovery is crucial. This denotes your LLM traffic share for the selected website."
+          ) : (
+            <div className="space-y-3">
+              <p>
+                At the age of GEO, driving a major share of traffic from
+                LLM-powered discovery is crucial. This denotes your LLM traffic
+                share for the selected website.
+              </p>
+              <p>Low LLM traffic?</p>
+              <button className="px-2 py-1 rounded-xs bg-green-500 text-primary font-semibold cursor-pointer hover:bg-green-400">
+                Try our LLM citation tool
+              </button>
+              <Image
+                alt="AI-citation-speedy-site"
+                src={"/images/products/AI-citation-speedy-site.webp"}
+                width={300}
+                height={150}
+                className="w-full h-auto"
+              />
+            </div>
+          ),
       },
     ];
 

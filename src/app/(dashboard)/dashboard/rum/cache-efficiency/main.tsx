@@ -3,14 +3,14 @@
 import { CustomCalendar, CustomTooltip } from "@/components/theme";
 import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
-import { OriginHits } from "@/app/api/dataTypes";
+import { CacheEfficiency } from "@/app/api/dataTypes";
 import { OriginPerformanceChart, OriginStatsOverview } from ".";
 import { InfoIcon, LoaderCircle } from "lucide-react";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 
 export default function Main() {
   const { selectedSite, startDate, endDate } = useSiteContext();
-  const [originHitData, setOriginHitData] = useState<OriginHits[]>([]);
+  const [originHitData, setOriginHitData] = useState<CacheEfficiency[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -49,14 +49,6 @@ export default function Main() {
               <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
               <line x1="6" y1="6" x2="6.01" y2="6" />
               <line x1="6" y1="18" x2="6.01" y2="18" />
-
-              <circle
-                cx="18"
-                cy="18"
-                r="2"
-                fill="currentColor"
-                className="animate-pulse"
-              />
             </svg>
             {/* Decorative Background Glow */}
             <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full -z-10 opacity-50" />
@@ -65,10 +57,10 @@ export default function Main() {
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <h2 className="font-bold text-xl tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Origin Hits
+                Cache Efficiency
               </h2>
               <CustomTooltip
-                content="Origin hits are requests that reach your web server instead of being served from cache. They use server resources (CPU, memory, bandwidth) and can slow your site if too high. Server-side caching (e.g., WP Rocket) reduces repeat hits, while a CDN serves content from edge servers to lower server load and improve speed. A high origin hit rate means your server handles most requests; a low rate means caching/CDN is working effectively."
+                content="Cache efficiency shows how many requests are served from cache instead of your origin server. Requests hitting the server use CPU, memory, and bandwidth, which can slow your site if too frequent. CDNs greatly reduces this load by serving content from edge locations. A high origin hit rate means more server load, while a low rate means CDN caching is working well."
                 trigger={
                   <InfoIcon
                     size={18}
@@ -88,7 +80,7 @@ export default function Main() {
         <CustomCalendar defaultDateRange={30} limited={30} />
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 mb-10 space-y-6">
         <OriginStatsOverview data={originHitData} isLoading={isLoading} />
 
         {/* --- Origin Server Hits Section --- */}
@@ -111,7 +103,7 @@ export default function Main() {
   );
 
   /**
-   * get origin hits per website
+   * get cached origin hits per website
    */
   async function cachedOriginHits() {
     if (!selectedSite || !startDate || !endDate) return;
@@ -122,20 +114,32 @@ export default function Main() {
     const key = `origin-hits:${selectedSite}-${s}-${e}`;
 
     setIsLoading(true);
-    const { response } = await cachedData({
-      fn: fetchOriginHits,
-      key: key,
-      session_Storage: false,
-      ttl: 5 * 60 * 1000,
-    });
 
-    setOriginHitData(response);
-    setIsLoading(false);
+    try {
+      const { response } = await cachedData({
+        fn: fetchOriginHits,
+        key,
+        session_Storage: false,
+        ttl: 5 * 60 * 1000,
+      });
 
-    // clean up expired cache
+      setOriginHitData(response);
+    } catch (err) {
+      console.error("Failed to fetch origin hits:", err);
+
+      // optional: reset data or show fallback
+      setOriginHitData([]);
+    } finally {
+      setIsLoading(false);
+    }
+
     cleanExpiredCache({ prefix: "origin-hits", session_Storage: false });
   }
 
+  /**
+   *
+   * @returns origin hit data for active site
+   */
   async function fetchOriginHits() {
     const res = await fetch("/api/server-hits/get", {
       method: "POST",

@@ -14,11 +14,16 @@ export type Rum_history =
 export type CloudflareConfig =
   Database["public"]["Tables"]["cloudflare_auth"]["Insert"];
 
-export type SpeedySiteTickets = Database["public"]["Tables"]["tickets"]["Insert"];
+export type SpeedySiteTickets =
+  Database["public"]["Tables"]["tickets"]["Insert"];
 
-export type TicketMessages = Database["public"]["Tables"]["ticket_messages"]["Insert"]
+export type TicketMessages =
+  Database["public"]["Tables"]["ticket_messages"]["Insert"];
 
-export type OriginHits = Database["public"]["Tables"]["rum_origin_hits_agg"]["Insert"]
+export type CacheEfficiency =
+  Database["public"]["Tables"]["rum_origin_hits_agg"]["Insert"];
 
-export type WordPress_key = Database["public"]["Tables"]["wp_key"]["Insert"]
+export type WordPress_key = Database["public"]["Tables"]["wp_key"]["Insert"];
 
+export type Notifications =
+  Database["public"]["Tables"]["notifications"]["Insert"];

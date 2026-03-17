@@ -80,6 +80,10 @@ export default function AppSidebar({
             url: `/dashboard/rum/ux-distributions?site=${selectedSite}`,
           },
           {
+            title: "Analytics",
+            url: `/dashboard/rum/analytics?site=${selectedSite}`,
+          },
+          {
             title: "Web Vitals",
             url: `/dashboard/rum/web-vitals?site=${selectedSite}`,
           },
@@ -88,12 +92,8 @@ export default function AppSidebar({
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
           {
-            title: "Analytics",
-            url: `/dashboard/rum/analytics?site=${selectedSite}`,
-          },
-          {
-            title: "Origin Hits",
-            url: `/dashboard/rum/origin-hits?site=${selectedSite}`,
+            title: "Cache Efficiency",
+            url: `/dashboard/rum/cache-efficiency?site=${selectedSite}`,
           },
         ],
       },
@@ -124,7 +124,7 @@ export default function AppSidebar({
     <Sidebar
       collapsible="icon"
       {...props}
-      className="dark:border-muted bg-muted-foreground"
+      className="dark:border-muted z-9999 bg-muted-foreground"
     >
       <SidebarHeader className="mb-5 mt-2">
         <div className="flex gap-4 items-center">

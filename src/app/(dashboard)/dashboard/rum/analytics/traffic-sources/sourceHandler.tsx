@@ -6,6 +6,7 @@ import { useSiteContext } from "../../../siteContext";
 import { LLMTrafficSource, TrafficSource } from "../index";
 import { countryDistributionApi } from "../cf-apis/calls";
 import CountryTrafficMap from "../visual-traffic-map/trafficMapContainer";
+import { cachedData, cleanExpiredCache } from "@/components/utils";
 
 interface SourceHandlerProps {
   originalTrafficData: any[];
@@ -26,6 +27,9 @@ export function SourceHandler({ originalTrafficData }: SourceHandlerProps) {
   useEffect(() => {
     const refs = [trafficSourceRef, trafficCountryRef];
 
+    // clean up country distribution data
+    cleanExpiredCache({ prefix: "country-dist", session_Storage: false });
+
     const observer = new IntersectionObserver(
       (entries: IntersectionObserverEntry[]) => {
         entries.forEach(async (entry) => {
@@ -34,7 +38,16 @@ export function SourceHandler({ originalTrafficData }: SourceHandlerProps) {
           }
 
           if (entry.target === trafficCountryRef.current) {
-            fetchCountryDistribution();
+            const key = `country-dist:${selectedSite}`;
+
+            const { response } = await cachedData({
+              fn: fetchCountryDistribution,
+              key: key,
+              session_Storage: false,
+              ttl: 5 * 60 * 1000,
+            });
+
+            setCountryDist(response);
           }
 
           // stop observing this target once loaded
@@ -152,22 +165,13 @@ export function SourceHandler({ originalTrafficData }: SourceHandlerProps) {
   async function fetchCountryDistribution() {
     if (!startDate || !endDate || !selectedSite) return;
 
-    try {
-      const res = await countryDistributionApi({
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
-        domain: selectedSite,
-      });
-      if (res && Array.isArray(res)) {
-        setCountryDist(res);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to fetch traffic distribution based on countries:",
-        error,
-      );
-      setCountryDist([]);
-    }
+    const res = await countryDistributionApi({
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+      domain: selectedSite,
+    });
+
+    return res;
   }
 
   function CountryDistributions(data: any[]) {
