@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { HowItWorks } from ".";
 import { useSiteContext } from "../siteContext";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
+import { createPortal } from "react-dom";
 
 export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
   const { selectedSite } = useSiteContext();
@@ -15,30 +16,32 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (!selectedSite) return;
 
+    // Cleanup expired keys
     cleanExpiredCache({
       prefix: "plugin_analysis_secret",
       session_Storage: false,
-    }); // cleanup expired keys
+    });
 
     const fetchSecret = async () => {
-      const key = `plugin_analysis_secret:${selectedSite}`;
+      try {
+        // Fetch the secret from cache or API
+        let secret = await getWpSecret(selectedSite);
 
-      const { response } = await cachedData({
-        fn: () => wpSecret(selectedSite),
-        key: key,
-        session_Storage: false,
-        ttl: 1440 * 60 * 1000, // 1 day
-      });
+        // If no secret found, generate a new key and save it
+        if (!secret) {
+          const newKey =
+            Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15);
 
-      if (!response) {
-        const newKey =
-          Math.random().toString(36).substring(2, 15) +
-          Math.random().toString(36).substring(2, 15);
+          await saveWpSecret(newKey, selectedSite);
+          secret = newKey; // update secret with new key
+        }
 
-        await saveWpSecret(newKey, selectedSite); // save into database
-        setSecretKey(newKey);
-      } else {
-        setSecretKey(response);
+        // Set state with the resolved secret
+        setSecretKey(secret);
+      } catch (error) {
+        console.error("Failed to fetch or generate secret:", error);
+        setSecretKey(""); // or handle error state as needed
       }
     };
 
@@ -154,8 +157,8 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
   }
   `;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141414]/80 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-[#141414]/80 backdrop-blur-sm">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -179,7 +182,7 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
             <div className="relative mt-8 group">
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleDownload(phpCode)}
+                  onClick={() => handlePluginDownload(phpCode)}
                   disabled={!secretKey}
                   className="border border-[#141414] p-2 hover:bg-[#141414] hover:text-[#E4E3E0]
                             disabled:opacity-50 disabled:cursor-not-allowed
@@ -208,10 +211,17 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
+/**
+ *
+ * @param secret secret key
+ * @param domain domain assigned
+ * @returns saves WP plugin secret into database
+ */
 async function saveWpSecret(secret: string, domain: string) {
   if (!domain) return;
 
@@ -230,25 +240,49 @@ async function saveWpSecret(secret: string, domain: string) {
   return;
 }
 
-export async function wpSecret(domain: string) {
-  if (!domain) return;
-
-  const res = await fetch("/api/wordpress/wp-secret", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ domain: domain }),
-  });
-
-  const body: any = await res.json();
-
-  if (!res.ok) {
-    console.error(body.message ?? "failed to fetch secret");
+/**
+ *
+ * @param domain domain to get WP secret for
+ * @returns WP plugin secret of a domain
+ */
+export async function getWpSecret(domain: string) {
+  if (!domain) {
+    throw new Error("Domain is required");
   }
 
-  return body.data;
+  const key = `plugin_analysis_secret:${domain}`;
+
+  const { response } = await cachedData({
+    fn: () => innerFunc(domain),
+    key: key,
+    session_Storage: false,
+    ttl: 1440 * 60 * 1000, // 1 day
+  });
+
+  return response;
+
+  async function innerFunc(domain: string) {
+    const res = await fetch("/api/wordpress/wp-secret", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domain: domain }),
+    });
+
+    const body: any = await res.json();
+
+    if (!res.ok) {
+      console.error(body.message ?? "failed to fetch secret");
+    }
+
+    return body.data;
+  }
 }
 
-async function handleDownload(phpCode: string) {
+/**
+ * Downloads the plugin in zip file into user's PC
+ * @param phpCode plugin code
+ */
+async function handlePluginDownload(phpCode: string) {
   const zip = new JSZip();
   const folder = zip.folder("speedy-site-plugin-auditor");
   folder?.file("speedy-site-plugin-auditor.php", phpCode);

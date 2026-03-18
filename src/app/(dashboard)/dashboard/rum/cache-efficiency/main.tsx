@@ -1,6 +1,10 @@
 "use client";
 
-import { CustomCalendar, CustomTooltip } from "@/components/theme";
+import {
+  CustomCalendar,
+  CustomTooltip,
+  LoadingAnimation,
+} from "@/components/theme";
 import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
 import { CacheEfficiency } from "@/app/api/dataTypes";
@@ -21,8 +25,8 @@ export default function Main() {
 
   if (!selectedSite) {
     return (
-      <div className="flex items-center w-full min-h-[calc(100lvh-100px)] justify-center">
-        <LoaderCircle size={45} className="text-primary/10 animate-spin" />
+      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+        <LoadingAnimation />
       </div>
     );
   }

@@ -124,7 +124,7 @@ export default function AppSidebar({
     <Sidebar
       collapsible="icon"
       {...props}
-      className="dark:border-muted z-9999 bg-muted-foreground"
+      className="dark:border-muted z-100 bg-muted-foreground"
     >
       <SidebarHeader className="mb-5 mt-2">
         <div className="flex gap-4 items-center">

@@ -1,9 +1,7 @@
 "use client";
 
-import { Fallback, NoSiteSelected } from "@/components/theme";
-import { validatePlan } from "@/components/utils/planValidation/activePlan";
-import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
-import { ReactNode, useEffect } from "react";
+import { UpgradeFallback, NoSiteSelected } from "@/components/theme";
+import { ReactNode } from "react";
 import { useSiteContext } from "../siteContext";
 
 interface RumLayoutProps {
@@ -11,25 +9,7 @@ interface RumLayoutProps {
 }
 
 export default function RumLayout({ children }: RumLayoutProps) {
-  const user = useSupabaseUser();
-  const { plan, setPlan, selectedSite } = useSiteContext();
-
-  useEffect(() => {
-    if (!user?.id || plan !== null) return; // already fetched
-
-    const fetchAndSetPlan = async () => {
-      try {
-        const activePlan: any = await validatePlan(user.id);
-        const planValue = activePlan?.[0]?.plan ?? "Free";
-        setPlan(planValue);
-      } catch (err) {
-        console.error("Failed to fetch plan:", err);
-        setPlan("Free");
-      }
-    };
-
-    fetchAndSetPlan();
-  }, [user?.id, plan, setPlan]);
+  const { plan, selectedSite } = useSiteContext();
 
   // Show nothing until plan is loaded
   if (plan === null) return null;
@@ -38,7 +18,7 @@ export default function RumLayout({ children }: RumLayoutProps) {
   if (!selectedSite) return <NoSiteSelected />;
 
   // Selected site, free plan
-  if (plan === "Free") return <Fallback />;
+  if (plan === "Free") return <UpgradeFallback />;
 
   // Selected site and paid plan
   return <>{children}</>;

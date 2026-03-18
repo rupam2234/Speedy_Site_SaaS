@@ -1,18 +1,19 @@
-interface Props<T>{
-    key: string;
-    fn: ()=> Promise<T>;
-    ttl: number;
-    session_Storage: boolean
+interface Props<T> {
+  key: string;
+  fn: () => Promise<T>;
+  ttl: number;
+  session_Storage: boolean;
+  useCache?: boolean;
 }
 
 interface CacheResult<T> {
-    response: T;
-    isCached: boolean;
+  response: T;
+  isCached: boolean;
 }
 
 interface CleanCache {
-    prefix: string, 
-    session_Storage: boolean
+  prefix: string;
+  session_Storage: boolean;
 }
 
 /**
@@ -21,75 +22,101 @@ interface CleanCache {
  * @param fn function to fetch data (not cached)
  * @param ttl cache expiry time
  * @param session_Storage should the date go into session storage? if false it sets to localstorage
+ * @param useCache default= TRUE; if set to FALSE returns fresh data. When TRUE, returns available / unexpired cached data (overrides cache contol)
  * @returns response & isCached
  */
-export async function cachedData<T>({key, fn, ttl, session_Storage}: Props<T>): Promise<CacheResult<T>> {
-    const storage = session_Storage ? sessionStorage : localStorage
+export async function cachedData<T>({
+  key,
+  fn,
+  ttl,
+  session_Storage,
+  useCache = true,
+}: Props<T>): Promise<CacheResult<T>> {
+  const storage = session_Storage ? sessionStorage : localStorage;
 
-    try{
-        const cached = storage.getItem(key);
+  if (!useCache) {
+    storage.removeItem(key); // if false (user override, we return fresh data and store new cache)
+  } else {
+    try {
+      const cached = storage.getItem(key);
 
-        if(cached !== null){
-            const parsed = JSON.parse(cached);
-            
-            if(Date.now() < parsed.expiry){
-                return {
-                    response: parsed.data as T,
-                    isCached: true,
-                };
-            }
-            // expired (removes the cached data
-            storage.removeItem(key);
+      if (cached !== null) {
+        const parsed = JSON.parse(cached);
+
+        if (Date.now() < parsed.expiry) {
+          return {
+            response: parsed.data as T,
+            isCached: true,
+          };
         }
-    } catch(error){
-        console.error("Cache parse error:", error);
+        // expired (removes the cached data
         storage.removeItem(key);
+      }
+    } catch (error) {
+      console.error("Cache parse error:", error);
+      storage.removeItem(key);
     }
-    
-    // if no cache fetch fresh data
-    const response = await fn();
+  }
 
-    const payload = {
-        data: response,
-        expiry: Date.now() + ttl,
-    };
+  // if no cache fetch fresh data
+  let response: T;
+  try {
+    response = await fn();
+  } catch (error) {
+    throw error;
+  }
 
-    // set new cache
+  if (ttl <= 0) {
+    return { response, isCached: false };
+  }
+
+  const payload = {
+    data: response,
+    expiry: Date.now() + ttl,
+  };
+
+  // set new cache
+  try {
     storage.setItem(key, JSON.stringify(payload));
+  } catch (e) {
+    console.warn("Cache write failed:", e);
+  }
 
-    // retrun the new data
-    return {response: response, isCached: false}
+  // retrun the new data
+  return { response: response, isCached: false };
 }
 
 /**
  * Silently cleans expired cache entries with a specific prefix
  */
-export function cleanExpiredCache({prefix, session_Storage = false}: CleanCache) {
-    const storage = session_Storage ? sessionStorage : localStorage;
+export function cleanExpiredCache({
+  prefix,
+  session_Storage = false,
+}: CleanCache) {
+  const storage = session_Storage ? sessionStorage : localStorage;
 
-    try {
-        const now = Date.now();
+  try {
+    const now = Date.now();
 
-        for (let i = storage.length - 1; i >= 0; i--) {
-            const key = storage.key(i);
-            if (!key || !key.startsWith(prefix)) continue;
+    for (let i = storage.length - 1; i >= 0; i--) {
+      const key = storage.key(i);
+      if (!key || !key.startsWith(prefix)) continue;
 
-            try {
-                const raw = storage.getItem(key);
-                if (!raw) continue;
+      try {
+        const raw = storage.getItem(key);
+        if (!raw) continue;
 
-                const parsed = JSON.parse(raw);
+        const parsed = JSON.parse(raw);
 
-                if (!parsed.expiry || now >= parsed.expiry) {
-                    storage.removeItem(key);
-                }
-
-            } catch {
-                // corrupted cache → remove
-                storage.removeItem(key);
-            }
+        if (!parsed.expiry || now >= parsed.expiry) {
+          storage.removeItem(key);
         }
-    } catch {
-        // silently fail (storage access errors etc)
+      } catch {
+        // corrupted cache → remove
+        storage.removeItem(key);
+      }
     }
+  } catch {
+    // silently fail (storage access errors etc)
+  }
 }

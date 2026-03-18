@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "./database.types";
+import { Database } from ".";
 
 class DB {
   private static SERVICE_INSTANCE: SupabaseClient<Database> | null = null;
@@ -41,4 +41,3 @@ class DB {
 
 export const setupDB = DB.setupDB;
 export const setupAnonDB = DB.setupAnonDB;
-

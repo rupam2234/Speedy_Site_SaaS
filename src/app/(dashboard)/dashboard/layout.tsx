@@ -6,19 +6,24 @@ import { ReactNode, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import SiteContextProvider, { useSiteContext } from "./siteContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
+import {
+  AuthProvider,
+  useSupabaseUser,
+} from "@/components/utils/supabase/AuthProvider";
 import { LoadingAnimation } from "@/components/theme";
 import SidebarInsetHeader from "@/components/sidebarDesign/Inset-Header";
+import { validatePlan } from "@/components/utils/planValidation/activePlan";
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 function LayoutContent({ children }: { children: ReactNode }) {
-  const { selectedSite } = useSiteContext();
+  const { selectedSite, plan, setPlan } = useSiteContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const user = useSupabaseUser();
 
   useEffect(() => {
     if (!selectedSite) return;
@@ -40,6 +45,24 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
     return () => clearTimeout(timeout);
   }, [selectedSite, router]);
+
+  // set active plan
+  useEffect(() => {
+    if (!user?.id || plan !== null) return; // plan already fetched
+
+    const fetchAndSetPlan = async () => {
+      try {
+        const activePlan: any = await validatePlan(user.id);
+        const planValue = activePlan?.[0]?.plan ?? "Free";
+        setPlan(planValue);
+      } catch (err) {
+        console.error("Failed to fetch plan:", err);
+        setPlan("Free");
+      }
+    };
+
+    fetchAndSetPlan();
+  }, [user?.id, plan, setPlan]);
 
   return (
     <>

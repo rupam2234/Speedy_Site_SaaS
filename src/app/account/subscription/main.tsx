@@ -69,17 +69,15 @@ export default function Main() {
       description: "Core features for individuals",
       current: planData?.plan === "Basic",
       features: [
-        "Up-to 2 sites",
+        "Up to 2 sites",
         "Real-Time Performance Tracking",
-        "100,000 pageviews/month",
+        "50,000 pageviews/month",
+        "History + Realtime data",
         "1 year data retention",
-        "Analytics Dashboard",
         "Element Debugging",
-        "WP Optimization Assistance",
-        "Image optimization Assistance",
-        "Performance Review & Suggestions",
-        "Weekly Performance Report",
-        "Priority Support",
+        "Image Optimization Assistance",
+        "Weekly Email Report",
+        "Standard Support",
       ],
     },
     {
@@ -88,16 +86,15 @@ export default function Main() {
       description: "Advanced monitoring for growing teams",
       current: planData?.plan === "Pro",
       features: [
-        "Up-to 6 sites",
+        "Up to 6 sites",
         "Real-Time Performance Tracking",
-        "250,000 pageviews/month",
+        "200,000 pageviews/month",
+        "History + Realtime data",
         "1 year data retention",
-        "Analytics Dashboard",
         "Element Debugging",
-        "WP Optimization Assistance",
-        "Image optimization Assistance",
-        "Performance Review & Suggestions",
-        "Weekly Performance Report",
+        "WP Plugin Audits",
+        "Image Optimization Assistance",
+        "Weekly Email Report",
         "Priority Support",
       ],
     },
@@ -107,25 +104,25 @@ export default function Main() {
       description: "Premium insights for high-traffic clients and agencies",
       current: planData?.plan === "Agency",
       features: [
-        "Up-to 20 sites",
+        "Up to 20 sites",
         "Real-Time Performance Tracking",
-        "8,00,000 pageviews",
+        "800,000 pageviews/month",
+        "History + Realtime data",
         "1 year data retention",
-        "Analytics Dashboard",
         "Element Debugging",
+        "WP Plugin Audits",
         "WP Optimization Assistance",
-        "Image optimization Assistance",
-        "Performance Review & Suggestions",
-        "Weekly Performance Report",
+        "Image Optimization Assistance",
+        "Weekly Email Report",
         "Priority Support",
       ],
     },
   ];
 
-  const calculatePrice = (monthlyPrice: number) => {
-    if (billingCycle === "monthly") return `$${monthlyPrice}/month`;
-    const yearlyPrice = monthlyPrice * 12 * 0.9; // 10% discount
-    return `$${yearlyPrice.toFixed(0)}/year`;
+  const calculatePrice = (monthlyPrice: number): number => {
+    if (billingCycle === "monthly") return monthlyPrice;
+    const yearlyPrice = (monthlyPrice * 12 * 0.9) / 12; // 10% discount
+    return yearlyPrice;
   };
 
   if (!planData) {
@@ -239,7 +236,7 @@ function PlanCard({
   features: string[];
   current: boolean;
   highlight?: boolean;
-  displayPrice: string;
+  displayPrice: number;
   billingCycle: "monthly" | "yearly";
 }) {
   // stripe price ids
@@ -308,8 +305,11 @@ function PlanCard({
         </div>
 
         <div className="-mx-6 bg-accent/80 dark:bg-accent-foreground/20 w-[calc(100%+3rem)] px-6 py-4">
-          <p className="text-2xl font-bold text-blue-500/70 dark:text-amber-200">
-            {displayPrice}
+          <p className="text-2xl font-bold text-blue-500/90 dark:text-amber-200">
+            <span>{displayPrice.toFixed(0)}</span>
+            <span className="text-sm font-medium ml-1">
+              /month {billingCycle === "yearly" && "(billed yearly)"}
+            </span>
           </p>
         </div>
 
@@ -327,7 +327,7 @@ function PlanCard({
             return (
               <li
                 key={feature}
-                className="flex items-start text-sm text-primary/60 relative group"
+                className="flex items-start text-xs text-primary/60 relative group"
               >
                 <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 shrink-0" />
                 <span>

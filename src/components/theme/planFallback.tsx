@@ -1,34 +1,19 @@
-import Link from "next/link";
-
-export function Fallback() {
+export function PlanUpgradeFallback() {
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-gray-50 px-6 text-center">
-      <div className="bg-white shadow-sm border border-gray-200 rounded-2xl p-8 max-w-lg w-full">
-        <div className="flex items-center justify-center w-14 h-14 mx-auto mb-6 rounded-full bg-indigo-50">
-          <span className="text-2xl">🔒</span>
-        </div>
-
-        <h2 className="text-2xl font-semibold text-gray-900 mb-3">
-          Premium Feature
-        </h2>
-
-        <p className="text-gray-600 mb-6 leading-relaxed">
-          This feature is available on our{" "}
-          <span className="font-medium text-gray-900">Professional</span> and
-          higher plans. Upgrade your subscription to unlock advanced insights,
-          priority support, and enhanced capabilities.
+    <div className="flex flex-col items-center justify-center h-[80vh] text-center px-6">
+      <div className="max-w-sm p-6 rounded-lg border border-primary/20 bg-primary-foreground dark:bg-secondary-background flex flex-col gap-4">
+        <h2 className="text-lg font-semibold text-primary">Upgrade Required</h2>
+        <p className="text-sm text-primary/80">
+          This feature requires a{" "}
+          <span className="font-medium">higher plan</span>. Unlock advanced
+          plugin analysis and more by upgrading.
         </p>
-
-        <Link
-          href="/account/subscription"
-          className="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 w-full sm:w-auto"
+        <button
+          className="mt-2 cursor-pointer w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+          onClick={() => (window.location.href = "/account/subscription")}
         >
-          View Plans & Upgrade
-        </Link>
-
-        <p className="mt-4 text-sm text-gray-500">
-          Need help choosing a plan? Contact our support team.
-        </p>
+          Upgrade Now
+        </button>
       </div>
     </div>
   );

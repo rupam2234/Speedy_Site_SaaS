@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!user_id) {
     return NextResponse.json(
       { message: "Request body missing" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -41,10 +41,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!data || data.length === 0) {
-      throw new Error("No active subscription found for user")
+      throw new Error("No active subscription found for user");
     }
 
-    return NextResponse.json({data}, {status: 200});
+    return NextResponse.json({ data }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }

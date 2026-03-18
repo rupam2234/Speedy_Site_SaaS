@@ -1,4 +1,4 @@
-import { Database } from "@/lib/db/database.types";
+import { Database } from "@/lib/db";
 
 export type OrderData = Database["public"]["Tables"]["orders"]["Insert"];
 
@@ -27,3 +27,6 @@ export type WordPress_key = Database["public"]["Tables"]["wp_key"]["Insert"];
 
 export type Notifications =
   Database["public"]["Tables"]["notifications"]["Insert"];
+
+export type PluginAudits =
+  Database["public"]["Views"]["wp_plugin_scans"]["Row"];
