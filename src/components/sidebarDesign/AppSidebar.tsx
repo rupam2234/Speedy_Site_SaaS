@@ -80,10 +80,6 @@ export default function AppSidebar({
             url: `/dashboard/rum/ux-distributions?site=${selectedSite}`,
           },
           {
-            title: "Analytics",
-            url: `/dashboard/rum/analytics?site=${selectedSite}`,
-          },
-          {
             title: "Web Vitals",
             url: `/dashboard/rum/web-vitals?site=${selectedSite}`,
           },
@@ -94,6 +90,10 @@ export default function AppSidebar({
           {
             title: "Cache Efficiency",
             url: `/dashboard/rum/cache-efficiency?site=${selectedSite}`,
+          },
+          {
+            title: "Analytics",
+            url: `/dashboard/rum/analytics?site=${selectedSite}`,
           },
         ],
       },
@@ -143,7 +143,7 @@ export default function AppSidebar({
       <SidebarContent>
         <MainNav
           DashboardItems={{
-            title: "Dashboard",
+            title: "Field Data",
             url: `/dashboard?site=${selectedSite}`,
             icon: LayoutDashboardIcon,
             isActive: false,

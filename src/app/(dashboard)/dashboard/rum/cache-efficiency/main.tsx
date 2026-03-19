@@ -64,7 +64,7 @@ export default function Main() {
                 Cache Efficiency
               </h2>
               <CustomTooltip
-                content="Cache efficiency shows how many requests are served from cache instead of your origin server. Requests hitting the server use CPU, memory, and bandwidth, which can slow your site if too frequent. CDNs greatly reduces this load by serving content from edge locations. A high origin hit rate means more server load, while a low rate means CDN caching is working well."
+                content="Cache efficiency shows how many requests are served from cache instead of your origin server. Requests hitting the server use CPU, memory, and bandwidth, which can slow your site if too frequent. CDNs greatly reduces this load by serving content from edge locations. A high origin hit rate means more server load, while a low rate means most of the requests are being served from edge cache."
                 trigger={
                   <InfoIcon
                     size={18}

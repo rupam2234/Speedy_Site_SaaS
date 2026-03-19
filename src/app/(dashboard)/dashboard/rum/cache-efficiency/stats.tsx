@@ -1,7 +1,7 @@
 "use client";
 
 import { CacheEfficiency } from "@/app/api/dataTypes";
-import { Activity, Zap, BarChart3, Clock, X, Sparkles } from "lucide-react";
+import { Activity, Zap, BarChart3, Clock, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useSiteContext } from "../../siteContext";
@@ -127,15 +127,15 @@ export function OriginStatsOverview({ data, isLoading }: Props) {
                     </div>
 
                     <p className="text-xs font-medium leading-none tracking-tight">
-                      Using a CDN like Cloudflare&apos;s free plan can greatly
+                      Using a CDN service, such as Cloudflare&apos; can greatly
                       reduce latency. Once configured, try our cloudflare cache
-                      rule enhancements and monitor cache efficiency + TTFB
-                      here.
+                      rule enhancements and compare cache efficiency +
+                      performance here.
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <button className="text-xs font-semibold underline underline-offset-4 hover:opacity-80 transition-opacity">
+                    {/* <button className="text-xs font-semibold underline underline-offset-4 hover:opacity-80 transition-opacity">
                       Learn more
                     </button>
                     <button
@@ -144,7 +144,7 @@ export function OriginStatsOverview({ data, isLoading }: Props) {
                       aria-label="Dismiss"
                     >
                       <X className="w-4 h-4 opacity-70" />
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               </div>

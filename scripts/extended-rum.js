@@ -117,8 +117,6 @@ if ("PerformanceObserver" in window) {
     const entry = list.getEntries()[0];
     if (!entry) return;
 
-
-
     queueEvent({
       type: "navigation-timing",
       navigationType: entry.type, // navigate | reload | back_forward | prerender
@@ -171,7 +169,6 @@ function initializeWebVitals() {
         ) {
           if (!maxCustomEntry || entry.duration > maxCustomEntry.duration) {
             maxCustomEntry = entry;
-            
           }
         }
       }
@@ -250,7 +247,7 @@ function queueEvent(event) {
 }
 
 function handleCLS(metric) {
-  if(!worstCLS || metric.value > worstCLS.value){
+  if (!worstCLS || metric.value > worstCLS.value) {
     worstCLS = {
       type: "web-vital",
       siteDomain,
@@ -261,7 +258,7 @@ function handleCLS(metric) {
         largestShiftTarget: metric.attribution?.largestShiftTarget,
         largestShiftTime: metric.attribution?.largestShiftTime,
       },
-    }
+    };
   }
 }
 
@@ -273,10 +270,13 @@ function handleINP(metric) {
 function handleLCP(metric) {
   const rating = classifyMetric(metric.value, LCPThresholds);
   const resourceEntries = performance.getEntriesByType("resource");
+  const targetEl = metric.attribution?.target;
+
   const isImage =
-    metric.attribution?.target?.tagName?.toLowerCase() === "img" ||
+    targetEl?.tagName?.toLowerCase() === "img" ||
     metric.attribution?.url?.match(/\.(jpe?g|png|webp|gif|avif|svg)$/i);
 
+  // image matching (always collect)
   const entryByExactUrl =
     metric.attribution?.url &&
     resourceEntries.find((e) => e.name === metric.attribution.url);
@@ -284,43 +284,83 @@ function handleLCP(metric) {
   const entryByLooseMatch =
     !entryByExactUrl &&
     resourceEntries.find((e) =>
-      e.name.includes(metric.attribution?.url?.split("/").pop()),
+      e.name.includes(metric.attribution?.url?.split("/").pop() || ""),
     );
 
   const matchedEntry = entryByExactUrl || entryByLooseMatch;
 
   const findImage =
-    isImage && metric.attribution?.target instanceof HTMLImageElement
-      ? metric.attribution.target
+    isImage && targetEl instanceof HTMLImageElement
+      ? targetEl
       : (metric.attribution?.url &&
-          document?.querySelector(`img[src="${metric.attribution?.url}"]`)) ||
+          document.querySelector(`img[src="${metric.attribution.url}"]`)) ||
         null;
 
-  if(!worstLCP || metric.value > worstLCP.value){
-    worstLCP = {type: "web-vital",
+  // worst LCP check
+  if (!worstLCP || metric.value > worstLCP.value) {
+    // font detection (only for worst LCP)
+    let fontData = null;
+    let fontResource = null;
+
+    if (!isImage && targetEl instanceof Element) {
+      const styles = getComputedStyle(targetEl);
+      const fontFamily = styles.fontFamily
+        ?.split(",")[0]
+        ?.replace(/["']/g, "")
+        .trim();
+
+      fontData = {
+        fontFamily,
+        fontWeight: styles.fontWeight,
+        fontSize: styles.fontSize,
+      };
+
+      fontResource = resourceEntries
+        .filter((e) => e.initiatorType === "font")
+        .find((e) => {
+          const fileName = e.name.split("/").pop()?.toLowerCase() || "";
+          return fontFamily && fileName.includes(fontFamily.toLowerCase());
+        });
+    }
+
+    worstLCP = {
+      type: "web-vital",
       siteDomain,
       name: "LCP",
       value: metric.value,
       rating,
       attribution: {
-        target: metric.attribution?.target,
+        target: summarizeElement(targetEl),
         resourceLoadDelay: metric.attribution?.resourceLoadDelay,
         resourceLoadDuration: metric.attribution?.resourceLoadDuration,
         elementRenderDelay: metric.attribution?.elementRenderDelay,
         timeToFirstByte: metric.attribution?.timeToFirstByte,
         url: metric.attribution?.url,
+
+        // always include image info
         ...(isImage && {
           decodedBodySize: matchedEntry?.decodedBodySize ?? null,
           transferSize: matchedEntry?.transferSize ?? null,
           width: findImage?.width ?? null,
           height: findImage?.height ?? null,
           isLazy:
-            findImage?.classList.contains("lazyloaded") ||
-            findImage?.classList.contains("lazyload"),
+            findImage?.classList?.contains("lazyloaded") ||
+            findImage?.classList?.contains("lazyload"),
+        }),
+
+        // font info only for worst LCP
+        ...(fontData && {
+          font: {
+            family: fontData.fontFamily,
+            weight: fontData.fontWeight,
+            size: fontData.fontSize,
+            url: fontResource?.name || null,
+            transferSize: fontResource?.transferSize ?? null,
+          },
         }),
       },
-    }
-  }      
+    };
+  }
 }
 
 function handleFCP(metric) {
@@ -360,12 +400,18 @@ function getDeviceType() {
 
 function detectOriginHit() {
   const nav = performance.getEntriesByType("navigation")[0];
-  if (!nav) return { type: "origin-info", detected: false, originHit: null, provider: null };
+  if (!nav)
+    return {
+      type: "origin-info",
+      detected: false,
+      originHit: null,
+      provider: null,
+    };
 
   const st = nav.serverTiming || [];
 
   // if cloudflare CDN
-  const cfOrigin = st.find(x => x.name === "cfOrigin");
+  const cfOrigin = st.find((x) => x.name === "cfOrigin");
   if (cfOrigin) {
     return {
       type: "origin-info",
@@ -373,12 +419,12 @@ function detectOriginHit() {
       provider: "cloudflare",
       originHit: cfOrigin.duration > 0,
       originDuration: cfOrigin.duration,
-      cacheStatus: null
+      cacheStatus: null,
     };
   }
 
   // generic CDN
-  const genericOrigin = st.find(x => x.name === "origin");
+  const genericOrigin = st.find((x) => x.name === "origin");
   if (genericOrigin) {
     return {
       type: "origin-info",
@@ -386,36 +432,38 @@ function detectOriginHit() {
       provider: "generic-server-timing",
       originHit: genericOrigin.duration > 0,
       originDuration: genericOrigin.duration,
-      cacheStatus: null
+      cacheStatus: null,
     };
   }
 
   // other CDNs
-  const cacheTiming = st.find(x =>
-    ["cache", "cdn-cache", "edgeCache"].includes(x.name)
+  const cacheTiming = st.find((x) =>
+    ["cache", "cdn-cache", "edgeCache"].includes(x.name),
   );
 
   if (cacheTiming?.description) {
     const status = cacheTiming.description.toUpperCase();
-    const originHit = ["MISS", "REVALIDATED", "EXPIRED", "BYPASS"].includes(status);
+    const originHit = ["MISS", "REVALIDATED", "EXPIRED", "BYPASS"].includes(
+      status,
+    );
     return {
       type: "origin-info",
       detected: true,
       provider: "generic-cache-status",
       originHit,
       originDuration: null,
-      cacheStatus: status
+      cacheStatus: status,
     };
   }
 
-  // no CDN 
+  // no CDN
   return {
     type: "origin-info",
     detected: false,
     originHit: null,
     originDuration: null,
     provider: null,
-    cacheStatus: null
+    cacheStatus: null,
   };
 }
 
@@ -444,15 +492,19 @@ function checkMetricsReady() {
     worstLCP !== null &&
     (webVitalsINP !== null || maxCustomEntry === null)
   ) {
-    return true
+    return true;
   }
 }
 
+let isFlushing = false;
 let hasFlushed = false;
 
 function flushMetrics() {
-  if (hasFlushed) return;  
+  if (isFlushing || hasFlushed) return;
+
+  isFlushing = true;
   hasFlushed = true;
+
   try {
     if (latestMetrics.INP || maxCustomEntry) {
       let inpAttribution = {};
@@ -501,14 +553,13 @@ function flushMetrics() {
         rating,
         attribution: inpAttribution,
       });
-
     }
 
     // aggregate CLS
-    if(worstCLS) batchedData.push(worstCLS);
+    if (worstCLS) batchedData.push(worstCLS);
 
     //aggregate LCP
-    if(worstLCP) batchedData.push(worstLCP);
+    if (worstLCP) batchedData.push(worstLCP);
 
     /**
      * origin hit detection
@@ -534,8 +585,7 @@ function flushMetrics() {
       let success = false;
 
       if (navigator.sendBeacon) {
-
-        const blob = new Blob([payload], { type: 'application/json' });
+        const blob = new Blob([payload], { type: "application/json" });
         success = navigator.sendBeacon(CONFIG.API_URL, blob);
       }
       if (!success) {
@@ -559,7 +609,7 @@ function flushMetrics() {
               //       timestamp: Date.now()
               //     })
               //   );
-              // }        
+              // }
             });
         } catch (error) {
           console.error("Fetch error:", error);
@@ -576,9 +626,10 @@ function flushMetrics() {
       }
     }
   } finally {
-    batchedData.length = 0; 
+    batchedData.length = 0;
     worstCLS = null;
     worstLCP = null;
+    isFlushing = false;
   }
 }
 
@@ -587,7 +638,7 @@ setTimeout(() => {
     const isReady = checkMetricsReady();
     if (isReady) flushMetrics();
   }
-}, 15000);  // flush after 15 seconds of page load
+}, 15000); // flush after 15 seconds of page load
 
 // iOS Safari and modern browsers
 window.addEventListener("pagehide", () => {
@@ -603,4 +654,3 @@ document.addEventListener("visibilitychange", () => {
 
 // fallback
 // window.addEventListener("beforeunload", flushMetrics);
-

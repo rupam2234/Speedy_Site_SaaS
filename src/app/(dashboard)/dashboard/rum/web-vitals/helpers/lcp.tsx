@@ -13,6 +13,7 @@ import {
   CopyCheckIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useSiteContext } from "../../../siteContext";
 
 const getVitalStatus = (ms: number) => {
   if (ms <= 2500) return { color: "text-emerald-500", label: "Good" };
@@ -29,6 +30,7 @@ export default function LCPelements({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState(5);
+  const { selectedSite } = useSiteContext();
 
   const filtered = useMemo(
     () =>
@@ -93,6 +95,16 @@ export default function LCPelements({
         </div>
       </div>
 
+      {/* if no contributors */}
+      {contributors.length === 0 && (
+        <div className="flex min-h-88 mx-32 items-center text-center justify-center text-primary/40">
+          <p>
+            No major contributors found. Active metric must be within the safe
+            range. Check metric average and distributions to confirm.
+          </p>
+        </div>
+      )}
+
       {/* Table Body */}
       <div className="divide-y divide-primary/5">
         {activeItems.map((item, i) => {
@@ -127,7 +139,7 @@ export default function LCPelements({
                     ) : (
                       <Type size={14} className="text-muted-foreground/60" />
                     )}
-                    <code className="bg-muted/50 px-1.5 py-0.5 rounded text-[12px] font-mono truncate max-w-xl border border-primary/5">
+                    <code className="bg-muted/50 px-1.5 py-0.5 rounded text-[10px] font-mono truncate max-w-xl border border-primary/5">
                       {item.element_target}
                     </code>
                     <button
@@ -145,14 +157,22 @@ export default function LCPelements({
                     </button>
                   </div>
                   <div className="flex items-center gap-3 text-muted-foreground">
-                    <span className="truncate max-w-75">{item.page_url}</span>
+                    <Link
+                      href={`https://${selectedSite}/${item.page_url}`}
+                      className="truncate max-w-75 hover:text-blue-400"
+                      target="_blank"
+                      rel="nofollow"
+                    >
+                      {item.page_url}
+                    </Link>
                     {item.image_url && (
                       <Link
                         href={item.image_url}
                         target="_blank"
+                        rel="nofollow"
                         className="hover:text-primary flex items-center gap-1"
                       >
-                        <ExternalLink size={11} /> source
+                        <ExternalLink size={11} /> image link
                       </Link>
                     )}
                     <span className="text-[11px] tabular-nums">

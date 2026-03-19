@@ -36,7 +36,7 @@ export default function MainNav({
   }[];
 
   DashboardItems: {
-    title: "Dashboard";
+    title: string;
     url: string;
     icon: typeof LayoutDashboardIcon;
     isActive: false;

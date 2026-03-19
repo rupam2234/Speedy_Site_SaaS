@@ -200,14 +200,19 @@ export default function Main() {
 
     switch (activeMetric) {
       case "LCP":
-        return contributors?.filter((x: any) => {
-          if (x.device_type !== selectedDevice) return false;
-          if (seen.has(x.element_target)) return false;
-          if (x.avg_lcp_value <= cwv_ranges.lcp[0]) return false;
+        return contributors
+          ?.filter((x: any) => x.device_type === selectedDevice)
+          .sort((a: any, b: any) => b.avg_lcp_value - a.avg_lcp_value)
+          .filter((x: any) => {
+            const key = x.element_target || "unknown";
 
-          seen.add(x.element_target);
-          return true;
-        });
+            if (x.avg_lcp_value <= cwv_ranges.lcp[0]) return false;
+
+            if (seen.has(key)) return false;
+            seen.add(key);
+
+            return true;
+          });
 
       case "CLS":
         return contributors?.filter((x: any) => {
@@ -347,10 +352,10 @@ export default function Main() {
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                         What it is
                       </p>
-                      <p className="text-xs leading-relaxed text-slate-300">
+                      <p className="text-xs leading-relaxed text-primary-foreground">
                         A single, weighted metric that summarizes your
                         site&apos;s overall speed and stability. It translates
-                        technical data (like LCP, INP, and CLS) into a
+                        technical data (LCP, FCP, INP, CLS and TTFB) into a
                         &quot;health&quot; score based on real visitor
                         interactions.
                       </p>
@@ -369,11 +374,11 @@ export default function Main() {
                             <span className="text-[11px] font-bold text-white">
                               One-Glance Health Status
                             </span>
-                            <span className="text-[10px] text-slate-400">
-                              Instead of monitoring dozens of individual charts,
-                              the UX Score gives you an immediate answer to:
-                              &quot;Is my site performing well for my users
-                              right now?&quot;
+                            <span className="text-[10px] text-primary-foreground/80">
+                              Instead of monitoring individual charts, the UX
+                              Score gives you an immediate answer to: &quot;Is
+                              my site performing well for my users right
+                              now?&quot;
                             </span>
                           </div>
                         </div>
@@ -384,7 +389,7 @@ export default function Main() {
                             <span className="text-[11px] font-bold text-white">
                               Preemptive Safety Net
                             </span>
-                            <span className="text-[10px] text-slate-400">
+                            <span className="text-[10px] text-primary-foreground/80">
                               By watching this score, you can catch gradual
                               performance regressions that haven&apos;t yet
                               triggered critical SEO failures but are starting
@@ -399,7 +404,7 @@ export default function Main() {
                             <span className="text-[11px] font-bold text-white">
                               Objective Benchmarking
                             </span>
-                            <span className="text-[10px] text-slate-400">
+                            <span className="text-[10px] text-primary-foreground/80">
                               It uses the same industry-standard thresholds
                               (Good, Needs Improvement, Poor) as Core Web
                               Vitals, ensuring your internal monitoring stays
@@ -451,7 +456,7 @@ export default function Main() {
                     {x.name}
                   </p>
                   <p className="text-[13px] font-sans">
-                    <span>Average: </span>
+                    <span>Weekly avg: </span>
                     {x.key === "LCP" ? (
                       <span
                         className={`${Number(sideBarObj?.lcp) <= cwv_ranges.lcp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.lcp) > cwv_ranges.lcp[0] && Number(sideBarObj?.lcp) < cwv_ranges.lcp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
@@ -493,7 +498,7 @@ export default function Main() {
         </div>
 
         {/* Main Content */}
-        <div className="md:col-span-10 border border-primary/10 rounded-sm bg-primary-foreground dark:bg-secondary-background md:ml-1 px-2 py-4">
+        <div className="md:col-span-10 border border-primary/10 rounded-sm bg-primary-foreground dark:bg-secondary-background md:ml-1 px-2 pb-4">
           <div className="relative flex gap-2 min-w-0 max-h-fit">
             <div className="w-full space-y-2">
               <RumCwvChart
@@ -504,9 +509,6 @@ export default function Main() {
               />
             </div>
           </div>
-
-          {/* distributions accross various tabs */}
-          {/* <BarGraphTabs activeMetric={activeMetric} /> */}
 
           {/* Breakdown/Details placeholder */}
           <div
@@ -527,6 +529,9 @@ export default function Main() {
               <></>
             )}
           </div>
+
+          {/* distributions accross various tabs */}
+          {/* <BarGraphTabs activeMetric={activeMetric} /> */}
         </div>
       </div>
     </>

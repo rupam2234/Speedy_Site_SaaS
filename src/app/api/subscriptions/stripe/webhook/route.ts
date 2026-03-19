@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       /*** SUBSCRIPTION CREATED ***/
       case "customer.subscription.created": {
         const subscription = event.data.object as Stripe.Subscription;
-      
+
         // Determine plan
         const priceId = subscription.items.data[0].price.id;
         const activeplan =
@@ -60,58 +60,58 @@ export async function POST(req: Request) {
               : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
                 ? "Agency"
                 : "Free";
-      
+
         const billingCycleEnd = new Date(
-          subscription.billing_cycle_anchor * 1000
+          subscription.billing_cycle_anchor * 1000,
         ).toISOString();
-      
+
         // Fetch existing subscription to get user_id
         const { data: existing } = await worker
           .from("subscriptions")
           .select("user_id")
           .eq("stripe_customer_id", subscription.customer as string)
           .single();
-      
+
         // Get safe UUID
         const userId =
           existing?.user_id ?? subscription.metadata?.user_id ?? null;
-      
+
         if (!userId) {
           console.warn(
             "No valid UUID for user_id; skipping subscription upsert for customer:",
-            subscription.customer
+            subscription.customer,
           );
           break; // Stop processing if we don't have a valid UUID
         }
-      
-        const { error } = await worker
-          .from("subscriptions")
-          .upsert(
-            {
-              user_id: userId,
-              stripe_subscription_status: subscription.status,
-              stripe_subscription_id: subscription.id,
-              stripe_customer_id: subscription.customer as string,
-              period_starts_at: new Date(subscription.start_date * 1000).toISOString(),
-              period_ends_at: subscription.billing_cycle_anchor
-                ? billingCycleEnd
-                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "active",
-              plan: activeplan,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "stripe_subscription_id" }
-          );
-      
+
+        const { error } = await worker.from("subscriptions").upsert(
+          {
+            user_id: userId,
+            stripe_subscription_status: subscription.status,
+            stripe_subscription_id: subscription.id,
+            stripe_customer_id: subscription.customer as string,
+            period_starts_at: new Date(
+              subscription.start_date * 1000,
+            ).toISOString(),
+            period_ends_at: subscription.billing_cycle_anchor
+              ? billingCycleEnd
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            status: "active",
+            plan: activeplan,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "stripe_subscription_id" },
+        );
+
         console.log("SUBSCRIPTION CREATED UPDATE:", error ?? "success");
-      
+
         // Send subscription created email
         await SubscriptionCreated({
           stripeCustomerId: subscription.customer as string,
           plan: activeplan,
           billingCycleEnd: billingCycleEnd,
         });
-      
+
         break;
       }
 
@@ -152,9 +152,9 @@ export async function POST(req: Request) {
         const invoice = event.data.object as Stripe.Invoice;
 
         // Only reset usage on real subscription renewals
-        // this will only reset usage on monthly renewal, 
+        // this will only reset usage on monthly renewal,
         // not upgrades (reseting on upgrade can allow people additional quota, revenue leakage)
-        if (invoice.billing_reason !== "subscription_cycle") { 
+        if (invoice.billing_reason !== "subscription_cycle") {
           break;
         }
 
@@ -162,8 +162,10 @@ export async function POST(req: Request) {
           break;
         }
 
-        const periodStart = new Date(invoice.period_start * 1000).toISOString();
-        const periodEnd = new Date(invoice.period_end * 1000).toISOString();
+        const periodStart = new Date(invoice.period_end * 1000).toISOString(); // next period start
+        const nextPeriodEnd = new Date(invoice.period_end * 1000);
+        nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + 1); // add 1 month
+        const periodEnd = nextPeriodEnd.toISOString();
 
         const { error } = await worker
           .from("subscriptions")
@@ -184,6 +186,18 @@ export async function POST(req: Request) {
         // send email
         await sendRenewalSuccessEmail({
           stripeCustomerId: invoice.customer as string,
+        });
+
+        // add a notification
+        await fetch("/api/notifications/subscription-notify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customer_id: invoice.customer,
+            message: "Your subscription renewal was successfull.",
+          }),
         });
 
         break;
@@ -256,4 +270,3 @@ export async function POST(req: Request) {
 
   return new Response("subscription process complete", { status: 200 });
 }
-

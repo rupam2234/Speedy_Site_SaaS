@@ -267,7 +267,7 @@ export default function UxReport() {
               </p>
             </div>
           </div>
-          <div className="w-full md:w-auto flex items-center gap-5">
+          <div className="w-full md:w-auto flex-col md:flex-row items-start flex md:items-center gap-5">
             <div className="flex items-center gap-2 border rounded-sm border-primary/20 bg-primary/10 px-3 py-1.5">
               {activeWindow === "Distributions" ? (
                 <MapPin size={16} />
@@ -323,8 +323,8 @@ export default function UxReport() {
                   <strong className="text-foreground">Core Web Vitals</strong>.
                   <span className="hidden sm:inline">
                     {" "}
-                    Improving Web Vital issues and CDN configurations will boost
-                    performance.
+                    Minimizing Web Vital related issues and delivering page
+                    assets with a CDN often results in GREEN regions.
                   </span>
                 </p>
               </figcaption>

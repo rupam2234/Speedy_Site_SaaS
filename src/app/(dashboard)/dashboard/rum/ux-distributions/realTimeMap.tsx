@@ -164,9 +164,7 @@ export default function RealtimeUxMap() {
   }, [visitors, theme]);
 
   useEffect(() => {
-    const socket = new WebSocket(
-      "wss://event-buffer.thespeedysite.workers.dev/realtime",
-    );
+    const socket = new WebSocket("wss://buffer.speedy.site/realtime");
 
     socket.onmessage = (event) => {
       try {
@@ -225,7 +223,7 @@ export default function RealtimeUxMap() {
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-primary/10 pb-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">
-                Active Users
+                Active Sessions
               </span>
               <div className="flex flex-col items-end">
                 <span className="text-2xl font-bold font-mono">
@@ -257,7 +255,7 @@ export default function RealtimeUxMap() {
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-blue-500" />
                 <span className="text-[9px] font-bold uppercase text-muted-foreground">
-                  Insufficient Data
+                  Insufficient UX Data
                 </span>
               </div>
             </div>
@@ -265,7 +263,7 @@ export default function RealtimeUxMap() {
             {/* Live Feed of Recent metrics */}
             <div className="space-y-3">
               <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
-                Latest Pulses
+                Latest Pageviews
               </h4>
               <div className="space-y-2 max-h-75 overflow-hidden">
                 {visitors.length === 0 ? (

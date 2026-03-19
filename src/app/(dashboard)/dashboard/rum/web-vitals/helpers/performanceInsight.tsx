@@ -5,8 +5,11 @@ import {
   Minus,
   AlertCircle,
   TriangleAlert,
+  Lightbulb,
 } from "lucide-react";
 import { useSiteContext } from "../../../siteContext";
+import { CustomTooltip } from "@/components/theme";
+import Image from "next/image";
 
 interface MetricTrendProps {
   data: [string, number][];
@@ -103,8 +106,8 @@ const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
         : "text-rose-500";
 
   return (
-    <div className="p-4 w-full">
-      <div className="flex items-center gap-2">
+    <div className="py-4 pr-4 w-full">
+      <div className="flex items-center gap-1">
         <div className={`shrink-0 ${iconColor}`}>
           {isAnomaly ? (
             <TriangleAlert size={18} />
@@ -136,9 +139,46 @@ const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
               : `${absDiff}% ${isImprovement ? "Improved" : "Declined"}`}
         </div>
 
-        <p className="text-primary/80 text-[12px] font-medium leading-relaxed">
+        <p className="text-primary/80 text-[12px] font-semibold leading-relaxed">
           {generateSentence()}
         </p>
+        <CustomTooltip
+          content={
+            <div className="space-y-3">
+              <p>
+                Weekly comparisons help reveal recent trends, but focus on
+                consistent directional changes for reliable insights. RUM data
+                can be more volatile than field data, so look for clear,
+                sustained shifts that often indicates real impact.
+              </p>
+              <Image
+                src={"/images/products/major-changes.png"}
+                alt="major-changes"
+                width={400}
+                height={205}
+                className="rounded-sm"
+              />
+              <p>
+                Sustained positive or negative shifts in RUM data can eventually
+                show up in your field metrics. Positive changes indicate
+                improvement; negative ones suggest your UX metrics need
+                attention.
+              </p>
+              <p>
+                <span className="font-semibold">Additional tip:</span> fix the
+                worst elements appears below, if there&apos;s any, can
+                significantly improve your target metrics.
+              </p>
+            </div>
+          }
+          side="bottom"
+          trigger={
+            <Lightbulb
+              size={22}
+              className="ml-3 rounded-full p-1 bg-primary/10 text-primary/80 cursor-pointer fill-amber-300"
+            />
+          }
+        />
       </div>
     </div>
   );
@@ -149,16 +189,16 @@ const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
     if (isAnomaly) {
       return anomalyDirection === "spike"
         ? `${device} ${metric} shows an unusual spike (${(percentChangeFromMedian * 100).toFixed(0)}% above normal).`
-        : `${device} ${metric} dropped unusually compared to historical patterns.`;
+        : `compared to historical patterns.`;
     }
 
     if (isStable) {
-      return `${device} ${metric} remained stable over the last seven days.`;
+      return `remained stable compared to previous week.`;
     }
 
     return isImprovement
-      ? `${device} ${metric} improved compared to the previous week.`
-      : `${device} ${metric} worsened compared to the previous week.`;
+      ? `compared to the previous week.`
+      : `compared to the previous week.`;
   }
 };
 

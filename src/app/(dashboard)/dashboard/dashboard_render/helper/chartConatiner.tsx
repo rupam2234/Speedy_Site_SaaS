@@ -124,7 +124,7 @@ export default function DashboardChartContainer() {
                 </div>
               )}
             </div>
-            <div className="flex text-sm flex-col sm:flex-row items-start sm:items-center gap-4 px-3 py-1.5 bg-white dark:bg-slate-900 shadow-sm rounded-full border border-gray-200 dark:border-slate-800">
+            <div className="flex text-sm flex-col sm:flex-row items-start sm:items-center gap-4 px-3 py-1.5 bg-white dark:bg-primary/10 shadow-sm rounded-full border border-gray-200 dark:border-slate-800">
               {/* Field Data Expectation Pill */}
               <CustomTooltip
                 delay={200}
@@ -136,9 +136,8 @@ export default function DashboardChartContainer() {
                         Why &quot;Expecting&quot;?
                       </p>
                       <p className="text-[12px] text-slate-300 leading-normal">
-                        Your official score is currently moving toward this
-                        value. Because of the 28-day lag, recent improvements
-                        take time to fully show up here.
+                        Current value of active metric is moving toward this
+                        value.
                       </p>
                     </div>
                   </div>
@@ -177,7 +176,7 @@ export default function DashboardChartContainer() {
               />
 
               {/* Weekly Trend Component */}
-              <p className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
+              <p className="flex items-center gap-2 text-primary/80 dark:text-primary/80 font-medium">
                 Trend this week:
                 <span
                   className={`

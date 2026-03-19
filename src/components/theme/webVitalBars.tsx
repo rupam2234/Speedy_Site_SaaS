@@ -46,8 +46,7 @@ const SegmentedBar: React.FC<SegmentedBarProps> = ({ good, okay, bad }) => {
                 <></>
               ) : (
                 <>
-                  {(section.value * 100).toFixed(2)}% users had {section.label}{" "}
-                  experience
+                  {(section.value * 100).toFixed(2)}% {section.label} experience
                 </>
               )}
             </span>
