@@ -12,7 +12,12 @@ import {
   TTFBelements,
 } from "./index";
 import { InfoIcon } from "lucide-react";
-import { cachedData, lazyload, RumWebVitalToolbar } from "@/components/utils";
+import {
+  cachedData,
+  cleanExpiredCache,
+  lazyload,
+  RumWebVitalToolbar,
+} from "@/components/utils";
 
 interface Metric {
   name: string;
@@ -183,6 +188,19 @@ export default function Main() {
 
     if (lazyloadKey.current === key) return;
 
+    // clean up expired cache
+    const keys = [
+      "lcp-elements",
+      "cls-elements",
+      "inp-elements",
+      "ttfb-breakdown",
+    ];
+
+    keys.forEach((x) =>
+      cleanExpiredCache({ prefix: x, session_Storage: false }),
+    );
+
+    // load valid cached data or pull fresh
     lazyload({
       fn: AnalysisHandler,
       refObj: triggerLazyload,
@@ -216,22 +234,22 @@ export default function Main() {
 
       case "CLS":
         return contributors?.filter((x: any) => {
-          if (x.device_type !== selectedDevice?.toLowerCase()) return false;
-          if (x.cls_value <= 0.1) return false;
+          if (x.device !== selectedDevice?.toLowerCase()) return false;
+          if (x.avg_magnitude <= 0.1) return false;
 
-          if (seen.has(x.largest_shift_target)) return false;
-          seen.add(x.largest_shift_target);
+          if (seen.has(x.target_element)) return false;
+          seen.add(x.target_element);
 
           return true;
         });
 
       case "INP":
         return contributors?.filter((x: any) => {
-          if (x.device_type !== selectedDevice.toLowerCase()) return false;
-          if (x.avg_inp_value <= 200) return false;
+          if (x._device !== selectedDevice.toLowerCase()) return false;
+          if (x._avg_inp_ms <= 200) return false;
 
-          if (seen.has(x.affected_element)) return false;
-          seen.add(x.affected_element);
+          if (seen.has(x._target_selector)) return false;
+          seen.add(x._target_selector);
 
           return true;
         });
@@ -241,7 +259,7 @@ export default function Main() {
           ? contributors.filter(
               (x: any) =>
                 x.device_type === selectedDevice.toLowerCase() &&
-                x.ttfb_ms > 800,
+                x.p75_ttfb > 800,
             )
           : [];
 
@@ -285,6 +303,8 @@ export default function Main() {
       return [x.day, Number(capped.toFixed(2))];
     });
   }, [historyData, activeMetric, selectedDevice, rumDistribution]);
+
+  console.log(contributors);
 
   if (!selectedSite) {
     return (

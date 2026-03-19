@@ -305,9 +305,6 @@ const RumCwvChart = ({
     <div ref={containerRef} className="w-full">
       <div className="flex items-center justify-between px-2 mb-2 text-xs">
         <div className="flex items-center gap-2">
-          {/* <span className="font-medium px-2 py-1 min-w-25 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">
-            {metric_key.toUpperCase()} Timeline
-          </span> */}
           <SimpleTrendInsight data={data ?? []} metric={metric_key} />
         </div>
         <span className="font-medium px-2 py-1 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">

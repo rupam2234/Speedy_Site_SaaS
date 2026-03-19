@@ -116,17 +116,17 @@ export default function Home() {
         <div className="relative z-10 mx-auto max-w-6xl px-6 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-bold text-indigo-600 mb-8 shadow-sm">
             <span className="flex h-2 w-2 rounded-full bg-indigo-500" />
-            Real-Time Performance Monitoring
+            Real-Time UX & Performance Monitoring
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.15] tracking-tight text-slate-900">
-            Optimize Core Web Vitals <br />
+          <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.15] tracking-tight text-slate-700">
+            Debug, Measure & Enhance Page UX <br />
             <span className="text-indigo-600">
-              Improve Crawl Efficiency for Search and AI
+              Boost Speed for Users and LLM Crawlers
             </span>
           </h1>
 
-          <p className="mt-8 max-w-2xl mx-auto text-lg md:text-xl text-slate-600 leading-relaxed font-normal">
+          <p className="mt-8 max-w-3xl mx-auto text-lg md:text-xl text-slate-600 leading-relaxed font-normal">
             See real-user performance across devices and regions, identify Core
             Web Vitals bottlenecks instantly, and fix issues before they impact
             UX, search rankings, or AI discoverability.
@@ -135,7 +135,7 @@ export default function Home() {
           <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
             <a
               href="#features"
-              className="px-8 py-4 bg-slate-900 text-white rounded-xl font-bold transition-all hover:bg-indigo-600 shadow-md"
+              className="px-8 py-4 bg-slate-700 text-white rounded-xl font-bold transition-all hover:bg-indigo-600 shadow-md"
             >
               See How It Works
             </a>
@@ -275,11 +275,11 @@ export default function Home() {
                     </ul>
                   </div>
                   <Image
-                    src={"/images/homepage/problematic-elements.png"}
+                    src={"/images/homepage/Element-debugging.png"}
                     alt="problematic-elements"
                     width={650}
                     height={350}
-                    className="mt-15 shadow-xl rounded-sm"
+                    className="mt-20 shadow-xl rounded-sm"
                   />
                 </div>
               </div>

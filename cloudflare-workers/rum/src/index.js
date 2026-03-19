@@ -1,4 +1,3 @@
-
 import script from './rum.txt';
 
 export default {
@@ -10,8 +9,9 @@ export default {
 				headers: {
 					'Content-Type': 'application/javascript',
 					'Cache-Control': 'public, max-age=86400',
+
 					// 'Access-Control-Allow-Origin': origin,  // echo origin
-          			// 'Access-Control-Allow-Credentials': 'true',
+					// 'Access-Control-Allow-Credentials': 'true',
 					// 'X-Content-Type-Options': 'nosniff'
 				},
 			});
@@ -20,7 +20,6 @@ export default {
 		return new Response('Not found', { status: 404 });
 	},
 };
-
 
 //backup
 

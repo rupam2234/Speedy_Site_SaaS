@@ -270,13 +270,23 @@ function handleINP(metric) {
 function handleLCP(metric) {
   const rating = classifyMetric(metric.value, LCPThresholds);
   const resourceEntries = performance.getEntriesByType("resource");
-  const targetEl = metric.attribution?.target;
+
+  let targetEl = metric.attribution?.target;
+
+  if (typeof targetEl === "string") {
+    try {
+      targetEl =
+        document.querySelector(targetEl) ||
+        document.querySelector(targetEl.split(">").pop());
+    } catch {
+      targetEl = null;
+    }
+  }
 
   const isImage =
     targetEl?.tagName?.toLowerCase() === "img" ||
     metric.attribution?.url?.match(/\.(jpe?g|png|webp|gif|avif|svg)$/i);
 
-  // image matching (always collect)
   const entryByExactUrl =
     metric.attribution?.url &&
     resourceEntries.find((e) => e.name === metric.attribution.url);
@@ -284,7 +294,7 @@ function handleLCP(metric) {
   const entryByLooseMatch =
     !entryByExactUrl &&
     resourceEntries.find((e) =>
-      e.name.includes(metric.attribution?.url?.split("/").pop() || ""),
+      e.name.includes(metric.attribution?.url?.split("/").pop()),
     );
 
   const matchedEntry = entryByExactUrl || entryByLooseMatch;
@@ -293,36 +303,36 @@ function handleLCP(metric) {
     isImage && targetEl instanceof HTMLImageElement
       ? targetEl
       : (metric.attribution?.url &&
-          document.querySelector(`img[src="${metric.attribution.url}"]`)) ||
+          document?.querySelector(`img[src="${metric.attribution?.url}"]`)) ||
         null;
 
-  // worst LCP check
+  let fontAttribution = null;
+
+  if (!isImage && targetEl instanceof Element) {
+    const styles = getComputedStyle(targetEl);
+
+    const fontFamily = styles.fontFamily
+      ?.split(",")[0]
+      ?.replace(/["']/g, "")
+      .trim();
+
+    const fontResource = resourceEntries
+      .filter((e) => e.initiatorType === "font")
+      .find((e) => {
+        const fileName = e.name.split("/").pop()?.toLowerCase() || "";
+        return fontFamily && fileName.includes(fontFamily.toLowerCase());
+      });
+
+    fontAttribution = {
+      family: fontFamily,
+      weight: styles.fontWeight,
+      size: styles.fontSize,
+      url: fontResource?.name || null,
+      transferSize: fontResource?.transferSize ?? null,
+    };
+  }
+
   if (!worstLCP || metric.value > worstLCP.value) {
-    // font detection (only for worst LCP)
-    let fontData = null;
-    let fontResource = null;
-
-    if (!isImage && targetEl instanceof Element) {
-      const styles = getComputedStyle(targetEl);
-      const fontFamily = styles.fontFamily
-        ?.split(",")[0]
-        ?.replace(/["']/g, "")
-        .trim();
-
-      fontData = {
-        fontFamily,
-        fontWeight: styles.fontWeight,
-        fontSize: styles.fontSize,
-      };
-
-      fontResource = resourceEntries
-        .filter((e) => e.initiatorType === "font")
-        .find((e) => {
-          const fileName = e.name.split("/").pop()?.toLowerCase() || "";
-          return fontFamily && fileName.includes(fontFamily.toLowerCase());
-        });
-    }
-
     worstLCP = {
       type: "web-vital",
       siteDomain,
@@ -330,33 +340,26 @@ function handleLCP(metric) {
       value: metric.value,
       rating,
       attribution: {
-        target: summarizeElement(targetEl),
+        target: metric.attribution?.target,
+
         resourceLoadDelay: metric.attribution?.resourceLoadDelay,
         resourceLoadDuration: metric.attribution?.resourceLoadDuration,
         elementRenderDelay: metric.attribution?.elementRenderDelay,
         timeToFirstByte: metric.attribution?.timeToFirstByte,
         url: metric.attribution?.url,
 
-        // always include image info
         ...(isImage && {
           decodedBodySize: matchedEntry?.decodedBodySize ?? null,
           transferSize: matchedEntry?.transferSize ?? null,
           width: findImage?.width ?? null,
           height: findImage?.height ?? null,
           isLazy:
-            findImage?.classList?.contains("lazyloaded") ||
-            findImage?.classList?.contains("lazyload"),
+            findImage?.classList.contains("lazyloaded") ||
+            findImage?.classList.contains("lazyload"),
         }),
 
-        // font info only for worst LCP
-        ...(fontData && {
-          font: {
-            family: fontData.fontFamily,
-            weight: fontData.fontWeight,
-            size: fontData.fontSize,
-            url: fontResource?.name || null,
-            transferSize: fontResource?.transferSize ?? null,
-          },
+        ...(fontAttribution && {
+          font: fontAttribution,
         }),
       },
     };

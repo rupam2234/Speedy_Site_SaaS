@@ -403,14 +403,9 @@ export default function Main() {
                         {percentile ?? "--"}
                         <p>{unit}</p>
                       </span>
-                      <CustomTooltip
-                        content={`At least 75% of users experienced ${percentile} ${label.toLowerCase()}.`}
-                        trigger={
-                          <span className="cursor-help dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
-                            p75
-                          </span>
-                        }
-                      />
+                      <span className="dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
+                        p75
+                      </span>
                     </div>
                   </div>
                   <div>
