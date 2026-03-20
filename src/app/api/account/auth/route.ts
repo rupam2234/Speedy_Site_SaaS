@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { jwtVerify } from 'jose';
-import { newUserSignup } from '../../emails/newSignUp';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { jwtVerify } from "jose";
+import { newUserSignup } from "../../emails/newSignUp";
 
 const supabaseAdmin = () => {
   const url = process.env.SUPABASE_URL!;
@@ -13,54 +13,76 @@ export async function GET(req: NextRequest) {
   const supabase = supabaseAdmin();
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ message: 'Unauthorized: Missing or invalid Authorization header' }, { status: 401 });
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { message: "Unauthorized: Missing or invalid Authorization header" },
+        { status: 401 },
+      );
     }
 
     const token = authHeader.slice(7).trim();
     const payload = await verifyToken(token);
     const userId = payload.sub;
     if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized: Missing user ID in token' }, { status: 401 });
+      return NextResponse.json(
+        { message: "Unauthorized: Missing user ID in token" },
+        { status: 401 },
+      );
     }
 
     // PROFILE CHECK / CREATE
     const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
       .single();
 
-    if (profileError && profileError.code !== 'PGRST116') {
-      return NextResponse.json({ message: 'Database error', error: profileError.message }, { status: 500 });
+    if (profileError && profileError.code !== "PGRST116") {
+      return NextResponse.json(
+        { message: "Database error", error: profileError.message },
+        { status: 500 },
+      );
     }
 
     if (!profile) {
-      const { error: insertProfileError } = await supabase.from('profiles').insert({
-        id: userId,
-        email: payload.email || null,
-      });
+      const { error: insertProfileError } = await supabase
+        .from("profiles")
+        .insert({
+          id: userId,
+          email: payload.email || null,
+        });
 
       if (insertProfileError) {
-        return NextResponse.json({ message: 'Failed to create profile', error: insertProfileError.message }, { status: 500 });
+        return NextResponse.json(
+          {
+            message: "Failed to create profile",
+            error: insertProfileError.message,
+          },
+          { status: 500 },
+        );
       }
 
       // if all good send new user message to admin
-
       const metaData = payload.user_metadata as any;
-      await newUserSignup({userEmail: payload.email as string ?? "unknown", userName: metaData.name as string ?? "unknown name"})
+      await newUserSignup({
+        userEmail: (payload.email as string) ?? "unknown",
+        userName: (metaData.name as string) ?? "unknown name",
+      });
     }
 
     // SUBSCRIPTION CHECK / CREATE
     const { data: subscription, error } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', userId)
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
-      return NextResponse.json({ message: 'Database error', error: error.message }, { status: 500 });
+    if (error && error.code !== "PGRST116") {
+      return NextResponse.json(
+        { message: "Database error", error: error.message },
+        { status: 500 },
+      );
     }
 
     if (!subscription) {
@@ -70,26 +92,34 @@ export async function GET(req: NextRequest) {
 
       const subscriptionData = {
         user_id: userId,
-        status: 'active',
-        plan: 'Free',
+        status: "active",
+        plan: "Free",
         period_starts_at: now.toISOString(),
         period_ends_at: trialEndsAt.toISOString(),
         trial_ends_at: trialEndsAt.toISOString(),
-        billing_interval: 'monthly',
+        billing_interval: "monthly",
         current_usage: 0,
         created_at: now.toISOString(),
         updated_at: now.toISOString(),
       };
 
-      const { error: insertError } = await supabase.from('subscriptions').insert(subscriptionData);
+      const { error: insertError } = await supabase
+        .from("subscriptions")
+        .insert(subscriptionData);
       if (insertError) {
-        return NextResponse.json({ message: 'Failed to create subscription', error: insertError.message }, { status: 500 });
+        return NextResponse.json(
+          {
+            message: "Failed to create subscription",
+            error: insertError.message,
+          },
+          { status: 500 },
+        );
       }
 
       return NextResponse.json({
-        message: 'Free subscription created',
-        access: 'granted',
-        plan: 'Free',
+        message: "Free subscription created",
+        access: "granted",
+        plan: "Free",
         user: {
           id: userId,
           email: payload.email || null,
@@ -99,17 +129,28 @@ export async function GET(req: NextRequest) {
     }
 
     // SUBSCRIPTION VALIDATION
-    if (subscription.status !== 'active') {
-      return NextResponse.json({ message: `Subscription status is '${subscription.status}'. Access denied.` }, { status: 403 });
+    if (subscription.status !== "active") {
+      return NextResponse.json(
+        {
+          message: `Subscription status is '${subscription.status}'. Access denied.`,
+        },
+        { status: 403 },
+      );
     }
 
     if (!isInSubscriptionPeriod(subscription)) {
-      return NextResponse.json({ message: 'Subscription period expired or not started' }, { status: 403 });
+      return NextResponse.json(
+        { message: "Subscription period expired or not started" },
+        { status: 403 },
+      );
     }
 
-    return NextResponse.json({ message: 'Request allowed', subscription });
+    return NextResponse.json({ message: "Request allowed", subscription });
   } catch (err: any) {
-    return NextResponse.json({ message: 'Unauthorized', error: err.message }, { status: 401 });
+    return NextResponse.json(
+      { message: "Unauthorized", error: err.message },
+      { status: 401 },
+    );
   }
 }
 
@@ -120,14 +161,18 @@ async function verifyToken(token: string) {
   const secret = encoder.encode(jwtSecret);
   const { payload } = await jwtVerify(token, secret, {
     issuer: `${supabaseUrl}/auth/v1`,
-    audience: 'authenticated',
+    audience: "authenticated",
   });
   return payload;
 }
 
 function isInSubscriptionPeriod(subscription: any): boolean {
   const now = new Date();
-  const start = subscription.period_starts_at ? new Date(subscription.period_starts_at) : null;
-  const end = subscription.period_ends_at ? new Date(subscription.period_ends_at) : null;
+  const start = subscription.period_starts_at
+    ? new Date(subscription.period_starts_at)
+    : null;
+  const end = subscription.period_ends_at
+    ? new Date(subscription.period_ends_at)
+    : null;
   return start !== null && end !== null && now >= start && now <= end;
 }

@@ -3,8 +3,7 @@ export type Json =
   | number
   | boolean
   | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+  | { [key: string]: Json | undefined };
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
@@ -1301,6 +1300,22 @@ export type Database = {
           moderate_percentage: number;
           total_sessions: number;
           unhappy_percentage: number;
+        }[];
+      };
+      ux_map_data: {
+        Args: { domain_url: string };
+        Returns: {
+          average_pct: number;
+          bad_pct: number;
+          country: string;
+          device_type: string;
+          good_pct: number;
+          network: string;
+          p75_cls: number;
+          p75_inp: number;
+          p75_lcp: number;
+          p75_ttfb: number;
+          total_sessions: number;
         }[];
       };
       web_vitals: {
