@@ -114,7 +114,7 @@ export default function OriginPerformanceChart({ data }: Props) {
         max: 100,
         splitNumber: 5,
       },
-      grid: { top: 40, bottom: 30, left: 40, right: 30, height: 300 },
+      grid: { top: 40, bottom: 30, left: 40, right: 30, height: "auto" },
       series: [
         {
           type: "line",
@@ -174,7 +174,6 @@ export default function OriginPerformanceChart({ data }: Props) {
         right: 30,
         feature: {
           restore: {},
-          saveAsImage: {},
         },
       },
       dataZoom: [
@@ -217,7 +216,7 @@ export default function OriginPerformanceChart({ data }: Props) {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full mb-10 overflow-x-hidden">
+    <div ref={containerRef} className="w-full overflow-x-hidden">
       <div ref={chartRef} className="w-full h-95" />
     </div>
   );

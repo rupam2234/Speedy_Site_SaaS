@@ -8,17 +8,30 @@ import { OriginPerformanceChart, OriginStatsOverview } from ".";
 import { InfoIcon, LoaderCircle } from "lucide-react";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 import TooltipIcon from "@/components/theme/customTooltip";
+import CacheAnalysisForensics from "./log";
 
 export default function Main() {
   const { selectedSite, startDate, endDate } = useSiteContext();
   const [originHitData, setOriginHitData] = useState<CacheEfficiency[]>([]);
+  const [cacheAnalysis, setCacheAnalysis] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const headerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    // first clear expired cache
+    ["origin-hits", "cache-analysis"].forEach((x) =>
+      cleanExpiredCache({ prefix: x, session_Storage: false }),
+    );
+
+    // then get data as cached or fresh
     cachedOriginHits();
   }, [selectedSite, endDate, startDate]);
+
+  useEffect(() => {
+    // then get data as cached or fresh
+    cachedEfficiencyAnalysis();
+  }, [selectedSite]);
 
   if (!selectedSite) {
     return (
@@ -60,24 +73,29 @@ export default function Main() {
         <CustomCalendar defaultDateRange={30} limited={30} />
       </div>
 
-      <div className="p-4 mb-10 space-y-6">
-        <OriginStatsOverview data={originHitData} isLoading={isLoading} />
-
-        {/* --- Origin Server Hits Section --- */}
-        <div className="relative ">
-          <div className="absolute left-0 right-0 w-full space-y-2">
-            {originHitData.length === 0 ? (
-              <div className="h-75 flex items-center justify-center mx-12.5 my-10 bg-primary/5 animate-pulse">
-                <LoaderCircle
-                  size={30}
-                  className="animate-spin text-primary/20"
-                />
-              </div>
-            ) : (
-              <OriginPerformanceChart data={originHitData} />
-            )}
-          </div>
+      <div className="p-4 grid grid-cols-7 gap-2">
+        <div className="col-span-2">
+          <OriginStatsOverview data={originHitData} isLoading={isLoading} />
         </div>
+
+        <div className="col-span-5">
+          {originHitData.length === 0 ? (
+            <div className="h-75 flex items-center justify-center mx-12.5 my-10 bg-primary/5 animate-pulse">
+              <LoaderCircle
+                size={30}
+                className="animate-spin text-primary/20"
+              />
+            </div>
+          ) : (
+            <OriginPerformanceChart data={originHitData} />
+          )}
+        </div>
+      </div>
+      <div className="p-4">
+        <h3 className="font-bold uppercase text-primary/80 text-[12px] py-2">
+          Recent Logs
+        </h3>
+        <CacheAnalysisForensics data={cacheAnalysis} />
       </div>
     </>
   );
@@ -97,7 +115,27 @@ export default function Main() {
 
     try {
       const { response } = await cachedData({
-        fn: fetchOriginHits,
+        fn: async () => {
+          const res = await fetch("/api/server-hits/get", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              domain: selectedSite,
+              startDate: startDate,
+              endDate: endDate,
+            }),
+          });
+
+          const body: any = await res.json();
+
+          if (!res.ok) {
+            throw new Error(body.message);
+          }
+
+          return body.data;
+        },
         key,
         session_Storage: false,
         ttl: 5 * 60 * 1000,
@@ -118,27 +156,35 @@ export default function Main() {
 
   /**
    *
-   * @returns origin hit data for active site
+   * @returns cached version of cache efficiency analysis
    */
-  async function fetchOriginHits() {
-    const res = await fetch("/api/server-hits/get", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+  async function cachedEfficiencyAnalysis() {
+    if (!selectedSite) return;
+
+    const key = `cache-analysis:${selectedSite}`;
+
+    const { response } = await cachedData({
+      fn: async () => {
+        const res = await fetch("/api/server-hits/cache-analysis", {
+          method: "POSt",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ domain: selectedSite }),
+        });
+
+        const body: any = await res.json();
+
+        if (!res.ok)
+          throw new Error(body.message ?? "Failed to fetch cache analysis");
+
+        return body.data;
       },
-      body: JSON.stringify({
-        domain: selectedSite,
-        startDate: startDate,
-        endDate: endDate,
-      }),
+      key: key,
+      session_Storage: false,
+      ttl: 5 * 60 * 1000,
     });
 
-    const body: any = await res.json();
-
-    if (!res.ok) {
-      throw new Error(body.message);
-    }
-
-    return body.data;
+    if (response) setCacheAnalysis(response);
   }
 }

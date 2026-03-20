@@ -164,12 +164,13 @@ export default function UxReport() {
     const segB = userHappinessData[compBIndex];
     if (!segA || !segB) return null;
 
-    // For all these metrics, a negative delta (decrease) is a performance improvement
     const calculateDiff = (a: number, b: number) => ((b - a) / (a || 1)) * 100;
 
     return {
       segA,
       segB,
+      // Negative = Value decreased (Good for performance)
+      // Positive = Value increased (Bad for performance)
       lcpDiff: calculateDiff(segA.p75_lcp, segB.p75_lcp),
       inpDiff: calculateDiff(segA.p75_inp, segB.p75_inp),
       ttfbDiff: calculateDiff(segA.p75_ttfb, segB.p75_ttfb),
@@ -282,7 +283,7 @@ export default function UxReport() {
                   </div>
                   <div style="padding: 6px; background: ${theme === "dark" ? "#020617" : "#fff"}; border-radius: 4px; border: 1px solid ${theme === "dark" ? "#1e293b" : "#f1f5f9"}">
                     <div style="font-size: 8px; color: #94a3b8; font-weight: 700;">CLS</div>
-                    <div style="font-size: 11px; font-weight: 700; color: ${getClsColor(p75_cls)}">${p75_cls.toFixed(3)}</div>
+                    <div style="font-size: 11px; font-weight: 700; color: ${getClsColor(p75_cls)}">${p75_cls?.toFixed(3)}</div>
                   </div>
                 </div>
               </div>
@@ -449,10 +450,13 @@ export default function UxReport() {
                       <p>
                         A region turns Red when its P75 metrics fall into the
                         &quot;Poor&quot; category. While low sample sizes can
-                        skew data, they are often a leading indicator of CDN
-                        Cold Caches. In these areas, infrequent traffic means
-                        users are likely hitting your origin server rather than
-                        a fast local edge, resulting in degraded performance.
+                        skew data, they could also be a leading indicator of CDN
+                        Cold Caches (in case the site has a CDN).
+                      </p>
+                      <p>
+                        Higher green regions accross the globe often results in
+                        good aggregate web vitals or atleast upcoming web vitals
+                        likely to be on safer side.
                       </p>
                     </div>
                   }
@@ -490,9 +494,6 @@ export default function UxReport() {
                 <p className="text-xs md:text-sm leading-relaxed text-muted-foreground">
                   <span className="font-medium text-foreground">Happines</span>{" "}
                   is a composite Core Web Vital score (LCP, CLS, INP).
-                  <span className="hidden sm:inline text-[12px] ml-2 opacity-60 uppercase font-bold tracking-tighter">
-                    Goal: All metrics in &quot;Good&quot; range.
-                  </span>
                 </p>
               </figcaption>
             </div>
@@ -555,44 +556,12 @@ export default function UxReport() {
           </div>
 
           {/* Comparison Section */}
-          <div className="border border-primary/20 rounded-xl bg-primary/5 p-6 space-y-6">
+          <div className="border border-primary/20 rounded-xl bg-primary/2 p-6 space-y-6">
             <div className="flex items-center gap-3">
               <ArrowRightLeft className="text-primary" size={20} />
               <h3 className="font-bold text-lg">Segment Comparison</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-              {/* SEGMENT A */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
-                  Segment A
-                </label>
-                <div className="relative">
-                  <select
-                    value={compAIndex}
-                    onChange={(e) => setCompAIndex(Number(e.target.value))}
-                    className="w-full appearance-none bg-background border border-primary/20 rounded-md p-2 pr-10 text-xs font-medium cursor-pointer transition-all hover:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  >
-                    {userHappinessData.map((d, i) => (
-                      <option key={i} value={i}>
-                        {alphacode2toCountry[d.country] || d.country} —{" "}
-                        {d.device_type} ({d.network})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={14}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-70"
-                  />
-                </div>
-              </div>
-
-              {/* ICON SEPARATOR */}
-              <div className="flex justify-center pt-4 md:pt-6">
-                <div className="p-2 rounded-full bg-primary/10 text-primary border border-primary/20">
-                  <ArrowRightLeft size={16} />
-                </div>
-              </div>
-
               {/* SEGMENT B */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
@@ -617,33 +586,70 @@ export default function UxReport() {
                   />
                 </div>
               </div>
+
+              {/* ICON SEPARATOR */}
+              <div className="flex justify-center pt-4 md:pt-6">
+                <div className="p-2 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  <ArrowRightLeft size={16} />
+                </div>
+              </div>
+
+              {/* SEGMENT A */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
+                  Segment A
+                </label>
+                <div className="relative">
+                  <select
+                    value={compAIndex}
+                    onChange={(e) => setCompAIndex(Number(e.target.value))}
+                    className="w-full appearance-none bg-background border border-primary/20 rounded-md p-2 pr-10 text-xs font-medium cursor-pointer transition-all hover:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  >
+                    {userHappinessData.map((d, i) => (
+                      <option key={i} value={i}>
+                        {alphacode2toCountry[d.country] || d.country} —{" "}
+                        {d.device_type} ({d.network})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={14}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-70"
+                  />
+                </div>
+              </div>
             </div>
 
             {comparisonData && (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 pt-4">
                 <ComparisonCard
-                  label="LCP Delta"
-                  value={`${Math.abs(Math.round(comparisonData.lcpDiff))}%`}
-                  trend={comparisonData.lcpDiff > 0 ? "down" : "up"}
-                  sub={`${Math.round(comparisonData.segB.p75_lcp)}ms vs ${Math.round(comparisonData.segA.p75_lcp)}ms`}
+                  label="LCP (Load Speed)"
+                  diff={comparisonData.lcpDiff}
+                  unit="ms"
+                  valA={comparisonData.segA.p75_lcp}
+                  valB={comparisonData.segB.p75_lcp}
                 />
                 <ComparisonCard
-                  label="INP Delta"
-                  value={`${Math.abs(Math.round(comparisonData.inpDiff))}%`}
-                  trend={comparisonData.inpDiff > 0 ? "down" : "up"}
-                  sub={`${Math.round(comparisonData.segB.p75_inp)}ms vs ${Math.round(comparisonData.segA.p75_inp)}ms`}
+                  label="INP (Responsiveness)"
+                  diff={comparisonData.inpDiff}
+                  unit="ms"
+                  valA={comparisonData.segA.p75_inp}
+                  valB={comparisonData.segB.p75_inp}
                 />
                 <ComparisonCard
-                  label="TTFB Delta"
-                  value={`${Math.abs(Math.round(comparisonData.ttfbDiff))}%`}
-                  trend={comparisonData.ttfbDiff > 0 ? "down" : "up"}
-                  sub={`${Math.round(comparisonData.segB.p75_ttfb)}ms vs ${Math.round(comparisonData.segA.p75_ttfb)}ms`}
+                  label="TTFB (Server Wait)"
+                  diff={comparisonData.ttfbDiff}
+                  unit="ms"
+                  valA={comparisonData.segA.p75_ttfb}
+                  valB={comparisonData.segB.p75_ttfb}
                 />
                 <ComparisonCard
-                  label="CLS Delta"
-                  value={`${Math.abs(Math.round(comparisonData.clsDiff))}%`}
-                  trend={comparisonData.clsDiff > 0 ? "down" : "up"}
-                  sub={`${comparisonData.segB.p75_cls?.toFixed(3)} vs ${comparisonData.segA.p75_cls?.toFixed(3)}`}
+                  label="CLS (Stability)"
+                  diff={comparisonData.clsDiff}
+                  unit=""
+                  valA={comparisonData.segA.p75_cls}
+                  valB={comparisonData.segB.p75_cls}
+                  isDecimal={true}
                 />
               </div>
             )}
@@ -656,36 +662,72 @@ export default function UxReport() {
 
 function ComparisonCard({
   label,
-  value,
-  trend,
-  sub,
+  diff,
+  unit,
+  valA,
+  valB,
+  isDecimal = false,
 }: {
   label: string;
-  value: string;
-  trend: "up" | "down";
-  sub: string;
+  diff: number;
+  unit: string;
+  valA: number;
+  valB: number;
+  isDecimal?: boolean;
 }) {
+  // For web vitals: Decrease is Good, Increase is Bad
+  const isImprovement = diff <= 0;
+  const absDiff = Math.abs(Math.round(diff));
+
+  const formatVal = (v: number) => (isDecimal ? v?.toFixed(3) : Math.round(v));
+
   return (
-    <div className="bg-background/40 border border-primary/10 rounded-lg p-4 flex flex-col items-center text-center transition-all hover:border-primary/30">
-      <span className="text-[10px] font-bold uppercase text-muted-foreground mb-2 tracking-widest">
+    <div className="bg-background/40 border border-primary/10 rounded-lg p-4 flex flex-col transition-all hover:border-primary/30">
+      <span className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">
         {label}
       </span>
-      <div
-        className={`flex items-center gap-2 text-2xl font-black ${
-          trend === "up" ? "text-green-500" : "text-red-500"
-        }`}
-      >
-        {/* Trend 'up' means performance improved (value decreased) */}
-        {trend === "up" ? (
-          <TrendingUp size={22} className="shrink-0" />
-        ) : (
-          <TrendingDown size={22} className="shrink-0" />
-        )}
-        {value}
+
+      <div className="flex items-end justify-between">
+        <div className="space-y-1">
+          <div
+            className={`flex items-center gap-1.5 text-2xl font-black ${
+              isImprovement ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            {isImprovement ? (
+              <TrendingDown size={24} className="shrink-0" />
+            ) : (
+              <TrendingUp size={24} className="shrink-0" />
+            )}
+            {absDiff}%
+          </div>
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+              isImprovement
+                ? "bg-green-500/10 text-green-600"
+                : "bg-red-500/10 text-red-600"
+            }`}
+          >
+            {isImprovement ? "Faster" : "Slower"}
+          </span>
+        </div>
+
+        <div className="text-right">
+          <div className="text-[10px] text-muted-foreground font-medium mb-1">
+            Comparing P75s
+          </div>
+          <div className="text-[11px] font-bold flex flex-col items-end">
+            <span className="text-muted-foreground/60 line-through decoration-1">
+              {formatVal(valA)}
+              {unit}
+            </span>
+            <span className="text-foreground">
+              {formatVal(valB)}
+              {unit}
+            </span>
+          </div>
+        </div>
       </div>
-      <span className="text-[9px] mt-2 text-muted-foreground font-semibold bg-primary/5 px-2 py-0.5 rounded-full border border-primary/5">
-        {sub}
-      </span>
     </div>
   );
 }

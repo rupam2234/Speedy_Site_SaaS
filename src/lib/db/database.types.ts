@@ -3,7 +3,8 @@ export type Json =
   | number
   | boolean
   | null
-  | { [key: string]: Json | undefined };
+  | { [key: string]: Json | undefined }
+  | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
@@ -747,6 +748,26 @@ export type Database = {
         }[];
       };
       bytea_to_text: { Args: { data: string }; Returns: string };
+      cache_analysis: {
+        Args: { domain_name_param: string };
+        Returns: {
+          cache_status: string;
+          cdn_provider: string;
+          city: string;
+          country: string;
+          created_at: string;
+          current_page: string;
+          device: string;
+          dns_time: number;
+          id: string;
+          is_origin_hit: string;
+          network_rtt: string;
+          network_type: string;
+          server_processing_time: number;
+          tcp_time: number;
+          ttfb_total: number;
+        }[];
+      };
       cwv_dist_by_connection: {
         Args: {
           p_domain: string;
