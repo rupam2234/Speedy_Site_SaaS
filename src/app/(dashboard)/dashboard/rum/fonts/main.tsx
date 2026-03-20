@@ -163,7 +163,7 @@ export default function FontAnalysis() {
                       <div className="flex items-center justify-center">
                         {font.device_type === "mobile" ? (
                           <Smartphone size={14} className="opacity-40" />
-                        ) : font.device_type === "Desktop" ? (
+                        ) : font.device_type === "desktop" ? (
                           <Monitor size={14} className="opacity-40" />
                         ) : (
                           <Tablet size={14} className="opacity-40" />
