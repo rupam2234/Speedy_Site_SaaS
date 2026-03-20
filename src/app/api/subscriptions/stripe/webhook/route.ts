@@ -50,8 +50,27 @@ export async function POST(req: Request) {
       case "customer.subscription.created": {
         const subscription = event.data.object as Stripe.Subscription;
 
+        let userId: string | undefined | null = subscription.metadata?.user_id;
+
+        if (!userId) {
+          // Fetch from DB if metadata is missing
+          const { data: userRow } = await worker
+            .from("subscriptions")
+            .select("user_id")
+            .eq("stripe_customer_id", subscription.customer as string)
+            .maybeSingle();
+
+          userId = userRow?.user_id;
+        }
+
+        if (!userId) {
+          console.error("No userId found for customer:", subscription.customer);
+          return new Response("User not found", { status: 404 });
+        }
+
         // Determine plan
         const priceId = subscription.items.data[0].price.id;
+
         const activeplan =
           priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
             ? "Basic"
@@ -65,24 +84,24 @@ export async function POST(req: Request) {
           subscription.billing_cycle_anchor * 1000,
         ).toISOString();
 
-        // Fetch existing subscription to get user_id
-        const { data: existing } = await worker
-          .from("subscriptions")
-          .select("user_id")
-          .eq("stripe_customer_id", subscription.customer as string)
-          .single();
+        // // Fetch existing subscription to get user_id
+        // const { data: existing } = await worker
+        //   .from("subscriptions")
+        //   .select("user_id")
+        //   .eq("stripe_customer_id", subscription.customer as string)
+        //   .single();
 
-        // Get safe UUID
-        const userId =
-          existing?.user_id ?? subscription.metadata?.user_id ?? null;
+        // // Get safe UUID
+        // const userId =
+        //   existing?.user_id ?? subscription.metadata?.user_id ?? null;
 
-        if (!userId) {
-          console.warn(
-            "No valid UUID for user_id; skipping subscription upsert for customer:",
-            subscription.customer,
-          );
-          break; // Stop processing if we don't have a valid UUID
-        }
+        // if (!userId) {
+        //   console.warn(
+        //     "No valid UUID for user_id; skipping subscription upsert for customer:",
+        //     subscription.customer,
+        //   );
+        //   break; // Stop processing if we don't have a valid UUID
+        // }
 
         const { error } = await worker.from("subscriptions").upsert(
           {
@@ -100,16 +119,32 @@ export async function POST(req: Request) {
             plan: activeplan,
             updated_at: new Date().toISOString(),
           },
-          { onConflict: "stripe_subscription_id" },
+          { onConflict: "user_id" },
         );
 
-        console.log("SUBSCRIPTION CREATED UPDATE:", error ?? "success");
+        if (error) {
+          console.error("SUBSCRIPTION CREATED UPDATE ERROR:", error);
+          return new Response("Database Update Failed", { status: 500 });
+        }
 
         // Send subscription created email
         await SubscriptionCreated({
           stripeCustomerId: subscription.customer as string,
           plan: activeplan,
           billingCycleEnd: billingCycleEnd,
+        });
+
+        // send a notification
+        const BASE_URL = process.env.NEXT_PUBLIC_PROD_BASE_URL;
+        await fetch(`${BASE_URL}/api/notifications/subscription-notify`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customer_id: subscription.customer,
+            message: `You have upgraded to the ${activeplan.toLowerCase()} plan. You have maximum 2 site slots and 50,000 monthly pageview limit.`,
+          }),
         });
 
         break;
@@ -191,7 +226,8 @@ export async function POST(req: Request) {
         });
 
         // add a notification
-        await fetch("/api/notifications/subscription-notify", {
+        const BASE_URL = process.env.NEXT_PUBLIC_PROD_BASE_URL;
+        await fetch(`${BASE_URL}/api/notifications/subscription-notify`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

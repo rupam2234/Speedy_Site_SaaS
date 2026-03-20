@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     if (!priceId) {
       return NextResponse.json(
         { error: "Missing priceId in request body" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,6 +40,13 @@ export async function POST(request: Request) {
 
       metadata: {
         user_id: user.id,
+      },
+
+      //This puts metadata on the Subscription (event: customer.subscription.created)
+      subscription_data: {
+        metadata: {
+          user_id: user.id,
+        },
       },
 
       line_items: [
