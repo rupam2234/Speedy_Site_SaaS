@@ -1,876 +1,374 @@
 "use client";
 
-import React, { ReactNode, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useSiteContext } from "../../siteContext";
 import {
-  Smile,
-  Meh,
-  Frown,
   ChevronDown,
   ChevronUp,
-  MousePointerClick,
-  Layout,
-  Clock,
-  TrendingUp,
-  Target,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  Image as ImageIcon,
-  Type,
-  Monitor,
-  GroupIcon,
   InfoIcon,
   Bug,
+  Copy,
+  Check,
 } from "lucide-react";
 import TooltipIcon from "@/components/theme/customTooltip";
 import { LoadingAnimation, PrimaryToolbar } from "@/components/theme";
+import { cachedData, cleanExpiredCache } from "@/components/utils";
 
-type PerformanceGroup = "good" | "average" | "poor";
+type PerformanceGroup = "poor" | "average" | "good";
 
-interface Target {
-  count: number;
-  target: string;
-}
-
-interface PageData {
-  device_type: string;
-  performance_group: PerformanceGroup;
-  domain_name: string;
-  current_page: string;
-  visit_count: number;
-  performance_score: number;
-  avg_lcp_ms: number | null;
-  avg_fcp_ms: number | null;
-  avg_cls: number | null;
-  avg_ttfb_ms: number | null;
-  avg_inp_ms: number | null;
-  sort_order: number;
-  cls_targets: Target[];
-  inp_targets: Target[];
-  lcp_targets: Target[];
-}
-
-const performanceTabs: {
-  key: PerformanceGroup;
-  label: string;
-  icon: ReactNode;
-}[] = [
-  {
-    key: "good",
-    label: "Good",
-    icon: <Smile size={16} className="text-green-500" />,
-  },
-  {
-    key: "average",
-    label: "Average",
-    icon: <Meh size={16} className="text-yellow-500" />,
-  },
-  {
-    key: "poor",
-    label: "Poor",
-    icon: <Frown size={16} className="text-red-500" />,
-  },
-];
-
-type SortKey = "avg_lcp_ms" | "avg_inp_ms" | "avg_cls";
-type SortDirection = "asc" | "desc";
-
-export default function Main() {
-  const { selectedSite, selectedDevice, startDate, endDate } = useSiteContext();
-  const [pageData, setPageData] = useState<PageData[]>([]);
-  const [activeTab, setActiveTab] = useState<PerformanceGroup>("good");
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [expandedRow, setExpandedRow] = useState<number | null>(null);
-  const [activeMetric, setActiveMetric] = useState<"LCP" | "INP" | "CLS">(
-    "LCP",
-  );
-
-  const itemsPerPage = 10;
+export default function PagePerformanceAnalysis() {
+  const { selectedSite, selectedDevice } = useSiteContext();
+  const [pageData, setPageData] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<PerformanceGroup>("poor");
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const lastFetched = useRef<string | null>(null);
 
   useEffect(() => {
-    const cacheKey = `${selectedSite}-${startDate}-${endDate}`;
-    if (selectedSite && lastFetched.current !== cacheKey) {
-      getPages();
-      lastFetched.current = cacheKey;
-    }
-  }, [selectedSite, startDate, endDate]);
+    // clear all expired cache
+    cleanExpiredCache({ prefix: "page-groups", session_Storage: false });
 
-  const grouped: Record<PerformanceGroup, PageData[]> = {
-    good: [],
-    average: [],
-    poor: [],
-  };
-
-  pageData
-    .filter(
-      (page) =>
-        !selectedDevice || page.device_type === selectedDevice.toLowerCase(),
-    )
-    .forEach((page) => {
-      const group = getPerformanceGroup(page);
-      grouped[group].push(page);
-    });
-
-  // Sort logic
-  const sortedData = [...grouped[activeTab]].sort((a, b) => {
-    if (!sortKey) return 0;
-    const aValue = a[sortKey] ?? Infinity;
-    const bValue = b[sortKey] ?? Infinity;
-    return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
-  });
-
-  // Pagination logic
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
-  const paginatedData = sortedData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
-
-  const getMetricColor = (
-    metric: number | null,
-    type: "lcp" | "inp" | "cls",
-  ) => {
-    if (metric == null) return "text-gray-400";
-    if (type === "lcp") {
-      if (metric <= 2500) return "text-green-600";
-      if (metric <= 4000) return "text-yellow-500";
-      return "text-red-600";
+    if (selectedSite && lastFetched.current !== selectedSite) {
+      fetchData();
+      lastFetched.current = selectedSite;
     }
-    if (type === "inp") {
-      if (metric <= 200) return "text-green-600";
-      if (metric <= 500) return "text-yellow-500";
-      return "text-red-600";
-    }
-    if (type === "cls") {
-      if (metric <= 0.1) return "text-green-600";
-      if (metric <= 0.25) return "text-yellow-500";
-      return "text-red-600";
-    }
-  };
+  }, [selectedSite]);
 
-  const getMetricStatus = (
-    metric: number | null,
-    type: "lcp" | "inp" | "cls",
-  ) => {
-    if (metric == null)
-      return {
-        status: "Unknown",
-        color: "bg-gray-400",
-        icon: <Info className="w-4 h-4" />,
-      };
-
-    if (type === "lcp") {
-      if (metric <= 2500)
-        return {
-          status: "Good",
-          color: "bg-green-500",
-          icon: <CheckCircle className="w-4 h-4" />,
-        };
-      if (metric <= 4000)
-        return {
-          status: "Average",
-          color: "bg-yellow-500",
-          icon: <TrendingUp className="w-4 h-4" />,
-        };
-      return {
-        status: "Poor",
-        color: "bg-red-500",
-        icon: <AlertTriangle className="w-4 h-4" />,
-      };
-    }
-    if (type === "inp") {
-      if (metric <= 200)
-        return {
-          status: "Good",
-          color: "bg-green-500",
-          icon: <CheckCircle className="w-4 h-4" />,
-        };
-      if (metric <= 500)
-        return {
-          status: "Average",
-          color: "bg-yellow-500",
-          icon: <TrendingUp className="w-4 h-4" />,
-        };
-      return {
-        status: "Poor",
-        color: "bg-red-500",
-        icon: <AlertTriangle className="w-4 h-4" />,
-      };
-    }
-    if (type === "cls") {
-      if (metric <= 0.1)
-        return {
-          status: "Good",
-          color: "bg-green-500",
-          icon: <CheckCircle className="w-4 h-4" />,
-        };
-      if (metric <= 0.25)
-        return {
-          status: "Average",
-          color: "bg-yellow-500",
-          icon: <TrendingUp className="w-4 h-4" />,
-        };
-      return {
-        status: "Poor",
-        color: "bg-red-500",
-        icon: <AlertTriangle className="w-4 h-4" />,
-      };
-    }
-    return {
-      status: "Unknown",
-      color: "bg-gray-400",
-      icon: <Info className="w-4 h-4" />,
+  const { filteredList, counts } = useMemo(() => {
+    const deviceFiltered = pageData.filter(
+      (p) =>
+        !selectedDevice ||
+        selectedDevice === "All" ||
+        p.device_type.toLowerCase() === selectedDevice.toLowerCase(),
+    );
+    const countsMap = {
+      poor: deviceFiltered.filter(
+        (p) => p.performance_group.toLowerCase() === "poor",
+      ).length,
+      average: deviceFiltered.filter(
+        (p) => p.performance_group.toLowerCase() === "average",
+      ).length,
+      good: deviceFiltered.filter(
+        (p) => p.performance_group.toLowerCase() === "good",
+      ).length,
     };
-  };
+    const list = deviceFiltered
+      .filter((p) => p.performance_group.toLowerCase() === activeTab)
+      .sort((a, b) => b.visit_count - a.visit_count);
 
-  const getTargetIcon = (target: string) => {
-    const lower = target.toLowerCase();
-    if (
-      lower.includes("img") ||
-      lower.includes("jpg") ||
-      lower.includes("png") ||
-      lower.includes("webp")
-    ) {
-      return <ImageIcon className="w-4 h-4" />;
-    }
-    if (
-      lower.includes("button") ||
-      lower.includes("click") ||
-      lower.includes("cta")
-    ) {
-      return <Target className="w-4 h-4" />;
-    }
-    if (
-      lower.includes("font") ||
-      lower.includes("h1") ||
-      lower.includes("h2") ||
-      lower.includes("title")
-    ) {
-      return <Type className="w-4 h-4" />;
-    }
-    if (
-      lower.includes("header") ||
-      lower.includes("nav") ||
-      lower.includes("footer")
-    ) {
-      return <Layout className="w-4 h-4" />;
-    }
-    return <Monitor className="w-4 h-4" />;
-  };
+    return { filteredList: list, counts: countsMap };
+  }, [pageData, activeTab, selectedDevice]);
 
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortDirection("asc");
-    }
-  };
-
-  const toggleRow = (index: number) => {
-    setExpandedRow((prev) => (prev === index ? null : index));
-  };
-
-  if (!selectedSite) {
+  if (!selectedSite)
     return (
-      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+      <div className="h-[80vh] flex items-center justify-center">
         <LoadingAnimation />
       </div>
     );
-  }
+
+  const getThemeColor = () => {
+    if (activeTab === "poor") return "text-red-500";
+    if (activeTab === "average") return "text-yellow-500";
+    return "text-green-500";
+  };
 
   return (
     <>
-      <PrimaryToolbar
-        defaultDateRange={30}
-        enableDistribution={false}
-        isSticky
-      />
-
-      <div className="px-5 mt-5 flex md:flex-row flex-col gap-2 justify-start items-center md:justify-between text-primary/80">
-        <div className="flex items-center gap-2">
-          <GroupIcon size={22} className="fill-green-200" />
-          <h2 className="text-xl font-semibold">Page Groups</h2>
-          <TooltipIcon
-            content="Pages are grouped as Good, Average, or Poor. 
-            Good pages need no UX action, while Average and Poor 
-            pages should be expanded to identify the most frequent 
-            issues."
-            trigger={
-              <InfoIcon
-                size={20}
-                className="text-primary/60 mt-0.5 hover:bg-primary/20 rounded-full p-0.75"
-              />
-            }
-            delay={300}
-            side="right"
-          />
-        </div>
-        <div className="flex gap-2 items-center">
-          {performanceTabs.map((tab) => {
-            return (
-              <button
-                key={tab.key}
-                className={`flex items-center gap-1 border px-4 py-1 hover:dark:bg-secondary-background cursor-pointer hover:bg-primary/10 ${
-                  activeTab === tab.label.toLowerCase()
-                    ? "bg-primary/10"
-                    : "dark:bg-secondary-background"
-                }`}
-                onClick={() => {
-                  setActiveTab(tab.key);
-                  setCurrentPage(1);
-                  setExpandedRow(null);
-                }}
-              >
-                {tab.icon} {tab.label}
-              </button>
-            );
-          })}
+      <div className="px-5 py-4 flex flex-col md:flex-row justify-between items-center">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <h2 className="font-extrabold text-2xl tracking-tight bg-linear-to-r from-primary via-primary/80 to-primary/50 bg-clip-text text-transparent">
+              Page Groups
+            </h2>
+            <TooltipIcon
+              content="Page groups aggregate field data by unique URL paths and most prominent contributors."
+              trigger={
+                <InfoIcon
+                  size={18}
+                  className="rounded-full cursor-pointer text-primary/30 hover:text-primary transition-colors"
+                />
+              }
+              side="right"
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-70">
+            URL-BASED PERFORMANCE SEGMENTATION
+          </p>
         </div>
       </div>
 
-      {pageData && pageData.length > 0 ? (
-        <div className="min-h-screen p-5">
-          <div className="w-auto">
-            {/* Table */}
-            <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        S.No
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        URL
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Visits
-                      </th>
-                      <th
-                        onClick={() => handleSort("avg_lcp_ms")}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
-                      >
-                        <div className="flex items-center">
-                          LCP{" "}
-                          {sortKey === "avg_lcp_ms" &&
-                            (sortDirection === "asc" ? "↑" : "↓")}
-                        </div>
-                      </th>
-                      <th
-                        onClick={() => handleSort("avg_inp_ms")}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
-                      >
-                        <div className="flex items-center">
-                          INP{" "}
-                          {sortKey === "avg_inp_ms" &&
-                            (sortDirection === "asc" ? "↑" : "↓")}
-                        </div>
-                      </th>
-                      <th
-                        onClick={() => handleSort("avg_cls")}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
-                      >
-                        <div className="flex items-center">
-                          CLS{" "}
-                          {sortKey === "avg_cls" &&
-                            (sortDirection === "asc" ? "↑" : "↓")}
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-secondary-background divide-y divide-gray-200 dark:divide-gray-700">
-                    {paginatedData.map((page, idx) => {
-                      const rowIndex = (currentPage - 1) * itemsPerPage + idx;
-                      const isExpanded = expandedRow === rowIndex;
-                      const current_page = page.current_page.replace(/\/$/, "");
-
-                      return (
-                        <React.Fragment key={idx}>
-                          <tr
-                            className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors duration-150 ${
-                              isExpanded ? "bg-gray-50 dark:bg-gray-700/30" : ""
-                            }`}
-                            onClick={() => toggleRow(rowIndex)}
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                              {rowIndex + 1}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white truncate">
-                              {current_page.length > 50
-                                ? `${current_page.slice(0, 50)}...`
-                                : current_page.length === 0
-                                  ? `/`
-                                  : current_page}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {page.visit_count}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              <div className="flex items-center">
-                                {page.avg_lcp_ms ? (
-                                  <>
-                                    <span
-                                      className={`mr-2 ${getMetricColor(
-                                        page.avg_lcp_ms,
-                                        "lcp",
-                                      )}`}
-                                    >
-                                      {(page.avg_lcp_ms / 1000).toFixed(2)}s
-                                    </span>
-                                    <div
-                                      className={`w-2 h-2 rounded-full ${
-                                        getMetricStatus(page.avg_lcp_ms, "lcp")
-                                          .color
-                                      }`}
-                                    />
-                                  </>
-                                ) : (
-                                  <span className="text-gray-400">N/A</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              <div className="flex items-center">
-                                {page.avg_inp_ms ? (
-                                  <>
-                                    <span
-                                      className={`mr-2 ${getMetricColor(
-                                        page.avg_inp_ms,
-                                        "inp",
-                                      )}`}
-                                    >
-                                      {page.avg_inp_ms.toFixed(0)}ms
-                                    </span>
-                                    <div
-                                      className={`w-2 h-2 rounded-full ${
-                                        getMetricStatus(page.avg_inp_ms, "inp")
-                                          .color
-                                      }`}
-                                    />
-                                  </>
-                                ) : (
-                                  <span className="text-gray-400">N/A</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              <div className="flex items-center">
-                                {page.avg_cls ? (
-                                  <>
-                                    <span
-                                      className={`mr-2 ${getMetricColor(
-                                        page.avg_cls,
-                                        "cls",
-                                      )}`}
-                                    >
-                                      {page.avg_cls.toFixed(3)}
-                                    </span>
-                                    <div
-                                      className={`w-2 h-2 rounded-full ${
-                                        getMetricStatus(page.avg_cls, "cls")
-                                          .color
-                                      }`}
-                                    />
-                                  </>
-                                ) : (
-                                  <span className="text-gray-400">N/A</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <button className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                                {isExpanded ? (
-                                  <ChevronUp size={18} />
-                                ) : (
-                                  <ChevronDown size={18} />
-                                )}
-                              </button>
-                            </td>
-                          </tr>
-                          {isExpanded && (
-                            <tr className="bg-gray-50 dark:bg-gray-700/20">
-                              <td colSpan={7} className="px-6 py-4">
-                                <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                                  {/* Tabs for Metrics */}
-                                  <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
-                                    {[
-                                      {
-                                        key: "LCP",
-                                        label: "LCP Elements",
-                                        icon: <Clock className="w-4 h-4" />,
-                                      },
-                                      {
-                                        key: "INP",
-                                        label: "INP Elements",
-                                        icon: (
-                                          <MousePointerClick className="w-4 h-4" />
-                                        ),
-                                      },
-                                      {
-                                        key: "CLS",
-                                        label: "CLS Elements",
-                                        icon: <Layout className="w-4 h-4" />,
-                                      },
-                                    ].map((metric) => (
-                                      <button
-                                        key={metric.key}
-                                        onClick={() =>
-                                          setActiveMetric(
-                                            metric.key as unknown as
-                                              | "LCP"
-                                              | "INP"
-                                              | "CLS",
-                                          )
-                                        }
-                                        className={`flex items-center px-4 py-2 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                                          activeMetric === metric.key
-                                            ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                                        }`}
-                                      >
-                                        {metric.icon}
-                                        <span className="ml-2">
-                                          {metric.label}
-                                        </span>
-                                      </button>
-                                    ))}
-                                  </div>
-
-                                  {/* Targets List */}
-                                  <div className="space-y-3">
-                                    {activeMetric === "LCP" &&
-                                      (page.lcp_targets.length > 0 ? (
-                                        page.lcp_targets.map((target, i) => (
-                                          <div
-                                            key={i}
-                                            className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
-                                          >
-                                            <div className="shrink-0">
-                                              {getTargetIcon(target.target)}
-                                            </div>
-                                            <div className="ml-3 flex-1 md:max-w-5xl">
-                                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                                {target.target.length > 100
-                                                  ? `${target.target.slice(0, 100)}...`
-                                                  : target.target}
-                                              </p>
-                                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                {target.count} occurrence
-                                                {target.count !== 1 ? "s" : ""}
-                                              </p>
-                                            </div>
-                                            <div className="flex gap-4 items-center">
-                                              <TooltipIcon
-                                                content={
-                                                  "Debug the element on live page"
-                                                }
-                                                delay={300}
-                                                trigger={
-                                                  <Bug
-                                                    size={19}
-                                                    className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
-                                                    onClick={() =>
-                                                      redirectToUrl(
-                                                        `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
-                                                      )
-                                                    }
-                                                  />
-                                                }
-                                                side="left"
-                                              />
-                                            </div>
-                                          </div>
-                                        ))
-                                      ) : (
-                                        <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                                          No LCP elements identified
-                                        </div>
-                                      ))}
-                                    {activeMetric === "INP" &&
-                                      (page.inp_targets.length > 0 ? (
-                                        page.inp_targets.map((target, i) => (
-                                          <div
-                                            key={i}
-                                            className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
-                                          >
-                                            <div className="shrink-0">
-                                              {getTargetIcon(target.target)}
-                                            </div>
-                                            <div className="ml-3 flex-1 md:max-w-5xl">
-                                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                                {target.target.length > 100
-                                                  ? `${target.target.slice(0, 100)}...`
-                                                  : target.target}
-                                              </p>
-                                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                {target.count} occurrence
-                                                {target.count !== 1 ? "s" : ""}
-                                              </p>
-                                            </div>
-                                            <div className="flex gap-4 items-center">
-                                              <TooltipIcon
-                                                content={
-                                                  "Debug the element on live page"
-                                                }
-                                                delay={300}
-                                                trigger={
-                                                  <Bug
-                                                    size={19}
-                                                    className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
-                                                    onClick={() =>
-                                                      redirectToUrl(
-                                                        `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
-                                                      )
-                                                    }
-                                                  />
-                                                }
-                                                side="left"
-                                              />
-                                            </div>
-                                          </div>
-                                        ))
-                                      ) : (
-                                        <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                                          No INP elements identified
-                                        </div>
-                                      ))}
-                                    {activeMetric === "CLS" &&
-                                      (page.cls_targets.length > 0 ? (
-                                        page.cls_targets.map((target, i) => (
-                                          <div
-                                            key={i}
-                                            className="flex items-center p-3 bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-600"
-                                          >
-                                            <div className="shrink-0">
-                                              {getTargetIcon(target.target)}
-                                            </div>
-                                            <div className="ml-3 flex-1 md:max-w-5xl">
-                                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                                {target.target.length > 100
-                                                  ? `${target.target.slice(0, 100)}...`
-                                                  : target.target}
-                                              </p>
-                                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                {target.count} occurrence
-                                                {target.count !== 1 ? "s" : ""}
-                                              </p>
-                                            </div>
-                                            <div className="flex gap-4 items-center">
-                                              <TooltipIcon
-                                                content={
-                                                  "Debug the element on live page"
-                                                }
-                                                delay={300}
-                                                trigger={
-                                                  <Bug
-                                                    size={19}
-                                                    className="text-primary/50 hover:fill-amber-300 hover:text-primary/80 cursor-pointer"
-                                                    onClick={() =>
-                                                      redirectToUrl(
-                                                        `${selectedSite}${current_page}/?highlightSelector=${target.target}`,
-                                                      )
-                                                    }
-                                                  />
-                                                }
-                                                side="left"
-                                              />
-                                            </div>
-                                          </div>
-                                        ))
-                                      ) : (
-                                        <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                                          No CLS elements identified
-                                        </div>
-                                      ))}
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white dark:bg-secondary-background border border-gray-200 dark:border-gray-700 rounded-lg">
-                <div className="text-sm text-gray-700 dark:text-gray-300">
-                  Showing{" "}
-                  <span className="font-medium">
-                    {(currentPage - 1) * itemsPerPage + 1}
-                  </span>{" "}
-                  to{" "}
-                  <span className="font-medium">
-                    {Math.min(currentPage * itemsPerPage, sortedData.length)}
-                  </span>{" "}
-                  of <span className="font-medium">{sortedData.length}</span>{" "}
-                  results
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(1, prev - 1))
-                    }
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-secondary-background border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-secondary-background border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+      <PrimaryToolbar
+        defaultDateRange={7}
+        enableDistribution={false}
+        isSticky={true}
+        enableAllDevices={false}
+        disableCalender={true}
+      >
+        <div className="flex gap-1 bg-primary/5 p-1 rounded-md border border-primary/10">
+          {(["good", "average", "poor"] as PerformanceGroup[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab);
+                setExpandedRow(null);
+              }}
+              className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-tight transition-all rounded-sm ${
+                activeTab === tab
+                  ? "bg-white dark:bg-primary text-primary dark:text-primary-foreground shadow-sm"
+                  : "bg-transparent text-primary/50 hover:text-primary"
+              }`}
+            >
+              {tab} <span className="opacity-60 ml-1">({counts[tab]})</span>
+            </button>
+          ))}
         </div>
-      ) : (
-        <>
-          <div className="min-h-screen p-5">
-            <div className="w-full">
-              <div className="bg-white dark:bg-secondary-background rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-pulse">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-700/50">
-                      <tr>
-                        {[
-                          "S.No",
-                          "URL",
-                          "Visits",
-                          "LCP",
-                          "INP",
-                          "CLS",
-                          "Actions",
-                        ].map((header) => (
-                          <th
-                            key={header}
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                          >
-                            <div className="h-3 w-16 bg-gray-300 dark:bg-gray-600 rounded" />
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
+      </PrimaryToolbar>
 
-                    <tbody className="bg-white dark:bg-secondary-background divide-y divide-gray-200 dark:divide-gray-700">
-                      {[...Array(5)].map((_, idx) => (
-                        <tr
-                          key={idx}
-                          className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        >
-                          {[...Array(7)].map((__, cellIdx) => (
-                            <td
-                              key={cellIdx}
-                              className="px-6 py-4 text-sm text-gray-900 dark:text-white"
-                            >
-                              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full" />
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+      <div className="text-primary">
+        <div className="w-full">
+          {filteredList.length > 0 ? (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-widest text-primary/40 border-b border-primary/10">
+                  <th className="py-3 px-6 font-bold w-12">#</th>
+                  <th className="py-3 px-4 font-bold">URL Path</th>
+                  <th className="py-3 px-4 font-bold text-center">Visits</th>
+                  <th className="py-3 px-4 font-bold text-center">LCP</th>
+                  <th className="py-3 px-4 font-bold text-center">INP</th>
+                  <th className="py-3 px-4 font-bold text-center">CLS</th>
+                  <th className="py-3 px-6 font-bold text-right">Debug</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-primary/5">
+                {filteredList.map((page, idx) => (
+                  <React.Fragment key={idx}>
+                    <tr
+                      className={`group transition-colors cursor-pointer hover:bg-primary/3 ${
+                        expandedRow === page.current_page ? "bg-primary/5" : ""
+                      }`}
+                      onClick={() =>
+                        setExpandedRow(
+                          expandedRow === page.current_page
+                            ? null
+                            : page.current_page,
+                        )
+                      }
+                    >
+                      <td className="py-4 px-6 text-xs opacity-40">
+                        {idx + 1}
+                      </td>
+                      <td className="py-4 px-4 min-w-75">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium truncate max-w-md">
+                            {page.current_page}
+                          </span>
+                          <span className="text-[9px] opacity-30 font-bold uppercase tracking-tight">
+                            {page.device_type}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-center text-xs font-mono">
+                        {page.visit_count}
+                      </td>
+                      <MetricCell value={page.avg_lcp_ms} type="lcp" />
+                      <MetricCell value={page.avg_inp_ms} type="inp" />
+                      <MetricCell value={page.avg_cls} type="cls" />
+                      <td className="py-4 px-6 text-right">
+                        {expandedRow === page.current_page ? (
+                          <ChevronUp size={16} className="ml-auto opacity-20" />
+                        ) : (
+                          <ChevronDown
+                            size={16}
+                            className="ml-auto opacity-20"
+                          />
+                        )}
+                      </td>
+                    </tr>
+
+                    {expandedRow === page.current_page && (
+                      <tr>
+                        <td colSpan={7} className="p-0 bg-primary/2">
+                          <div className="px-14 py-8 grid grid-cols-1 md:grid-cols-3 gap-12 border-b border-primary/10">
+                            <TargetList
+                              title="LCP Elements"
+                              items={page.lcp_elements}
+                              color={getThemeColor()}
+                              site={selectedSite}
+                              path={page.current_page}
+                            />
+                            <TargetList
+                              title="CLS Shifters"
+                              items={page.cls_elements}
+                              color={getThemeColor()}
+                              site={selectedSite}
+                              path={page.current_page}
+                            />
+                            <TargetList
+                              title="INP Targets"
+                              items={page.inp_elements}
+                              color={getThemeColor()}
+                              site={selectedSite}
+                              path={page.current_page}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="py-20 text-center opacity-30 text-sm italic font-medium">
+              No pages found in this category.
             </div>
-          </div>
-        </>
-      )}
+          )}
+        </div>
+      </div>
     </>
   );
 
-  function redirectToUrl(url: string) {
-    if (url) {
-      window.open(`https://${url}`, "_blank", "noopener,noreferrer");
-    }
+  async function fetchData() {
+    const { response } = await cachedData({
+      fn: async () => {
+        const res = await fetch("/api/rum/page_performance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ domain: selectedSite }),
+        });
+        const body: any = await res.json();
+        return body.data;
+      },
+      session_Storage: false,
+      key: `page-groups:${selectedSite}`,
+      ttl: 5 * 60 * 1000,
+    });
+    if (response) setPageData(response);
   }
+}
 
-  async function getPages() {
-    if (!selectedSite || !startDate || !endDate) return;
+// ... MetricCell and TargetList components stay the same
 
-    try {
-      const res = await fetch("/api/rum/page_performance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain: selectedSite,
-          startDate: startDate,
-          endDate: endDate,
-        }),
-      });
+function MetricCell({
+  value,
+  type,
+}: {
+  value: number | null;
+  type: "lcp" | "inp" | "cls";
+}) {
+  const getStyle = () => {
+    if (value === null) return "text-primary/20";
+    if (type === "lcp")
+      return value > 4000
+        ? "text-red-500"
+        : value > 2500
+          ? "text-yellow-500"
+          : "text-green-500";
+    if (type === "inp")
+      return value > 500
+        ? "text-red-500"
+        : value > 200
+          ? "text-yellow-500"
+          : "text-green-500";
+    if (type === "cls")
+      return value > 0.25
+        ? "text-red-500"
+        : value > 0.1
+          ? "text-yellow-500"
+          : "text-green-500";
+    return "";
+  };
 
-      if (!res.ok) {
-        const errData: any = await res.json();
-        throw new Error(errData.error || `HTTP error ${res.status}`);
-      }
+  const display =
+    value === null
+      ? "—"
+      : type === "lcp"
+        ? `${(value / 1000).toFixed(1)}s`
+        : type === "inp"
+          ? `${Math.round(value)}ms`
+          : value.toFixed(3);
 
-      const data: any = await res.json();
+  return (
+    <td
+      className={`py-4 px-4 text-center font-mono text-xs font-bold ${getStyle()}`}
+    >
+      {display}
+    </td>
+  );
+}
 
-      const metrics: PageData[] = (data.data || []).filter(
-        (x: PageData) => x.device_type !== "unknown",
-      );
+function TargetList({
+  title,
+  items,
+  site,
+  path,
+}: {
+  title: string;
+  items: any[];
+  color: string;
+  site: string;
+  path: string;
+}) {
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-      setPageData(metrics);
-    } catch (error: any) {
-      console.error("Fetch failed:", error.message || error);
-      setPageData([]);
-    }
-  }
+  const handleCopy = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
 
-  function getPerformanceGroup(page: PageData): PerformanceGroup {
-    const classify = (value: number | null, type: "lcp" | "inp" | "cls") => {
-      if (value == null) return "average"; // fallback
-      if (type === "lcp") {
-        if (value <= 2500) return "good";
-        if (value <= 4000) return "average";
-        return "poor";
-      }
-      if (type === "inp") {
-        if (value <= 200) return "good";
-        if (value <= 500) return "average";
-        return "poor";
-      }
-      if (type === "cls") {
-        if (value <= 0.1) return "good";
-        if (value <= 0.25) return "average";
-        return "poor";
-      }
-      return "average";
-    };
-
-    const scores = [
-      classify(page.avg_lcp_ms, "lcp"),
-      classify(page.avg_inp_ms, "inp"),
-      classify(page.avg_cls, "cls"),
-    ];
-
-    // If any metric is poor, overall is poor
-    if (scores.includes("poor")) return "poor";
-
-    // If any metric is average, overall is average
-    if (scores.includes("average")) return "average";
-
-    // Otherwise, it's good
-    return "good";
-  }
+  return (
+    <div className="flex flex-col gap-3">
+      <span className={`text-[12px] font-bold uppercase tracking-widest`}>
+        {title}
+      </span>
+      {items && items.length > 0 ? (
+        items.map((item: any, i: number) => (
+          <div
+            key={i}
+            className="flex items-center justify-between p-2.5 border border-primary/5 bg-primary/80 dark:bg-primary/10 group/item transition-colors hover:border-primary/20"
+          >
+            <div className="min-w-0 flex flex-col">
+              <code
+                className={`text-[12px] font-mono truncate max-w-45 dark:text-primary text-primary-foreground`}
+                title={item.el}
+              >
+                {item.el}
+              </code>
+              <span className="text-[10px] uppercase font-semibold mt-1 dark:text-primary/80 text-primary-foreground/80">
+                {item.count} detections
+              </span>
+            </div>
+            <div className="flex items-center gap-2 ml-2">
+              <button
+                onClick={() => handleCopy(item.el, i)}
+                className="opacity-40 hover:opacity-100 transition-opacity"
+                title="Copy selector"
+              >
+                {copiedIndex === i ? (
+                  <Check size={13} className="text-green-500" />
+                ) : (
+                  <Copy
+                    size={13}
+                    className="dark:text-primary text-primary-foreground"
+                  />
+                )}
+              </button>
+              <Bug
+                size={13}
+                className="opacity-40 group-hover/item:opacity-100 group-hover/item:text-amber-500 cursor-pointer transition-all"
+                onClick={() =>
+                  window.open(
+                    `https://${site}${path}?highlightSelector=${encodeURIComponent(item.el)}`,
+                    "_blank",
+                  )
+                }
+              />
+            </div>
+          </div>
+        ))
+      ) : (
+        <span className="text-[10px] italic">No elements detected</span>
+      )}
+    </div>
+  );
 }

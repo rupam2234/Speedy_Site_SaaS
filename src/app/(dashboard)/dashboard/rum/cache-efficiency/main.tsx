@@ -1,16 +1,13 @@
 "use client";
 
-import {
-  CustomCalendar,
-  CustomTooltip,
-  LoadingAnimation,
-} from "@/components/theme";
+import { CustomCalendar, LoadingAnimation } from "@/components/theme";
 import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
 import { CacheEfficiency } from "@/app/api/dataTypes";
 import { OriginPerformanceChart, OriginStatsOverview } from ".";
 import { InfoIcon, LoaderCircle } from "lucide-react";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
+import TooltipIcon from "@/components/theme/customTooltip";
 
 export default function Main() {
   const { selectedSite, startDate, endDate } = useSiteContext();
@@ -38,44 +35,23 @@ export default function Main() {
         className={`flex px-4 py-3 justify-between flex-col md:flex-row w-full items-start backdrop-blur-sm md:items-center gap-4 relative`}
       >
         <div className="flex items-center gap-3 w-full md:w-auto">
-          {/* --- CUSTOM SVG ICON --- */}
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-6 h-6"
-            >
-              <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
-              <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
-              <line x1="6" y1="6" x2="6.01" y2="6" />
-              <line x1="6" y1="18" x2="6.01" y2="18" />
-            </svg>
-            {/* Decorative Background Glow */}
-            <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full -z-10 opacity-50" />
-          </div>
-
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-xl tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <h2 className="font-extrabold text-2xl tracking-tight bg-linear-to-r from-primary via-primary/80 to-primary/50 bg-clip-text text-transparent">
                 Cache Efficiency
               </h2>
-              <CustomTooltip
+              <TooltipIcon
                 content="Cache efficiency shows how many requests are served from cache instead of your origin server. Requests hitting the server use CPU, memory, and bandwidth, which can slow your site if too frequent. CDNs greatly reduces this load by serving content from edge locations. A high origin hit rate means more server load, while a low rate means most of the requests are being served from edge cache."
                 trigger={
                   <InfoIcon
                     size={18}
-                    className="rounded-full cursor-pointer text-primary/40 hover:text-primary/80 transition-colors"
+                    className="rounded-full cursor-pointer text-primary/30 hover:text-primary transition-colors"
                   />
                 }
                 side="right"
-                maxWidth="400px"
               />
             </div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-70">
               Server Load / CDN EFFICIENCY ANALYTICS
             </p>
           </div>

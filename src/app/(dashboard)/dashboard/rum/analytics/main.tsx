@@ -13,6 +13,7 @@ import { SourceHandler } from ".";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 import { llm_sources } from "./traffic-sources/llmDomains";
 import Image from "next/image";
+import TooltipIcon from "@/components/theme/customTooltip";
 
 type overviewMetrics = {
   date_collected: string;
@@ -110,6 +111,28 @@ export default function Main() {
 
   return (
     <>
+      <div className="px-5 py-4 flex flex-col md:flex-row justify-between items-center">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <h2 className="font-extrabold text-2xl tracking-tight bg-linear-to-r from-primary via-primary/80 to-primary/50 bg-clip-text text-transparent">
+              Simple Analytics
+            </h2>
+            <TooltipIcon
+              content="By capturing user experience and page speed metrics, we can additionally gather privacy-focused page analytics data. This represents the minimal page analytics you need."
+              trigger={
+                <InfoIcon
+                  size={18}
+                  className="rounded-full cursor-pointer text-primary/30 hover:text-primary transition-colors"
+                />
+              }
+              side="right"
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-70">
+            URL-BASED PERFORMANCE SEGMENTATION
+          </p>
+        </div>
+      </div>
       <PrimaryToolbar enableAllDevices={true} isSticky />
       <div className="min-h-screen p-5">
         {/* Page View Section */}

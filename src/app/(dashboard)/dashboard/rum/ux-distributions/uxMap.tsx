@@ -13,13 +13,12 @@ import {
 import { CanvasRenderer } from "echarts/renderers";
 import * as echarts from "echarts/core";
 import rawWorldMap from "../../../../../../public/maps/worldMap.json";
-import { CustomTooltip, DeviceController, useTheme } from "@/components/theme";
+import { DeviceController, useTheme } from "@/components/theme";
 import {
   InfoIcon,
   AlertCircle,
   CheckCircle2,
   Users,
-  Activity,
   DatabaseIcon,
   MapPin,
   MapPinCheckIcon,
@@ -27,6 +26,7 @@ import {
 import { alpha3ToAlpha2 } from "@/components/countries/countryCodes";
 import { countryNameToAlpha2 } from "@/components/countries/alpha2codes";
 import { RealtimeUxMap } from ".";
+import TooltipIcon from "@/components/theme/customTooltip";
 
 type HappinessData = {
   country_iso: string;
@@ -237,35 +237,25 @@ export default function UxReport() {
     <>
       <div className="w-full px-4 md:px-0">
         <div className="flex flex-col md:flex-row md:items-center mb-6 justify-between w-full gap-4 group">
-          <div className="flex items-start md:items-center gap-4">
-            <Activity
-              size={34}
-              className="text-primary/80 shrink-0 mt-1 md:mt-0"
-            />
-
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <h2 className="font-bold text-lg md:text-xl tracking-tighter bg-linear-to-br from-primary via-primary to-primary/50 bg-clip-text text-transparent">
-                  UX Distributions
-                </h2>
-                <CustomTooltip
-                  content="Global UX shows region based user experience status to expose geo performance distributions. These signals are strongly linked with web vitals of your pages and CDN effectiveness. Bad web vitals or lack of edge cache are two major reasons leads to poor region experience."
-                  trigger={
-                    <div className="p-1 rounded-full hover:bg-primary/10 transition-colors cursor-help">
-                      <InfoIcon
-                        size={16}
-                        className="text-primary/40 hover:text-primary/80"
-                      />
-                    </div>
-                  }
-                  side="right"
-                  maxWidth="400px"
-                />
-              </div>
-              <p className="text-[10px] md:text-[11px] text-muted-foreground font-semibold uppercase tracking-widest opacity-80">
-                Page Speed Impact & User Experience Across Globe
-              </p>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <h2 className="font-extrabold text-2xl tracking-tight bg-linear-to-r from-primary via-primary/80 to-primary/50 bg-clip-text text-transparent">
+                UX Distributions
+              </h2>
+              <TooltipIcon
+                content="Global UX shows region based user experience status to expose geo performance distributions. These signals are strongly linked with web vitals of your pages and CDN effectiveness. Bad web vitals or lack of edge cache are two major reasons leads to poor region experience."
+                trigger={
+                  <InfoIcon
+                    size={18}
+                    className="rounded-full cursor-pointer text-primary/30 hover:text-primary transition-colors"
+                  />
+                }
+                side="right"
+              />
             </div>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-70">
+              Page Speed Impact & User Experience Across Globe
+            </p>
           </div>
           <div className="w-full md:w-auto flex-col md:flex-row items-start flex md:items-center gap-5">
             <div className="flex items-center gap-2 border rounded-sm border-primary/20 bg-primary/10 px-3 py-1.5">

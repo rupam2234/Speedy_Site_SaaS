@@ -1,32 +1,32 @@
 import { setupDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-const worker = setupDB();
-
 interface Props {
   domain: string;
 }
 
-export async function POST(request: NextRequest) {
-  const { domain }: Props = await request.json();
+const worker = setupDB();
+
+export async function POST(req: NextRequest) {
+  const { domain }: Props = await req.json();
 
   if (!domain) {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 
   try {
-    const { data, error } = await worker.rpc("page_performance_analysis", {
+    const { error, data } = await worker.rpc("font_analysis", {
       p_domain: domain,
     });
 
     if (error) {
-      throw Error(error.message);
+      throw new Error(error.message ?? "Error fetching font analysis");
     }
 
     return NextResponse.json({ data }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || "Unknown error" },
+      { message: error.message ?? "Unexpacted Error" },
       { status: 500 },
     );
   }

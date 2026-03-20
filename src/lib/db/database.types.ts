@@ -674,22 +674,20 @@ export type Database = {
         }[];
       };
       analyze_inp_by_device: {
-        Args: { domain_filter?: string };
+        Args: { domain_filter: string };
         Returns: {
-          affected_element: string;
-          avg_inp_value: number;
-          device_type: string;
-          good_count: number;
-          interaction_type: string;
-          max_inp_value: number;
-          min_inp_value: number;
-          needs_improvement_count: number;
-          occurrence_count: number;
-          poor_count: number;
+          _avg_inp_ms: number;
+          _device: string;
+          _interaction_type: string;
+          _main_cause: string;
+          _occurrence_count: number;
+          _p75_inp_ms: number;
+          _sample_pages: string[];
+          _target_selector: string;
         }[];
       };
       analyze_lcp_by_device: {
-        Args: { domain_filter: string };
+        Args: { days_back?: number; domain_filter: string };
         Returns: {
           avg_element_render_delay: number;
           avg_lcp_value: number;
@@ -697,12 +695,19 @@ export type Database = {
           avg_resource_load_duration: number;
           device_type: string;
           element_target: string;
+          font_family: string;
+          font_size: string;
+          font_transfer_size: number;
+          font_weight: string;
           good_count: number;
           image_url: string;
           max_lcp_value: number;
           min_lcp_value: number;
           needs_improvement_count: number;
           occurrence_count: number;
+          p50_lcp_value: number;
+          p75_lcp_value: number;
+          p95_lcp_value: number;
           page_url: string;
           poor_count: number;
         }[];
@@ -786,6 +791,19 @@ export type Database = {
         }[];
       };
       delete_old_rum_metrics: { Args: never; Returns: undefined };
+      font_analysis: {
+        Args: { p_domain: string };
+        Returns: {
+          avg_font_load_ms: number;
+          avg_lcp_ms: number;
+          avg_render_delay_ms: number;
+          device_type: string;
+          font_family: string;
+          font_weight: string;
+          poor_lcp_pct: number;
+          sample_count: number;
+        }[];
+      };
       get_ai_citation: {
         Args: { p_domain_name: string };
         Returns: {
@@ -1149,18 +1167,16 @@ export type Database = {
         }[];
       };
       page_performance_analysis: {
-        Args: { p_domain?: string; p_end_date: string; p_start_date: string };
+        Args: { p_domain?: string };
         Returns: {
           avg_cls: number;
-          avg_fcp_ms: number;
           avg_inp_ms: number;
           avg_lcp_ms: number;
-          avg_ttfb_ms: number;
-          cls_targets: Json;
+          cls_elements: Json;
           current_page: string;
           device_type: string;
-          inp_targets: Json;
-          lcp_targets: Json;
+          inp_elements: Json;
+          lcp_elements: Json;
           performance_group: string;
           visit_count: number;
         }[];
@@ -1179,11 +1195,13 @@ export type Database = {
       rum_cls: {
         Args: { p_domain_name: string };
         Returns: {
-          cls_timestamp: number;
-          cls_value: number;
-          current_page: string;
-          device_type: string;
-          largest_shift_target: string;
+          avg_magnitude: number;
+          device: string;
+          most_frequent_timing: string;
+          sample_pages_to_test: string[];
+          shift_count: number;
+          target_element: string;
+          total_impact_score: number;
         }[];
       };
       rum_distributions_all_metrics: {
@@ -1227,23 +1245,18 @@ export type Database = {
       ttfb_contributors: {
         Args: { p_domain: string };
         Returns: {
-          browser: string;
-          city: string;
-          country: string;
+          avg_downlink: number;
+          avg_rtt: number;
           device_type: string;
-          downlink: number;
-          isp: string;
-          network_type: string;
-          os: string;
+          occurrence_count: number;
+          origin_hit_rate: number;
+          p75_dns: number;
+          p75_server: number;
+          p75_tcp: number;
+          p75_ttfb: number;
           page_path: string;
-          region: string;
-          rtt: number;
-          timezone: string;
-          ttfb_dns_lookup: number;
-          ttfb_ms: number;
-          ttfb_request_start: number;
-          ttfb_response_start: number;
-          ttfb_tcp_connection: number;
+          top_country: string;
+          top_isp: string;
         }[];
       };
       urlencode:

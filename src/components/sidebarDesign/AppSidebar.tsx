@@ -84,16 +84,16 @@ export default function AppSidebar({
             url: `/dashboard/rum/web-vitals?site=${selectedSite}`,
           },
           {
+            title: "Analytics",
+            url: `/dashboard/rum/analytics?site=${selectedSite}`,
+          },
+          {
             title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
           {
             title: "Cache Efficiency",
             url: `/dashboard/rum/cache-efficiency?site=${selectedSite}`,
-          },
-          {
-            title: "Analytics",
-            url: `/dashboard/rum/analytics?site=${selectedSite}`,
           },
         ],
       },
@@ -106,6 +106,10 @@ export default function AppSidebar({
           {
             title: "LCP Images",
             url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
+          },
+          {
+            title: "Font Analysis",
+            url: `/dashboard/rum/fonts?site=${selectedSite}`,
           },
           {
             title: "WP Plugin Analysis",

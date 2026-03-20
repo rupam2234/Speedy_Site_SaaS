@@ -10,9 +10,6 @@ import {
   Layout,
   MousePointer2,
   Clock,
-  Smartphone,
-  Monitor,
-  Tablet,
   Copy,
   Activity,
 } from "lucide-react";
@@ -38,6 +35,7 @@ const THEME = {
 
 const ITEMS_PER_PAGE = 7;
 
+// Diagnostic Logic for the Right Column
 const getActionableFix = (target: string, timing: string) => {
   const t = target.toLowerCase();
   if (timing.includes("<3s")) {
@@ -53,17 +51,6 @@ const getActionableFix = (target: string, timing: string) => {
     return "Dynamic Content: An element entered the viewport late. Consider pre-sizing dynamic containers or disabling lazy-loading for hero items.";
   }
   return "Late Interaction Shift: Likely a popup, cookie banner, or late JS injection. Avoid inserting DOM elements above the user's current scroll position.";
-};
-
-const DeviceIcon = ({ type }: { type: string }) => {
-  switch (type.toLowerCase()) {
-    case "mobile":
-      return <Smartphone size={14} />;
-    case "tablet":
-      return <Tablet size={14} />;
-    default:
-      return <Monitor size={14} />;
-  }
 };
 
 export default function CLSInsights({
@@ -209,9 +196,6 @@ export default function CLSInsights({
                       {item.target_element}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-bold text-neutral-400 uppercase tabular-nums flex items-center gap-1">
-                        <DeviceIcon type={item.device} /> {item.device}
-                      </span>
                       <span className="text-[10px] font-black uppercase text-neutral-400">
                         {item.shift_count} events
                       </span>
@@ -308,7 +292,6 @@ export default function CLSInsights({
                       Occurred on
                     </p>
                     <div className="flex items-center gap-1.5 font-black uppercase text-xs">
-                      <DeviceIcon type={activeElement.device} />{" "}
                       {activeElement.device}
                     </div>
                   </div>
@@ -318,8 +301,8 @@ export default function CLSInsights({
                 <div
                   className="p-5 border-2 rounded-md space-y-3"
                   style={{
-                    borderColor: `${THEME.orange}33`,
-                    backgroundColor: `${THEME.orange}08`,
+                    borderColor: `${THEME.green}33`,
+                    backgroundColor: `${THEME.green}08`,
                   }}
                 >
                   <div className="flex justify-between items-center">
@@ -333,9 +316,9 @@ export default function CLSInsights({
                   <div className="space-y-2">
                     <h3
                       className="text-xs font-black uppercase"
-                      style={{ color: THEME.orange }}
+                      style={{ color: THEME.green }}
                     >
-                      Developer Fix
+                      Potential Fix
                     </h3>
                     <p className="text-[11px] font-medium leading-relaxed text-neutral-600 dark:text-neutral-400">
                       {getActionableFix(

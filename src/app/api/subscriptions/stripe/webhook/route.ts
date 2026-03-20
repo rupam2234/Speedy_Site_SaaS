@@ -167,6 +167,8 @@ export async function POST(req: Request) {
         nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + 1); // add 1 month
         const periodEnd = nextPeriodEnd.toISOString();
 
+        // imp: need to apply reset of individual usages for the success account
+
         const { error } = await worker
           .from("subscriptions")
           .update({

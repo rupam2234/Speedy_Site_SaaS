@@ -19,40 +19,18 @@ import {
 } from ".";
 
 interface Props {
-  /**
-   * Enables the "All" device type option.
-   */
   enableAllDevices?: boolean;
-
-  /**
-   * Enables distribution view.
-   */
   enableDistribution?: boolean;
-
-  /**
-   * Disables the tablet device option.
-   */
   disableTablet?: boolean;
-
-  /**
-   * Default date range in days (e.g. 72, 500).
-   */
   defaultDateRange?: number;
-
-  /**
-   * Enable sticky toolbar, default: false
-   */
   isSticky?: boolean;
-
-  /**
-   * Limit will force calender to only allow limited no of date range to select
-   */
   limited?: number;
-
-  /**
-   *  disable or enable calender
-   */
   disableCalender?: boolean;
+  /**
+   * Custom components to render on the right side.
+   * If provided, these will show instead of (or alongside) the calendar.
+   */
+  children?: React.ReactNode;
 }
 
 export default function PrimaryToolbar({
@@ -63,17 +41,17 @@ export default function PrimaryToolbar({
   isSticky,
   limited,
   disableCalender,
+  children, // 1. Destructure children
 }: Props) {
   const { rumDistribution, setRumDistribution } = useSiteContext();
 
   const isMobile = useIsMobile();
-  const [sticky, setIsSticky] = useState<boolean>(false); // this sets border bottom when user is scrolling
+  const [sticky, setIsSticky] = useState<boolean>(false);
   const headerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
       if (!headerRef.current) return;
-
       const { top } = headerRef.current.getBoundingClientRect();
       setIsSticky(top <= 0);
     };
@@ -85,7 +63,9 @@ export default function PrimaryToolbar({
   return (
     <div
       ref={headerRef}
-      className={`flex flex-col md:flex-row px-5 py-4 w-full items-start gap-3 md:justify-between bg-transparent`}
+      className={`flex flex-col md:flex-row py-4 w-full items-start gap-3 md:justify-between ${
+        sticky ? "bg-white pl-3 pr-5" : "bg-transparent px-5"
+      }`}
       style={{
         position: isSticky && !isMobile ? "sticky" : "unset",
         top: 0,
@@ -94,6 +74,7 @@ export default function PrimaryToolbar({
         borderBottom: sticky ? "1px solid rgba(0,0,0,0.1)" : "",
       }}
     >
+      {/* Left Side */}
       <div className="flex gap-3 md:items-center items-start flex-col md:flex-row">
         {sticky && !isMobile ? <SidebarTrigger /> : <></>}
         <DeviceController
@@ -101,7 +82,7 @@ export default function PrimaryToolbar({
           disableTablet={disableTablet !== undefined && disableTablet}
         />
         <div className="flex items-center gap-2">
-          {enableDistribution ? (
+          {enableDistribution && (
             <>
               <div className="dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 w-auto border px-1 rounded-sm">
                 <div className="flex justify-between items-center pl-2 py-0.5 w-full">
@@ -132,9 +113,7 @@ export default function PrimaryToolbar({
                 </div>
               </div>
               <CustomTooltip
-                content={
-                  "Percentiles help normalize performance by showing real user experiences. P50 shows the median (typical) experience, P75 is used in Core Web Vitals to represent the majority of users, and higher percentiles like P90 or P99 highlight slower experiences at the tail end. These help uncover issues that averages or medians might miss."
-                }
+                content={"Percentiles help normalize performance..."}
                 maxWidth="16rem"
                 side="bottom"
                 trigger={
@@ -145,16 +124,23 @@ export default function PrimaryToolbar({
                 }
               />
             </>
-          ) : (
-            <></>
           )}
         </div>
       </div>
-      {disableCalender ? (
-        <></>
-      ) : (
-        <CustomCalendar defaultDateRange={defaultDateRange} limited={limited} />
-      )}
+
+      {/* Right Side Logic */}
+      <div className="flex items-center gap-3">
+        {children ? (
+          // If children are passed, render them
+          children
+        ) : !disableCalender ? (
+          // Otherwise, render the default calendar (if not disabled)
+          <CustomCalendar
+            defaultDateRange={defaultDateRange}
+            limited={limited}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
