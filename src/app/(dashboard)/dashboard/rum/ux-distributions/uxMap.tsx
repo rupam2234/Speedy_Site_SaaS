@@ -76,7 +76,7 @@ export default function UxReport() {
   const windows = ["Distributions", "Live Traffic"] as const;
 
   const [compAIndex, setCompAIndex] = useState<number>(0);
-  const [compBIndex] = useState<number>(1);
+  const [compBIndex, setCompBIndex] = useState<number>(1);
 
   const { theme } = useTheme();
 
@@ -561,6 +561,7 @@ export default function UxReport() {
               <h3 className="font-bold text-lg">Segment Comparison</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+              {/* SEGMENT A */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
                   Segment A
@@ -584,28 +585,37 @@ export default function UxReport() {
                   />
                 </div>
               </div>
-              <div className="flex justify-center">
-                <div className="p-2 rounded-full bg-primary/10 text-primary">
+
+              {/* ICON SEPARATOR */}
+              <div className="flex justify-center pt-4 md:pt-6">
+                <div className="p-2 rounded-full bg-primary/10 text-primary border border-primary/20">
                   <ArrowRightLeft size={16} />
                 </div>
               </div>
-              <div className="relative">
-                <select
-                  value={compAIndex}
-                  onChange={(e) => setCompAIndex(Number(e.target.value))}
-                  className="w-full appearance-none bg-background border border-primary/20 rounded-md p-2 pr-10 text-xs font-medium cursor-pointer transition-all hover:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                >
-                  {userHappinessData.map((d, i) => (
-                    <option key={i} value={i}>
-                      {alphacode2toCountry[d.country] || d.country} —{" "}
-                      {d.device_type} ({d.network})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={14}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-70"
-                />
+
+              {/* SEGMENT B */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
+                  Segment B
+                </label>
+                <div className="relative">
+                  <select
+                    value={compBIndex} // FIXED: Use compBIndex
+                    onChange={(e) => setCompBIndex(Number(e.target.value))} // FIXED: Use setCompBIndex
+                    className="w-full appearance-none bg-background border border-primary/20 rounded-md p-2 pr-10 text-xs font-medium cursor-pointer transition-all hover:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  >
+                    {userHappinessData.map((d, i) => (
+                      <option key={i} value={i}>
+                        {alphacode2toCountry[d.country] || d.country} —{" "}
+                        {d.device_type} ({d.network})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={14}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-70"
+                  />
+                </div>
               </div>
             </div>
 
