@@ -159,7 +159,7 @@ export default function LCPelements({
                   </div>
                   <div className="mt-4 w-full pt-4 border-t border-neutral-200 dark:border-neutral-800">
                     <div className="flex justify-between items-center text-[10px] font-bold text-neutral-500 uppercase">
-                      <span>P75 Goal</span>
+                      <span>P75</span>
                       <span className={getVitalColor(item.p75_lcp_value)}>
                         {(item.p75_lcp_value / 1000).toFixed(2)}s
                       </span>
@@ -316,24 +316,27 @@ function getInsight(
   render: number,
   isFont: boolean,
 ) {
-  const max = Math.max(delay, load, render);
-  if (max === delay && delay > 600)
+  if (delay > 800 && !isFont) {
+    return "LCP image is discovered late (>800ms). Remove lazy loading or add preload.";
+  }
+
+  if (isFont && delay > 500) {
+    return "Font-based LCP is delayed. Add preload and use font-display: swap.";
+  }
+
+  if (load > 1500) {
     return isFont
-      ? "Fonts were discovered late by the browser. Add a preload link."
-      : "Asset discovery delay. Remove loading='lazy' from the LCP element.";
-  if (max === load && load > 1000)
-    return isFont ? (
-      "The font file is quite large. Ensure you are using WOFF2 format."
-    ) : (
-      <span>
-        Resource load is slow. Use{" "}
-        <a href="/pixel" className="text-blue-400">
-          Pixel{" "}
-        </a>
-        to compress the image or CDN response times.
-      </span>
-    );
-  if (max === render && render > 400)
-    return "Render delay. The browser is likely blocked by long-running JavaScript or CSS.";
-  return "Metric phases are balanced. Focus on general site-wide performance optimizations.";
+      ? "Font file is large (>1.5s load). Use WOFF2 and reduce unused glyphs."
+      : "Image load is very slow (>1.5s). Compress or use a faster CDN.";
+  }
+
+  if (render > 500) {
+    return "Render delay is high. Likely main-thread blocking from JS or CSS.";
+  }
+
+  if (delay > 400 && load > 800) {
+    return "Both discovery and loading are slow. Optimize preload and asset size together.";
+  }
+
+  return "LCP phases look balanced. Focus on overall page performance improvements.";
 }
