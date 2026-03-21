@@ -80,10 +80,6 @@ export async function POST(req: Request) {
                 ? "Agency"
                 : "Free";
 
-        const billingCycleEnd = new Date(
-          subscription.billing_cycle_anchor * 1000,
-        ).toISOString();
-
         // // Fetch existing subscription to get user_id
         // const { data: existing } = await worker
         //   .from("subscriptions")
@@ -103,6 +99,10 @@ export async function POST(req: Request) {
         //   break; // Stop processing if we don't have a valid UUID
         // }
 
+        const periodEnd = new Date(subscription.billing_cycle_anchor * 1000);
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+        const billingCycleEnd = periodEnd.toISOString();
+
         const { error } = await worker.from("subscriptions").upsert(
           {
             user_id: userId,
@@ -112,9 +112,7 @@ export async function POST(req: Request) {
             period_starts_at: new Date(
               subscription.start_date * 1000,
             ).toISOString(),
-            period_ends_at: subscription.billing_cycle_anchor
-              ? billingCycleEnd
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            period_ends_at: billingCycleEnd,
             status: "active",
             plan: activeplan,
             updated_at: new Date().toISOString(),
