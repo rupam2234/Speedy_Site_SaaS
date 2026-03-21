@@ -27,6 +27,7 @@ export function ImageOptimizerLite({ imageUrl }: { imageUrl: string }) {
   const [originalSize, setOriginalSize] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [fileName, setFilename] = useState<string>("");
   const imageRef = useRef<string | null>(null);
 
   const optimize = useCallback(async () => {
@@ -36,7 +37,8 @@ export function ImageOptimizerLite({ imageUrl }: { imageUrl: string }) {
       const blob = await response.blob();
       setOriginalSize(blob.size); // Track original size
 
-      const fileName = imageUrl.split("/").pop() || "image";
+      setFilename(imageUrl.split("/").pop() || "image");
+
       const file = new File([blob], fileName, { type: blob.type });
 
       const formats = ["webp", "jpeg", "png"];
@@ -62,6 +64,7 @@ export function ImageOptimizerLite({ imageUrl }: { imageUrl: string }) {
       console.error("Optimization failed", err);
     } finally {
       setIsProcessing(false);
+      setFilename("");
     }
   }, [imageUrl]);
 
@@ -138,7 +141,7 @@ export function ImageOptimizerLite({ imageUrl }: { imageUrl: string }) {
         <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
           <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
           <span className="text-xs font-medium text-slate-600">
-            Generating next-gen formats...
+            Generating optimized files...
           </span>
         </div>
       )}
@@ -202,7 +205,7 @@ export function ImageOptimizerLite({ imageUrl }: { imageUrl: string }) {
                 )}
                 <a
                   href={res.url}
-                  download={`optimized.${res.format}`}
+                  download={`${fileName}.${res.format}`}
                   className="p-2 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 rounded-lg transition-all"
                 >
                   <Download className="w-4 h-4" />
