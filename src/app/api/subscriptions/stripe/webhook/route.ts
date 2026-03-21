@@ -234,7 +234,7 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({
             customer_id: invoice.customer,
-            message: "Your subscription renewal was successfull.",
+            message: "Your subscription renewal was successful.",
           }),
         });
 

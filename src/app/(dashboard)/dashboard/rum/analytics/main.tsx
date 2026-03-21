@@ -129,7 +129,7 @@ export default function Main() {
             />
           </div>
           <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-70">
-            URL-BASED PERFORMANCE SEGMENTATION
+            Lightweight Analytics With LLM Source Tracking
           </p>
         </div>
       </div>
