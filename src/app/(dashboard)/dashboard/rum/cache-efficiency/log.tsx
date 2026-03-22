@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import TooltipIcon from "@/components/theme/customTooltip";
+import { CustomTooltip } from "@/components/theme";
 
 export interface RequestLog {
   id: string | number;
@@ -37,22 +38,26 @@ interface Props {
 }
 
 export default function CacheAnalysisForensics({ data, isLoading }: Props) {
-  // --- Pagination State ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // --- Logic ---
-  const { paginatedData, totalPages, startIndex, endIndex } = useMemo(() => {
-    const total = Math.ceil(data.length / itemsPerPage);
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = Math.min(start + itemsPerPage, data.length);
-    return {
-      paginatedData: data.slice(start, start + itemsPerPage),
-      totalPages: total,
-      startIndex: start,
-      endIndex: end,
-    };
-  }, [data, currentPage]);
+  const { paginatedData, totalPages, startIndex, endIndex, averageTTFB } =
+    useMemo(() => {
+      const total = Math.ceil(data.length / itemsPerPage);
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = Math.min(start + itemsPerPage, data.length);
+      const avgTTFB =
+        data.reduce((acc, index) => acc + (index.ttfb_total ?? 0), 0) /
+        data.length;
+
+      return {
+        paginatedData: data.slice(start, start + itemsPerPage),
+        totalPages: total,
+        startIndex: start,
+        endIndex: end,
+        averageTTFB: avgTTFB,
+      };
+    }, [data, currentPage]);
 
   if (isLoading)
     return (
@@ -73,7 +78,23 @@ export default function CacheAnalysisForensics({ data, isLoading }: Props) {
                 <th className="px-4 py-4">Visitor</th>
                 <th className="px-4 py-4">Experience</th>
                 <th className="px-4 py-4">Analysis</th>
-                <th className="px-4 py-4 text-right">Result</th>
+                <th className={`px-4 py-4 text-right `}>
+                  <CustomTooltip
+                    content={"Includes all devices"}
+                    trigger={
+                      <span className="underline decoration-dotted decoration-primary/80">
+                        {" "}
+                        Avg. TTFB:
+                      </span>
+                    }
+                  />{" "}
+                  <span
+                    className={`${averageTTFB < 800 ? "text-green-500" : averageTTFB < 1800 ? "text-orange-500" : "text-red-500"}`}
+                  >
+                    {averageTTFB.toFixed(2)}
+                  </span>
+                  MS / Result
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-primary/10">
@@ -85,7 +106,6 @@ export default function CacheAnalysisForensics({ data, isLoading }: Props) {
         </div>
       </div>
 
-      {/* --- Pagination Controls --- */}
       {data.length > itemsPerPage && (
         <div className="flex items-center justify-between px-1">
           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
