@@ -5,7 +5,6 @@ import { useSiteContext } from "../../siteContext";
 import {
   InfoIcon,
   Type,
-  AlertTriangle,
   Monitor,
   Smartphone,
   HelpCircle,
@@ -80,8 +79,6 @@ export default function FontAnalysis() {
     );
   }
 
-  console.log(filteredFonts);
-
   return (
     <>
       {/* Header Section */}
@@ -122,9 +119,11 @@ export default function FontAnalysis() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="text-[10px] uppercase tracking-widest text-primary/40 border-b border-primary/10">
-                  <th className="py-3 px-6 font-bold">Font Asset</th>
+                  <th className="py-3 px-6 font-bold">Font Family</th>
                   <th className="py-3 px-4 font-bold text-center">Device</th>
-                  <th className="py-3 px-4 font-bold text-center">Avg LCP</th>
+                  <th className="py-3 px-4 font-bold text-center">
+                    Avg. LCP / Samples
+                  </th>
                   <th className="py-3 px-4 font-bold text-center">
                     <div className="flex items-center justify-center gap-1">
                       Render Delay
@@ -135,7 +134,9 @@ export default function FontAnalysis() {
                     </div>
                   </th>
                   <th className="py-3 px-4 font-bold text-center">Load Time</th>
-                  <th className="py-3 px-6 font-bold text-right">LCP Score</th>
+                  <th className="py-3 px-6 font-bold text-right">
+                    LCP Involvement
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-primary/5">
@@ -166,12 +167,13 @@ export default function FontAnalysis() {
                         ) : font.device_type === "desktop" ? (
                           <Monitor size={14} className="opacity-40" />
                         ) : (
-                          <Tablet size={14} className="opacity-40" />
+                          <Tablet size={14} className="opacity-40 rotate-90" />
                         )}
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center font-mono text-xs italic">
-                      {(font.avg_lcp_ms / 1000).toFixed(2)}s
+                      {(font.avg_lcp_ms / 1000).toFixed(2)}s /{" "}
+                      {font.sample_count}
                     </td>
                     <MetricCell value={font.avg_render_delay_ms} type="delay" />
                     <MetricCell value={font.avg_font_load_ms} type="load" />
@@ -231,15 +233,7 @@ function MetricCell({
  * Score Badge for Poor LCP Impact
  */
 function ScoreBadge({ percentage }: { percentage: number }) {
-  const isPoor = percentage > 25;
   return (
-    <div
-      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-bold uppercase tracking-tighter ${
-        isPoor ? "bg-red-500/10 text-red-500" : "bg-green-500/10 text-green-500"
-      }`}
-    >
-      {isPoor && <AlertTriangle size={10} />}
-      {percentage}% Poor LCP
-    </div>
+    <div className="text-[12px] text-primary italic">{percentage}% Poor</div>
   );
 }
