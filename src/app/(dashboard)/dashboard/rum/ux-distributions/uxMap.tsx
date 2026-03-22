@@ -354,7 +354,7 @@ export default function UxReport() {
         },
         key: `ux-granular:${selectedSite}`,
         session_Storage: true,
-        ttl: 5 * 60 * 1000,
+        ttl: 60 * 60 * 1000,
       });
       setHappinessData(response || []);
     } finally {

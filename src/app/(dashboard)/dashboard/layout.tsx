@@ -41,7 +41,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
     const timeout = setTimeout(() => {
       router.push("/dashboard");
-    }, 5000);
+    }, 7000);
 
     return () => clearTimeout(timeout);
   }, [selectedSite, router]);

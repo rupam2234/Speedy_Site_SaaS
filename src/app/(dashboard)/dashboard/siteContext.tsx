@@ -17,6 +17,7 @@ type SiteContextType = {
   selectedSite: string;
   setSelectedSite: (site: string) => void;
   orders: OrderData[] | null;
+  isLoadingOrders: boolean;
   setOrders: (orders: OrderData[] | null) => void;
   fetchOrders: (siteFromUrl?: string, userId?: string) => Promise<void>;
   dailyCrux: DailyCruxData | null;
@@ -43,6 +44,7 @@ export const SiteContext = createContext<SiteContextType>({
   selectedSite: "",
   setSelectedSite: () => {},
   orders: null,
+  isLoadingOrders: true,
   setOrders: () => {},
   fetchOrders: async () => {},
   dailyCrux: null,
@@ -69,9 +71,8 @@ export default function SiteContextProvider({
   children: React.ReactNode;
 }) {
   const [orders, setOrders] = useState<OrderData[] | null>(null);
-
+  const [isLoadingOrders, setIsLoadingOrders] = useState<boolean>(true);
   const [selectedSite, setSelectedSite] = useState<string>("");
-
   const [hydrated, setHydrated] = useState(false);
 
   const [dailyCrux, setDailyCrux] = useState<DailyCruxData | null>(null);
@@ -81,30 +82,51 @@ export default function SiteContextProvider({
   >("Desktop");
 
   const [collapsed, setCollapsed] = useState<boolean>(false);
-
   const [experienceType, setExperienceType] = useState<
     "Percentile" | "Distribution"
   >("Percentile");
-
   const [rumDistribution, setRumDistribution] = useState<
     "p50" | "p75" | "p90" | "p95" | "p99"
   >("p75");
 
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
-
   const [plan, setPlan] = useState<string | null>(null);
 
+  // --- Hooks & Refs ---
   const user = useSupabaseUser();
-
   const searchParams = useSearchParams();
-
   const fetchCalledRef = useRef<{
     userId?: string;
     siteFromUrl?: string | null;
   } | null>(null);
 
-  // Restore selected site after mount (hydration safe)
+  /**
+   * Logical helper to decide which site to select once orders are loaded.
+   * Priority: 1. Existing selection, 2. URL Param, 3. First order in list.
+   */
+  const handleInitialSiteSelection = useCallback(
+    (orderList: OrderData[], siteFromUrl?: string) => {
+      setSelectedSite((prev) => {
+        // If the user already has a site selected in state, don't override it
+        if (prev) return prev;
+
+        // If a site is provided in the URL, try to match it
+        if (
+          siteFromUrl &&
+          orderList.some((o) => o.website_name === siteFromUrl)
+        ) {
+          return siteFromUrl;
+        }
+
+        // Default to the first site in the array
+        return orderList[0]?.website_name || "";
+      });
+    },
+    [],
+  );
+
+  // Restore selected site from session storage on mount
   useEffect(() => {
     const stored = sessionStorage.getItem("selected-site");
     if (stored) {
@@ -113,93 +135,74 @@ export default function SiteContextProvider({
     setHydrated(true);
   }, []);
 
-  // Persist selected site
+  // Persist selected site whenever it changes
   useEffect(() => {
     if (selectedSite) {
       sessionStorage.setItem("selected-site", selectedSite);
     }
   }, [selectedSite]);
 
+  // The Fetch Logic
   const fetchOrders = useCallback(
     async (siteFromUrl?: string, userId?: string) => {
-      if (!userId) return;
+      if (!userId) {
+        setIsLoadingOrders(false);
+        return;
+      }
 
+      setIsLoadingOrders(true);
       const now = Date.now();
-
       const cachedOrders = sessionStorage.getItem("orders");
       const cachedTime = sessionStorage.getItem("orders-ts");
 
+      // Check Cache (5 minute TTL)
       if (
         cachedOrders &&
         cachedTime &&
         now - parseInt(cachedTime) < 5 * 60 * 1000
       ) {
         const parsedOrders: OrderData[] = JSON.parse(cachedOrders);
-
         setOrders(parsedOrders);
-
-        setSelectedSite((prev) => {
-          if (prev || !hydrated) return prev;
-
-          if (
-            siteFromUrl &&
-            parsedOrders.some((o) => o.website_name === siteFromUrl)
-          ) {
-            return siteFromUrl;
-          }
-
-          return parsedOrders[0]?.website_name || "";
-        });
-
+        handleInitialSiteSelection(parsedOrders, siteFromUrl);
+        setIsLoadingOrders(false);
         return;
       }
 
       try {
         const response = await fetch("/api/orders/fetchOrder");
-
         if (!response.ok) throw new Error("Failed to fetch orders");
 
         const { data }: { data: OrderData[] } = await response.json();
 
-        if (data?.length > 0) {
+        if (data && data.length > 0) {
           sessionStorage.setItem("orders", JSON.stringify(data));
           sessionStorage.setItem("orders-ts", Date.now().toString());
-
           setOrders(data);
-
-          setSelectedSite((prev) => {
-            if (prev || !hydrated) return prev;
-
-            if (siteFromUrl && data.some((o) => o.website_name === siteFromUrl))
-              return siteFromUrl;
-
-            return data[0].website_name;
-          });
+          handleInitialSiteSelection(data, siteFromUrl);
         } else {
+          // Explicitly set to empty array if no orders found in DB
           setOrders([]);
           setSelectedSite("");
-
           sessionStorage.removeItem("orders");
           sessionStorage.removeItem("orders-ts");
         }
       } catch (error) {
         console.error("Error fetching orders:", error);
-
-        setOrders(null);
-        setSelectedSite("");
-
-        sessionStorage.removeItem("orders");
-        sessionStorage.removeItem("orders-ts");
+        setOrders([]); // Fallback to empty to stop loading state
+      } finally {
+        setIsLoadingOrders(false);
       }
     },
-    [hydrated],
+    [handleInitialSiteSelection],
   );
 
+  // Trigger fetch on user load or URL change
   useEffect(() => {
     if (!user?.id || !hydrated) return;
 
     const siteFromUrl = searchParams.get("site");
 
+    // Prevent duplicate calls if params haven't changed
     if (
       fetchCalledRef.current?.userId === user.id &&
       fetchCalledRef.current?.siteFromUrl === siteFromUrl
@@ -219,6 +222,7 @@ export default function SiteContextProvider({
     <SiteContext.Provider
       value={{
         orders,
+        isLoadingOrders,
         setOrders,
         selectedSite,
         setSelectedSite,

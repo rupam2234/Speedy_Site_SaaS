@@ -11,19 +11,22 @@ interface SignOutOptions {
 export function useSignOut() {
   const router = useRouter();
 
-  const signOut = useCallback(async ({ redirectTo }: SignOutOptions = {}) => {
-    const { error } = await supabase_client.auth.signOut();
-  
-    sessionStorage.removeItem("subscriptionData"); // remove subscription data
-    sessionStorage.removeItem("supabase-user") // remove user
+  const signOut = useCallback(
+    async ({ redirectTo }: SignOutOptions = {}) => {
+      const { error } = await supabase_client.auth.signOut();
 
-    if (error) {
-      console.error(error.message);
-      return;
-    }
+      if (error) {
+        console.error(error.message ?? "Supabase sign out error");
+        return;
+      }
 
-    router.push(redirectTo ?? "/sign-in");
-  }, [router]);
+      sessionStorage.clear();
+      localStorage.clear();
+
+      router.push(redirectTo ?? "/sign-in");
+    },
+    [router],
+  );
 
   return signOut;
 }

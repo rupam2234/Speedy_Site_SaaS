@@ -3,14 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
 import { LoadingAnimation } from "@/components/theme/loadingAnimation";
-import { CustomTooltip, useIsMobile } from "@/components/theme";
+import { CustomTooltip, NoSiteSelected, useIsMobile } from "@/components/theme";
 import { CruxMetricKey, DailyCruxData } from "@/data-types";
 import { HistrogramBar, RumWebVitalToolbar } from "@/components/utils";
 import { Bookmark, MoveRight } from "lucide-react";
 import { cwv_metrics, DashboardChartContainer } from ".";
 
 export default function Main() {
-  const [showPrompt, setShowPrompt] = useState(false);
   const {
     selectedSite,
     setDailyCrux,
@@ -19,6 +18,8 @@ export default function Main() {
     endDate,
     selectedDevice,
     setCruxData,
+    orders,
+    isLoadingOrders,
   } = useSiteContext();
   const isMobile = useIsMobile();
 
@@ -104,25 +105,20 @@ export default function Main() {
     });
   }, [dailyCrux, selectedDevice]);
 
-  useEffect(() => {
-    if (!selectedSite) {
-      const timeout = setTimeout(() => {
-        setShowPrompt(true);
-      }, 3000);
-
-      return () => clearTimeout(timeout);
-    }
-  }, [selectedSite]);
-
-  if (!selectedSite && !showPrompt) {
+  if (isLoadingOrders) {
     return (
-      <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
+      <div className="h-[80vh] flex items-center justify-center">
         <LoadingAnimation />
       </div>
     );
   }
 
-  if (!selectedSite && showPrompt) {
+  // No site selected
+  if (!orders || orders.length === 0) {
+    return <NoSiteSelected />;
+  }
+
+  if (!selectedSite) {
     return (
       <div className="flex flex-col space-y-4 md:-mt-12.5 items-center justify-center min-h-full dark:text-secondary-background p-8">
         <p className="text-4xl md:text-6xl font-bold text-primary/50">
