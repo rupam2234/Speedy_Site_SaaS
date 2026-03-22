@@ -2,9 +2,9 @@ import { Metadata } from "next";
 import { Main } from ".";
 
 export const metadata: Metadata = {
-  title: "Cache Efficiency",
+  title: "Edge Cache Performance | Speedy Site",
   description:
-    "Real-time and historical origin server hits for your site, aggregated from real user monitoring data.",
+    "Minitor your edge cache effectiveness and requests hitting origin server + impact on TTFB.",
   keywords: [
     "origin hit",
     "RUM",
@@ -17,14 +17,14 @@ export const metadata: Metadata = {
   authors: [{ name: "Speedy Site" }],
   robots: "index, follow",
   openGraph: {
-    title: "Cache Efficiency",
+    title: "Edge Cache Performance | Speedy Site",
     description:
-      "View origin hit percentages for all your monitored sites in real-time.",
-    url: "https://speedy.site/origin-hits",
+      "Minitor your edge cache effectiveness and requests hitting origin server + impact on TTFB.",
+    url: "https://speedy.site/rum/edge-cache-performance",
     siteName: "Speedy Site",
     images: [
       {
-        url: "https://your-saas-domain.com/og-image.png",
+        url: "/images/homepage/Cache-Efficiency.png",
         width: 1200,
         height: 630,
         alt: "Origin Hit Analytics",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Cache Efficiency",
     description: "View origin server hit percentages for your monitored sites.",
-    images: ["https://your-saas-domain.com/og-image.png"],
+    images: ["/images/homepage/Cache-Efficiency.png"],
   },
 };
 

@@ -92,8 +92,8 @@ export default function AppSidebar({
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
           {
-            title: "Cache Efficiency",
-            url: `/dashboard/rum/cache-efficiency?site=${selectedSite}`,
+            title: "Edge Cache Performance",
+            url: `/dashboard/rum/edge-cache-performance?site=${selectedSite}`,
           },
         ],
       },

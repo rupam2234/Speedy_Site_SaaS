@@ -51,10 +51,32 @@ export default function Main() {
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <h2 className="font-extrabold text-2xl tracking-tight bg-linear-to-r from-primary via-primary/80 to-primary/50 bg-clip-text text-transparent">
-                Cache Efficiency
+                Edge Cache Performance
               </h2>
               <TooltipIcon
-                content="Cache efficiency shows how many requests are served from cache instead of your origin server. Requests hitting the server use CPU, memory, and bandwidth, which can slow your site if too frequent. CDNs greatly reduces this load by serving content from edge locations. A high origin hit rate means more server load, while a low rate means most of the requests are being served from edge cache."
+                content={
+                  <div className="space-y-3">
+                    <p>
+                      Use this to understand how many requests are being served
+                      from CDN (if you have any) instead of the origin server.
+                      Requests hitting the server uses CPU, memory, and
+                      bandwidth. CDNs greatly reduces this load by serving
+                      content from edge locations.
+                    </p>
+                    <p>
+                      Your origin server may perform well for nearby regions,
+                      but users farther away can experience slower load times. A
+                      CDN helps improve global performance and user experience
+                      by distributing content across geographically closer edge
+                      nodes.
+                    </p>
+                    <p>
+                      To analyze page-level TTFB across different devices and
+                      network conditions, refer to the TTFB section under RUM
+                      Web Vitals.
+                    </p>
+                  </div>
+                }
                 trigger={
                   <InfoIcon
                     size={18}
