@@ -1,11 +1,17 @@
+"use client";
+
 import {
   ArrowRightLeft,
+  Camera,
   ChevronDown,
+  Loader2,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import { ComparisonData, UxGranularData } from ".";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toPng } from "html-to-image";
+import { useSiteContext } from "../../siteContext";
 
 interface Props {
   compBIndex: number;
@@ -26,20 +32,108 @@ export function ComparisonMain({
   alphacode2toCountry,
   comparisonData,
 }: Props) {
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const { selectedSite } = useSiteContext();
+  const [error, setError] = useState<string>("");
+
+  const captureLimit = 3; // maximum allowed captures per session
+  const captureCountRef = useRef(0);
+
   const sortedData = useMemo(() => {
     return [...userHappinessData].sort((a, b) =>
       b.country.localeCompare(a.country),
     );
   }, [userHappinessData]);
 
+  const handleCapture = useCallback(async () => {
+    if (reportRef.current === null) return;
+
+    // Check if user has reached the limit
+    if (captureCountRef.current >= captureLimit) {
+      setError(
+        `You've already generated ${captureLimit} reports. Take a breather before making more.`,
+      );
+      return;
+    }
+
+    setIsCapturing(true);
+
+    try {
+      // small delay to ensure UI settles
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      const dataUrl = await toPng(reportRef.current, {
+        cacheBust: true,
+        filter: (node: HTMLElement) =>
+          !["no-capture"].some((cls) => node.classList?.contains?.(cls)),
+        backgroundColor: "#ffffff",
+        style: {
+          color: "#0f172a",
+          backgroundColor: "#ffffff",
+          padding: "20px",
+          borderRadius: "12px",
+        },
+      });
+
+      const link = document.createElement("a");
+      link.download = `ux-report-${selectedSite}.png`;
+      link.href = dataUrl;
+      link.click();
+
+      // Increment the capture count
+      captureCountRef.current += 1;
+    } catch (err) {
+      console.error("Capture failed", err);
+    } finally {
+      setIsCapturing(false);
+    }
+  }, [reportRef, selectedSite]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setError("");
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, [error]);
+
   return (
-    <div className="border border-primary/20 rounded-xl bg-primary/2 p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <ArrowRightLeft className="text-primary" size={20} />
-        <h3 className="font-bold text-lg">Segment Comparison</h3>
+    <div
+      ref={reportRef}
+      className="border border-primary/20 rounded-xl bg-primary/2 p-6 space-y-6"
+    >
+      <div className="flex items-center justify-between no-capture">
+        <div className="flex items-center gap-3">
+          <ArrowRightLeft className="text-primary" size={20} />
+          <h3 className="font-bold text-lg">Segment Comparison</h3>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {error.length > 0 && (
+            <p className="text-red-400 text-[12px] font-medium">{error}</p>
+          )}
+          <button
+            onClick={handleCapture}
+            disabled={isCapturing}
+            className="flex items-cente cursor-pointer gap-2 px-3 py-1.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-xs font-bold transition-all hover:bg-primary/20 disabled:opacity-50"
+          >
+            {isCapturing ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Capturing...
+              </>
+            ) : (
+              <>
+                <Camera size={14} />
+                Download Report
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-        {/* SEGMENT A */}
         <SegmentSelect
           label="Segment A"
           value={compBIndex}
@@ -49,14 +143,12 @@ export function ComparisonMain({
           userHappinessData={userHappinessData}
         />
 
-        {/* ICON SEPARATOR */}
         <div className="flex justify-center pt-4 md:pt-6">
           <div className="p-2 rounded-full bg-primary/10 text-primary border border-primary/20">
             <ArrowRightLeft size={16} />
           </div>
         </div>
 
-        {/* SEGMENT B */}
         <SegmentSelect
           label="Segment B"
           value={compAIndex}
