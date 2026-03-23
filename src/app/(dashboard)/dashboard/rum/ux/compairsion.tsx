@@ -51,12 +51,21 @@ export function ComparisonMain({
               onChange={(e) => setCompAIndex(Number(e.target.value))}
               className="w-full appearance-none bg-background border border-primary/20 rounded-md p-2 pr-10 text-xs font-medium cursor-pointer transition-all hover:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
             >
-              {sortedData.map((d, i) => (
-                <option key={i} value={i}>
-                  {alphacode2toCountry[d.country] || d.country} —{" "}
-                  {d.device_type} ({d.network === null ? "WiFi" : d.network})
-                </option>
-              ))}
+              {sortedData.map((d) => {
+                const originalIndex = userHappinessData.findIndex(
+                  (x) =>
+                    x.country === d.country &&
+                    x.device_type === d.device_type &&
+                    x.network === d.network,
+                );
+
+                return (
+                  <option key={originalIndex} value={originalIndex}>
+                    {alphacode2toCountry[d.country] || d.country} —{" "}
+                    {d.device_type} ({d.network === null ? "WiFi" : d.network})
+                  </option>
+                );
+              })}
             </select>
             <ChevronDown
               size={14}
@@ -83,12 +92,21 @@ export function ComparisonMain({
               onChange={(e) => setCompBIndex(Number(e.target.value))}
               className="w-full appearance-none bg-background border border-primary/20 rounded-md p-2 pr-10 text-xs font-medium cursor-pointer transition-all hover:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
             >
-              {sortedData.map((d, i) => (
-                <option key={i} value={i}>
-                  {alphacode2toCountry[d.country] || d.country} —{" "}
-                  {d.device_type} ({d.network === null ? "WiFi" : d.network})
-                </option>
-              ))}
+              {sortedData.map((d) => {
+                const originalIndex = userHappinessData.findIndex(
+                  (x) =>
+                    x.country === d.country &&
+                    x.device_type === d.device_type &&
+                    x.network === d.network,
+                );
+
+                return (
+                  <option key={originalIndex} value={originalIndex}>
+                    {alphacode2toCountry[d.country] || d.country} —{" "}
+                    {d.device_type} ({d.network === null ? "WiFi" : d.network})
+                  </option>
+                );
+              })}
             </select>
             <ChevronDown
               size={14}
@@ -152,6 +170,7 @@ export function ComparisonCard({
 }) {
   const isImprovement = diff <= 0;
   const absDiff = Math.abs(Math.round(diff));
+  const isASlower = valA > valB;
 
   const formatVal = (v: number) => (isDecimal ? v?.toFixed(3) : Math.round(v));
 
@@ -191,11 +210,24 @@ export function ComparisonCard({
             Comparing P75s
           </div>
           <div className="text-[11px] font-bold flex flex-col items-end">
-            <span className="text-muted-foreground/60 line-through decoration-1">
+            <span
+              className={`${
+                isASlower
+                  ? "text-muted-foreground/60 line-through decoration-1"
+                  : "text-foreground"
+              }`}
+            >
               {formatVal(valA)}
               {unit}
             </span>
-            <span className="text-foreground">
+
+            <span
+              className={`${
+                !isASlower
+                  ? "text-muted-foreground/60 line-through decoration-1"
+                  : "text-foreground"
+              }`}
+            >
               {formatVal(valB)}
               {unit}
             </span>
