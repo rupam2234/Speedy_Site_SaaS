@@ -77,7 +77,7 @@ export default function AppSidebar({
         items: [
           {
             title: "UX Map",
-            url: `/dashboard/rum/ux-distributions?site=${selectedSite}`,
+            url: `/dashboard/rum/ux?site=${selectedSite}`,
           },
           {
             title: "Web Vitals",

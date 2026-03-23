@@ -290,10 +290,10 @@ export default function UxReport() {
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <h2 className="font-extrabold text-2xl tracking-tight bg-linear-to-r from-primary via-primary/80 to-primary/50 bg-clip-text text-transparent">
-              UX Distributions
+              UX Map
             </h2>
             <TooltipIcon
-              content="P75 metrics evaluation based on Core Web Vitals thresholds."
+              content="Representation of the weekly p75 user experience for the active website across global regions, weighted by traffic distribution."
               trigger={
                 <InfoIcon
                   size={18}
@@ -409,7 +409,7 @@ export default function UxReport() {
                 <>
                   <div className="p-3 rounded-lg bg-background/50 border border-primary/10">
                     <span className="text-[10px] uppercase font-bold text-muted-foreground block mb-1">
-                      Total Segment Sessions
+                      Sample Sessions
                     </span>
                     <p className="text-2xl font-bold tracking-tighter text-primary">
                       {analysis.totalSessions.toLocaleString()}

@@ -5,6 +5,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { ComparisonData, UxGranularData } from ".";
+import { useMemo } from "react";
 
 interface Props {
   compBIndex: number;
@@ -25,6 +26,13 @@ export function ComparisonMain({
   alphacode2toCountry,
   comparisonData,
 }: Props) {
+  // short the happiness data by country?
+  const sortedData = useMemo(() => {
+    return [...userHappinessData].sort((a, b) =>
+      b.country.localeCompare(a.country),
+    );
+  }, [userHappinessData]);
+
   return (
     <div className="border border-primary/20 rounded-xl bg-primary/2 p-6 space-y-6">
       <div className="flex items-center gap-3">
@@ -32,21 +40,21 @@ export function ComparisonMain({
         <h3 className="font-bold text-lg">Segment Comparison</h3>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-        {/* SEGMENT B */}
+        {/* SEGMENT A */}
         <div className="space-y-2">
           <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
-            Segment B
+            Segment A
           </label>
           <div className="relative">
             <select
-              value={compBIndex}
-              onChange={(e) => setCompBIndex(Number(e.target.value))}
+              value={compAIndex}
+              onChange={(e) => setCompAIndex(Number(e.target.value))}
               className="w-full appearance-none bg-background border border-primary/20 rounded-md p-2 pr-10 text-xs font-medium cursor-pointer transition-all hover:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
             >
-              {userHappinessData.map((d, i) => (
+              {sortedData.map((d, i) => (
                 <option key={i} value={i}>
                   {alphacode2toCountry[d.country] || d.country} —{" "}
-                  {d.device_type} ({d.network})
+                  {d.device_type} ({d.network === null ? "WiFi" : d.network})
                 </option>
               ))}
             </select>
@@ -64,21 +72,21 @@ export function ComparisonMain({
           </div>
         </div>
 
-        {/* SEGMENT A */}
+        {/* SEGMENT B */}
         <div className="space-y-2">
           <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
-            Segment A
+            Segment B
           </label>
           <div className="relative">
             <select
-              value={compAIndex}
-              onChange={(e) => setCompAIndex(Number(e.target.value))}
+              value={compBIndex}
+              onChange={(e) => setCompBIndex(Number(e.target.value))}
               className="w-full appearance-none bg-background border border-primary/20 rounded-md p-2 pr-10 text-xs font-medium cursor-pointer transition-all hover:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
             >
-              {userHappinessData.map((d, i) => (
+              {sortedData.map((d, i) => (
                 <option key={i} value={i}>
                   {alphacode2toCountry[d.country] || d.country} —{" "}
-                  {d.device_type} ({d.network})
+                  {d.device_type} ({d.network === null ? "WiFi" : d.network})
                 </option>
               ))}
             </select>
