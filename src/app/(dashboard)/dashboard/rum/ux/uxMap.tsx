@@ -133,14 +133,21 @@ export default function UxReport() {
     const segA = userHappinessData[compAIndex];
     const segB = userHappinessData[compBIndex];
     if (!segA || !segB) return null;
-    const diff = (a: number, b: number) => ((b - a) / (a || 1)) * 100;
+
+    // If B is 2000 and A is 4000: ((2000-4000)/4000) = -0.5 (-50%)
+    // A negative percentage in Web Vitals is an IMPROVEMENT.
+    const percentDiffFromA = (a: number, b: number) => {
+      if (!a || a === 0) return 0;
+      return ((b - a) / a) * 100;
+    };
+
     return {
       segA,
       segB,
-      lcpDiff: diff(segA.p75_lcp, segB.p75_lcp),
-      inpDiff: diff(segA.p75_inp, segB.p75_inp),
-      ttfbDiff: diff(segA.p75_ttfb, segB.p75_ttfb),
-      clsDiff: diff(segA.p75_cls, segB.p75_cls),
+      lcpDiff: percentDiffFromA(segA.p75_lcp, segB.p75_lcp),
+      inpDiff: percentDiffFromA(segA.p75_inp, segB.p75_inp),
+      ttfbDiff: percentDiffFromA(segA.p75_ttfb, segB.p75_ttfb),
+      clsDiff: percentDiffFromA(segA.p75_cls, segB.p75_cls),
     };
   }, [userHappinessData, compAIndex, compBIndex]);
 
