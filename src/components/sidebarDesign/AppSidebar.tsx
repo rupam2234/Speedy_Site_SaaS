@@ -147,7 +147,7 @@ export default function AppSidebar({
       <SidebarContent>
         <MainNav
           DashboardItems={{
-            title: "Google's Field Data",
+            title: "Google's CWV",
             url: `/dashboard?site=${selectedSite}`,
             icon: LayoutDashboardIcon,
             isActive: false,

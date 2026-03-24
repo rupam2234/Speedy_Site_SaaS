@@ -6,8 +6,13 @@ import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import { CustomTooltip, NoSiteSelected, useIsMobile } from "@/components/theme";
 import { CruxMetricKey, DailyCruxData } from "@/data-types";
 import { HistrogramBar, RumWebVitalToolbar } from "@/components/utils";
-import { Bookmark, MoveRight } from "lucide-react";
-import { cwv_metrics, DashboardChartContainer } from ".";
+import { Bookmark, Lightbulb, MoveRight } from "lucide-react";
+import {
+  cwv_metrics,
+  DashboardChartContainer,
+  getP75Desc,
+  getStatusColor,
+} from ".";
 
 export default function Main() {
   const {
@@ -27,14 +32,8 @@ export default function Main() {
   const cruxHistoryRef = useRef<string | null>(null);
   const [activeDailyCrux, setDailyActiveCrux] = useState<{
     dailyCruxData: DailyCruxData | null;
-    status:
-      | "Passing"
-      | "Failing"
-      | "Needs improvement"
-      | "Insufficient data"
-      | "No data"
-      | null;
-  }>({ dailyCruxData: null, status: null });
+    status: "Passing" | "Failing" | "Needs improvement" | "Empty data";
+  }>({ dailyCruxData: null, status: "Empty data" });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -68,7 +67,7 @@ export default function Main() {
 
   useEffect(() => {
     if (!dailyCrux) {
-      setDailyActiveCrux({ dailyCruxData: null, status: null });
+      setDailyActiveCrux({ dailyCruxData: null, status: "Empty data" });
       return;
     }
 
@@ -161,42 +160,24 @@ export default function Main() {
               }}
             />
             <h2 className="text-xl font-bold text-primary/90">
-              {isMobile ? "CWV Status" : "Core Web Vital Status"}
+              {isMobile ? "CWV Status" : "Core Web Vitals (via Google)"}
             </h2>
             <MoveRight />
             {(() => {
-              const p = activeDailyCrux.status;
-              const borderColor =
-                p === "Passing"
-                  ? "border-green-300"
-                  : p === "Failing"
-                    ? "border-red-300"
-                    : p === "Needs improvement"
-                      ? "border-yellow-300"
-                      : p === "Insufficient data"
-                        ? "border-gray-300/30"
-                        : "border-gray-300/30";
-              const bgColour =
-                p === "Passing"
-                  ? "bg-green-300/10"
-                  : p === "Failing"
-                    ? "bg-red-300/10"
-                    : p === "Needs improvement"
-                      ? "bg-yellow-300/10"
-                      : p === "Insufficient data"
-                        ? "bg-gray-300/10"
-                        : "bg-gray-300/10";
+              const { bg, border } = getStatusColor({
+                status: activeDailyCrux.status,
+              });
 
               return (
                 <>
-                  {activeDailyCrux.status === null ? (
+                  {activeDailyCrux.status === "Empty data" ? (
                     <CustomTooltip
                       content={
                         <div className="flex flex-col gap-3 p-2 max-w-70">
                           <div className="space-y-1">
                             <p className="text-[13px] font-medium leading-relaxed text-primary-foreground dark:text-primary">
-                              Empty field data bars usually occur due to
-                              limitations in how real user data is collected and
+                              Empty bars usually occur due to limitations in how
+                              Google collects real user experience data and
                               reported.
                             </p>
                           </div>
@@ -244,20 +225,42 @@ export default function Main() {
                               </p>
                             </li>
                           </ul>
+                          <p>
+                            Data appears here only when Google has reportable
+                            information, just like the Web Vitals section in
+                            Google Search Console.
+                          </p>
+                          <p className="flex items-start gap-2 text-primary-foreground/80 italic">
+                            <Lightbulb size={35} className="fill-amber-300" />
+                            That&apos;s why real user monitoring is essential—it
+                            delivers actionable insights within few minutes of
+                            setup (depending on your website&apos;s traffic
+                            density).
+                          </p>
+                          <button
+                            onClick={() =>
+                              window.location.replace(
+                                `/dashboard/rum/web-vitals?site=${selectedSite}`,
+                              )
+                            }
+                            className="mt-1 w-full text-center bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase py-2 rounded transition-colors shadow-lg"
+                          >
+                            Open RUM Web Vitals
+                          </button>
                         </div>
                       }
                       trigger={
                         <div
-                          className={`rounded-full text-primary text-sm ${borderColor} ${bgColour} cursor-help border-2 font-medium hover:bg-primary/10 dark:text-primary px-4 py-0.5`}
+                          className={`rounded-full text-primary text-sm ${border} ${bg} cursor-help border-2 font-medium hover:bg-primary/10 dark:text-primary px-4 py-0.5`}
                         >
-                          <p>Insufficient data ?</p>
+                          <p>Empty data ?</p>
                         </div>
                       }
                       side="bottom"
                     />
                   ) : (
                     <div
-                      className={`rounded-full text-primary text-sm ${borderColor} ${bgColour} border-2 font-medium px-4 py-0.5`}
+                      className={`rounded-full text-primary text-sm ${border} ${bg} border-2 font-medium px-4 py-0.5`}
                     >
                       {activeDailyCrux.status}
                     </div>
@@ -358,7 +361,7 @@ export default function Main() {
               );
             }
 
-            const { label, key, unit } = _ as (typeof cwv_metrics)[0];
+            const { label, key, unit, acronym } = _ as (typeof cwv_metrics)[0];
             const prefix =
               activeDailyCrux.dailyCruxData?.[0].record.metrics?.[key];
             const percentile = prefix?.percentiles.p75 as number;
@@ -367,6 +370,8 @@ export default function Main() {
               metric: key,
               value: percentile || 0,
             });
+
+            const tip = getP75Desc({ metric: acronym, value: percentile });
 
             return (
               <div key={key}>
@@ -393,15 +398,30 @@ export default function Main() {
                       </h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`flex gap-0.5 items-center text-sm font-semibold ${metricColor}`}
-                      >
-                        {percentile ?? "--"}
-                        <p>{unit}</p>
-                      </span>
-                      <span className="dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
-                        p75
-                      </span>
+                      {percentile ? (
+                        <CustomTooltip
+                          content={
+                            <div className="h-8">
+                              <span>{tip}</span>
+                            </div>
+                          }
+                          trigger={
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`flex gap-0.5 items-center text-sm font-semibold ${metricColor}`}
+                              >
+                                {percentile ?? "--"}
+                                <p>{unit}</p>
+                              </span>
+                              <span className="dark:text-accent-foreground text-accent bg-primary/80 dark:bg-secondary px-2 py-1 text-[12px] rounded-sm">
+                                p75
+                              </span>
+                            </div>
+                          }
+                        />
+                      ) : (
+                        <>--</>
+                      )}
                     </div>
                   </div>
                   <div>
@@ -410,6 +430,7 @@ export default function Main() {
                         good={histrogram[0].density}
                         okay={histrogram[1].density}
                         bad={histrogram[2].density}
+                        label={acronym}
                       />
                     ) : (
                       <div className="w-full mt-4 h-8 rounded-sm bg-primary/5 animate-pulse"></div>
@@ -430,20 +451,16 @@ export default function Main() {
               content={
                 <div className="flex flex-col gap-3 p-2 max-w-70">
                   <p className="text-[13px] font-medium leading-relaxed text-primary-foreground dark:text-primary">
-                    Field Data history tracks your Chrome User Experience
-                    trajectory over time. It helps you monitor performance and
-                    UX changes, validate{" "}
-                    <span className="font-semibold">real user data</span>, and
-                    understand the impact of recent updates to your site.
+                    Field data refers to performance and user experience metrics
+                    collected from real users on Chrome and aggregated by Google
+                    to measure loading times, responsiveness, and stability of
+                    your site.
                   </p>
-
                   <p className="text-[13px] font-medium leading-relaxed text-primary-foreground dark:text-primary">
-                    This dataset is also used by Google to evaluate aspects of
-                    your{" "}
-                    <span className="font-semibold text-[#50a2ff]">
-                      search rankings
-                    </span>
-                    , making it important for both performance and visibility.
+                    The chart below shows your website&apos;s history for load
+                    times, responsiveness, stability, and how quickly your
+                    server begins sending data in response to user requests
+                    across different devices.
                   </p>
                 </div>
               }
@@ -462,50 +479,58 @@ export default function Main() {
               delay={300}
             />
           </div>
-          {/* rum CTA button */}
 
           <CustomTooltip
             content={
               <div className="flex flex-col gap-3 p-2 max-w-70">
-                <div className="space-y-1">
-                  <p className="text-[13px] font-medium leading-relaxed text-primary-foreground dark:text-primary">
-                    Field Data is delayed and only tracks Chrome users. Real
-                    User Monitoring gives you real-time and daily aggregate
-                    insights, helps you debug performance related bottlenecks
-                    faster.
+                <div className="space-y-3">
+                  <p className="text-[13px] font-medium text-primary-foreground dark:text-primary">
+                    Google provides field data, but it&apos;s delayed and only
+                    covers Chrome users.
+                  </p>
+                  <p className="text-[13px] font-medium text-primary-foreground dark:text-primary">
+                    Real User Monitoring should give you faster UX insights,
+                    help identify performance bottlenecks before they impact
+                    your business.
+                  </p>
+                  <p className="text-[13px] font-medium text-primary-foreground dark:text-primary">
+                    At Speedy Site -
                   </p>
                 </div>
 
                 <ul className="space-y-2">
-                  <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
+                  <li className="flex items-start gap-2 text-[12px] text-primary-foreground/80 dark:text-primary/80">
                     <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
                     <p>
-                      <span className="font-semibold">Live Feedback</span>: See
-                      performance changes instantly after a deployment.
+                      You get to see user experience data within few minutes of
+                      deployment.
                     </p>
                   </li>
-                  <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
+                  <li className="flex items-start gap-2 text-[12px] text-primary-foreground/80 dark:text-primary/80">
                     <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
                     <span>
-                      <span className="font-semibold">Full Coverage:</span>
-                      Track Safari, Firefox, and iOS users (which Google
-                      ignores).
+                      Monitor users on any devices, browsers or networks to
+                      optimize for all.
                     </span>
                   </li>
-                  <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
+                  <li className="flex items-start gap-2 text-[12px] text-primary-foreground/80 dark:text-primary/80">
                     <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
                     <span>
-                      <strong>Low-Traffic Visibility:</strong> Get data even if
-                      you don&apos;t meet minimum traffic thresholds.
+                      Your site doesn&apos;t need to meet a minimum traffic
+                      thresholds, we track each users while maintaining privacy
+                      intact.
                     </span>
                   </li>
-                  <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
+                  <li className="flex items-start gap-2 text-[12px] text-primary-foreground/80 dark:text-primary/80">
                     <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
                     <span>
-                      <strong>Debug Mode:</strong> Identify exactly which
-                      elements are causing layout shifts, largest contentful
-                      paint and interection to next paint.
+                      It flags potential flaws in your site and notifies you
+                      before they impact the majority of users.
                     </span>
+                  </li>
+                  <li className="flex items-start gap-2 text-[12px] text-primary-foreground/80 dark:text-primary/80">
+                    <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
+                    <span>There&apos;s more...</span>
                   </li>
                 </ul>
 
@@ -513,15 +538,15 @@ export default function Main() {
                   href={`/dashboard/rum/web-vitals?site=${selectedSite}`}
                   className="mt-1 w-full text-center bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase py-2 rounded transition-colors shadow-lg"
                 >
-                  Open RUM Web Vitals
+                  Start Exploring Real User Monitoring
                 </a>
               </div>
             }
             trigger={
               <div className="flex items-center gap-2 px-2 py-1 bg-[#50a2ff]/20 rounded-full border border-blue-500/20 transition-all group">
                 <span className="h-2 w-2 rounded-full bg-blue-500 group-hover:scale-125 transition-transform" />
-                <span className="text-[10px] uppercase tracking-wider  dark:text-[#50a2ff] font-black flex items-center gap-1">
-                  Why should you use Real User Monitoring?
+                <span className="text-[10px] uppercase tracking-wider text-primary/80 dark:text-[#50a2ff] font-black flex items-center gap-1">
+                  How monitoring your user experience at Speedy.site helps you?
                 </span>
               </div>
             }
@@ -603,16 +628,9 @@ export default function Main() {
     lcp: number | null;
     inp: number | null;
     cls: number | null;
-  }):
-    | "Passing"
-    | "Failing"
-    | "Needs improvement"
-    | "Insufficient data"
-    | "No data" {
+  }): "Passing" | "Failing" | "Needs improvement" | "Empty data" {
     if (lcp == null || inp == null || cls == null) {
-      return "No data";
-    } else if (lcp === 0 && inp === 0 && cls === 0) {
-      return "Insufficient data";
+      return "Empty data";
     } else if (lcp > 4000 || inp > 300 || cls > 0.25) {
       return "Failing";
     } else if (lcp > 2300 || inp > 200 || cls > 0.1) {

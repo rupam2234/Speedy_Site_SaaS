@@ -4,7 +4,7 @@ export type CWVMetric = {
   label: string;
   key: CruxMetricKey;
   unit?: string;
-  acronym: string;
+  acronym: "LCP" | "CLS" | "INP" | "TTFB";
 };
 
 export const cwv_metrics: CWVMetric[] = [
@@ -33,5 +33,3 @@ export const cwv_metrics: CWVMetric[] = [
     unit: "ms",
   },
 ];
-
-
