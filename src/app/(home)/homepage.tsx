@@ -652,7 +652,7 @@ export default function Home() {
             Upgrade later in your account when ready
           </p>
           <p className="text-xs text-primary/60 italic">
-            Start free. No credit card needed.
+            No credit card needed.
           </p>
         </div>
       </section>
