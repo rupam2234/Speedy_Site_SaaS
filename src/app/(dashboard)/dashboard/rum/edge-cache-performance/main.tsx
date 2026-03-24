@@ -45,13 +45,13 @@ export default function Main() {
     <>
       <div
         ref={headerRef}
-        className={`flex px-4 py-3 justify-between flex-col md:flex-row w-full items-start backdrop-blur-sm md:items-center gap-4 relative`}
+        className={`flex px-5 py-3 justify-between flex-col md:flex-row w-full items-start backdrop-blur-sm md:items-center gap-4 relative`}
       >
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <h2 className="font-extrabold text-2xl tracking-tight bg-linear-to-r from-primary via-primary/80 to-primary/50 bg-clip-text text-transparent">
-                Edge Cache Performance
+                Cache Efficiency
               </h2>
               <TooltipIcon
                 content={
@@ -87,7 +87,7 @@ export default function Main() {
               />
             </div>
             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-70">
-              Server Load / CDN EFFICIENCY ANALYTICS
+              User Requests to Your Server/CDN?
             </p>
           </div>
         </div>

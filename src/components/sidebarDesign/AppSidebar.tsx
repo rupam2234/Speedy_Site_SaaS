@@ -76,7 +76,7 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "UX Map",
+            title: "Global Experience",
             url: `/dashboard/rum/ux?site=${selectedSite}`,
           },
           {
@@ -92,7 +92,7 @@ export default function AppSidebar({
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
           {
-            title: "Edge Cache Performance",
+            title: "Cache Efficiency",
             url: `/dashboard/rum/edge-cache-performance?site=${selectedSite}`,
           },
         ],
@@ -104,11 +104,11 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "LCP Images",
+            title: "Slow Images",
             url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
           },
           {
-            title: "Font Analysis",
+            title: "Fonts",
             url: `/dashboard/rum/fonts?site=${selectedSite}`,
           },
           {
@@ -147,7 +147,7 @@ export default function AppSidebar({
       <SidebarContent>
         <MainNav
           DashboardItems={{
-            title: "Field Data",
+            title: "Google's Field Data",
             url: `/dashboard?site=${selectedSite}`,
             icon: LayoutDashboardIcon,
             isActive: false,

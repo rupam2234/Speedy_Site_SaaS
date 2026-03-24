@@ -297,7 +297,7 @@ export default function UxReport() {
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <h2 className="font-extrabold text-2xl tracking-tight bg-linear-to-r from-primary via-primary/80 to-primary/50 bg-clip-text text-transparent">
-              UX Map
+              Global Experience
             </h2>
             <TooltipIcon
               content="Representation of the weekly p75 user experience for the active website across global regions, weighted by traffic distribution."
@@ -311,7 +311,7 @@ export default function UxReport() {
             />
           </div>
           <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-70">
-            P75 Metrics Across Globe
+            Data based on 75% of users
           </p>
         </div>
 

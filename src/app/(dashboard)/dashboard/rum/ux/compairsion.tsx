@@ -126,7 +126,7 @@ export function ComparisonMain({
             ) : (
               <>
                 <Camera size={14} />
-                Download Report
+                Capture Report
               </>
             )}
           </button>

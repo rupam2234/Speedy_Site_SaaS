@@ -172,9 +172,9 @@ export default function Main() {
               <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
                 <div className="flex flex-wrap items-center text-primary/80 gap-2">
                   <Images />
-                  <h1 className="text-lg md:text-xl font-bold">
-                    Critical Images
-                  </h1>
+                  <h2 className="text-xl md:text-2xl text-primary/80 font-bold">
+                    Slow Images
+                  </h2>
 
                   <span className="hidden md:inline">|</span>
 
@@ -411,9 +411,9 @@ export default function Main() {
                 {/* Left: Title & Context */}
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
-                    <h1 className="text-xl font-semibold tracking-tight text-primary">
-                      Critical Images
-                    </h1>
+                    <h2 className="text-xl md:text-2xl text-primary/80 font-bold">
+                      Slow Images
+                    </h2>
                     <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
                     <span className="text-xs bg-red-200 rounded-md border border-red-400 px-2 py-0.5 font-medium dark:text-primary-foreground/80 text-primary/80 tabular-nums">
                       {lcpImageData?.length || 0} Assets

@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { Main } from ".";
 
 export const metadata: Metadata = {
-  title: "Speedy Site | LCP Images",
+  title: "Slow Images (LCP) | Speedy Site",
   description:
     "Identify the images that have the greatest impact on your website's LCP.",
 };
