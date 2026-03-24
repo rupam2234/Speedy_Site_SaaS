@@ -6,7 +6,7 @@ const worker = setupDB();
 export interface UserPlan {
   idx: number;
   user_id: string;
-  plan: "Basic" | "Pro" | "Agency" | "Free";
+  plan: "Basic" | "Pro" | "Agency" | "Free" | "Starter";
   current_usage: number;
   usage_limit: number;
   degradation_policy: "block" | "alert" | "degrade";

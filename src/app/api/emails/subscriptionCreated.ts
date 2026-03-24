@@ -1,3 +1,4 @@
+import { PlanType } from "@/app/account/subscription";
 import { setupDB } from "@/lib/db";
 import { Resend } from "resend";
 
@@ -7,7 +8,7 @@ const worker = setupDB();
 interface Props {
   stripeCustomerId: string;
   billingCycleEnd: string;
-  plan?: "Basic" | "Pro" | "Agency" | "Free";
+  plan?: PlanType;
 }
 
 export async function SubscriptionCreated({

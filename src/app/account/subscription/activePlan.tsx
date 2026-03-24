@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTheme } from "@/components/theme";
-import { PlanType } from "./main";
+import { PlanType } from ".";
+import { cachedData, cleanExpiredCache } from "@/components/utils";
 
 export default function ActivePlanCard({
   userPlan,
@@ -28,21 +29,31 @@ export default function ActivePlanCard({
   const isLoading = !usage || !userPlan;
 
   useEffect(() => {
+    const key = `billing-history`;
+    // clear cache
+    cleanExpiredCache({ prefix: key, session_Storage: true });
+
     async function getBillingHistory() {
-      try {
-        const res = await fetch("/api/subscriptions/stripe/billing-history");
+      const { response } = await cachedData({
+        fn: async () => {
+          const res = await fetch("/api/subscriptions/stripe/billing-history");
 
-        const body: any = await res.json();
+          const body: any = await res.json();
 
-        if (!res.ok) {
-          throw new Error(body);
-        }
+          if (!res.ok) {
+            throw new Error(body);
+          }
 
-        setInvoices(body.invoices);
-      } catch (err) {
-        console.error(err);
-        setInvoices([]);
-      }
+          return body.invoices;
+        },
+        key: key,
+        session_Storage: true,
+        ttl: 10 * 60 * 1000,
+      });
+
+      if (response) {
+        setInvoices(response);
+      } else setInvoices([]);
     }
 
     getBillingHistory();

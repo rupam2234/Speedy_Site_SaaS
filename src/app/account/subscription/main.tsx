@@ -2,12 +2,11 @@
 
 import { UserPlan } from "@/app/api/subscriptions/plan/route";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
-import { BadgeCheck, CheckCircle } from "lucide-react";
+import { BadgeCheck, CheckCircle, X, LayoutPanelTop } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CustomTooltip, LoadingAnimation } from "@/components/theme";
 import ActivePlanCard from "./activePlan";
-
-export type PlanType = "Basic" | "Pro" | "Agency" | "Free";
+import { PlanType, priceMap } from ".";
 
 interface PlanCardProps {
   name: PlanType;
@@ -17,11 +16,13 @@ interface PlanCardProps {
   current: boolean;
 }
 
-export default function Main() {
+export default function SubscriptionManager() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly",
   );
   const [planData, setPlanData] = useState<UserPlan | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   const user = useSupabaseUser();
   const currentUser = useRef<string | null>(null);
 
@@ -37,9 +38,7 @@ export default function Main() {
       try {
         const res = await fetch("/api/subscriptions/plan", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ user_id: user?.id }),
         });
 
@@ -64,6 +63,24 @@ export default function Main() {
 
   const planCards: PlanCardProps[] = [
     {
+      name: "Starter",
+      price: 9,
+      description: "Core features for individuals",
+      current: planData?.plan === "Starter",
+      features: [
+        "1 site",
+        "Real-Time Performance Tracking",
+        "20,000 pageviews/month",
+        "History + Realtime data",
+        "1 year data retention",
+        "Element Debugging",
+        "5 WP Plugin Audits",
+        "Image & Font Flagging",
+        "Weekly Email Report",
+        "Standard Support",
+      ],
+    },
+    {
       name: "Basic",
       price: 19,
       description: "Core features for individuals",
@@ -75,7 +92,8 @@ export default function Main() {
         "History + Realtime data",
         "1 year data retention",
         "Element Debugging",
-        "Image Optimization Assistance",
+        "WP Plugin Monitoring + Audits",
+        "Image & Font Flagging",
         "Weekly Email Report",
         "Standard Support",
       ],
@@ -92,8 +110,8 @@ export default function Main() {
         "History + Realtime data",
         "1 year data retention",
         "Element Debugging",
-        "WP Plugin Audits",
-        "Image Optimization Assistance",
+        "WP Plugin Monitoring + Audits",
+        "Image & Font Flagging",
         "Weekly Email Report",
         "Priority Support",
       ],
@@ -110,9 +128,8 @@ export default function Main() {
         "History + Realtime data",
         "1 year data retention",
         "Element Debugging",
-        "WP Plugin Audits",
-        "WP Optimization Assistance",
-        "Image Optimization Assistance",
+        "WP Plugin Monitoring + Audits",
+        "Image & Font Flagging",
         "Weekly Email Report",
         "Priority Support",
       ],
@@ -121,8 +138,7 @@ export default function Main() {
 
   const calculatePrice = (monthlyPrice: number): number => {
     if (billingCycle === "monthly") return monthlyPrice;
-    const yearlyPrice = (monthlyPrice * 12 * 0.9) / 12; // 10% discount
-    return yearlyPrice;
+    return (monthlyPrice * 12 * 0.9) / 12; // 10% discount
   };
 
   if (!planData) {
@@ -134,82 +150,105 @@ export default function Main() {
   }
 
   return (
-    <div className="p-5">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-3">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="py-2 px-5 bg-primary/5 dark:bg-secondary-background text-primary font-medium rounded">
-            <h3 className="text-[16px] text-primary/80">
-              Manage your subscription
-            </h3>
-          </div>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2 text-sm">
-              <span
-                className={
-                  billingCycle === "monthly"
-                    ? "font-medium text-primary/70"
-                    : "text-primary/70 font-medium"
-                }
-              >
-                Monthly
-              </span>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className={`sr-only`}
-                  checked={billingCycle === "yearly"}
-                  onChange={() =>
-                    setBillingCycle((prev) =>
-                      prev === "monthly" ? "yearly" : "monthly",
-                    )
-                  }
-                />
-                <span
-                  className={`relative inline-block w-10 h-5 rounded-full transition ${
-                    billingCycle === "yearly" ? "bg-blue-600" : "bg-gray-300"
-                  }`}
-                >
-                  <span
-                    className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white shadow transition transform ${
-                      billingCycle === "yearly" ? "translate-x-5" : ""
-                    }`}
-                  />
-                </span>
-              </label>
-              <span
-                className={
-                  billingCycle === "yearly"
-                    ? "font-medium text-primary/80"
-                    : "font-medium text-primary/80"
-                }
-              >
-                Yearly{" "}
-                <span className="ml-1 text-green-600 font-semibold">
-                  (Save 10%)
-                </span>
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {planCards.map((plan) => (
-              <PlanCard
-                key={plan.name}
-                name={plan.name}
-                price={plan.price}
-                description={plan.description}
-                features={plan.features}
-                current={plan.current}
-                highlight={plan.name === planData.plan}
-                displayPrice={calculatePrice(plan.price)}
-                billingCycle={billingCycle}
-              />
-            ))}
-          </div>
+    <div className="p-5 relative">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div className="py-2 px-5 bg-primary/5 dark:bg-secondary-background text-primary font-medium rounded">
+          <h3 className="text-[16px] text-primary/80">
+            Manage your subscription
+          </h3>
         </div>
 
-        <ActivePlanCard userPlan={planData.plan} usage={usage} />
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 text-sm">
+            <span
+              className={
+                billingCycle === "monthly"
+                  ? "font-medium text-primary/70"
+                  : "text-primary/70 font-medium"
+              }
+            >
+              Monthly
+            </span>
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={billingCycle === "yearly"}
+                onChange={() =>
+                  setBillingCycle((p) =>
+                    p === "monthly" ? "yearly" : "monthly",
+                  )
+                }
+              />
+              <span
+                className={`relative inline-block w-10 h-5 rounded-full transition ${billingCycle === "yearly" ? "bg-blue-600" : "bg-gray-300"}`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white shadow transition transform ${billingCycle === "yearly" ? "translate-x-5" : ""}`}
+                />
+              </span>
+            </label>
+            <span className="font-medium text-primary/80">
+              Yearly{" "}
+              <span className="ml-1 text-green-600 font-semibold">
+                (Save 10%)
+              </span>
+            </span>
+          </div>
+
+          {/* Usage Slider Trigger */}
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary/80 rounded-md text-sm font-semibold transition"
+          >
+            <LayoutPanelTop className="w-4 h-4" />
+            View Usage & Plan
+          </button>
+        </div>
       </div>
+
+      {/* 4 PLANS IN ONE LINE */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {planCards.map((plan) => (
+          <PlanCard
+            key={plan.name}
+            name={plan.name}
+            price={plan.price}
+            description={plan.description}
+            features={plan.features}
+            current={plan.current}
+            highlight={plan.name === planData.plan}
+            displayPrice={calculatePrice(plan.price)}
+            billingCycle={billingCycle}
+          />
+        ))}
+      </div>
+
+      {/* FOLDABLE SIDEBAR (DRAWER) */}
+      <div
+        className={`fixed inset-y-0 right-0 w-full max-w-sm bg-white dark:bg-[#121212] z-50 shadow-2xl transform transition-transform duration-300 ease-in-out border-l border-primary/10 ${isDrawerOpen ? "translate-x-0" : "translate-x-full"}`}
+      >
+        <div className="h-full flex flex-col p-6 overflow-y-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-bold text-lg">Active Subscription</h3>
+            <button
+              onClick={() => setIsDrawerOpen(false)}
+              className="p-2 hover:bg-primary/5 rounded-full transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <ActivePlanCard userPlan={planData.plan} usage={usage} />
+        </div>
+      </div>
+
+      {/* BACKDROP */}
+      {isDrawerOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity"
+          onClick={() => setIsDrawerOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -223,14 +262,7 @@ function PlanCard({
   displayPrice,
   billingCycle,
 }: {
-  name:
-    | "Free"
-    | "Basic"
-    | "Pro"
-    | "Agency"
-    | "Basic (Yearly)"
-    | "Pro (Yearly)"
-    | "Agency (Yearly)";
+  name: PlanType;
   price: number;
   description: string;
   features: string[];
@@ -239,16 +271,6 @@ function PlanCard({
   displayPrice: number;
   billingCycle: "monthly" | "yearly";
 }) {
-  // stripe price ids
-  const priceMap = {
-    Basic: "price_1SHfk8FudyIXBfXkozoK2jmm",
-    Pro: "price_1SHfnpFudyIXBfXkLekhIkoM",
-    Agency: "price_1SHfpXFudyIXBfXkVPU9bgrP",
-    Basic_yearly: "price_1SV7F9FudyIXBfXk8dez9wT1",
-    Pro_yearly: "price_1SV7N3FudyIXBfXkngR9eZRh",
-    Agency_yearly: "price_1SV7OMFudyIXBfXkEeO7i2TS",
-  };
-
   async function handleSubscribe(priceId: string) {
     try {
       const res = await fetch("/api/subscriptions/stripe/checkout", {
@@ -256,47 +278,29 @@ function PlanCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId }),
       });
-
       const data: any = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.error) {
-        console.error("Error creating checkout session:", data.error);
-        alert(data.error);
-      }
+      if (data.url) window.location.href = data.url;
     } catch (err) {
       console.error(err);
-      alert("Unexpected error occurred");
     }
   }
 
   return (
     <div
-      className={`p-6 border rounded flex flex-col justify-between transition ${
-        highlight
-          ? "bg-blue-50 dark:bg-secondary-background border-blue-300"
-          : "bg-white dark:bg-secondary-background border-primary/15"
-      }`}
+      className={`p-6 border rounded flex flex-col justify-between transition ${highlight ? "bg-blue-50 dark:bg-secondary-background border-blue-300" : "bg-white dark:bg-secondary-background border-primary/15"}`}
     >
       <div>
         <div className="flex items-center justify-between">
           <div className="flex gap-2 items-center">
             <h3 className="text-lg font-semibold text-primary/80">{name}</h3>
-            {name === "Pro" ? (
+            {name === "Pro" && (
               <div className="px-2 text-[10px] py-1 text-primary-foreground dark:text-primary font-semibold bg-green-500/60">
                 Most Popular
               </div>
-            ) : (
-              <></>
             )}
           </div>
           {highlight && (
-            <BadgeCheck
-              className="w-4 h-4 text-blue-600 shrink-0"
-              aria-label="Recommended Plan"
-              role="img"
-            />
+            <BadgeCheck className="w-4 h-4 text-blue-600 shrink-0" />
           )}
         </div>
 
@@ -306,7 +310,7 @@ function PlanCard({
 
         <div className="-mx-6 bg-accent/80 dark:bg-accent-foreground/20 w-[calc(100%+3rem)] px-6 py-4">
           <p className="text-2xl font-bold text-blue-500/90 dark:text-amber-200">
-            <span>{displayPrice.toFixed(0)}</span>
+            <span>${displayPrice.toFixed(0)}</span>
             <span className="text-sm font-medium ml-1">
               /month {billingCycle === "yearly" && "(billed yearly)"}
             </span>
@@ -315,11 +319,10 @@ function PlanCard({
 
         <ul className="mt-4 space-y-2">
           {features.map((feature) => {
-            const match = feature.match(/(\d[\d,]*)/); // find the number part
+            const match = feature.match(/(\d[\d,]*)/);
             const numberPart = match?.[0];
             const shouldUnderline =
               feature.toLowerCase().includes("pageviews") && numberPart;
-
             const [before, after] = numberPart
               ? feature.split(numberPart)
               : [feature, ""];
@@ -356,20 +359,10 @@ function PlanCard({
       <button
         disabled={current}
         onClick={() => {
-          const priceId =
-            billingCycle === "monthly"
-              ? priceMap[name as keyof typeof priceMap]
-              : priceMap[`${name}_yearly` as keyof typeof priceMap];
-
-          if (!current) handleSubscribe(priceId);
+          const key = billingCycle === "monthly" ? name : `${name}_yearly`;
+          if (!current) handleSubscribe(priceMap[key as keyof typeof priceMap]);
         }}
-        className={`mt-6 w-full text-sm font-medium py-2 rounded-md transition-all duration-150 ${
-          current
-            ? "bg-blue-500/30 text-primary cursor-not-allowed"
-            : highlight
-              ? "bg-blue-600 text-white hover:bg-blue-700"
-              : "bg-gray-100 text-gray-800 hover:bg-blue-500/30 hover:text-primary"
-        }`}
+        className={`mt-6 w-full text-sm font-medium py-2 rounded-md transition-all duration-150 ${current ? "bg-blue-500/30 text-primary cursor-not-allowed" : highlight ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-100 text-gray-800 hover:bg-blue-500/30 hover:text-primary"}`}
       >
         {current ? "✓ Current Plan" : `Change to ${name}`}
       </button>

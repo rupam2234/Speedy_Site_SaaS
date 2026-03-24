@@ -1,3 +1,4 @@
+import { getPlanFromSubscription, PlanType } from "@/app/account/subscription";
 import { sendRenewalSuccessEmail } from "@/app/api/emails/renewalSuccess";
 import { SubscriptionCreated } from "@/app/api/emails/subscriptionCreated";
 import { setupDB } from "@/lib/db";
@@ -69,39 +70,16 @@ export async function POST(req: Request) {
         }
 
         // Determine plan
-        const priceId = subscription.items.data[0].price.id;
 
-        const activeplan =
-          priceId === "price_1SHfk8FudyIXBfXkozoK2jmm"
-            ? "Basic"
-            : priceId === "price_1SHfnpFudyIXBfXkLekhIkoM"
-              ? "Pro"
-              : priceId === "price_1SHfpXFudyIXBfXkVPU9bgrP"
-                ? "Agency"
-                : "Free";
+        let activeplan: PlanType = "Free";
 
-        // // Fetch existing subscription to get user_id
-        // const { data: existing } = await worker
-        //   .from("subscriptions")
-        //   .select("user_id")
-        //   .eq("stripe_customer_id", subscription.customer as string)
-        //   .single();
+        if (subscription.items.data.length > 0) {
+          activeplan = getPlanFromSubscription(subscription);
+        }
 
-        // // Get safe UUID
-        // const userId =
-        //   existing?.user_id ?? subscription.metadata?.user_id ?? null;
-
-        // if (!userId) {
-        //   console.warn(
-        //     "No valid UUID for user_id; skipping subscription upsert for customer:",
-        //     subscription.customer,
-        //   );
-        //   break; // Stop processing if we don't have a valid UUID
-        // }
-
-        const periodEnd = new Date(subscription.billing_cycle_anchor * 1000);
-        periodEnd.setMonth(periodEnd.getMonth() + 1);
-        const billingCycleEnd = periodEnd.toISOString();
+        const currentPeriodEnd = new Date(
+          (subscription as any).current_period_end * 1000,
+        ).toISOString();
 
         const { error } = await worker.from("subscriptions").upsert(
           {
@@ -112,7 +90,7 @@ export async function POST(req: Request) {
             period_starts_at: new Date(
               subscription.start_date * 1000,
             ).toISOString(),
-            period_ends_at: billingCycleEnd,
+            period_ends_at: currentPeriodEnd,
             status: "active",
             plan: activeplan,
             updated_at: new Date().toISOString(),
@@ -128,8 +106,8 @@ export async function POST(req: Request) {
         // Send subscription created email
         await SubscriptionCreated({
           stripeCustomerId: subscription.customer as string,
-          plan: activeplan,
-          billingCycleEnd: billingCycleEnd,
+          plan: activeplan as PlanType,
+          billingCycleEnd: currentPeriodEnd,
         });
 
         // send a notification
@@ -184,23 +162,29 @@ export async function POST(req: Request) {
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
 
-        // Only reset usage on real subscription renewals
-        // this will only reset usage on monthly renewal,
         // not upgrades (reseting on upgrade can allow people additional quota, revenue leakage)
         if (invoice.billing_reason !== "subscription_cycle") {
           break;
         }
 
-        if (!invoice.period_start || !invoice.period_end) {
+        // get the start and end date (works both monthly and yearly)
+        const subscriptionData = invoice.lines?.data?.find(
+          (x: any) => x?.type === "subscription",
+        );
+
+        if (
+          !subscriptionData?.period?.start ||
+          !subscriptionData?.period?.end
+        ) {
           break;
         }
 
-        const periodStart = new Date(invoice.period_end * 1000).toISOString(); // next period start
-        const nextPeriodEnd = new Date(invoice.period_end * 1000);
-        nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + 1); // add 1 month
-        const periodEnd = nextPeriodEnd.toISOString();
-
-        // imp: need to apply reset of individual usages for the success account
+        const periodStart = new Date(
+          subscriptionData.period.start * 1000,
+        ).toISOString();
+        const nextPeriodEnd = new Date(
+          subscriptionData.period.end * 1000,
+        ).toISOString();
 
         const { error } = await worker
           .from("subscriptions")
@@ -210,7 +194,7 @@ export async function POST(req: Request) {
             updated_at: new Date().toISOString(),
             current_usage: 0, // resets the usage
             period_starts_at: periodStart,
-            period_ends_at: periodEnd,
+            period_ends_at: nextPeriodEnd,
           })
           .eq("stripe_customer_id", invoice.customer as string);
 
@@ -241,45 +225,36 @@ export async function POST(req: Request) {
 
       /** CUSTOMER UPDATE */
       case "customer.subscription.updated": {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object as any;
+        const previous = event.data.previous_attributes as any;
 
-        // Determine period start
-        const periodStart = new Date(subscription.start_date * 1000);
+        // Skip updates that only changed the current period (i.e., renewal)
+        const periodChanged =
+          previous?.current_period_start !==
+            subscription.current_period_start ||
+          previous?.current_period_end !== subscription.current_period_end;
 
-        // Determine period end
-        let periodEnd: Date;
+        if (periodChanged) {
+          break; // skip renewals
+        }
 
-        // Grab the first price item
-        const price = subscription.items.data[0].price;
-        const recurring = price.recurring;
+        const periodStart = new Date(subscription.current_period_start * 1000);
+        const periodEnd = new Date(subscription.current_period_end * 1000);
+        const activePlan = getPlanFromSubscription(subscription);
 
-        if (recurring) {
-          // Use subscription.billing_cycle_anchor if available
-          if (subscription.billing_cycle_anchor) {
-            periodEnd = new Date(subscription.billing_cycle_anchor * 1000);
-          } else {
-            // Fallback: calculate from interval
-            periodEnd = new Date(periodStart);
-            const intervalCount = recurring.interval_count ?? 1;
-            if (recurring.interval === "month") {
-              periodEnd.setMonth(periodEnd.getMonth() + intervalCount);
-            } else if (recurring.interval === "year") {
-              periodEnd.setFullYear(periodEnd.getFullYear() + intervalCount);
-            } else {
-              // unknown interval fallback
-              periodEnd.setMonth(periodEnd.getMonth() + 1);
-            }
-          }
-        } else {
-          // Non-recurring / free / lifetime subscription
-          periodEnd = new Date(periodStart);
-          periodEnd.setFullYear(periodEnd.getFullYear() + 100); // or null in DB
+        // Determine status: cancelled, cancelling, or active
+        let status = "active";
+        if (subscription.status === "canceled") {
+          status = "canceled"; // immediate cancel
+        } else if (subscription.cancel_at_period_end) {
+          status = "cancelling"; // will cancel at end of period
         }
 
         const { error } = await worker
           .from("subscriptions")
           .update({
-            status: "active",
+            status,
+            plan: activePlan,
             stripe_subscription_status: subscription.status,
             period_starts_at: periodStart.toISOString(),
             period_ends_at: periodEnd.toISOString(),
@@ -287,12 +262,7 @@ export async function POST(req: Request) {
           })
           .eq("stripe_customer_id", subscription.customer as string);
 
-        if (!error) {
-          // Optional: send renewal email for free plans
-          await sendRenewalSuccessEmail({
-            stripeCustomerId: subscription.customer as string,
-          });
-        } else {
+        if (error) {
           console.log("Subscription update failed:", error);
         }
 
@@ -300,7 +270,6 @@ export async function POST(req: Request) {
       }
     }
   } catch (error: any) {
-    console.error("Webhook DB error:", error);
     return new Response(error, { status: 500 });
   }
 

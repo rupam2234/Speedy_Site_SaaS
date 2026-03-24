@@ -1,10 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ReactNode, useEffect, useState } from "react";
 import SiteHeader from "./header";
 import Link from "next/link";
-import { ComparisonTable, Testimonials } from "./index";
+import { ComparisonTable, Pricing, Testimonials } from "./index";
 import { SiteFooter } from "@/components/theme";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
@@ -18,85 +18,108 @@ export interface FeatureCore {
 
 const extraFeatures: FeatureCore[] = [
   {
-    title: "Integrated Optimization Assistance",
+    title: "WordPress Optimization",
     desc: (
       <>
         <p>
-          From your dashboard, you can send us your performance and UX
-          bottleneck report, and our Speedy Site WordPress Optimization service
-          (for WP sites only) will provide expert assistance.
+          WordPress sites benefit from plugin and theme load analysis,
+          monitoring and automatic resolution of critical UX issues + on-demand
+          performance upgrades by experts.
         </p>
       </>
     ),
   },
   {
-    title: "Cache Management",
+    title: "Privacy-first UX Monitoring",
     desc: (
       <>
         <p>
-          Improve your site&apos;s TTFB worldwide by leveraging
-          Cloudflare&apos;s CDN with advanced configurations. Track cache hit
-          rates automatically, receive instant alerts, and ensure consistent
-          high performance across your top regions.
+          Real User Monitoring shouldn&apos;t come at the cost of users&apos;
+          privacy. Collect data without cookies & profiling, only what&apos;s
+          needed to ensure smooth page UX & lower bounce rates.
         </p>
       </>
     ),
   },
   {
-    title: "Privacy-First Real User Monitoring",
+    title: "Server Responsiveness",
     desc: (
       <>
         <p>
-          Real User Monitoring shouldn&apos;t come at the cost of user privacy.
-          Our RUM tracks only performance attributes, no cookies, no profiling,
-          just the metrics you need to fix performance issues with confidence.
+          Monitor server response time globally, receive alerts on consistent
+          bottlenecks + leverage Cloudflare&apos;s cache rules to ensure
+          consistent performance across global audiences.
         </p>
       </>
     ),
   },
+  // {
+  //   title: "Image Assistance",
+  //   desc: (
+  //     <>
+  //       <p>
+  //         Images are pivotal in page performance and maintaining web vitals as
+  //         they are highly linked to LCPs. Speedy Site automatically captures
+  //         slow loading images across your website and provide you with utilities
+  //         to optimize them.
+  //       </p>
+  //     </>
+  //   ),
+  // },
+  // {
+  //   title: "Weekly Performance Analysis",
+  //   desc: (
+  //     <>
+  //       <p>
+  //         We deliver weekly performance insights and recommendations directly to
+  //         your email or Slack, so you don&apos;t have to constantly monitor your
+  //         site. If we detect recurring bottlenecks or performance issues,
+  //         you&apos;ll receive proactive alerts along with actionable suggestions
+  //         to resolve them.
+  //       </p>
+  //     </>
+  //   ),
+  // },
+  // {
+  //   title: "WordPress Plugin Audit",
+  //   desc: (
+  //     <>
+  //       <p>
+  //         WordPress plugins are exceptional in extending custom features unless
+  //         they silently drains your site resources and performance. Our WP
+  //         Plugin Audit helps you catch plugin footprints on both backend &
+  //         frontend to avoid using slow plugins.
+  //       </p>
+  //     </>
+  //   ),
+  // },
+];
+
+const headlines: { head: string; tail: string }[] = [
   {
-    title: "Image Assistance",
-    desc: (
-      <>
-        <p>
-          Images are pivotal in page performance and maintaining web vitals as
-          they are highly linked to LCPs. Speedy Site automatically captures
-          slow loading images across your website and provide you with utilities
-          to optimize them.
-        </p>
-      </>
-    ),
+    head: "Know Your Visitors’ Experience",
+    tail: "Fix What's Needed! No Guesswork",
   },
   {
-    title: "Weekly Performance Analysis",
-    desc: (
-      <>
-        <p>
-          We deliver weekly performance insights and recommendations directly to
-          your email or Slack, so you don&apos;t have to constantly monitor your
-          site. If we detect recurring bottlenecks or performance issues,
-          you&apos;ll receive proactive alerts along with actionable suggestions
-          to resolve them.
-        </p>
-      </>
-    ),
+    head: "Fix Customer Costing Bottlenecks",
+    tail: "Optimize Conversion Rates",
   },
   {
-    title: "WordPress Plugin Audit",
-    desc: (
-      <>
-        <p>
-          WordPress plugins are exceptional in extending custom features unless
-          they silently drains your site resources and performance. Our WP
-          Plugin Audit helps you catch plugin footprints on both backend &
-          frontend to avoid using slow plugins.
-        </p>
-      </>
-    ),
+    head: "Make Every Page Load Lightning Fast",
+    tail: "Keep Your Visitors Engaged",
   },
 ];
 
 export default function Home() {
+  const [index, setIndex] = useState<number>(0); // index of headline
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % headlines.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <main className="bg-white text-gray-900 w-full overflow-x-hidden">
       <SiteHeader enableNav={true} />
@@ -116,20 +139,32 @@ export default function Home() {
         <div className="relative z-10 mx-auto max-w-6xl px-6 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-bold text-indigo-600 mb-8 shadow-sm">
             <span className="flex h-2 w-2 rounded-full bg-indigo-500" />
-            Real-Time UX & Performance Monitoring
+            Is your website slowing down your business?
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.15] tracking-tight text-slate-700">
-            Debug, Measure & Enhance Page UX <br />
-            <span className="text-indigo-600">
-              Boost Speed for Users and LLM Crawlers
-            </span>
-          </h1>
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={index}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className="inline-block"
+            >
+              <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.15] tracking-tight text-slate-700">
+                {headlines[index].head}
+                <br />
+                <span className="text-indigo-500">{headlines[index].tail}</span>
+              </h1>
+            </motion.span>
+          </AnimatePresence>
 
           <p className="mt-8 max-w-3xl mx-auto text-lg md:text-xl text-slate-600 leading-relaxed font-normal">
-            See real-user performance across devices and regions, identify Core
-            Web Vitals bottlenecks instantly, and fix issues before they impact
-            UX, search rankings, or AI discoverability.
+            Monitor Core Web Vitals and page performance across devices and
+            geographic regions for real users and identify bottlenecks accross
+            all pages with a single integration. Proactively resolve issues to
+            keep user experience seamless, search rankings high, and AI
+            discoverability intact.
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
@@ -141,7 +176,7 @@ export default function Home() {
             </a>
 
             <a
-              href="#pricing"
+              href="#feature-comparison"
               className="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold transition-all hover:bg-slate-50 shadow-sm"
             >
               Start Free Today
@@ -151,16 +186,12 @@ export default function Home() {
       </section>
 
       {/* --- SECTION 2: WORKFLOW --- */}
-      <section id="features" className="relative py-24 bg-[#f5f6f0]">
+      <section id="features" className="relative py-10 bg-[#f5f6f0]">
         <div className="max-w-6xl mx-auto px-6 relative">
-          <div className="max-w-2xl mb-20">
-            <h2 className="text-indigo-600 font-bold tracking-widest uppercase text-sm mb-4">
+          <div className="max-w-2xl mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#615fff] tracking-tight leading-tight">
               The Workflow
             </h2>
-            <p className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              Understand your users,{" "}
-              <span className="text-slate-400">Improve their experience.</span>
-            </p>
           </div>
 
           <div className="relative">
@@ -175,12 +206,13 @@ export default function Home() {
                 </div>
                 <div className="flex-1 grid md:grid-cols-2 gap-12 items-center">
                   <div className="space-y-4">
-                    <h3 className="text-3xl font-bold text-slate-900">
+                    <h3 className="text-3xl font-bold text-primary/90">
                       Install in Minutes
                     </h3>
                     <p className="text-slate-600 text-lg leading-relaxed">
-                      Getting started is as simple as adding a snippet. No
-                      infrastructure overhead, no complex config.
+                      Getting started is as simple as adding a snippet into your
+                      site {"<" + "head" + ">"}. No infrastructure overhead, no
+                      complex configurations.
                     </p>
                     <div className="flex flex-wrap gap-3 pt-2">
                       {[
@@ -212,22 +244,24 @@ export default function Home() {
 
               <div className="relative flex flex-col md:flex-row gap-12 group">
                 <div className="flex-none relative">
-                  <div className="w-14 h-14 rounded-2xl bg-white border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xl z-10 relative">
+                  <div className="w-14 h-14 rounded-2xl bg-[#615fff] border-2 border-slate-900 flex items-center justify-center text-white font-black text-xl z-10 relative">
                     2
                   </div>
                 </div>
-                <div className="flex-1 grid md:grid-cols-2 gap-12 items-center">
+                <div className="flex-1 grid md:grid-cols-2 gap-12 items-start">
                   <div className="space-y-6">
-                    <h3 className="text-3xl font-bold text-slate-900">
-                      Monitor Experience
+                    <h3 className="text-3xl font-bold text-primary/90">
+                      Monitor User Experience
                     </h3>
                     <p className="text-slate-600 text-lg">
-                      Collect privacy-first performance and UX data and break it
-                      down by device and region to find issues faster.
+                      Start collecting privacy-first performance and user
+                      experience data {"->"} break it down by device, network,
+                      pages and geographic locations to find issues faster.
                     </p>
                     <p className="text-slate-600 text-lg">
-                      Weekly UX analysis report to understand the trajectory of
-                      crucial performance metrices.
+                      Weekly insights on key user experience metrices, helping
+                      you clearly interpret and be ahead of Web Vitals data on
+                      Google Search Console.
                     </p>
                   </div>
                   <Image
@@ -235,35 +269,35 @@ export default function Home() {
                     alt="ux-analytics"
                     width={650}
                     height={350}
-                    className="mt-15 shadow-xl rounded-sm"
+                    className="shadow-xl items-start rounded-sm"
                   />
                 </div>
               </div>
 
               <div className="relative flex flex-col md:flex-row gap-12 group">
                 <div className="flex-none relative">
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black text-xl z-10 relative shadow-md">
+                  <div className="w-14 h-14 rounded-2xl bg-white flex items-center border-2 border-slate-900 justify-center text-primary font-black text-xl z-10 relative shadow-md">
                     3
                   </div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-8 relative z-10">
+                <div className="flex-1 grid md:grid-cols-2 gap-12 items-start">
                   <div className="space-y-6">
-                    <h3 className="text-3xl font-bold text-slate-900">
-                      Identify & Fix
+                    <h3 className="text-3xl font-bold text-primary/90">
+                      Flagging Bottlenecks
                     </h3>
                     <p className="text-slate-600 text-lg leading-relaxed">
-                      Automatically identifies the specific DOM elements
-                      responsible for / related to UX issues and performance
-                      bottlenecks on pages accross your site. Guess less and
-                      invest more time fixing issues.
+                      Automatically identifies responsible elements, plugins,
+                      scripts related to UX issues and performance bottlenecks
+                      accross all pages. Guess less and invest more time fixing
+                      issues.
                     </p>
                     <ul className="space-y-3">
                       {[
-                        "LCP Image / fonts Detection",
-                        "Elements related to CLS",
-                        "INP element hints",
-                        "Network and devices related to poor TTFB",
-                        "Bottleneck breakdown by page",
+                        "Slow images / fonts detection",
+                        "Elements causing layout unstability",
+                        "Identifying Responsiveness Issues",
+                        "Flagging slow server responses",
+                        "Problem breakdown by page groups",
                       ].map((item) => (
                         <li
                           key={item}
@@ -279,26 +313,33 @@ export default function Home() {
                     alt="problematic-elements"
                     width={650}
                     height={350}
-                    className="mt-20 shadow-xl rounded-sm"
+                    className="shadow-xl rounded-sm"
                   />
                 </div>
               </div>
 
               <div className="relative flex flex-col md:flex-row gap-12 group">
                 <div className="flex-none relative">
-                  <div className="w-14 h-14 rounded-2xl bg-white border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xl z-10 relative">
+                  <div className="w-14 h-14 rounded-2xl bg-[#615fff] border-2 border-slate-900 flex items-center justify-center text-white font-black text-xl z-10 relative">
                     4
                   </div>
                 </div>
-                <div className="flex-1 grid md:grid-cols-2 gap-12 items-center">
+                <div className="flex-1 grid md:grid-cols-2 gap-12 items-start">
                   <div className="space-y-6">
-                    <h3 className="text-3xl font-bold text-slate-900">
-                      Real-Time Geo & Performance Insights
+                    <h3 className="text-3xl font-bold text-primary/90">
+                      A lot more...
                     </h3>
                     <p className="text-slate-600 text-lg leading-relaxed">
-                      Measure user experience by location, optimize speed and
-                      save bandwidth with caching, and monitor web vitals &
-                      performance live.
+                      You can measure user experience by location, compare by
+                      device, network and geographic locations.
+                    </p>
+                    <p className="text-slate-600 text-lg leading-relaxed">
+                      A real time system to give user experience insights /
+                      keeps track user journey per session.
+                    </p>
+                    <p className="text-slate-600 text-lg leading-relaxed">
+                      And a cache efficiency monitoring system that gives you
+                      insights on the fly.
                     </p>
                   </div>
                   <AutomatedImageSlider />
@@ -312,30 +353,19 @@ export default function Home() {
       {/* Additional Features */}
       <section
         id="additional-features"
-        className="relative py-24 bg-primary/5 overflow-hidden"
+        className="relative overflow-hidden bg-[#f5f6f0] py-24 lg:py-32 text-slate-900"
       >
-        {/* Subtle decorative element to make the white bg look premium */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-linear-to-r from-transparent via-primary/20 to-transparent" />
-
         <div className="max-w-6xl mx-auto px-6 text-center relative z-10">
           {/* Section Badge */}
-          <span className="inline-block px-4 py-1.5 mb-6 text-[10px] font-bold tracking-[0.2em] uppercase bg-primary/10 text-primary/80 rounded-full">
-            Extended Capabilities
+          <span className="inline-block px-4 py-1.5 mb-6 text-[12px] font-bold tracking-[0.2em] uppercase bg-primary/10 border border-primary/10 text-primary rounded-full">
+            Finding bottlenecks is just the beginning
           </span>
 
-          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
-            There&apos;s More
-          </h2>
-
-          <p className="mt-6 text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-            Fixing bottlenecks is just the beginning. To truly stay ahead, you
-            might need help with optimization, smarter cache rules, server load
-            checks, and detailed cache reports — all to keep your site fast,
-            SEO-friendly, and ready for LLM crawlers.
-          </p>
-
-          <p className="mt-6 text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-            Here&apos;s what we&apos;re adding to make that easier…
+          <p className=" text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed font-light">
+            To truly stay ahead, Speedy Site delivers smarter cache rules,
+            data-backed recommendations, and adaptive fixes for WordPress -
+            along with detailed weekly reports to keep your site performing at
+            its best.
           </p>
 
           {/* Cards Container */}
@@ -378,16 +408,13 @@ export default function Home() {
             ))}
           </div>
         </div>
-
-        {/* Background Decoration */}
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mb-32 -ml-32" />
       </section>
 
       {/* Legacy Section */}
-      <section id="speedy" className="relative py-32 bg-white overflow-hidden">
-        {/* BLENDING ELEMENT: A subtle vertical line that "connects" the sections */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-24 bg-linear-to-b from-primary/20 to-transparent" />
-
+      <section
+        id="speedy"
+        className="relative overflow-hidden bg-[#f5f6f0] py-5 lg:py-10 text-slate-900"
+      >
         <div className="max-w-5xl mx-auto px-6 relative z-10">
           <div className="flex flex-col items-center text-center">
             {/* EVOLUTION BADGE */}
@@ -422,7 +449,7 @@ export default function Home() {
                 Vitals.
               </p>
 
-              <div className="p-8 rounded-3xl bg-slate-50 border border-slate-100 relative group">
+              <div className="p-8 rounded-3xl bg-slate-50 border-2 border-primary/10 relative group">
                 <p className="text-slate-600 leading-relaxed italic">
                   &quot;Extending the same DNA, Speedy Site now empowers you
                   with actionable insights, real-time metrics, and historical
@@ -451,7 +478,7 @@ export default function Home() {
             </div>
 
             {/* LEGACY LINKS - Styled as professional chips */}
-            <div className="mt-16 pt-10 border-t border-slate-100 w-full">
+            <div className="pt-10 border-t border-slate-100 w-full">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">
                 Looking for legacy services?
               </p>
@@ -478,35 +505,17 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* Background Decoration */}
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-[100px]" />
       </section>
 
       {/* Testimonials */}
       <section
         id="testimonials"
-        className="relative bg-slate-50 py-25 overflow-hidden border-t border-slate-100"
+        className="relative overflow-hidden bg-[#f5f6f0] py-24 lg:py-32 text-slate-900"
       >
-        {/* BLENDING ELEMENT: Subtle Mesh Gradient for depth */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[120px]" />
-        </div>
-
-        {/* CONTINUITY: Faint grid lines to match the "SaaS/Performance" theme */}
-        <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)`,
-            backgroundSize: "40px 40px",
-          }}
-        />
-
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           {/* SECTION HEADER */}
           <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-primary/20 mb-6">
               <svg
                 className="w-3 h-3 text-emerald-500"
                 fill="currentColor"
@@ -563,17 +572,14 @@ export default function Home() {
 
       {/* Feature Comparison */}
       <section
-        id="pricing"
+        id="feature-comparison"
         className="relative overflow-hidden bg-indigo-950" // Base dark for depth
       >
-        {/* 1. THE CORE GRADIENT BACKGROUND */}
         <div className="absolute inset-0 bg-linear-to-r from-indigo-600 via-purple-600 to-indigo-700 opacity-90" />
 
-        {/* 2. AMBIENT GLOW ORBS (The Standout factor) */}
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/20 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-400/20 rounded-full blur-[120px]" />
 
-        {/* 3. THE DOTS LAYER - Preserved and refined */}
         <div
           className="absolute inset-0 pointer-events-none opacity-40 z-10"
           style={{
@@ -593,7 +599,6 @@ export default function Home() {
 
         <div className="relative z-20 w-full px-6 text-center py-24 lg:py-32">
           <div className="mx-auto max-w-6xl">
-            {/* HEADER DESIGN */}
             <div className="mb-16">
               <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
                 What you get?
@@ -602,9 +607,15 @@ export default function Home() {
                 <div className="h-full w-1/2 bg-white animate-shimmer" />
               </div>
               <p className="mt-6 mx-auto max-w-3xl text-indigo-100 text-lg font-light leading-relaxed">
-                Our goal is to provide deeper, continuously collected
-                performance insights and highlight potential bottlenecks so you
-                can optimize user experience proactively.
+                Our goal is to deliver deep, real-user performance insights that
+                automatically reveal bottlenecks / issues that manual testing
+                might miss.
+              </p>
+              <p className="mt-6 mx-auto max-w-3xl text-indigo-100 text-lg font-light leading-relaxed">
+                This gives you an edge over Google Search Console&apos;s Web
+                Vitals data and helps protect your site from potential
+                business-impacting problems, allowing you to optimize user
+                experience without the guesswork.
               </p>
             </div>
 
@@ -617,28 +628,32 @@ export default function Home() {
                 <ComparisonTable />
               </div>
             </div>
-
-            {/* FOOTER CTA */}
-            <div className="mt-20">
-              <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white/10 border border-white/10 backdrop-blur-sm text-sm text-indigo-50 mb-8">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                Start free. No credit card needed.
-              </div>
-
-              <div className="flex flex-col items-center">
-                <Link
-                  href="/sign-up"
-                  className="group relative inline-flex items-center gap-2 rounded-full bg-white text-indigo-700 px-10 py-3 font-bold text-lg hover:bg-gray-50 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-indigo-900/20"
-                >
-                  Sign Up Free
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <p className="mt-4 text-xs font-bold text-white/70 uppercase tracking-[0.2em]">
-                  Upgrade later in your account when ready
-                </p>
-              </div>
-            </div>
           </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section
+        id="pricing"
+        className="relative overflow-hidden bg-[#f5f6f0] py-14 lg:py-15 text-slate-900"
+      >
+        <div className="max-w-7xl mx-auto px-11 relative z-10">
+          <Pricing />
+        </div>
+        <div className="flex flex-col py-10 space-y-3 items-center">
+          <Link
+            href="/sign-up"
+            className="group relative inline-flex items-center gap-2 rounded-full bg-white text-indigo-700 px-10 py-3 font-bold text-lg hover:bg-gray-50 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-indigo-900/20"
+          >
+            Sign Up Free
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Link>
+          <p className="mt-4 text-xs font-bold text-primary/60 uppercase tracking-[0.2em]">
+            Upgrade later in your account when ready
+          </p>
+          <p className="text-xs text-primary/60 italic">
+            Start free. No credit card needed.
+          </p>
         </div>
       </section>
 

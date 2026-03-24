@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { Main } from "./index";
+import { SubscriptionManager } from ".";
 
 export const metadata: Metadata = {
   title: "Speedy Site | Subscription",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Subscription() {
-  return <Main />;
+  return <SubscriptionManager />;
 }

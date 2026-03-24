@@ -133,6 +133,12 @@ export default function SiteHeader({ enableNav }: { enableNav: boolean }) {
               >
                 Our Journey
               </Link>
+              <Link
+                href="#pricing"
+                className="px-4 py-2 rounded-full hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+              >
+                Pricing
+              </Link>
             </>
           )}
         </nav>

@@ -7,13 +7,14 @@ const AutomatedImageSlider = () => {
   const images = [
     {
       src: "/images/homepage/ux-geo.png",
-      alt: "UX-Geographical-Analysis",
+      alt: "Geographical Analysis",
     },
     {
       src: "/images/homepage/realtime-vitals.png",
-      alt: "Real-time-web-vitals",
+      alt: "Real Time User Experience",
     },
-    { src: "/images/homepage/cache-hit-miss.webp", alt: "Cache-Efficiency" },
+    { src: "/images/homepage/cache-monitoring.png", alt: "Cache Efficiency" },
+    { src: "/images/homepage/slow-fonts.png", alt: "Slow Fonts" },
   ];
 
   useEffect(() => {
@@ -24,7 +25,7 @@ const AutomatedImageSlider = () => {
   }, [images.length]);
 
   return (
-    <div className="relative w-full mt-12 group">
+    <div className="relative w-full mt-8 group">
       <div className="absolute -top-6 left-0 right-0 h-6 bg-slate-200/50 rounded-t-lg flex items-center px-3 gap-1.5 border-2 border-b-0 border-slate-300/40">
         <div className="w-2 h-2 rounded-full bg-slate-300" />
         <div className="w-2 h-2 rounded-full bg-slate-300" />
@@ -45,7 +46,7 @@ const AutomatedImageSlider = () => {
                 height={350}
                 layout="responsive"
                 priority={idx === 0}
-                className="object-cover"
+                className="object"
               />
             </div>
           ))}
