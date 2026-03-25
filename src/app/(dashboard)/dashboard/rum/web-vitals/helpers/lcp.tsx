@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSiteContext } from "../../../siteContext";
+import { LoadingAnimation } from "@/components/theme";
 
 interface Contributor {
   device_type: string;
@@ -50,7 +51,21 @@ export default function LCPelements({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState(5);
+  const [loading, setLoading] = useState(true);
   const { selectedSite } = useSiteContext();
+
+  useEffect(() => {
+    if (contributors.length > 0) {
+      setLoading(false); // data arrived -> stop immediately
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setLoading(false); // fallback after 3s
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [contributors]);
 
   const filtered = useMemo(
     () =>
@@ -64,6 +79,10 @@ export default function LCPelements({
 
   const activeItems = filtered.slice((page - 1) * rows, page * rows);
   const totalPages = Math.ceil(filtered.length / rows) || 1;
+
+  if (loading) {
+    return <LoadingAnimation />;
+  }
 
   return (
     <div className="w-full text-foreground font-sans">

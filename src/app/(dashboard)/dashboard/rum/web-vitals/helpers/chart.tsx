@@ -18,7 +18,8 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import TooltipIcon from "@/components/theme/customTooltip";
 import { debounce } from "@/components/utils";
-import { SimpleTrendInsight } from ".";
+import { getP75Status, SimpleTrendInsight, Metric, getDistStatus } from ".";
+import { CustomTooltip } from "@/components/theme";
 
 echarts.use([
   TitleComponent,
@@ -301,152 +302,167 @@ const RumCwvChart = ({
     };
   }, []);
 
+  const p75Status = getP75Status({
+    metric: metric_key.toUpperCase() as Metric,
+    activePercentile: rumDistribution,
+  });
+
+  function getMetricMessage(
+    metric: Metric,
+    percentage: number,
+    share: "Good" | "Average" | "Poor",
+  ) {
+    return getDistStatus({
+      metric: metric,
+      percentage: percentage,
+      share: share,
+    });
+  }
+
   return (
     <div ref={containerRef} className="w-full">
       <div className="flex items-center justify-between px-2 mb-2 text-xs">
         <div className="flex items-center gap-2">
           <SimpleTrendInsight data={data ?? []} metric={metric_key} />
         </div>
-        <span className="font-medium px-2 py-1 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">
-          Active Percentile:
-          <strong className="ml-1 uppercase">
-            {rumDistribution ? rumDistribution : ""}
-          </strong>
-        </span>
+        <CustomTooltip
+          content={<>{p75Status}</>}
+          trigger={
+            <span className="font-medium px-2 py-1 rounded bg-primary text-primary-foreground dark:bg-accent-foreground dark:text-accent">
+              Active Percentile:
+              <strong className="ml-1 uppercase">
+                {rumDistribution ? rumDistribution : ""}
+              </strong>
+            </span>
+          }
+        />
       </div>
       <div ref={chartRef} style={{ width: "100%", height: "380px" }} />
-      <div className="px-2 my-2 md:grid-cols-3 text-sm text-primary/80 font-medium grid grid-cols-1 gap-2 ">
-        <div className="md:border-r md:border-primary/10 col-span-1">
-          <TooltipIcon
-            content={
-              metric_key === "lcp"
-                ? `LCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
-                : metric_key === "cls"
-                  ? `CLS is greater than ${metricRange.b} or less than ${metricRange.c}.`
-                  : metric_key === "inp"
-                    ? `INP is greater than ${metricRange.b} ms or less than ${metricRange.c} ms.`
-                    : metric_key === "fcp"
-                      ? `FCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
-                      : metric_key === "ttfb"
-                        ? `TTFB is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
-                        : ""
-            }
-            side="top"
-            trigger={
-              <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
-                Good
-              </span>
-            }
-          />
-          <div className="flex items-center gap-2">
-            <h3 className="text-2xl font-bold">
-              {shares !== null
-                ? `${((shares?.good_count / total_events) * 100).toFixed(0)} %`
-                : "N/A"}
-            </h3>
-            <div className="w-37.5 h-5 bg-gray-300 rounded overflow-hidden">
-              <span
-                className="block h-full bg-green-500"
-                style={{
-                  width: `${
-                    shares !== null
-                      ? ((shares?.good_count / total_events) * 100).toFixed(0)
-                      : 0
-                  }%`,
-                }}
-              />
+      <div className="px-2 mt-5">
+        <p className="text-primary/80 text-[12px] font-semibold">
+          Understand the user experience distributions:
+        </p>
+        <div className="my-2 md:grid-cols-3 text-sm text-primary/80 font-medium grid grid-cols-1 gap-2 ">
+          <div className="md:border-r md:border-primary/10 col-span-1">
+            <TooltipIcon
+              content={
+                <>
+                  {getMetricMessage(
+                    metric_key.toUpperCase() as Metric,
+                    (shares?.good_count / total_events) * 100,
+                    "Good",
+                  )}
+                </>
+              }
+              side="top"
+              trigger={
+                <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
+                  Good
+                </span>
+              }
+            />
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl font-bold">
+                {shares !== null
+                  ? `${((shares?.good_count / total_events) * 100).toFixed(0)} %`
+                  : "N/A"}
+              </h3>
+              <div className="w-37.5 h-5 bg-gray-300 rounded overflow-hidden">
+                <span
+                  className="block h-full bg-green-500"
+                  style={{
+                    width: `${
+                      shares !== null
+                        ? ((shares?.good_count / total_events) * 100).toFixed(0)
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
             </div>
+            <p> {shares !== null ? `of total events` : ``}</p>
           </div>
-          <p> {shares !== null ? `of total events` : ``}</p>
-        </div>
-        <div className="md:border-r md:border-primary/10 col-span-1">
-          <TooltipIcon
-            content={
-              metric_key === "lcp"
-                ? `LCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
-                : metric_key === "cls"
-                  ? `CLS is greater than ${metricRange.b} or less than ${metricRange.c}.`
-                  : metric_key === "inp"
-                    ? `INP is greater than ${metricRange.b} ms or less than ${metricRange.c} ms.`
-                    : metric_key === "fcp"
-                      ? `FCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
-                      : metric_key === "ttfb"
-                        ? `TTFB is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
-                        : ""
-            }
-            side="top"
-            trigger={
-              <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
-                Needs Improvement
-              </span>
-            }
-          />
-          <div className="flex items-center gap-2">
-            <h3 className="text-2xl font-bold">
-              {shares !== null
-                ? `${((shares?.needs_improvement_count / total_events) * 100).toFixed(0)} %`
-                : "N/A"}
-            </h3>
-            <div className="w-37.5 h-5 bg-gray-300 rounded overflow-hidden">
-              <span
-                className="block h-full bg-orange-300"
-                style={{
-                  width: `${
-                    shares !== null
-                      ? (
-                          (shares?.needs_improvement_count / total_events) *
-                          100
-                        ).toFixed(0)
-                      : 0
-                  }%`,
-                }}
-              />
+          <div className="md:border-r md:border-primary/10 col-span-1">
+            <TooltipIcon
+              content={
+                <>
+                  {getMetricMessage(
+                    metric_key.toUpperCase() as Metric,
+                    (shares?.needs_improvement_count / total_events) * 100,
+                    "Average",
+                  )}
+                </>
+              }
+              side="top"
+              trigger={
+                <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
+                  Needs Improvement
+                </span>
+              }
+            />
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl font-bold">
+                {shares !== null
+                  ? `${((shares?.needs_improvement_count / total_events) * 100).toFixed(0)} %`
+                  : "N/A"}
+              </h3>
+              <div className="w-37.5 h-5 bg-gray-300 rounded overflow-hidden">
+                <span
+                  className="block h-full bg-orange-300"
+                  style={{
+                    width: `${
+                      shares !== null
+                        ? (
+                            (shares?.needs_improvement_count / total_events) *
+                            100
+                          ).toFixed(0)
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
             </div>
+            <p> {shares !== null ? `of total events` : ``}</p>
           </div>
-          <p> {shares !== null ? `of total events` : ``}</p>
-        </div>
-        <div className="col-span-1">
-          <TooltipIcon
-            content={
-              metric_key === "lcp"
-                ? `LCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
-                : metric_key === "cls"
-                  ? `CLS is greater than ${metricRange.b} or less than ${metricRange.c}.`
-                  : metric_key === "inp"
-                    ? `INP is greater than ${metricRange.b} ms or less than ${metricRange.c} ms.`
-                    : metric_key === "fcp"
-                      ? `FCP is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
-                      : metric_key === "ttfb"
-                        ? `TTFB is greater than ${metricRange.b / 1000} sec or less than ${metricRange.c / 1000} sec.`
-                        : ""
-            }
-            side="top"
-            trigger={
-              <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
-                Poor
-              </span>
-            }
-          />
-          <div className="flex items-center gap-2">
-            <h3 className="text-2xl font-bold">
-              {shares !== null
-                ? `${((shares?.poor_count / total_events) * 100).toFixed(0)} %`
-                : "N/A"}{" "}
-            </h3>
-            <div className="w-37.5 h-5 bg-gray-300 rounded overflow-hidden">
-              <span
-                className="block h-full bg-red-400"
-                style={{
-                  width: `${
-                    shares !== null
-                      ? ((shares?.poor_count / total_events) * 100).toFixed(0)
-                      : 0
-                  }%`,
-                }}
-              />
+          <div className="col-span-1">
+            <TooltipIcon
+              content={
+                <>
+                  {getMetricMessage(
+                    metric_key.toUpperCase() as Metric,
+                    (shares?.poor_count / total_events) * 100,
+                    "Poor",
+                  )}
+                </>
+              }
+              side="top"
+              trigger={
+                <span className="cursor-pointer underline underline-offset-2 decoration-primary/20 decoration-dashed">
+                  Poor
+                </span>
+              }
+            />
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl font-bold">
+                {shares !== null
+                  ? `${((shares?.poor_count / total_events) * 100).toFixed(0)} %`
+                  : "N/A"}{" "}
+              </h3>
+              <div className="w-37.5 h-5 bg-gray-300 rounded overflow-hidden">
+                <span
+                  className="block h-full bg-red-400"
+                  style={{
+                    width: `${
+                      shares !== null
+                        ? ((shares?.poor_count / total_events) * 100).toFixed(0)
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
             </div>
+            <p> {shares !== null ? `of total events` : ``}</p>
           </div>
-          <p> {shares !== null ? `of total events` : ``}</p>
         </div>
       </div>
     </div>

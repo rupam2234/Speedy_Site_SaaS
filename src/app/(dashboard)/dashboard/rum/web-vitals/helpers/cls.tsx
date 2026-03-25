@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSiteContext } from "../../../siteContext";
+import { LoadingAnimation } from "@/components/theme";
 
 export type CLSGroup = {
   target_element: string;
@@ -61,7 +62,25 @@ export default function CLSInsights({
   const [activeElement, setActiveElement] = useState<CLSGroup | null>(null);
   const [sortBy, setSortBy] = useState<"impact" | "count">("impact");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const { selectedSite } = useSiteContext();
+
+  useEffect(() => {
+    if (contributors.length > 0) {
+      setLoading(false); // data arrived -> stop immediately
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setLoading(false); // fallback after 3s
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [contributors]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy]);
 
   const problematicElements = useMemo(() => {
     return [...contributors].sort((a, b) => {
@@ -71,15 +90,15 @@ export default function CLSInsights({
     });
   }, [contributors, sortBy]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [sortBy]);
-
   const totalPages = Math.ceil(problematicElements.length / ITEMS_PER_PAGE);
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return problematicElements.slice(start, start + ITEMS_PER_PAGE);
   }, [problematicElements, currentPage]);
+
+  if (loading) {
+    return <LoadingAnimation />;
+  }
 
   if (problematicElements.length === 0) {
     return (

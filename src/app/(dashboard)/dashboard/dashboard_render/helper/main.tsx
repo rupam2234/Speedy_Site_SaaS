@@ -5,7 +5,12 @@ import { useSiteContext } from "../../siteContext";
 import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import { CustomTooltip, NoSiteSelected, useIsMobile } from "@/components/theme";
 import { CruxMetricKey, DailyCruxData } from "@/data-types";
-import { HistrogramBar, RumWebVitalToolbar } from "@/components/utils";
+import {
+  cachedData,
+  cleanExpiredCache,
+  HistrogramBar,
+  RumWebVitalToolbar,
+} from "@/components/utils";
 import { Bookmark, Lightbulb, MoveRight } from "lucide-react";
 import {
   cwv_metrics,
@@ -35,6 +40,11 @@ export default function Main() {
     status: "Passing" | "Failing" | "Needs improvement" | "Empty data";
   }>({ dailyCruxData: null, status: "Empty data" });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // cleans up expired cached data
+    cleanExpiredCache({ prefix: "crux-history", session_Storage: false });
+  }, [selectedSite]);
 
   useEffect(() => {
     if (!selectedSite || !startDate || !endDate) return;
@@ -160,7 +170,7 @@ export default function Main() {
               }}
             />
             <h2 className="text-xl font-bold text-primary/90">
-              {isMobile ? "CWV Status" : "Core Web Vitals (via Google)"}
+              {isMobile ? "CWV Status" : "Core Web Vitals (Google's Data)"}
             </h2>
             <MoveRight />
             {(() => {
@@ -275,9 +285,9 @@ export default function Main() {
                 <div className="flex flex-col gap-3 p-2 max-w-70">
                   <div className="space-y-1">
                     <p className="text-[13px] font-medium leading-relaxed text-primary-foreground dark:text-primary">
-                      This provides a real-world summary of your site&apos;s
-                      performance and user experience for the latest available
-                      time frame.
+                      Provides a real-world summary of your site&apos;s
+                      performance and user experience based on Google&apos;s
+                      most recent data.
                     </p>
                   </div>
 
@@ -322,8 +332,8 @@ export default function Main() {
                   </div>
 
                   <p className="text-[11px] italic text-primary-foreground/70 dark:text-primary/70">
-                    Helps in visualizing performance and user experience across
-                    all platforms at a glance.
+                    It&apos;s the same dataset appears on your Google Search
+                    Console.
                   </p>
                 </div>
               }
@@ -482,7 +492,7 @@ export default function Main() {
 
           <CustomTooltip
             content={
-              <div className="flex flex-col gap-3 p-2 max-w-70">
+              <div className="flex flex-col gap-3 p-2">
                 <div className="space-y-3">
                   <p className="text-[13px] font-medium text-primary-foreground dark:text-primary">
                     Google provides field data, but it&apos;s delayed and only
@@ -546,12 +556,12 @@ export default function Main() {
               <div className="flex items-center gap-2 px-2 py-1 bg-[#50a2ff]/20 rounded-full border border-blue-500/20 transition-all group">
                 <span className="h-2 w-2 rounded-full bg-blue-500 group-hover:scale-125 transition-transform" />
                 <span className="text-[10px] uppercase tracking-wider text-primary/80 dark:text-[#50a2ff] font-black flex items-center gap-1">
-                  How monitoring your user experience at Speedy.site helps you?
+                  How monitoring UX at Speedy.site helps you?
                 </span>
               </div>
             }
             side="right"
-            maxWidth="400px"
+            width="350px"
             delay={300}
           />
         </div>
@@ -643,22 +653,38 @@ export default function Main() {
       setCruxData([]);
       return;
     }
+
+    const key = `crux-history:${selectedSite}`;
+
     try {
-      const res = await fetch("/api/crux/history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ site: selectedSite }),
+      const { response } = await cachedData({
+        fn: async () => {
+          const res = await fetch("/api/crux/history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ site: selectedSite }),
+          });
+
+          const body: any = await res.json();
+
+          if (!res.ok) {
+            throw new Error(
+              body.message ?? "Failed to fetch crux history data.",
+            );
+          }
+
+          return body.data;
+        },
+        key,
+        session_Storage: false,
+        ttl: 10 * 60 * 1000,
       });
 
-      if (!res.ok) {
-        setCruxData([]);
-        throw new Error(res.statusText);
-      }
-
-      const body: any = await res.json();
-      setCruxData(body.data);
+      setCruxData(response ?? []);
     } catch (error) {
-      console.error(error);
+      console.error("CrUX history fetch failed:", error);
+
+      setCruxData([]);
     }
   }
 }

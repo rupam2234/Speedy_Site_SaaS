@@ -124,19 +124,27 @@ export default function CoreWebVitalChart({ metric_key }: ChartProps) {
     return [label, value];
   });
 
+  const finalChartData =
+    p75ChartData && p75ChartData.length > 0
+      ? [...p75ChartData]
+      : getLast7DaysFallback();
+
   // if we have new daily data we will insert it to cruxhistory
   if (dailyCrux !== undefined && dailyCrux !== null) {
     const firstDate = dailyCrux[0].record.collectionPeriod.firstDate;
     const lastDate = dailyCrux[0].record.collectionPeriod.lastDate;
     const p75 = dailyCrux[0].record.metrics[metric_key].percentiles.p75;
-    p75ChartData.push([formatRange({ start: firstDate, end: lastDate }), p75]);
+    finalChartData.push([
+      formatRange({ start: firstDate, end: lastDate }),
+      p75,
+    ]);
   }
 
   const metricRange = getRanges(metric_key);
 
   // chart config
   useEffect(() => {
-    if (!chartRef.current || !p75ChartData.length) return;
+    if (!chartRef.current || !finalChartData.length) return;
 
     // Initialize chart only once
     if (!chartInstanceRef.current) {
@@ -146,7 +154,7 @@ export default function CoreWebVitalChart({ metric_key }: ChartProps) {
 
     const gridLineColor = theme === "dark" ? "#393E46" : "#B3C8CF";
 
-    const styledData = p75ChartData.map(([x, y]) => {
+    const styledData = finalChartData.map(([x, y]) => {
       const isHigh = (y as number) >= metricRange.c;
       const isMed =
         (y as number) < metricRange.c && (y as number) > metricRange.b;
@@ -186,41 +194,61 @@ export default function CoreWebVitalChart({ metric_key }: ChartProps) {
         },
         formatter: (params: any) => {
           const param = params[0];
+          const value = param.value[1];
+
           const metric_key_data = cwv_metrics?.find(
             (x) => x.key === (metric_key as string),
-          ); // gives us access to metric key props
+          );
+
+          const isCLS = metric_key === "cumulative_layout_shift";
+
+          // Detect no data
+          const isNoData = value == null || (!isCLS && value === 0);
+
+          // Status label
+          let status = "--";
+          if (!isNoData) {
+            if (value <= metricRange.b) status = "good";
+            else if (value < metricRange.c) status = "okay";
+            else status = "poor";
+          }
+
+          // Color logic
+          let valueColor = theme === "dark" ? "text-[#555]" : "text-[#ccc]";
+          if (!isNoData) {
+            if (value >= metricRange.c) {
+              valueColor = "text-[#FF3B30] dark:text-[#ff5c54]";
+            } else if (value > metricRange.b) {
+              valueColor = "text-[#ffa11c] dark:text-[#ffb54d]";
+            } else {
+              valueColor = "text-[#00E676] dark:text-[#2ae387]";
+            }
+          }
+
           return `
             <div class="p-3 bg-[#333446] dark:bg-accent-foreground w-auto rounded-sm text-primary-foreground">
               <p class="mb-2">${param.name}</p>
-              <p>75% of ${selectedDevice.toLocaleLowerCase()} page loads experienced</p>
+        
+              ${
+                !isNoData
+                  ? `<p>75% of ${selectedDevice.toLocaleLowerCase()} page loads experienced</p>`
+                  : ""
+              }
+        
               <div class="flex gap-1 items-center">
-                <span>${metric_key_data?.acronym || ""}</span>≤
-                <span class="${
-                  param.value[1] >= metricRange.c
-                    ? "text-[#FF3B30] dark:text-[#ff5c54]"
-                    : param.value[1] < metricRange.c &&
-                        param.value[1] > metricRange.b
-                      ? "text-[#ffa11c] dark:text-[#ffb54d]"
-                      : param.value[1] > metricRange.a &&
-                          param.value[1] <= metricRange.b
-                        ? "text-[#00E676] dark:text-[#2ae387]"
-                        : theme === "dark"
-                          ? "text-[#555]"
-                          : "text-[#ccc]"
-                } font-semibold">${param.value[1]}</span> ${
-                  metric_key_data?.unit
+                <span>${metric_key_data?.acronym || ""}</span>${
+                  isNoData ? "" : "≤"
                 }
+                <span class="${valueColor}">
+                  ${isNoData ? ": not enough data yet, wait till Google's report or configure our RUM." : value}
+                </span> ${isNoData ? "" : metric_key_data?.unit || ""}
               </div>
-              <p class="mt-2">Means ${metric_key_data?.acronym} was ${
-                param.value[1] <= metricRange.b
-                  ? "good"
-                  : param.value[1] > metricRange.b &&
-                      param.value[1] < metricRange.c
-                    ? "okay"
-                    : param.value[1] >= metricRange.c
-                      ? "poor"
-                      : "--"
-              }.</p>
+        
+              ${
+                !isNoData
+                  ? `<p class="mt-2">Means ${metric_key_data?.acronym} was ${status}.</p>`
+                  : ""
+              }
             </div>
           `;
         },
@@ -232,13 +260,13 @@ export default function CoreWebVitalChart({ metric_key }: ChartProps) {
         axisLabel: {
           rotate: 0,
           fontSize: 10,
-          interval: Math.floor(p75ChartData.length / 5),
+          interval: Math.floor(finalChartData.length / 5),
         },
       },
       yAxis: {
         type: "value",
         nameTextStyle: { fontSize: 10, padding: 5 },
-        min: 0,
+        min: metricRange.a,
         max: metricRange.d,
         splitLine: {
           show: true,
@@ -250,6 +278,7 @@ export default function CoreWebVitalChart({ metric_key }: ChartProps) {
       series: [
         {
           type: "line",
+          connectNulls: false,
           showSymbol: true,
           smooth: 0.6, // Smooth line curve
           symbolSize: 8,
@@ -277,7 +306,7 @@ export default function CoreWebVitalChart({ metric_key }: ChartProps) {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [metric_key, selectedDevice, cruxData, p75ChartData]);
+  }, [metric_key, selectedDevice, cruxData, finalChartData]);
 
   // Cleanup chart on unmount
   useEffect(() => {
@@ -290,13 +319,13 @@ export default function CoreWebVitalChart({ metric_key }: ChartProps) {
     };
   }, [setCruxData]);
 
-  if (!p75ChartData || p75ChartData.length === 0) {
-    return (
-      <div className="flex items-center justify-center text-primary/40 h-full">
-        No data available
-      </div>
-    );
-  }
+  // if (!p75ChartData || p75ChartData.length === 0) {
+  //   return (
+  //     <div className="flex items-center justify-center text-primary/40 h-full">
+  //       No data available
+  //     </div>
+  //   );
+  // }
 
   return <div ref={chartRef} style={{ width: "100%", height: "380px" }} />;
 }
@@ -326,4 +355,23 @@ function formatRange({
   const endDate = new Date(end.year, end.month - 1, end.day);
 
   return `${startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })} to ${endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+}
+
+function getLast7DaysFallback() {
+  const data: [string, number][] = [];
+  const today = new Date();
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+
+    const label = d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+
+    data.push([label, 0]); // 0 = no data
+  }
+
+  return data;
 }

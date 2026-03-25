@@ -4,7 +4,7 @@ type Metric = "LCP" | "CLS" | "INP" | "TTFB";
 const expressions: Record<Metric, Record<Experience, string>> = {
   LCP: {
     good: "fast",
-    okay: "moderate",
+    okay: "moderately",
     poor: "slow",
   },
   CLS: {

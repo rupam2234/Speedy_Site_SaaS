@@ -203,7 +203,7 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
                         </span>
                       }
                       side="left"
-                      maxWidth="500px"
+                      width="500px"
                       content="Edge TTL refers to how long resources are cached at servers closest to the users. A balance between cache time and your content update is ideal."
                     />
                   </th>
@@ -216,7 +216,7 @@ export default function CloudflareConfigurations({ site, cachekey }: Props) {
                         </span>
                       }
                       side="left"
-                      maxWidth="500px"
+                      width="500px"
                       content="Browser TTL is how long the visitor’s browser caches your resources before it asks Cloudflare for a fresh copy."
                     />
                   </th>

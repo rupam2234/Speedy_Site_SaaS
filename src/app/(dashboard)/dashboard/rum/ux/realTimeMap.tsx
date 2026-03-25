@@ -306,7 +306,7 @@ export default function RealtimeUxMap() {
                             </div>
                           }
                           side="right"
-                          maxWidth="450px"
+                          width="450px"
                           content={
                             <div className="relative pl-6 space-y-4">
                               <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-slate-200" />

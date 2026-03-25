@@ -113,8 +113,10 @@ export default function PrimaryToolbar({
                 </div>
               </div>
               <CustomTooltip
-                content={"Percentiles help normalize performance..."}
-                maxWidth="16rem"
+                content={
+                  "Percentiles help normalize user experience ... hover on the key components to understand what you are looking at."
+                }
+                width="16rem"
                 side="bottom"
                 trigger={
                   <InfoIcon

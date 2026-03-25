@@ -362,10 +362,10 @@ export default function Home() {
           </span>
 
           <p className=" text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-            To truly stay ahead, Speedy Site delivers smarter cache rules,
-            data-backed recommendations, and adaptive fixes for WordPress -
-            along with detailed weekly reports to keep your site performing at
-            its best.
+            To truly stay ahead, Speedy Site helps you with smarter cache rules,
+            data-backed recommendations, adaptive fixes for WordPress, UX
+            comparison across regions, network and devices - along with detailed
+            weekly reports to keep you updated on latest user experience trends.
           </p>
 
           {/* Cards Container */}

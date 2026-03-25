@@ -10,8 +10,10 @@ import {
   CLSelements,
   INPelements,
   TTFBelements,
-} from "./index";
-import { InfoIcon } from "lucide-react";
+  getSidebarTooltip,
+  Metric as MetricNorms,
+} from ".";
+import { BadgeInfo, InfoIcon } from "lucide-react";
 import {
   cachedData,
   cleanExpiredCache,
@@ -84,6 +86,20 @@ export default function Main() {
   const triggerLazyload = useRef(null);
   const lazyloadKey = useRef<string | null>(null);
   const hasRun = useRef(false);
+
+  useEffect(() => {
+    // clean up expired cache
+    const keys = [
+      "lcp-elements",
+      "cls-elements",
+      "inp-elements",
+      "ttfb-breakdown",
+    ];
+
+    keys.forEach((x) =>
+      cleanExpiredCache({ prefix: x, session_Storage: false }),
+    );
+  }, []);
 
   useEffect(() => {
     if (!selectedSite) return;
@@ -188,18 +204,6 @@ export default function Main() {
 
     if (lazyloadKey.current === key) return;
 
-    // clean up expired cache
-    const keys = [
-      "lcp-elements",
-      "cls-elements",
-      "inp-elements",
-      "ttfb-breakdown",
-    ];
-
-    keys.forEach((x) =>
-      cleanExpiredCache({ prefix: x, session_Storage: false }),
-    );
-
     // load valid cached data or pull fresh
     lazyload({
       fn: AnalysisHandler,
@@ -282,7 +286,7 @@ export default function Main() {
         : 0;
 
     return { selectedDist, totalEvents };
-  }, [distData, selectedDevice, startDate, endDate]);
+  }, [distData, selectedDevice, activeMetric, startDate, endDate]);
 
   const activeSeries = useMemo(() => {
     if (historyData === undefined) return [];
@@ -303,8 +307,6 @@ export default function Main() {
       return [x.day, Number(capped.toFixed(2))];
     });
   }, [historyData, activeMetric, selectedDevice, rumDistribution]);
-
-  console.log(contributors);
 
   if (!selectedSite) {
     return (
@@ -334,7 +336,7 @@ export default function Main() {
                 UX Score
               </p>
               <CustomTooltip
-                side="right"
+                side="bottom"
                 trigger={
                   <InfoIcon
                     size={16}
@@ -374,10 +376,10 @@ export default function Main() {
                       </p>
                       <p className="text-xs leading-relaxed text-primary-foreground">
                         A single, weighted metric that summarizes your
-                        site&apos;s overall speed and stability. It translates
-                        technical data (LCP, FCP, INP, CLS and TTFB) into a
-                        &quot;health&quot; score based on real visitor
-                        interactions.
+                        site&apos;s overall page loading speed, responsiveness
+                        and stability. It translates web vitals data (LCP, CLS,
+                        INP including TTFB, FCP) into a &quot;health&quot; score
+                        based on real visitor interactions.
                       </p>
                     </div>
 
@@ -391,14 +393,10 @@ export default function Main() {
                         <div className="flex items-start gap-2.5">
                           <div className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
                           <div className="flex flex-col">
-                            <span className="text-[11px] font-bold text-white">
-                              One-Glance Health Status
-                            </span>
                             <span className="text-[10px] text-primary-foreground/80">
-                              Instead of monitoring individual charts, the UX
-                              Score gives you an immediate answer to: &quot;Is
-                              my site performing well for my users right
-                              now?&quot;
+                              The UX Score gives you an immediate answer to:
+                              &quot;Is my site performing well for my users
+                              right now?&quot;
                             </span>
                           </div>
                         </div>
@@ -406,9 +404,6 @@ export default function Main() {
                         <div className="flex items-start gap-2.5">
                           <div className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
                           <div className="flex flex-col">
-                            <span className="text-[11px] font-bold text-white">
-                              Preemptive Safety Net
-                            </span>
                             <span className="text-[10px] text-primary-foreground/80">
                               By watching this score, you can catch gradual
                               performance regressions that haven&apos;t yet
@@ -421,9 +416,6 @@ export default function Main() {
                         <div className="flex items-start gap-2.5">
                           <div className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
                           <div className="flex flex-col">
-                            <span className="text-[11px] font-bold text-white">
-                              Objective Benchmarking
-                            </span>
                             <span className="text-[10px] text-primary-foreground/80">
                               It uses the same industry-standard thresholds
                               (Good, Needs Improvement, Poor) as Core Web
@@ -436,7 +428,7 @@ export default function Main() {
                     </div>
                   </div>
                 }
-                maxWidth="400px"
+                width="400px"
               />
             </span>
 
@@ -475,42 +467,59 @@ export default function Main() {
                   <p className="text-sm font-medium text-primary dark:text-primary/80">
                     {x.name}
                   </p>
-                  <p className="text-[13px] font-sans">
-                    <span>Weekly avg: </span>
-                    {x.key === "LCP" ? (
-                      <span
-                        className={`${Number(sideBarObj?.lcp) <= cwv_ranges.lcp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.lcp) > cwv_ranges.lcp[0] && Number(sideBarObj?.lcp) < cwv_ranges.lcp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
-                      >
-                        {(Number(sideBarObj?.lcp) / 1000).toFixed(2)} Sec
-                      </span>
-                    ) : x.key === "CLS" ? (
-                      <span
-                        className={`${Number(sideBarObj?.cls) <= cwv_ranges.cls[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.cls) > cwv_ranges.cls[0] && Number(sideBarObj?.cls) < cwv_ranges.cls[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
-                      >
-                        {Number(sideBarObj?.cls).toFixed(4)}
-                      </span>
-                    ) : x.key === "FCP" ? (
-                      <span
-                        className={`${Number(sideBarObj?.fcp) <= cwv_ranges.fcp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.fcp) > cwv_ranges.fcp[0] && Number(sideBarObj?.fcp) < cwv_ranges.fcp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
-                      >
-                        {(Number(sideBarObj?.fcp) / 1000).toFixed(2)} Sec
-                      </span>
-                    ) : x.key === "INP" ? (
-                      <span
-                        className={`${Number(sideBarObj?.inp) <= cwv_ranges.inp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.inp) > cwv_ranges.inp[0] && Number(sideBarObj?.inp) < cwv_ranges.inp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
-                      >
-                        {Number(sideBarObj?.inp).toFixed(0)}
-                      </span>
-                    ) : x.key === "TTFB" ? (
-                      <span
-                        className={`${Number(sideBarObj?.ttfb) <= cwv_ranges.ttfb[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.ttfb) > cwv_ranges.ttfb[0] && Number(sideBarObj?.ttfb) < cwv_ranges.ttfb[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
-                      >
-                        {(Number(sideBarObj?.ttfb) / 1000).toFixed(2)} Sec
-                      </span>
-                    ) : (
-                      `--`
-                    )}
-                  </p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-[13px] font-sans">
+                      {x.key === "LCP" ? (
+                        <span
+                          className={`${Number(sideBarObj?.lcp) <= cwv_ranges.lcp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.lcp) > cwv_ranges.lcp[0] && Number(sideBarObj?.lcp) < cwv_ranges.lcp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
+                        >
+                          {(Number(sideBarObj?.lcp) / 1000).toFixed(2)} Sec
+                        </span>
+                      ) : x.key === "CLS" ? (
+                        <span
+                          className={`${Number(sideBarObj?.cls) <= cwv_ranges.cls[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.cls) > cwv_ranges.cls[0] && Number(sideBarObj?.cls) < cwv_ranges.cls[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
+                        >
+                          {Number(sideBarObj?.cls).toFixed(4)}
+                        </span>
+                      ) : x.key === "FCP" ? (
+                        <span
+                          className={`${Number(sideBarObj?.fcp) <= cwv_ranges.fcp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.fcp) > cwv_ranges.fcp[0] && Number(sideBarObj?.fcp) < cwv_ranges.fcp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
+                        >
+                          {(Number(sideBarObj?.fcp) / 1000).toFixed(2)} Sec
+                        </span>
+                      ) : x.key === "INP" ? (
+                        <span
+                          className={`${Number(sideBarObj?.inp) <= cwv_ranges.inp[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.inp) > cwv_ranges.inp[0] && Number(sideBarObj?.inp) < cwv_ranges.inp[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
+                        >
+                          {Number(sideBarObj?.inp).toFixed(0)}
+                        </span>
+                      ) : x.key === "TTFB" ? (
+                        <span
+                          className={`${Number(sideBarObj?.ttfb) <= cwv_ranges.ttfb[0] ? `dark:text-[#66cc8f] text-green-500 font-semibold` : Number(sideBarObj?.ttfb) > cwv_ranges.ttfb[0] && Number(sideBarObj?.ttfb) < cwv_ranges.ttfb[1] ? `dark:text-[#FFEEA9] text-yellow-500 font-semibold` : `dark:text-[#FF9898] font-semibold text-red-500`}`}
+                        >
+                          {(Number(sideBarObj?.ttfb) / 1000).toFixed(2)} Sec
+                        </span>
+                      ) : (
+                        `--`
+                      )}
+                    </p>
+                    <CustomTooltip
+                      content={
+                        <>
+                          {getSidebarTooltip({
+                            metric: x.key as MetricNorms,
+                          })}
+                        </>
+                      }
+                      side="right"
+                      trigger={
+                        <BadgeInfo
+                          size={16}
+                          className="fill-blue-400 border-transparent text-primary-foreground/80 opacity-80"
+                        />
+                      }
+                    />
+                  </div>
                 </div>
               ))}
             </>
@@ -535,6 +544,10 @@ export default function Main() {
             ref={triggerLazyload}
             className="px-2 min-h-96 mt-2 md:mt-7 py-4"
           >
+            <p className="text-primary/80 text-[12px] mb-3 font-semibold">
+              These are responsible page elements you can optimize to enhance
+              user experience:
+            </p>
             {filteredContributors === undefined ? (
               <></>
             ) : activeMetric === "LCP" ? (

@@ -8,7 +8,7 @@ interface TooltipIconProps {
   content: string | React.ReactNode;
   side?: "top" | "right" | "bottom" | "left";
   trigger?: React.ReactNode;
-  maxWidth?: string;
+  width?: string; // e.g., "300px" or "20rem"
   delay?: number;
 }
 
@@ -16,7 +16,7 @@ export default function TooltipIcon({
   content,
   side = "left",
   trigger,
-  maxWidth = "300px",
+  width = "300px",
   delay = 300,
 }: TooltipIconProps) {
   const [visible, setVisible] = useState(false);
@@ -77,7 +77,7 @@ export default function TooltipIcon({
         return {
           top: rect.top + rect.height / 2,
           left: rect.right + spacing,
-          transform: "translateY(-20%)",
+          transform: "translateY(-50%)",
         };
       case "bottom":
         return {
@@ -90,7 +90,7 @@ export default function TooltipIcon({
         return {
           top: rect.top + rect.height / 2,
           left: rect.left - spacing,
-          transform: "translate(-100%, -20%)",
+          transform: "translate(-100%, -50%)",
         };
     }
   };
@@ -102,12 +102,12 @@ export default function TooltipIcon({
       case "top":
         return "bottom-[-8px] left-1/2 -translate-x-1/2 border-x-8 border-t-8 border-t-gray-700";
       case "right":
-        return "left-[-8px] top-1/5 -translate-y-1/2 border-y-8 border-r-8 border-r-gray-700";
+        return "left-[-8px] top-1/2 -translate-y-1/2 border-y-8 border-r-8 border-r-gray-700";
       case "bottom":
         return "top-[-8px] left-1/2 -translate-x-1/2 border-x-8 border-b-8 border-b-gray-700";
       case "left":
       default:
-        return "right-[-8px] top-1/5 -translate-y-1/2 border-y-8 border-l-8 border-l-gray-700";
+        return "right-[-8px] top-1/2 -translate-y-1/2 border-y-8 border-l-8 border-l-gray-700";
     }
   };
 
@@ -133,7 +133,7 @@ export default function TooltipIcon({
           >
             <div
               className="relative p-2 text-xs text-white bg-gray-700 rounded shadow-md"
-              style={{ maxWidth, width: "max-content" }}
+              style={{ width }}
             >
               <div className={clsx(arrowBase, getArrowClasses())} />
               {content}

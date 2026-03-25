@@ -23,7 +23,10 @@ const SimpleTrendInsight = ({ data, metric }: MetricTrendProps) => {
     return (
       <div className="p-4 flex items-center gap-2 text-slate-400 text-[12px]">
         <AlertCircle size={14} />
-        <span>Collecting more data to generate weekly trend analysis...</span>
+        <span>
+          Collecting data to generate analysis... please check again within a
+          few minutes.
+        </span>
       </div>
     );
   }

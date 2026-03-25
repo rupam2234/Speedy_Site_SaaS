@@ -20,7 +20,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSiteContext } from "../../../siteContext";
-import { CustomTooltip } from "@/components/theme";
+import { CustomTooltip, LoadingAnimation } from "@/components/theme";
 
 export interface INPContributor {
   _target_selector: string;
@@ -89,7 +89,25 @@ export default function INPelements({
   );
   const [sortBy, setSortBy] = useState<"p75" | "count">("p75");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const { selectedSite } = useSiteContext();
+
+  useEffect(() => {
+    if (contributors.length > 0) {
+      setLoading(false); // data arrived -> stop immediately
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setLoading(false); // fallback after 3s
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [contributors]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy]);
 
   const problematicElements = useMemo(() => {
     return [...contributors].sort((a, b) => {
@@ -98,15 +116,15 @@ export default function INPelements({
     });
   }, [contributors, sortBy]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [sortBy]);
-
   const totalPages = Math.ceil(problematicElements.length / ITEMS_PER_PAGE);
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return problematicElements.slice(start, start + ITEMS_PER_PAGE);
   }, [problematicElements, currentPage]);
+
+  if (loading) {
+    return <LoadingAnimation />;
+  }
 
   if (problematicElements.length === 0) {
     return (
