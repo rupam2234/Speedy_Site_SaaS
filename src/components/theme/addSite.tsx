@@ -1,9 +1,10 @@
 "use client";
 
 import { OrderData } from "@/app/api/dataTypes";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
 import { cachedData } from "../utils";
+import { Check, ChevronDown, ChevronUp, Code2, Copy } from "lucide-react";
 
 interface Props {
   setDisplay: ({ display }: { display: boolean }) => void;
@@ -27,16 +28,25 @@ export function AddNewWebsite({ setDisplay }: Props) {
   const [input, setInput] = useState<string>("");
   const user = useSupabaseUser();
 
-  useEffect(() => {
-    if (!success) return;
+  // for optional RUM script configuration
+  const [showConfig, setShowConfig] = useState(false);
 
-    const redirect = setTimeout(() => {
-      setDisplay({ display: false });
-      window.location.reload();
-    }, 5000);
+  const [siteId, setSiteId] = useState<string>("");
+  const [copied, setCopied] = useState(false);
 
-    return () => clearTimeout(redirect);
-  }, [success, setDisplay]);
+  const id = siteId?.split?.("-")?.[0] ?? "missing-id";
+
+  const trackingScript =
+    success && siteId
+      ? `<script src="https://rum.speedy.site/rum.js?v=0.0.1&id=${id}" defer></script>`
+      : "";
+
+  const handleCopy = () => {
+    if (!trackingScript) return;
+    navigator.clipboard.writeText(trackingScript);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-[#141414]/80 backdrop-blur-sm">
@@ -101,16 +111,80 @@ export function AddNewWebsite({ setDisplay }: Props) {
           </div>
 
           {success !== null && (
-            <p className="text-sm mt-4 text-green-500 font-medium capitalize">
-              {success}
-              <span className="text-primary/80 ml-2">
-                refreshing the page...
-              </span>
-            </p>
+            <div className="mt-10 space-y-3">
+              {/* Success Message */}
+              <div className="flex items-center gap-2 text-emerald-600 font-medium capitalize text-sm">
+                {success}
+              </div>
+
+              <div className="text-xs text-primary/80">
+                (Optional) you may set up the user experience monitoring script
+                now, or reload this page to skip. You can configure it later
+                from the site Settings.
+              </div>
+
+              {/* Optional Action Dropdown */}
+              <div className="border border-primary/20 rounded-sm overflow-hidden transition-all bg-card/50">
+                <button
+                  onClick={() => setShowConfig(!showConfig)}
+                  className="w-full flex items-center justify-between p-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Code2 className="w-4 h-4 text-primary" />
+                    <span>Quick RUM Configuration</span>
+                  </div>
+                  {showConfig ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </button>
+
+                {showConfig && (
+                  <div className="p-4 pt-2 space-y-3 animate-in fade-in slide-in-from-top-1">
+                    <p className="text-xs text-muted-foreground">
+                      Paste this snippet into your site&apos;s{" "}
+                      <code className="text-primary font-bold">
+                        &lt;head&gt;
+                      </code>{" "}
+                      tag to start tracking users on your site.
+                    </p>
+
+                    <div className="relative group">
+                      <pre className="p-3 rounded-sm text-[11px] font-mono overflow-x-auto border border-white/10 bg-primary/80 text-primary-foreground break-all whitespace-pre-wrap leading-relaxed">
+                        {trackingScript}
+                      </pre>
+
+                      <button
+                        onClick={handleCopy}
+                        className="absolute right-2 top-2 p-2 rounded-md bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-sm border border-white/10"
+                        title="Copy to clipboard"
+                      >
+                        {copied ? (
+                          <Check className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="text-[10px] text-muted-foreground/60"></div>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
 
-        <div className="p-6 border-t border-[#141414] flex justify-end">
+        <div className="p-6 border-t border-[#141414] flex gap-3 justify-end">
+          {success !== null && (
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 border border-[#141414] uppercase font-bold text-xs tracking-widest hover:bg-[#141414] hover:text-[#E4E3E0] transition-all"
+            >
+              Refresh Page
+            </button>
+          )}
           <button
             onClick={() => setDisplay({ display: false })}
             className="px-6 py-3 border border-[#141414] uppercase font-bold text-xs tracking-widest hover:bg-[#141414] hover:text-[#E4E3E0] transition-all"
@@ -135,9 +209,9 @@ export function AddNewWebsite({ setDisplay }: Props) {
       setError(
         "You have reached site limit. Either upgrade your plan or delete a site",
       );
+      setProcessing(false);
       return;
     }
-    //
 
     appendLog("validating");
     const cleanDomain = extractRootDomain(input?.trim());
@@ -172,12 +246,13 @@ export function AddNewWebsite({ setDisplay }: Props) {
 
     if (res.status !== 200) {
       appendLog("error");
-      console.log(res.body);
       setError(res.body.message);
       setProcessing(false);
       return;
     }
 
+    // set order id
+    setSiteId(res?.body?.order?.order_id ?? "");
     appendLog("done");
     setSuccess("Website configured.");
     setProcessing(false);

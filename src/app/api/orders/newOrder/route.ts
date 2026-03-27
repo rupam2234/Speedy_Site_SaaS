@@ -12,14 +12,14 @@ export async function POST(req: Request) {
     if (!user_id) {
       return NextResponse.json(
         { error: "Missing user authentication" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     if (!orderData) {
       return NextResponse.json(
         { error: "Invalid or missing order data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         {
           error: "Error fetching subscription details or no subscription found",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -56,14 +56,14 @@ export async function POST(req: Request) {
     if (siteError) {
       return NextResponse.json(
         { error: "Error checking existing site" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     if (existingSite) {
       return NextResponse.json(
         { message: `This site is already added: ${orderData.website_name}` },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
           currentUsage: subscription.current_usage,
           plan: subscription.plan,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -93,7 +93,8 @@ export async function POST(req: Request) {
         order_status: orderData.order_status,
         user_id,
       })
-      .select();
+      .select("*")
+      .single();
 
     if (insertError) {
       return NextResponse.json(
@@ -101,17 +102,17 @@ export async function POST(req: Request) {
           error: "Failed to insert order data",
           details: insertError.message,
         },
-        { status: insertStatus }
+        { status: insertStatus },
       );
     }
 
     return NextResponse.json(
       {
         message: "Order data inserted successfully",
-        order: insertedOrder ? insertedOrder[0] : null,
+        order: insertedOrder ? insertedOrder : null,
         plan: subscription.plan,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     return NextResponse.json(
@@ -119,7 +120,7 @@ export async function POST(req: Request) {
         error: "Internal Server Error",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
