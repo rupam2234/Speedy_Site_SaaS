@@ -279,71 +279,69 @@ export default function Main() {
               );
             })()}
           </div>
-          <div className="flex items-center gap-1">
-            <CustomTooltip
-              content={
-                <div className="flex flex-col gap-3 p-2 max-w-70">
-                  <div className="space-y-1">
-                    <p className="text-[13px] font-medium leading-relaxed text-primary-foreground dark:text-primary">
-                      Provides a real-world summary of your site&apos;s
-                      performance and user experience based on Google&apos;s
-                      most recent data.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2 border-t border-primary-foreground/10 dark:border-primary/10 pt-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-foreground dark:text-primary">
-                      Core Focus Areas
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                        <p>Loading Speed</p>
-                      </li>
-                      <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                        <p>Interactivity</p>
-                      </li>
-                      <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                        <p>Visual Stability</p>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="space-y-2 border-t border-primary-foreground/10 dark:border-primary/10 pt-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-foreground dark:text-primary">
-                      Device Breakdown
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                        <p>Desktop</p>
-                      </li>
-                      <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                        <p>Mobile</p>
-                      </li>
-                      <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                        <p>Tablet</p>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <p className="text-[11px] italic text-primary-foreground/70 dark:text-primary/70">
-                    It&apos;s the same dataset appears on your Google Search
-                    Console.
+          <CustomTooltip
+            content={
+              <div className="flex flex-col gap-3 p-2 max-w-70">
+                <div className="space-y-1">
+                  <p className="text-[13px] font-medium leading-relaxed text-primary-foreground dark:text-primary">
+                    Provides a real-world summary of your site&apos;s
+                    performance and user experience based on Google&apos;s most
+                    recent data.
                   </p>
                 </div>
-              }
-              trigger={
-                <p className="text-sm rounded-sm px-2 py-0.5 hover:bg-primary/5 text-primary/80">
-                  What this means ?
+
+                <div className="space-y-2 border-t border-primary-foreground/10 dark:border-primary/10 pt-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-foreground dark:text-primary">
+                    Core Focus Areas
+                  </p>
+                  <ul className="space-y-2">
+                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
+                      <p>Loading Speed</p>
+                    </li>
+                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
+                      <p>Interactivity</p>
+                    </li>
+                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
+                      <p>Visual Stability</p>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-2 border-t border-primary-foreground/10 dark:border-primary/10 pt-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-foreground dark:text-primary">
+                    Device Breakdown
+                  </p>
+                  <ul className="space-y-2">
+                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
+                      <p>Desktop</p>
+                    </li>
+                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
+                      <p>Mobile</p>
+                    </li>
+                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
+                      <p>Tablet</p>
+                    </li>
+                  </ul>
+                </div>
+
+                <p className="text-[11px] italic text-primary-foreground/70 dark:text-primary/70">
+                  It&apos;s the same dataset appears on your Google Search
+                  Console.
                 </p>
-              }
-            />
-          </div>
+              </div>
+            }
+            trigger={
+              <p className="text-sm rounded-sm px-2 py-0.5 hover:bg-primary/5 text-primary/80">
+                What this means ?
+              </p>
+            }
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
@@ -442,8 +440,21 @@ export default function Main() {
                         bad={histrogram[2].density}
                         label={acronym}
                       />
+                    ) : loading ? (
+                      <div className="w-full mt-4 space-y-2">
+                        {/* <div className="h-3 w-16 bg-slate-200 animate-pulse rounded-full" /> */}
+                        <div className="flex w-full h-8 gap-1 overflow-hidden rounded-sm animate-pulse">
+                          <div className="h-full bg-slate-200 w-[40%]" />{" "}
+                          <div className="h-full bg-slate-100 w-[30%]" />{" "}
+                          <div className="h-full bg-slate-200 w-[30%]" />{" "}
+                        </div>
+                      </div>
                     ) : (
-                      <div className="w-full mt-4 h-8 rounded-sm bg-primary/5 animate-pulse"></div>
+                      <div className="w-full mt-4 h-8 flex items-center justify-center border border-dashed border-slate-200 rounded-sm">
+                        <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                          No data available
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>

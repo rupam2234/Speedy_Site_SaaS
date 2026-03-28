@@ -72,7 +72,8 @@ const RumCwvChart = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const { theme } = useTheme();
-  const { selectedDevice, rumDistribution } = useSiteContext();
+  const { selectedDevice, rumDistribution, startDate, endDate } =
+    useSiteContext();
 
   const metricRange = getRanges(metric_key);
 
@@ -85,6 +86,8 @@ const RumCwvChart = ({
   useEffect(() => {
     if (!chartRef.current) return;
 
+    if (!startDate || !endDate) return;
+
     if (!chartInstanceRef.current) {
       chartInstanceRef.current = echarts.init(chartRef.current);
     }
@@ -92,37 +95,56 @@ const RumCwvChart = ({
     const chart = chartInstanceRef.current;
     const gridLineColor = theme === "dark" ? "#393E46" : "#B3C8CF";
 
-    if (data.length === 0) {
-      const option = {
-        xAxis: {
-          type: "category",
-          data: [],
-          axisLabel: {
-            color: theme === "dark" ? "#ccc" : "#333",
-          },
-          boundaryGap: false,
-        },
-        yAxis: {
-          type: "value",
-          splitLine: {
-            show: true,
-            lineStyle: { color: gridLineColor, type: "dashed", width: 1 },
-          },
-          axisLabel: {
-            color: theme === "dark" ? "#ccc" : "#333",
-          },
-        },
-        grid: { top: 40, bottom: 30, left: 50, right: 40, height: 300 },
-        series: [], // No line series
-        // No graphic text
-      };
+    const current = new Date(startDate);
+    const endDateObj = new Date(endDate);
 
-      chart.setOption(option, { notMerge: true });
-      return;
+    // create a array of date and metric data for full selected date range
+    const structuredData: [string, number | null | string][] = [];
+    const validDataObject: Map<string, number | null | string> = new Map();
+
+    data.forEach((x) => validDataObject.set(x[0], x[1]));
+
+    // this will fill up empty dates with dummy dates and 0 value on metrics (create a full chart impression)
+    while (current <= endDateObj) {
+      const tempDate = current.toLocaleDateString("en-CA");
+
+      const value = validDataObject.get(tempDate);
+      structuredData.push([tempDate, value ?? 0]);
+
+      current.setDate(current.getDate() + 1);
     }
 
+    // if (structuredData.length === 0) {
+    //   const option = {
+    //     xAxis: {
+    //       type: "category",
+    //       data: [],
+    //       axisLabel: {
+    //         color: theme === "dark" ? "#ccc" : "#333",
+    //       },
+    //       boundaryGap: false,
+    //     },
+    //     yAxis: {
+    //       type: "value",
+    //       splitLine: {
+    //         show: true,
+    //         lineStyle: { color: gridLineColor, type: "dashed", width: 1 },
+    //       },
+    //       axisLabel: {
+    //         color: theme === "dark" ? "#ccc" : "#333",
+    //       },
+    //     },
+    //     grid: { top: 40, bottom: 30, left: 50, right: 40, height: 300 },
+    //     series: [], // No line series
+    //     // No graphic text
+    //   };
+
+    //   chart.setOption(option, { notMerge: true });
+    //   return;
+    // }
+
     // If there is data, proceed with full chart options
-    const styledData = data.map(([x, y]) => {
+    const styledData = structuredData.map(([x, y]) => {
       const isHigh = (y as number) >= metricRange.c;
       const isMed =
         (y as number) < metricRange.c && (y as number) > metricRange.b;
@@ -164,11 +186,14 @@ const RumCwvChart = ({
         formatter: (params: any) => {
           const param = params[0];
           const value = param?.value[1];
-          const displayValue = isMs
-            ? value >= 1000
-              ? `${(value / 1000).toFixed(2)}s`
-              : `${Math.round(value)}ms`
-            : value.toFixed(3);
+          const displayValue =
+            metric_key !== "cls" && value === 0
+              ? "n/a"
+              : isMs
+                ? value >= 1000
+                  ? `${(value / 1000).toFixed(2)}s`
+                  : `${Math.round(value)}ms`
+                : value.toFixed(3);
 
           const colorClass =
             value >= metricRange?.c
@@ -180,7 +205,7 @@ const RumCwvChart = ({
           return `
           <div class="p-3 bg-[#333446] dark:bg-accent-foreground w-auto rounded-sm text-primary-foreground">
             <p class="mb-2">${param.name}</p>
-            <p>${rumDistribution.toUpperCase()} of ${selectedDevice.toLowerCase()} page loads experienced ≤ <span class="${colorClass} font-semibold">${displayValue}</span></p>
+            <p>${displayValue !== "n/a" ? `${rumDistribution.toUpperCase()} of ${selectedDevice.toLowerCase()} page loads experienced ≤ <span class="${colorClass} font-semibold">${displayValue}</span>` : `Data not available`}</p>
           </div>
         `;
         },
@@ -190,7 +215,7 @@ const RumCwvChart = ({
         axisLabel: {
           rotate: 0,
           fontSize: 10,
-          interval: Math.floor(data.length / 5),
+          interval: Math.floor(structuredData.length / 5),
         },
         boundaryGap: false,
       },

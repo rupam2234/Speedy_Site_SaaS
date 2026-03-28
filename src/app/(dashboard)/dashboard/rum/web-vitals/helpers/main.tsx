@@ -270,7 +270,7 @@ export default function Main() {
       default:
         return [];
     }
-  }, [activeMetric, contributors, selectedDevice]);
+  }, [activeMetric, contributors, selectedSite, selectedDevice]);
 
   const { selectedDist, totalEvents } = useMemo(() => {
     const selectedDist =
@@ -581,7 +581,6 @@ export default function Main() {
         ttl: 1000 * 60 * 5, // 5 minutes
       });
 
-      // console.log(`data cached? ${isCached}`);
       setRumHistoryData(response);
     } catch (error: any) {
       console.error(error.message);
