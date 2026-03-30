@@ -359,7 +359,7 @@ export default function RealtimeUxMap() {
 
           <div
             ref={chartRef}
-            className="relative z-10 w-full min-h-75 md:min-h-100 lg:min-h-140"
+            className="relative z-10 mt-10 w-full min-h-125"
           />
 
           <figcaption className="border-t px-4 py-3 bg-background/20 backdrop-blur-xs">

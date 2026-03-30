@@ -152,12 +152,7 @@ export default function UxReport() {
   }, [userHappinessData, compAIndex, compBIndex]);
 
   useEffect(() => {
-    if (
-      activeWindow !== "Distributions" ||
-      !chartRef.current ||
-      loading ||
-      userHappinessData.length === 0
-    )
+    if (activeWindow !== "Distributions" || !chartRef.current || loading)
       return;
 
     if (chartInstanceRef.current) chartInstanceRef.current.dispose();
@@ -211,19 +206,37 @@ export default function UxReport() {
         },
       },
       series: [
-        {
-          type: "map",
-          map: "world",
-          zoom: 1.2,
-          roam: false,
-          label: { show: false },
-          itemStyle: { borderColor: theme === "dark" ? "#14142e" : "#BED4CB" },
-          emphasis: {
-            itemStyle: { areaColor: "#A4D8F0B3" },
-            label: { show: false },
-          },
-          data: seriesData,
-        },
+        userHappinessData.length > 0
+          ? {
+              type: "map",
+              map: "world",
+              zoom: 1.2,
+              roam: false,
+              label: { show: false },
+              itemStyle: {
+                borderColor: theme === "dark" ? "#14142e" : "#BED4CB",
+              },
+              emphasis: {
+                itemStyle: { areaColor: "#A4D8F0B3" },
+                label: { show: false },
+              },
+              data: seriesData,
+            }
+          : {
+              type: "map",
+              map: "world",
+              zoom: 1.2,
+              roam: false,
+              label: { show: false },
+              itemStyle: {
+                borderColor: theme === "dark" ? "#14142e" : "#BED4CB",
+              },
+              emphasis: {
+                itemStyle: { areaColor: "#A4D8F0B3" },
+                label: { show: false },
+              },
+              data: [],
+            },
       ],
     });
 
@@ -404,7 +417,7 @@ export default function UxReport() {
                 className="relative z-10 mt-10 w-full min-h-125"
               />
               <figcaption className="relative z-20 mt-auto border-t px-4 py-3 bg-background/20 backdrop-blur-xs">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Color indicates metric health based on the <b>weakest link</b>{" "}
                   among Core Web Vitals.
                 </p>
@@ -412,7 +425,7 @@ export default function UxReport() {
             </div>
 
             <div className="order-2 lg:order-1 lg:col-span-2 border border-primary/20 rounded-xl p-5 bg-primary/3 flex flex-col gap-6">
-              {analysis && (
+              {analysis ? (
                 <>
                   <div className="p-3 rounded-lg bg-background/50 border border-primary/10">
                     <span className="text-[10px] uppercase font-bold text-muted-foreground block mb-1">
@@ -490,19 +503,30 @@ export default function UxReport() {
                     </p>
                   </div>
                 </>
+              ) : (
+                <>
+                  <div className="p-3 rounded-lg bg-background/50 border border-primary/10">
+                    <p className="text-xs font-medium tracking-tighter text-primary/80">
+                      We don&apos;t have sufficient traffic data to classify
+                      user experience.
+                    </p>
+                  </div>
+                </>
               )}
             </div>
           </div>
 
-          <ComparisonMain
-            alphacode2toCountry={alphacode2toCountry}
-            compAIndex={compAIndex}
-            compBIndex={compBIndex}
-            comparisonData={comparisonData}
-            userHappinessData={userHappinessData}
-            setCompAIndex={setCompAIndex}
-            setCompBIndex={setCompBIndex}
-          />
+          {userHappinessData.length > 0 && (
+            <ComparisonMain
+              alphacode2toCountry={alphacode2toCountry}
+              compAIndex={compAIndex}
+              compBIndex={compBIndex}
+              comparisonData={comparisonData}
+              userHappinessData={userHappinessData}
+              setCompAIndex={setCompAIndex}
+              setCompBIndex={setCompBIndex}
+            />
+          )}
         </>
       )}
     </div>

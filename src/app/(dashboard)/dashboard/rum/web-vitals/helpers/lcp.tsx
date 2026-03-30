@@ -147,8 +147,9 @@ export default function LCPelements({
             No LCP Elements Found
           </h3>
           <p className="max-w-md text-sm text-neutral-500 dark:text-neutral-400 mt-2 px-6">
-            Your Largest Contentful Paint is likely within the healthy range. No
-            specific elements were identified as slowing down your pages.
+            Your Largest Contentful Paint is likely within the healthy range, or
+            we don&apos;t have enought data to show yet. No specific elements
+            were identified as slowing down your pages.
           </p>
         </div>
       )}

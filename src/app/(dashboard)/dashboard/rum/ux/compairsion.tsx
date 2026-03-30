@@ -144,8 +144,8 @@ export function ComparisonMain({
         />
 
         <div className="flex justify-center pt-4 md:pt-6">
-          <div className="p-2 rounded-full bg-primary/10 text-primary border border-primary/20">
-            <ArrowRightLeft size={16} />
+          <div className="p-2 rounded-full bg-primary/10 text-primary/30 hover:text-primary/80 cursor-pointer border border-primary/20">
+            <ArrowRightLeft size={16} onClick={handleSwap} />
           </div>
         </div>
 
@@ -194,6 +194,11 @@ export function ComparisonMain({
       )}
     </div>
   );
+
+  function handleSwap() {
+    setCompAIndex(compBIndex);
+    setCompBIndex(compAIndex);
+  }
 }
 
 function SegmentSelect({
