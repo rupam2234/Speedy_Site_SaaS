@@ -147,7 +147,7 @@ export default function UxReport() {
       lcpDiff: percentDiffFromA(segA.p75_lcp, segB.p75_lcp),
       inpDiff: percentDiffFromA(segA.p75_inp, segB.p75_inp),
       ttfbDiff: percentDiffFromA(segA.p75_ttfb, segB.p75_ttfb),
-      clsDiff: percentDiffFromA(segA.p75_cls, segB.p75_cls),
+      clsDiff: segB.p75_cls - segA.p75_cls, // cls differences are tiny, can't rely on percentDiffFromA
     };
   }, [userHappinessData, compAIndex, compBIndex]);
 

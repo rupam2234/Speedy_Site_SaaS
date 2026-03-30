@@ -280,6 +280,10 @@ export function ComparisonCard({
     return isImprovement ? "Faster" : "Slower";
   };
 
+  const signedDisplay = isDecimal
+    ? `${diff > 0 ? "+" : ""}${diff.toFixed(3)}`
+    : `${displayDiff}%`;
+
   return (
     <div className="bg-background/40 border border-primary/10 rounded-lg p-4 flex flex-col transition-all hover:border-primary/30">
       <span className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">
@@ -303,7 +307,13 @@ export function ComparisonCard({
               ) : (
                 <TrendingUp size={24} />
               ))}
-            {isNoChange ? "0%" : `${displayDiff}%`}
+            {isNoChange
+              ? isDecimal
+                ? "0"
+                : "0%"
+              : isDecimal
+                ? signedDisplay
+                : `${displayDiff}%`}
           </div>
 
           <span
