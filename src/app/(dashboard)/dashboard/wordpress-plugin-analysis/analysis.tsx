@@ -1,4 +1,14 @@
-import { AlertTriangle, Cpu, Info, RefreshCw } from "lucide-react";
+"use client";
+
+import {
+  AlertTriangle,
+  Cpu,
+  Database,
+  Globe,
+  RefreshCw,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 import { PluginAnalysis } from "./types";
 import { useMemo } from "react";
 
@@ -24,14 +34,14 @@ export default function AnalysisDashboard({
     return (
       <div className="flex flex-col items-center justify-center py-40">
         <div className="relative">
-          <RefreshCw className="animate-spin text-[#141414]" size={48} />
+          <RefreshCw className="animate-spin text-primary/40" size={48} />
           <Cpu
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-40"
+            className="absolute top-1/2 left-1/2 -tranprimary-x-1/2 -tranprimary-y-1/2 opacity-40"
             size={20}
           />
         </div>
         <p className="mt-6 font-mono uppercase tracking-[0.3em] text-xs opacity-50 animate-pulse">
-          Analyzing Footprint...
+          Analyzing Plugins...
         </p>
       </div>
     );
@@ -41,154 +51,222 @@ export default function AnalysisDashboard({
     <div className="space-y-3 mt-6">
       {!loading && analysisResult.length > 0 && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 border border-primary/20 bg-primary-foreground dark:bg-secondary-background">
-              <p className="text-[12px] uppercase mb-1">Detected Plugins</p>
-              <p className="text-4xl text-primary/80 font-bold">
-                {analysisResult.length}
-              </p>
-            </div>
-            <div className="p-6 border border-primary/20 bg-primary-foreground dark:bg-secondary-background">
-              <p className="text-[12px] uppercase mb-1">Weight Level</p>
-              <p
-                className={`text-4xl uppercase font-bold ${impactfulPlugins > 90 ? "text-[#ff6467]" : impactfulPlugins > 40 ? "text-[#FCBF49]" : "text-[#53a94a]"}`}
-              >
-                {impactfulPlugins.toFixed(0)}% heavy
-              </p>
-            </div>
-            <div className="p-6 border border-primary/20 bg-primary-foreground dark:bg-secondary-background">
-              <p className="text-[12px] uppercase  mb-1">Audit Type</p>
-              <p className="text-4xl font-bold text-primary/80 uppercase tracking-tighter">
-                FULL SCAN
-              </p>
-            </div>
-          </div>
-          <div className="border border-primary/20 bg-primary-foreground dark:bg-secondary-background overflow-hidden">
-            <div className="bg-primary/60 dark:bg-primary/20 text-primary-foreground dark:text-primary p-4 flex justify-between items-center">
-              <h3 className="font-mono uppercase tracking-widest text-sm">
-                Audit Results
-              </h3>
-              <div className="flex items-center gap-4">
-                <span className="text-[12px] font-mono uppercase">
-                  Sorted by Impact
+          {/* overview section */}
+          <OverviewSection
+            analysisResult={analysisResult}
+            impactfulPlugins={impactfulPlugins}
+          />
+          {/* plugin section */}
+          <PluginResult analysisResult={analysisResult} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function OverviewSection({
+  analysisResult,
+  impactfulPlugins,
+}: {
+  analysisResult: PluginAnalysis[];
+  impactfulPlugins: number;
+}) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="p-6 border border-primary/20 bg-primary-foreground dark:bg-secondary-background">
+        <p className="text-[12px] uppercase mb-1">
+          Plugins Detected In Your WordPress site
+        </p>
+        <p className="text-4xl text-primary/80 font-bold">
+          {analysisResult.length}
+        </p>
+      </div>
+      <div className="p-6 border border-primary/20 bg-primary-foreground dark:bg-secondary-background">
+        <p className="text-[12px] uppercase mb-1">
+          Plugins with an impact score above 4/10
+        </p>
+        <p
+          className={`text-4xl uppercase font-bold ${impactfulPlugins > 90 ? "text-[#ff6467]" : impactfulPlugins > 40 ? "text-[#FCBF49]" : "text-[#53a94a]"}`}
+        >
+          {impactfulPlugins.toFixed(0)}% heavy
+        </p>
+      </div>
+      <div className="p-6 border border-primary/20 bg-primary-foreground dark:bg-secondary-background">
+        <p className="text-[12px] uppercase  mb-1">Audit Type</p>
+        <p className="text-4xl font-bold text-primary/80 uppercase tracking-tighter">
+          Single SCAN
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PluginResult({
+  analysisResult,
+}: {
+  analysisResult: PluginAnalysis[];
+}) {
+  return (
+    <div className="space-y-6">
+      {/* Results List */}
+      <div className="space-y-4">
+        {analysisResult.map((item, idx) => (
+          <div
+            key={idx}
+            className="group relative bg-primary-foreground/80 hover:bg-primary-foreground dark:bg-secondary-background border border-primary/20 p-5 md:p-6 transition-all duration-300"
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <h4 className="text-lg font-bold text-primary tracking-tight leading-none">
+                  {item.name}
+                </h4>
+                <span
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    item.impactLevel === "Critical"
+                      ? "bg-rose-100 text-rose-600"
+                      : item.impactLevel === "High"
+                        ? "bg-orange-100 text-orange-600"
+                        : item.impactLevel === "Medium"
+                          ? "bg-amber-100 text-amber-600"
+                          : "bg-emerald-100 text-emerald-600"
+                  }`}
+                >
+                  {item.impactLevel} Impact
                 </span>
+              </div>
+
+              {/* Score Indicator */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-primary/80 uppercase tracking-tighter">
+                  Impact Score
+                </span>
+                <div
+                  className={`text-xl font-black ${item.impactScore > 7 ? "text-rose-500" : "text-primary/80"}`}
+                >
+                  {item.impactScore}
+                  <span className="text-[10px] text-primary-300 font-normal ml-0.5">
+                    /10
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="divide-y divide-[#141414]">
-              {analysisResult.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="p-6 hover:bg-primary/5 transition-colors group"
-                >
-                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span
-                          className={`px-2 py-0.5 text-[11px] font-mono uppercase border ${
-                            item.impactLevel === "Critical"
-                              ? "bg-red-600 text-white border-red-600"
-                              : item.impactLevel === "High"
-                                ? "bg-orange-500 text-white border-orange-500"
-                                : item.impactLevel === "Medium"
-                                  ? "bg-yellow-400 text-[#141414] border-yellow-400"
-                                  : "bg-green-500 text-white border-green-500"
-                          }`}
-                        >
-                          {item.impactLevel} Impact
-                        </span>
-                        <h4 className="text-xl font-bold uppercase tracking-tight">
-                          {item.name}
-                        </h4>
-                      </div>
-                      <div className="text-[15px] text-primary/80 mb-4 leading-relaxed font-sans">
-                        <div>{item.reasoning}</div>
-                      </div>
+            <p className="text-primary/70 text-[14px] leading-relaxed mb-6 max-w-3xl">
+              {item.reasoning}
+            </p>
 
-                      {/* Performance Metrics Section */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-                        <div className="p-3 bg-gray-50 dark:bg-primary/10 border border-[#141414]/5 rounded-sm">
-                          <p className="text-[11px] font-mono uppercase mb-1">
-                            Est. DB Queries
-                          </p>
-                          <p className="text-sm font-bold font-mono">
-                            {item.metrics.estQueries}
-                          </p>
-                        </div>
-                        <div className="p-3 bg-gray-50 dark:bg-primary/10 border border-[#141414]/5 rounded-sm">
-                          <p className="text-[11px] font-mono uppercase mb-1">
-                            Est. HTTP Requests
-                          </p>
-                          <p className="text-sm font-bold font-mono">
-                            {item.metrics.estHttpRequests}
-                          </p>
-                        </div>
-                        <div className="p-3 bg-gray-50 border dark:bg-primary/10 border-[#141414]/5 rounded-sm">
-                          <p className="text-[11px] font-mono uppercase mb-1">
-                            Est. Load Impact
-                          </p>
-                          <p className="text-sm font-bold font-mono">
-                            {item.metrics.estLoadTime}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Conflict Warnings */}
-                      {item.conflicts && item.conflicts.length > 0 && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-sm">
-                          <div className="flex items-center gap-2 mb-2">
-                            <AlertTriangle size={14} className="text-red-600" />
-                            <p className="text-[12px] font-bold uppercase text-red-900">
-                              Potential Conflict Detected
-                            </p>
-                          </div>
-                          <div className="space-y-2">
-                            {item.conflicts.map((conflict, cIdx) => (
-                              <div
-                                key={cIdx}
-                                className="text-[12px] text-red-800 leading-relaxed"
-                              >
-                                <span className="font-bold">
-                                  With {conflict.plugin}:
-                                </span>{" "}
-                                {conflict.issue}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-sm">
-                        <Info
-                          size={16}
-                          className="text-blue-600 mt-0.5 shrink-0"
-                        />
-                        <div className="text-sm text-blue-800 italic font-sans leading-relaxed">
-                          <span className="font-bold uppercase tracking-tighter mr-2 not-italic text-blue-900">
-                            Recommendation:
-                          </span>
-                          {item.recommendation}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-3 ">
-                      <div className="text-center bg-white dark:bg-primary/20 p-4 border border-[#141414] min-w-25 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:shadow-[6px_6px_0px_0px_rgba(20,20,20,1)] transition-all">
-                        <p className="text-[9px] font-mono uppercase mb-1">
-                          Impact Score
-                        </p>
-                        <p className="text-4xl font-bold leading-none">
-                          {item.impactScore}
-                          <span className="text-xs font-normal">/10</span>
-                        </p>
-                      </div>
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-4 flex flex-col gap-2">
+                <p className="text-[10px] font-bold text-primary/90 uppercase tracking-widest">
+                  Resource Usage
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-primary-50 border border-primary-100 p-2.5 rounded-xl text-center">
+                    <Database
+                      size={14}
+                      className="mx-auto mb-1 text-primary/50"
+                    />
+                    <p className="text-xs font-bold text-primary/80">
+                      {item.metrics.estQueries}
+                    </p>
+                    <p className="text-[9px] text-primary/80 uppercase">
+                      Queries
+                    </p>
+                  </div>
+                  <div className="bg-primary-50 border border-primary-100 p-2.5 rounded-xl text-center">
+                    <Globe size={14} className="mx-auto mb-1 text-primary/50" />
+                    <p className="text-xs font-bold text-primary/80">
+                      {item.metrics.estHttpRequests}
+                    </p>
+                    <p className="text-[9px] text-primary/80 uppercase">
+                      Requests
+                    </p>
+                  </div>
+                  <div className="bg-primary-50 border border-primary-100 p-2.5 rounded-xl text-center">
+                    <Zap size={14} className="mx-auto mb-1 text-primary/50" />
+                    <p className="text-xs font-bold text-primary/80">
+                      {item.metrics.estLoadTime}
+                    </p>
+                    <p className="text-[9px] text-primary/80 uppercase">
+                      Impact
+                    </p>
                   </div>
                 </div>
-              ))}
+              </div>
+
+              <div className="lg:col-span-8 space-y-3 min-h-40">
+                {/* Conflict Warning (Only shows if exists) */}
+                {item.conflicts && item.conflicts.length > 0 && (
+                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex gap-3">
+                    <AlertTriangle
+                      size={16}
+                      className="text-rose-500 shrink-0 mt-0.5"
+                    />
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-bold text-rose-700 uppercase">
+                        Optimization Note
+                      </p>
+                      {item.conflicts.map((conflict, cIdx) => (
+                        <p
+                          key={cIdx}
+                          className="text-xs text-rose-600 leading-snug"
+                        >
+                          Consider reviewing compatibility with{" "}
+                          <span className="font-bold underline">
+                            {conflict.plugin}
+                          </span>
+                          .
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Helpful Recommendation */}
+                <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex gap-3">
+                  <Sparkles
+                    size={16}
+                    className="text-blue-500 shrink-0 mt-0.5"
+                  />
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-bold text-blue-700 uppercase">
+                      Performance Tip
+                    </p>
+                    <p className="text-xs text-blue-800 leading-relaxed font-medium">
+                      {item.recommendation}
+                    </p>
+                  </div>
+                </div>
+
+                {!item.alternates
+                  ? []
+                  : item.alternates.length > 0 && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-primary/80">
+                          Alternative plugins with similar features but improved
+                          performance (ensure they fit your needs).
+                        </p>
+                        <ol className="space-y-1 list-disc pl-3.5">
+                          {item.alternates.map((x, index) => (
+                            <li
+                              className="text-xs text-green-600 leading-snug"
+                              key={index}
+                            >
+                              <span className="font-bold underline">
+                                {x.name}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+              </div>
             </div>
+
+            {/* Subtle Hover Action indicator */}
           </div>
-        </>
-      )}
+        ))}
+      </div>
     </div>
   );
 }

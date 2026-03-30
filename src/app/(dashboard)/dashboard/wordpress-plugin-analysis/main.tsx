@@ -169,7 +169,7 @@ export default function Main() {
               className={`${
                 pluginStatus.isConnected
                   ? "bg-green-600/10 text-green-600 border border-green-600/20"
-                  : "text-primary/40"
+                  : "bg-blue-600/10 text-blue-600 border border-blue-600/20"
               } inline-flex items-center cursor-pointer justify-center gap-2 whitespace-nowrap rounded-lg px-5 py-2.5 text-sm font-medium transition-colors hover:opacity-80 focus:outline-none`}
             >
               {pluginStatus.loading ? (
@@ -250,7 +250,20 @@ export default function Main() {
 
     try {
       const { response } = await cachedData({
-        fn: () => analysisApi(key, domain),
+        fn: async () => {
+          if (!domain || !key) return;
+          const res = await fetch("/api/wordpress/plugin-analysis", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ domain, key }),
+          });
+
+          const body: any = await res.json();
+
+          if (!res.ok)
+            throw new Error(body.message ?? "Failed to fetch plugin data");
+          return body.result;
+        },
         key: cacheKey,
         session_Storage: false,
         ttl: 30 * 60 * 1000, // 30 min cache
@@ -261,26 +274,12 @@ export default function Main() {
       await updateQuota();
 
       setResult(response);
-    } catch (err: any) {
-      setError(err.message || "Failed to complete scan");
+    } catch (error: any) {
+      console.warn(error);
+      setError("Failed to complete scan");
     } finally {
       setLoading(false);
     }
-  }
-
-  async function analysisApi(key: string, domain: string) {
-    if (!domain || !key) return;
-
-    const res = await fetch("/api/wordpress/plugin-analysis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ domain, key }),
-    });
-
-    const body: any = await res.json();
-
-    if (!res.ok) throw new Error(body.message ?? "Failed to fetch plugin data");
-    return body.result;
   }
 
   /**
