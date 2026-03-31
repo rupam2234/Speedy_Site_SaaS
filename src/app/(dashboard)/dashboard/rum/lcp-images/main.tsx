@@ -22,7 +22,6 @@ import { cwv_ranges } from "../cwvRanges";
 import Image from "next/image";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 
-// Custom Badge component
 const Badge = ({
   variant = "default",
   children,
@@ -668,7 +667,23 @@ export default function Main() {
     const key = `lcp-images:${selectedSite}`;
 
     const { response } = await cachedData({
-      fn: fetchImages,
+      fn: async () => {
+        const res = await fetch("/api/rum/lcp-images", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            domain: selectedSite,
+          }),
+        });
+
+        const body: any = await res.json();
+
+        if (!res.ok) {
+          throw new Error(body.message);
+        }
+
+        return body;
+      },
       key: key,
       session_Storage: true,
       ttl: 5 * 60 * 1000,
@@ -679,24 +694,6 @@ export default function Main() {
     setIsLoading(false);
     // clean up silently
     cleanExpiredCache({ prefix: "lcp-images", session_Storage: true });
-
-    async function fetchImages() {
-      const res = await fetch("/api/rum/lcp-images", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domain: selectedSite,
-        }),
-      });
-
-      const body: any = await res.json();
-
-      if (!res.ok) {
-        throw new Error(body.message);
-      }
-
-      return body;
-    }
   }
 
   function isImageUrl(url: string): boolean {

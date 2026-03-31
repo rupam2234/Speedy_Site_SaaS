@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "motion/react";
 import JSZip from "jszip";
 import { ComparisonSlider, DropZone, ResultCard } from ".";
 import { CustomTooltip } from "@/components/theme";
+import Image from "next/image";
 
 interface ConversionResult {
   format: string;
@@ -307,7 +308,10 @@ export default function ImageOptimizer() {
                     )}
                   >
                     <div className="w-14 h-14 rounded-md overflow-hidden bg-slate-100 shrink-0">
-                      <img
+                      <Image
+                        alt={`${f.originalUrl}-detetcted`}
+                        width={56}
+                        height={56}
                         src={f.originalUrl}
                         className="w-full h-full object-cover"
                       />

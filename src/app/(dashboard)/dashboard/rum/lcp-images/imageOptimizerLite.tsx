@@ -33,7 +33,22 @@ export function ImageOptimizerLite({ imageUrl }: { imageUrl: string }) {
   const optimize = useCallback(async () => {
     setIsProcessing(true);
     try {
-      const response = await fetch(imageUrl);
+      const response = await fetch(`/api/compression/proxy-image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: imageUrl }),
+      });
+
+      if (!response.ok) {
+        // Check if it was a timeout (504)
+        if (response.status === 504) {
+          throw new Error(
+            "The external site took too long to respond. Try again or use a different image.",
+          );
+        }
+        throw new Error("Failed to load image.");
+      }
+
       const blob = await response.blob();
       setOriginalSize(blob.size); // Track original size
 
@@ -61,10 +76,10 @@ export function ImageOptimizerLite({ imageUrl }: { imageUrl: string }) {
       }
       setResults(newResults);
     } catch (err) {
-      console.error("Optimization failed", err);
+      console.error(err);
     } finally {
       setIsProcessing(false);
-      setFilename("");
+      // setFilename("");
     }
   }, [imageUrl]);
 
