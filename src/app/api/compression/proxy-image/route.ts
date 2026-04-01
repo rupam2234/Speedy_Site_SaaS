@@ -23,7 +23,6 @@ async function fetchWithRetry(url: string, retries = 1): Promise<Response> {
           "User-Agent": userAgents[i % userAgents.length],
           Accept:
             "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-          Referer: new URL(url).origin,
           "Cache-Control": "no-cache",
         },
       });
@@ -34,7 +33,6 @@ async function fetchWithRetry(url: string, retries = 1): Promise<Response> {
       }
     } catch (err) {
       if (i === retries) throw err;
-      console.log(`Retry ${i + 1} for ${url}`);
     } finally {
       clearTimeout(timeoutId);
     }

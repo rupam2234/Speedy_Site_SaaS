@@ -105,33 +105,39 @@ export type Database = {
           order_date: string;
           order_id: string;
           order_status: boolean;
+          report_email: string | null;
           rum_connection: boolean | null;
           usage_by_site: number;
           user_id: string;
           website_address: string;
           website_name: string;
+          weekly_report: boolean | null;
         };
         Insert: {
           favicon_file?: string | null;
           order_date?: string;
           order_id?: string;
           order_status: boolean;
+          report_email?: string | null;
           rum_connection?: boolean | null;
           usage_by_site?: number;
           user_id?: string;
           website_address: string;
           website_name: string;
+          weekly_report?: boolean | null;
         };
         Update: {
           favicon_file?: string | null;
           order_date?: string;
           order_id?: string;
           order_status?: boolean;
+          report_email?: string | null;
           rum_connection?: boolean | null;
           usage_by_site?: number;
           user_id?: string;
           website_address?: string;
           website_name?: string;
+          weekly_report?: boolean | null;
         };
         Relationships: [];
       };
@@ -458,6 +464,36 @@ export type Database = {
           subject?: string;
           updated_at?: string | null;
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      website_metadata: {
+        Row: {
+          description: string | null;
+          id: number;
+          last_updated: string | null;
+          mobile_optimized: boolean | null;
+          site_type: string | null;
+          title: string | null;
+          url: string;
+        };
+        Insert: {
+          description?: string | null;
+          id?: number;
+          last_updated?: string | null;
+          mobile_optimized?: boolean | null;
+          site_type?: string | null;
+          title?: string | null;
+          url: string;
+        };
+        Update: {
+          description?: string | null;
+          id?: number;
+          last_updated?: string | null;
+          mobile_optimized?: boolean | null;
+          site_type?: string | null;
+          title?: string | null;
+          url?: string;
         };
         Relationships: [];
       };
@@ -810,6 +846,7 @@ export type Database = {
           ttfb_avg: number;
         }[];
       };
+      delete_old_rum_hits: { Args: never; Returns: undefined };
       delete_old_rum_metrics: { Args: never; Returns: undefined };
       font_analysis: {
         Args: { p_domain: string };

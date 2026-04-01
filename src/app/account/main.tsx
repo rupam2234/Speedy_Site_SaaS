@@ -1,7 +1,8 @@
 "use client";
 
+import { cachedData, cleanExpiredCache } from "@/components/utils";
 import { Clipboard } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function AccountRender() {
@@ -14,33 +15,48 @@ export default function AccountRender() {
   const [passMatch, setPassMatch] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
+  const userRef = useRef<{ email: string; name: string; phone: string }>({
+    email: "",
+    name: "",
+    phone: "",
+  });
+
   useEffect(() => {
-    async function getUser() {
-      try {
-        const res = await fetch("/api/account/get", {
-          cache: "no-store",
-        });
+    const key = `user-account`;
+    cleanExpiredCache({ prefix: key, session_Storage: true });
 
-        if (!res.ok) {
-          console.error("Unable to fetch user", res.status);
-          return null;
-        }
+    const getCachedUser = async () => {
+      const { response } = await cachedData({
+        fn: async () => {
+          const res = await fetch("/api/account/get", {
+            cache: "no-store",
+          });
 
-        const data = await res.json();
-        setActiveUser(data);
-      } catch (err) {
-        console.error("Error fetching user:", err);
+          if (!res.ok) throw new Error(res.statusText);
+
+          const data = await res.json();
+
+          return data;
+        },
+        key: key,
+        session_Storage: true,
+        ttl: 5 * 60 * 1000,
+      });
+
+      if (response) {
+        setActiveUser(response);
+      } else {
         setActiveUser(null);
       }
-    }
+    };
 
-    getUser();
+    getCachedUser();
   }, []);
 
   return (
-    <div className="grid grid-cols-1 h-full md:grid-cols-6 m-5">
+    <div className="grid grid-cols-1 h-full md:grid-cols-6">
       {/* Main Content */}
-      <div className="col-span-1 md:border-r md:col-span-4 p-6 w-full min-h-full bg-white dark:bg-secondary-background rounded-l-sm space-y-10">
+      <div className="col-span-1 md:border-r md:col-span-4 p-6 w-full min-h-full  dark:bg-secondary-background rounded-l-sm space-y-10">
         {/* Header */}
         <h2 className="text-lg font-semibold mb-4">Account Settings</h2>
 
@@ -51,12 +67,12 @@ export default function AccountRender() {
         >
           <div className="space-y-4">
             {/* Upload Avatar */}
-            <div className="flex items-center space-x-4">
+            {/* <div className="flex items-center space-x-4">
               <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700" />
               <button className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 rounded">
                 Change Photo
               </button>
-            </div>
+            </div> */}
 
             {/* Inputs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -66,9 +82,9 @@ export default function AccountRender() {
                 <input
                   type="email"
                   placeholder={activeUser?.user.email || "your email"}
-                  value={email}
+                  // value={email || activeUser?.user.email || ""}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input px-2 py-1 dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
+                  className="input px-2 py-1 dark:bg-secondary-background text-primary/80 text-sm border rounded-sm border-primary/10"
                 />
               </div>
               <div className="flex gap-2 items-center">
@@ -78,9 +94,9 @@ export default function AccountRender() {
                   placeholder={
                     activeUser?.user.user_metadata.name || "your name..."
                   }
-                  value={name}
+                  // value={name || activeUser?.user.name || ""}
                   onChange={(e) => setName(e.target.value)}
-                  className="input px-2 py-1 dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
+                  className="input px-2 py-1 dark:bg-secondary-background text-sm text-primary/80 border rounded-sm border-primary/10"
                 />
               </div>
               <div className="flex gap-2 items-center">
@@ -88,9 +104,9 @@ export default function AccountRender() {
                 <input
                   type="text"
                   placeholder={activeUser?.user.phone || "your contact no..."}
-                  value={phone}
+                  // value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="input px-2 py-1 dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
+                  className="input px-2 py-1 dark:bg-secondary-background text-sm text-primary/80 border rounded-sm border-primary/10"
                 />
               </div>
             </div>
@@ -115,7 +131,7 @@ export default function AccountRender() {
                 placeholder="New Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input px-2 py-1 w-75 dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
+                className="input px-2 py-1 w-75 dark:bg-secondary-background text-sm text-primary/80 border rounded-sm border-primary/10"
               />
             </div>
             <div className="flex gap-2 items-center">
@@ -124,7 +140,7 @@ export default function AccountRender() {
                 placeholder="Confirm New Password"
                 value={conf_pass}
                 onChange={(e) => setConfPass(e.target.value)}
-                className="input px-2 py-1 w-75 dark:bg-secondary-background text-primary/80 border rounded-sm border-primary/10"
+                className="input px-2 py-1 w-75 dark:bg-secondary-background text-sm text-primary/80 border rounded-sm border-primary/10"
               />
             </div>
           </div>
@@ -149,7 +165,7 @@ export default function AccountRender() {
       </div>
 
       {/* Sidebar */}
-      <div className="col-span-1 space-y-4 md:col-span-2 p-6 w-full min-h-full bg-white dark:bg-secondary-background rounded-r-sm">
+      <div className="col-span-1 space-y-4 md:col-span-2 p-6 w-full min-h-full  dark:bg-secondary-background rounded-r-sm">
         <h2 className="font-semibold mb-3">Account Details:</h2>
         <div className="text-[14px] font-mono">
           {activeUser === undefined ? (
@@ -253,6 +269,14 @@ export default function AccountRender() {
   }
 
   async function handleUserUpdate() {
+    if (!name && !phone && !email) return;
+    if (
+      userRef.current.email === activeUser?.user.email &&
+      userRef.current.name === activeUser?.user.user_metadata.name &&
+      userRef.current.phone === activeUser?.user.phone
+    )
+      return;
+
     try {
       const res = await fetch("/api/account/update-user", {
         method: "POST",
@@ -279,6 +303,13 @@ export default function AccountRender() {
       toast.success("User updated", {
         style: { backgroundColor: "green", color: "white" },
       });
+
+      userRef.current.email = activeUser?.user.email;
+      userRef.current.name = activeUser?.user.user_metadata.name;
+      userRef.current.phone = activeUser?.user.phone;
+
+      // clear cache
+      sessionStorage.removeItem("user-account");
     } catch (err) {
       console.error("Network or server error:", err);
     }

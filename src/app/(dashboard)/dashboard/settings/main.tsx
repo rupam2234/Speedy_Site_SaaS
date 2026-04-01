@@ -168,7 +168,8 @@ export default function Main() {
         {/* RUM Integration - Wider Section */}
         <div className="col-span-1 md:col-span-8">
           <Integrations
-            siteId={siteData?.order_id}
+            siteData={siteData}
+            setSiteData={(e) => setSiteData(e)}
             cfData={cloudflareStatus}
             setCfData={() => {
               // setCloudflareStatus;
@@ -183,14 +184,25 @@ export default function Main() {
   async function fetchDomainData(selectedSite: string) {
     if (!selectedSite) return;
 
-    const siteKey = `${selectedSite}-domain-info`;
     const cfKey = `${selectedSite}-cloudflare-status`;
     const expiry = 5 * 60 * 1000; // five minutes
 
     // Check site data cache
-    const cachedSiteData = getRateLimiter(siteKey);
-    if (cachedSiteData) {
-      setSiteData(cachedSiteData);
+
+    const cachedDomainData = sessionStorage.getItem("orders");
+    let filteredDomainData;
+
+    if (cachedDomainData) {
+      const temp = JSON.parse(cachedDomainData);
+
+      filteredDomainData =
+        temp !== null && temp.length > 0
+          ? temp.filter((x: OrderData) => x.website_name === selectedSite)
+          : [];
+    }
+
+    if (filteredDomainData.length > 0) {
+      setSiteData(filteredDomainData[0]);
     } else {
       try {
         const siteRes = await fetch("/api/orders/get-site", {
@@ -204,20 +216,16 @@ export default function Main() {
 
         if (!siteRes.ok || !siteBody.data || !siteBody.data.length) {
           setSiteData(undefined);
-          setRatelimiter({ key: siteKey, ttl: expiry, value: undefined });
           throw new Error(siteBody.message || "Failed to fetch site data");
         }
 
         const siteData = siteBody.data[0];
         setSiteData(siteData);
-        setRatelimiter({ key: siteKey, ttl: expiry, value: siteData });
       } catch (error) {
         console.error("Error fetching site data:", error);
         return;
       }
     }
-
-    const siteData = getRateLimiter(siteKey); // guaranteed to exist here
 
     // Check Cloudflare status cache
     const cachedCFStatus = getRateLimiter(cfKey);
@@ -230,8 +238,8 @@ export default function Main() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            user_id: siteData.user_id,
-            site_id: siteData.order_id,
+            user_id: siteData?.user_id,
+            site_id: siteData?.order_id,
           }),
         });
 

@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
 
     // else we run the analysis
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+
     const aiResponse = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Analyze these WordPress plugins for performance impact. Rank them by their potential to slow down a site. 
