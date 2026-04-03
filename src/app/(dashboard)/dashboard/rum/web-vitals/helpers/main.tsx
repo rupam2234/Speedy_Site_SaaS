@@ -340,7 +340,7 @@ export default function Main() {
                 trigger={
                   <InfoIcon
                     size={16}
-                    className="text-primary/60 cursor-pointer hover:bg-primary/5 rounded-full transition-colors"
+                    className="text-primary/60 cursor-help hover:bg-primary/5 rounded-full transition-colors"
                   />
                 }
                 content={

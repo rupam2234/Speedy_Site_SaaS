@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Main from "./main";
 
 export const metadata: Metadata = {
-  title: "Font Bottleneck Diagnostics | Speedy Site",
+  title: "Font Bottlenecks | Speedy Site",
   description:
     "Discover which fonts are slowing down your site. Track 'Flash of Invisible Text' (FOIT) issues and optimize font delivery for better Core Web Vitals.",
 };

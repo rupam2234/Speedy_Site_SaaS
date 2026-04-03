@@ -9,9 +9,14 @@ import {
   Smartphone,
   HelpCircle,
   Tablet,
+  SortDesc,
 } from "lucide-react";
 import TooltipIcon from "@/components/theme/customTooltip";
-import { LoadingAnimation, PrimaryToolbar } from "@/components/theme";
+import {
+  CustomTooltip,
+  LoadingAnimation,
+  PrimaryToolbar,
+} from "@/components/theme";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 
 interface FontMetric {
@@ -25,11 +30,23 @@ interface FontMetric {
   poor_lcp_pct: number;
 }
 
+const filters = {
+  Samples: "samples",
+  "Average LCP": "avgLCP",
+  "Render Delay": "renderDelay",
+  "LCP Involvement": "lcpInvolvement",
+} as const;
+
+type SortBy = keyof typeof filters;
+
 export default function FontAnalysis() {
   const { selectedSite, selectedDevice } = useSiteContext();
   const [fontData, setFontData] = useState<FontMetric[]>([]);
   const [loading, setLoading] = useState(false);
   const lastFetched = useRef<string | null>(null);
+  const [sortBy, setSorting] = useState<SortBy>("Samples");
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     cleanExpiredCache({ prefix: "font-analysis", session_Storage: false });
@@ -38,18 +55,6 @@ export default function FontAnalysis() {
       lastFetched.current = selectedSite;
     }
   }, [selectedSite]);
-
-  const filteredFonts = useMemo(() => {
-    if (!fontData) return [];
-    return fontData
-      .filter(
-        (f) =>
-          !selectedDevice ||
-          selectedDevice === "All" ||
-          f.device_type.toLowerCase() === selectedDevice.toLowerCase(),
-      )
-      .sort((a, b) => b.avg_render_delay_ms - a.avg_render_delay_ms); // Sort by biggest bottleneck
-  }, [fontData, selectedDevice]);
 
   async function fetchData() {
     setLoading(true);
@@ -70,6 +75,34 @@ export default function FontAnalysis() {
     if (response) setFontData(response);
     setLoading(false);
   }
+
+  const filteredFonts = useMemo(() => {
+    if (!fontData) return [];
+    return fontData.filter(
+      (f) =>
+        !selectedDevice ||
+        selectedDevice === "All" ||
+        f.device_type.toLowerCase() === selectedDevice.toLowerCase(),
+    );
+  }, [fontData, selectedDevice]);
+
+  const sortedFonts = useMemo(() => {
+    return sortFonts({
+      fonts: filteredFonts,
+      sortBy: filters[sortBy],
+    });
+  }, [filteredFonts, sortBy]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (!selectedSite || loading) {
     return (
@@ -111,11 +144,46 @@ export default function FontAnalysis() {
         isSticky={true}
         enableAllDevices={true}
         disableCalender={true}
-      />
+      >
+        <div ref={ref} className="relative inline-block text-sm">
+          {/* Trigger */}
+          <CustomTooltip
+            content={"Sort by"}
+            width="60px"
+            trigger={
+              <div
+                className="border rounded px-4 py-2 bg-primary/5 cursor-pointer flex items-center gap-2"
+                onClick={() => setOpen((prev) => !prev)}
+              >
+                <SortDesc size={14} className="text-primary/80" />
+                <p>{sortBy}</p>
+              </div>
+            }
+          />
+
+          {/* Dropdown */}
+          {open && (
+            <div className="absolute right-0 mt-1 w-48 border rounded shadow bg-primary-foreground dark:bg-secondary-background z-10">
+              {Object.entries(filters).map(([label]) => (
+                <div
+                  key={label}
+                  onClick={() => {
+                    setSorting(label as SortBy);
+                    setOpen(false);
+                  }}
+                  className="p-2 cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/30"
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </PrimaryToolbar>
 
       <div className="text-primary mt-4">
         <div className="w-full">
-          {filteredFonts.length > 0 ? (
+          {sortedFonts?.length > 0 ? (
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="text-[10px] uppercase tracking-widest text-primary/40 border-b border-primary/10">
@@ -140,7 +208,7 @@ export default function FontAnalysis() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-primary/5">
-                {filteredFonts.map((font, idx) => (
+                {sortedFonts.map((font, idx) => (
                   <tr
                     key={idx}
                     className="group hover:bg-primary/3 transition-colors"
@@ -236,4 +304,23 @@ function ScoreBadge({ percentage }: { percentage: number }) {
   return (
     <div className="text-[12px] text-primary italic">{percentage}% Poor</div>
   );
+}
+
+function sortFonts({
+  fonts,
+  sortBy,
+}: {
+  fonts: FontMetric[];
+  sortBy: "samples" | "avgLCP" | "renderDelay" | "lcpInvolvement";
+}) {
+  const sorted = {
+    samples: [...fonts].sort((a, b) => b.sample_count - a.sample_count),
+    avgLCP: [...fonts].sort((a, b) => b.avg_lcp_ms - a.avg_lcp_ms),
+    renderDelay: [...fonts].sort(
+      (a, b) => b.avg_render_delay_ms - a.avg_render_delay_ms,
+    ),
+    lcpInvolvement: [...fonts].sort((a, b) => b.poor_lcp_pct - a.poor_lcp_pct),
+  };
+
+  return sorted[sortBy];
 }

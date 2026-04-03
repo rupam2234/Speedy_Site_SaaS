@@ -3,10 +3,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
+import { InfoIcon } from "lucide-react";
 
 interface TooltipIconProps {
   content: string | React.ReactNode;
   side?: "top" | "right" | "bottom" | "left";
+  /**
+   * sets a difault trigger <Infoicon/> -> optional
+   */
   trigger?: React.ReactNode;
   width?: string; // e.g., "300px" or "20rem"
   delay?: number;
@@ -15,7 +19,12 @@ interface TooltipIconProps {
 export default function TooltipIcon({
   content,
   side = "left",
-  trigger,
+  trigger = (
+    <InfoIcon
+      size={16}
+      className="text-primary/60 cursor-help hover:bg-primary/5 rounded-full transition-colors"
+    />
+  ),
   width = "300px",
   delay = 300,
 }: TooltipIconProps) {

@@ -5,7 +5,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { CustomTooltip } from ".";
-import { InfoIcon } from "lucide-react";
 
 type Props = {
   /**
@@ -88,12 +87,6 @@ export default function CustomCalendar({ defaultDateRange, limited }: Props) {
               The date range defaults to the past 30 days from today, but you
               can modify it as needed.
             </>
-          }
-          trigger={
-            <InfoIcon
-              size={16}
-              className="rounded-full text-primary/40 hover:text-primary/80 hover:bg-primary/10"
-            />
           }
         />
 

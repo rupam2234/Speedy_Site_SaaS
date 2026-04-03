@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { ChartScatter, InfoIcon } from "lucide-react";
+import { ChartScatter } from "lucide-react";
 import { useSiteContext } from "../../app/(dashboard)/dashboard/siteContext";
 import { useEffect, useRef, useState } from "react";
 import { SidebarTrigger } from "../ui/sidebar";
@@ -118,12 +118,6 @@ export default function PrimaryToolbar({
                 }
                 width="16rem"
                 side="bottom"
-                trigger={
-                  <InfoIcon
-                    className="bg-transparent hover:bg-primary/5 text-primary/50 p-0.5 rounded-full"
-                    size={22}
-                  />
-                }
               />
             </>
           )}

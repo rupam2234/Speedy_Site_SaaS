@@ -1,5 +1,6 @@
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { MonitorSmartphone } from "lucide-react";
+import { CustomTooltip } from ".";
 
 interface Props {
   /**
@@ -27,7 +28,13 @@ export function DeviceController({ disableAllDevices, disableTablet }: Props) {
   return (
     <div className="p-1.5 dark:bg-secondary-background bg-gray-500/10 border-gray-500/20 border rounded-sm">
       <div className="flex gap-2 w-full items-center px-2">
-        <MonitorSmartphone size={18} className="mr-2" />
+        <CustomTooltip
+          content={"Select a device type"}
+          trigger={<MonitorSmartphone size={18} className="mr-2" />}
+          width="130px"
+          side="bottom"
+        />
+
         {disableAllDevices ? (
           <>
             {devices

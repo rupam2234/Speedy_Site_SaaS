@@ -7,7 +7,7 @@ import {
   getColor,
 } from "../helper";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, InfoIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { CustomTooltip } from "@/components/theme";
 import { useIsMobile } from "@/components/theme/use-mobile";
 import { useSiteContext } from "../../siteContext";
@@ -172,8 +172,22 @@ export default function DashboardChartContainer() {
         <div className="flex items-center gap-2 text-sm">
           {!isMobile && (
             <CustomTooltip
-              content="Percentile vs Distribution explanation"
-              trigger={<InfoIcon className="text-primary/80 cursor-pointer" />}
+              content=<div className="space-y-3">
+                <p>
+                  p75 (75th percentile) in Web Vitals shows the value below
+                  which 75% of users&apos; experiences fall, giving a quick
+                  snapshot of how most visitors experience metrics like LCP,
+                  FID, or CLS. It summarizes the majority experience while
+                  ignoring extreme outliers.
+                </p>
+                <p>
+                  Distribution shows the full range of user experiences, often
+                  broken into &quot;Good,” “Needs Improvement,” and “Poor”
+                  categories. It reveals how all users are affected, including
+                  those with slow or problematic experiences, giving a more
+                  detailed view than a single percentile.
+                </p>
+              </div>
             />
           )}
 
