@@ -255,7 +255,7 @@ export default function Main() {
                             }
                             className="mt-1 w-full text-center bg-green-700 hover:bg-green-600 text-white text-[10px] font-black uppercase py-2 rounded transition-colors shadow-lg"
                           >
-                            Open RUM Web Vitals
+                            Try using real user monitoring instead
                           </button>
                         </div>
                       }
