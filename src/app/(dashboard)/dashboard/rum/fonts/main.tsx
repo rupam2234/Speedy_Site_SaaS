@@ -152,7 +152,7 @@ export default function FontAnalysis() {
             width="60px"
             trigger={
               <div
-                className="border rounded px-4 py-2 bg-primary/5 cursor-pointer flex items-center gap-2"
+                className="border rounded-sm border-primary/20 px-4 py-2 bg-primary/5 cursor-pointer flex items-center gap-2"
                 onClick={() => setOpen((prev) => !prev)}
               >
                 <SortDesc size={14} className="text-primary/80" />
