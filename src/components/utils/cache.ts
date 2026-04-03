@@ -59,12 +59,7 @@ export async function cachedData<T>({
   }
 
   // if no cache fetch fresh data
-  let response: T;
-  try {
-    response = await fn();
-  } catch (error) {
-    throw error;
-  }
+  const response = await fn();
 
   if (ttl <= 0) {
     return { response, isCached: false };
@@ -83,7 +78,10 @@ export async function cachedData<T>({
   }
 
   // retrun the new data
-  return { response: response, isCached: false };
+  return {
+    response: response,
+    isCached: false,
+  };
 }
 
 /**

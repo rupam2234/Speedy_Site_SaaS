@@ -4,7 +4,14 @@ import { OrderData } from "@/app/api/dataTypes";
 import { useState } from "react";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
 import { cachedData } from "../utils";
-import { Check, ChevronDown, ChevronUp, Code2, Copy } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Code2,
+  Copy,
+  LoaderCircle,
+} from "lucide-react";
 
 interface Props {
   setDisplay: ({ display }: { display: boolean }) => void;
@@ -14,7 +21,6 @@ type Steps =
   | "idle"
   | "validating"
   | "fetching favicon"
-  | "uploading favicon"
   | "upload failed"
   | "creating order"
   | "error"
@@ -89,15 +95,21 @@ export function AddNewWebsite({ setDisplay }: Props) {
 
             <button
               disabled={isProcessing}
+              onClick={() => {
+                return (document.getElementById("log")!.textContent = "");
+              }}
               className="bg-green-300 border border-[#141414] px-4 py-2 text-xs font-bold uppercase tracking-wide hover:bg-green-500 transition-all"
             >
-              Add Site
+              {isProcessing ? (
+                <LoaderCircle
+                  size={16}
+                  className="text-primary/20 min-w-14 animate-spin transition-all delay-300"
+                />
+              ) : (
+                "Add Site"
+              )}
             </button>
           </form>
-
-          {error && (
-            <p className="text-red-500 font-medium text-xs mb-4">{error}</p>
-          )}
 
           <div className="mt-6">
             <h4 className="font-bold uppercase text-xs mb-2 text-primary/80">
@@ -110,8 +122,14 @@ export function AddNewWebsite({ setDisplay }: Props) {
             />
           </div>
 
+          {error && (
+            <p className="mt-2 text-red-500 font-medium text-xs mb-4">
+              {error}
+            </p>
+          )}
+
           {success !== null && (
-            <div className="mt-10 space-y-3">
+            <div className="mt-2 space-y-3">
               {/* Success Message */}
               <div className="flex items-center gap-2 text-emerald-600 font-medium capitalize text-sm">
                 {success}
@@ -224,10 +242,9 @@ export function AddNewWebsite({ setDisplay }: Props) {
     }
 
     let favicon_file = null;
-    appendLog("fetching favicon");
     const favicon = await getFavicon(cleanDomain);
 
-    appendLog("uploading favicon");
+    appendLog("fetching favicon");
     if (favicon) {
       try {
         favicon_file = await uploadFavicon(favicon, cleanDomain);
@@ -244,9 +261,27 @@ export function AddNewWebsite({ setDisplay }: Props) {
     appendLog("creating order");
     const res = await addOrder(favicon_file, cleanDomain);
 
-    if (res.status !== 200) {
+    if (!res) {
+      setError("Unexpected error occurred.");
       appendLog("error");
-      setError(res.body.message);
+      setProcessing(false);
+      return;
+    }
+
+    if (res.status === 409) {
+      setError(
+        res.body.message ||
+          "Site already exists. Please check your site list or contact support",
+      );
+      appendLog("error");
+      setProcessing(false);
+      return;
+    }
+
+    // Handle other errors
+    if (res.status !== 200) {
+      setError(res.body.message || "Failed to create site.");
+      appendLog("error");
       setProcessing(false);
       return;
     }
@@ -261,10 +296,8 @@ export function AddNewWebsite({ setDisplay }: Props) {
   async function addOrder(
     uploadedFavicon: string | null,
     domain: string,
-  ): Promise<any | null> {
-    if (!domain) {
-      return;
-    }
+  ): Promise<{ status: number; body: any } | null> {
+    if (!domain) return null;
 
     const orderData: OrderData = {
       order_status: true,
@@ -275,35 +308,28 @@ export function AddNewWebsite({ setDisplay }: Props) {
 
     const key = `orders`;
 
-    const { response } = await cachedData({
-      fn: fetchNewOrders,
-      session_Storage: true,
-      ttl: 5 * 60 * 1000,
-      key: key,
-    });
+    try {
+      const { response } = await cachedData({
+        fn: async () => {
+          const res = await fetch("/api/orders/newOrder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderData, user_id: user?.id }),
+          });
 
-    async function fetchNewOrders() {
-      const res = await fetch("/api/orders/newOrder", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+          const body = await res.json();
+
+          return { status: res.status, body };
         },
-        body: JSON.stringify({ orderData: orderData, user_id: user?.id }),
+        session_Storage: true,
+        ttl: 5 * 60 * 1000,
+        key,
       });
 
-      const body: any = await res.json();
-
-      if (!res.ok) {
-        throw new Error(body.message);
-      }
-
-      sessionStorage.removeItem("orders");
-      sessionStorage.removeItem("orders-ts");
-
-      return { status: res.status, body: body };
+      return response;
+    } catch (error: any) {
+      return { status: 500, body: { message: error.message } };
     }
-
-    return response;
   }
 }
 

@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
     if (existingSite) {
       return NextResponse.json(
-        { message: `This site is already added: ${orderData.website_name}` },
+        { message: `${orderData.website_name} already exists.` },
         { status: 409 },
       );
     }

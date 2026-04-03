@@ -352,13 +352,16 @@ export default function Integrations({
     setRumScript({ loading: true, isAvailable: false });
 
     try {
-      const res = await fetch("/api/orders/validate-rum-script", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const res = await fetch(
+        "https://speedy-site-rum-check-production.up.railway.app/api/check-script",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ domain: selectedSite }),
         },
-        body: JSON.stringify({ domain: selectedSite }),
-      });
+      );
 
       let body: any;
       try {
