@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
+import { CustomTooltip } from ".";
+import { InfoIcon } from "lucide-react";
 
 type Props = {
   /**
@@ -79,27 +81,44 @@ export default function CustomCalendar({ defaultDateRange, limited }: Props) {
 
   return (
     <div className="relative w-full max-w-75">
-      {/* Trigger */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full cursor-pointer rounded-md px-3 py-2
-          flex justify-between items-center text-sm
+      <div className="flex items-center gap-2">
+        <CustomTooltip
+          content={
+            <>
+              The date range defaults to the past 30 days from today, but you
+              can modify it as needed.
+            </>
+          }
+          trigger={
+            <InfoIcon
+              size={16}
+              className="rounded-full text-primary/40 hover:text-primary/80 hover:bg-primary/10"
+            />
+          }
+        />
+
+        {/* Trigger */}
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="w-full cursor-pointer rounded-md px-3 py-2
+          flex justify-between items-center gap-3 text-sm
           dark:bg-secondary-background bg-gray-500/10
           border border-gray-500/20"
-      >
-        <span>
-          {start
-            ? `${format(start, "MMM dd, yyyy")} → ${
-                end ? format(end, "MMM dd, yyyy") : "—"
-              }`
-            : "Select date range"}
-        </span>
-        <span>📅</span>
-      </button>
+        >
+          <span>
+            {start
+              ? `${format(start, "MMM dd, yyyy")} → ${
+                  end ? format(end, "MMM dd, yyyy") : "—"
+                }`
+              : "Select date range"}
+          </span>
+          <span>📅</span>
+        </button>
+      </div>
 
       {/* Calendar */}
       {open && (
-        <div className="absolute z-20 mt-2 rounded-lg border shadow-lg bg-white">
+        <div className="absolute right-0 z-20 mt-2 rounded-lg border shadow-lg bg-white">
           <Calendar
             mode="multiple"
             selected={dates}
