@@ -316,19 +316,20 @@ function handleLCP(metric) {
       ?.replace(/["']/g, "")
       .trim();
 
-    const fontResource = resourceEntries
-      .filter((e) => e.initiatorType === "font")
-      .find((e) => {
-        const fileName = e.name.split("/").pop()?.toLowerCase() || "";
-        return fontFamily && fileName.includes(fontFamily.toLowerCase());
-      });
+    const normalize = (str) => str.toLowerCase().replace(/[\s_\-\+]+/g, "-");
+
+    const fontResource = performance
+      .getEntriesByType("resource")
+      .filter((x) => normalize(x.name).includes(normalize(fontFamily)));
 
     fontAttribution = {
       family: fontFamily,
       weight: styles.fontWeight,
       size: styles.fontSize,
-      url: fontResource?.name || null,
-      transferSize: fontResource?.transferSize ?? null,
+      fontData: fontResource.map((x) => ({
+        url: x.name ?? null,
+        transferSize: x.transferSize ?? null,
+      })),
     };
   }
 

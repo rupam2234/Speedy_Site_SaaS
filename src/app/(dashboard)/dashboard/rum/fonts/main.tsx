@@ -7,9 +7,13 @@ import {
   Type,
   Monitor,
   Smartphone,
-  HelpCircle,
   Tablet,
   SortDesc,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  Globe,
+  Link,
 } from "lucide-react";
 import TooltipIcon from "@/components/theme/customTooltip";
 import {
@@ -18,16 +22,19 @@ import {
   PrimaryToolbar,
 } from "@/components/theme";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
+import { cwv_ranges } from "../cwvRanges";
 
 interface FontMetric {
-  device_type: string;
+  device: string;
   font_family: string;
   font_weight: string;
-  sample_count: number;
-  avg_lcp_ms: number;
-  avg_render_delay_ms: number;
-  avg_font_load_ms: number;
-  poor_lcp_pct: number;
+  font_file_url: string | null;
+  avg_resource_size: number | null;
+  major_pages: string[];
+  total_occurrences: number;
+  avg_lcp: number;
+  avg_render_delay: number;
+  poor_lcp_percentage: number;
 }
 
 const filters = {
@@ -39,10 +46,42 @@ const filters = {
 
 type SortBy = keyof typeof filters;
 
+const tableHeadlinesArray = [
+  {
+    key: "Font Family",
+    description:
+      "The font family that contributed to page load across your site.",
+  },
+  {
+    key: "Device",
+    description: "The type of device where this font contributed to page load.",
+  },
+  {
+    key: "Avg. LCP",
+    description: "Average contribution of a font to largest contentful paint.",
+  },
+  {
+    key: "Render Delay",
+    description:
+      "Time the browser waited for the font before rendering text. High values may cause 'invisible text'.",
+  },
+  {
+    key: "Sample",
+    description:
+      "Number of times the font contributed to the Largest Contentful Paint.",
+  },
+  {
+    key: "LCP Involvement",
+    description:
+      "Percentage contribution of this font to Largest Contentful Paint (LCP) issues across your site.",
+  },
+];
+
 export default function FontAnalysis() {
   const { selectedSite, selectedDevice } = useSiteContext();
   const [fontData, setFontData] = useState<FontMetric[]>([]);
   const [loading, setLoading] = useState(false);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const lastFetched = useRef<string | null>(null);
   const [sortBy, setSorting] = useState<SortBy>("Samples");
   const [open, setOpen] = useState(false);
@@ -56,33 +95,13 @@ export default function FontAnalysis() {
     }
   }, [selectedSite]);
 
-  async function fetchData() {
-    setLoading(true);
-    const { response } = await cachedData({
-      fn: async () => {
-        const res = await fetch("/api/rum/fonts/analysis", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ domain: selectedSite }),
-        });
-        const body: any = await res.json();
-        return body.data;
-      },
-      key: `font-analysis:${selectedSite}`,
-      session_Storage: false,
-      ttl: 5 * 60 * 1000,
-    });
-    if (response) setFontData(response);
-    setLoading(false);
-  }
-
   const filteredFonts = useMemo(() => {
     if (!fontData) return [];
     return fontData.filter(
       (f) =>
         !selectedDevice ||
         selectedDevice === "All" ||
-        f.device_type.toLowerCase() === selectedDevice.toLowerCase(),
+        f.device.toLowerCase() === selectedDevice.toLowerCase(),
     );
   }, [fontData, selectedDevice]);
 
@@ -99,7 +118,6 @@ export default function FontAnalysis() {
         setOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -142,11 +160,10 @@ export default function FontAnalysis() {
         defaultDateRange={7}
         enableDistribution={false}
         isSticky={true}
-        enableAllDevices={true}
+        enableAllDevices={false}
         disableCalender={true}
       >
         <div ref={ref} className="relative inline-block text-sm">
-          {/* Trigger */}
           <CustomTooltip
             content={"Sort by"}
             width="60px"
@@ -160,8 +177,6 @@ export default function FontAnalysis() {
               </div>
             }
           />
-
-          {/* Dropdown */}
           {open && (
             <div className="absolute right-0 mt-1 w-48 border rounded shadow bg-primary-foreground dark:bg-secondary-background z-10">
               {Object.entries(filters).map(([label]) => (
@@ -186,70 +201,168 @@ export default function FontAnalysis() {
           {sortedFonts?.length > 0 ? (
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-[10px] uppercase tracking-widest text-primary/40 border-b border-primary/10">
-                  <th className="py-3 px-6 font-bold">Font Family</th>
-                  <th className="py-3 px-4 font-bold text-center">Device</th>
-                  <th className="py-3 px-4 font-bold text-center">
-                    Avg. LCP / Samples
-                  </th>
-                  <th className="py-3 px-4 font-bold text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      Render Delay
-                      <TooltipIcon
-                        content="Time the browser waited for the font before painting text. High values cause 'invisible text'."
-                        trigger={<HelpCircle size={10} />}
+                <tr className="text-[10px] uppercase tracking-widest text-primary/60 border-b border-primary/10">
+                  <th className="py-3 px-4 w-10"></th> {/* Expand arrow col */}
+                  {tableHeadlinesArray?.map((x, index) => (
+                    <th
+                      className={`py-3 px-4 font-bold hover:text-primary/80 ${
+                        x.key === "Font Family"
+                          ? "text-left"
+                          : x.key === "LCP Involvement" || x.key === "Sample"
+                            ? "text-right"
+                            : "text-center"
+                      }`}
+                      key={index}
+                    >
+                      <CustomTooltip
+                        content={x.description}
+                        side="left"
+                        width="200px"
+                        trigger={<p className="cursor-help">{x.key}</p>}
                       />
-                    </div>
-                  </th>
-                  <th className="py-3 px-4 font-bold text-center">Load Time</th>
-                  <th className="py-3 px-6 font-bold text-right">
-                    LCP Involvement
-                  </th>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-primary/5">
-                {sortedFonts.map((font, idx) => (
-                  <tr
-                    key={idx}
-                    className="group hover:bg-primary/3 transition-colors"
-                  >
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/5 rounded-md">
-                          <Type size={16} className="text-primary/60" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-semibold">
-                            {font.font_family}
-                          </span>
-                          <span className="text-[10px] opacity-40 font-mono">
-                            Weight: {font.font_weight}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      <div className="flex items-center justify-center">
-                        {font.device_type === "mobile" ? (
-                          <Smartphone size={14} className="opacity-40" />
-                        ) : font.device_type === "desktop" ? (
-                          <Monitor size={14} className="opacity-40" />
-                        ) : (
-                          <Tablet size={14} className="opacity-40 rotate-90" />
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-center font-mono text-xs italic">
-                      {(font.avg_lcp_ms / 1000).toFixed(2)}s /{" "}
-                      {font.sample_count}
-                    </td>
-                    <MetricCell value={font.avg_render_delay_ms} type="delay" />
-                    <MetricCell value={font.avg_font_load_ms} type="load" />
-                    <td className="py-4 px-6 text-right">
-                      <ScoreBadge percentage={font.poor_lcp_pct} />
-                    </td>
-                  </tr>
-                ))}
+                {sortedFonts.map((font, idx) => {
+                  const rowId = `${font.font_family}-${font.device}-${idx}`;
+                  const isExpanded = expandedRow === rowId;
+
+                  return (
+                    <React.Fragment key={rowId}>
+                      <tr
+                        className={`group cursor-pointer transition-colors ${isExpanded ? "bg-primary/5" : "hover:bg-primary/3"}`}
+                        onClick={() =>
+                          setExpandedRow(isExpanded ? null : rowId)
+                        }
+                      >
+                        <td className="py-4 px-4 text-center">
+                          {isExpanded ? (
+                            <ChevronDown size={14} className="text-primary" />
+                          ) : (
+                            <ChevronRight
+                              size={14}
+                              className="opacity-30 group-hover:opacity-100"
+                            />
+                          )}
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/5 rounded-md">
+                              <Type size={16} className="text-primary/60" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold">
+                                {font.font_family}
+                              </span>
+                              <span className="text-[10px] opacity-40 font-mono">
+                                Weight: {font.font_weight}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <div className="flex items-center justify-center">
+                            {font.device === "mobile" ? (
+                              <Smartphone size={14} className="opacity-40" />
+                            ) : font.device === "desktop" ? (
+                              <Monitor size={14} className="opacity-40" />
+                            ) : (
+                              <Tablet
+                                size={14}
+                                className="opacity-40 rotate-90"
+                              />
+                            )}
+                          </div>
+                        </td>
+                        <td
+                          className={`py-4 px-6 text-center font-mono text-xs italic ${
+                            font.avg_lcp < cwv_ranges.lcp[0]
+                              ? "text-green-500"
+                              : font.avg_lcp < cwv_ranges.lcp[1]
+                                ? "text-yellow-500"
+                                : "text-red-500"
+                          }`}
+                        >
+                          {(font.avg_lcp / 1000).toFixed(2)}s
+                        </td>
+                        <MetricCell
+                          value={font.avg_render_delay}
+                          type="delay"
+                        />
+                        <td className="py-4 px-8 text-right text-xs">
+                          {font.total_occurrences.toLocaleString()}
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <ScoreBadge percentage={font.poor_lcp_percentage} />
+                        </td>
+                      </tr>
+
+                      {/* EXPANDED SECTION */}
+                      {isExpanded && (
+                        <tr className="bg-primary/2">
+                          <td
+                            colSpan={7}
+                            className="py-6 px-14 border-b border-primary/10"
+                          >
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                              {/* Left: Font File */}
+                              <div className="flex flex-col gap-2">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/80 flex items-center gap-2">
+                                  <Link size={12} /> Font Resource URL
+                                </h4>
+                                {font.font_file_url ? (
+                                  <a
+                                    href={font.font_file_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs font-mono text-blue-500 hover:underline break-all bg-primary/5 p-3 rounded border border-primary/5"
+                                  >
+                                    {font.font_file_url}
+                                  </a>
+                                ) : (
+                                  <span className="text-xs italic opacity-40">
+                                    Not detected / System Font
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Right: Pages */}
+                              <div className="flex flex-col gap-2">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
+                                  <Globe size={12} /> Top Affected Pages
+                                </h4>
+                                <div className="flex flex-col gap-1">
+                                  {font.major_pages?.map((page, pIdx) => (
+                                    <div
+                                      key={pIdx}
+                                      className="flex items-center justify-between group/link bg-primary/5 px-3 py-1.5 rounded"
+                                    >
+                                      <span className="text-xs font-mono opacity-70 truncate max-w-75">
+                                        {page}
+                                      </span>
+                                      <a
+                                        href={`https://${selectedSite}${page}`}
+                                        target="_blank"
+                                        className="opacity-0 group-hover/link:opacity-100 transition-opacity"
+                                      >
+                                        <ExternalLink
+                                          size={12}
+                                          className="text-primary/40 hover:text-primary"
+                                        />
+                                      </a>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           ) : (
@@ -261,6 +374,26 @@ export default function FontAnalysis() {
       </div>
     </>
   );
+
+  async function fetchData() {
+    setLoading(true);
+    const { response } = await cachedData({
+      fn: async () => {
+        const res = await fetch("/api/rum/fonts/analysis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ domain: selectedSite }),
+        });
+        const body: any = await res.json();
+        return body.data;
+      },
+      key: `font-analysis:${selectedSite}`,
+      session_Storage: false,
+      ttl: 5 * 60 * 1000,
+    });
+    if (response) setFontData(response);
+    setLoading(false);
+  }
 }
 
 /**
@@ -271,7 +404,7 @@ function MetricCell({
   type,
 }: {
   value: number;
-  type: "delay" | "load";
+  type: "delay" | "size";
 }) {
   const getStyle = () => {
     if (type === "delay") {
@@ -292,7 +425,8 @@ function MetricCell({
     <td
       className={`py-4 px-4 text-center font-mono text-xs font-bold ${getStyle()}`}
     >
-      {Math.round(value)}ms
+      {Math.round(value)}
+      {type === "delay" ? "ms" : ""}
     </td>
   );
 }
@@ -314,13 +448,16 @@ function sortFonts({
   sortBy: "samples" | "avgLCP" | "renderDelay" | "lcpInvolvement";
 }) {
   const sorted = {
-    samples: [...fonts].sort((a, b) => b.sample_count - a.sample_count),
-    avgLCP: [...fonts].sort((a, b) => b.avg_lcp_ms - a.avg_lcp_ms),
-    renderDelay: [...fonts].sort(
-      (a, b) => b.avg_render_delay_ms - a.avg_render_delay_ms,
+    samples: [...fonts].sort(
+      (a, b) => b.total_occurrences - a.total_occurrences,
     ),
-    lcpInvolvement: [...fonts].sort((a, b) => b.poor_lcp_pct - a.poor_lcp_pct),
+    avgLCP: [...fonts].sort((a, b) => b.avg_lcp - a.avg_lcp),
+    renderDelay: [...fonts].sort(
+      (a, b) => b.avg_render_delay - a.avg_render_delay,
+    ),
+    lcpInvolvement: [...fonts].sort(
+      (a, b) => b.poor_lcp_percentage - a.poor_lcp_percentage,
+    ),
   };
-
   return sorted[sortBy];
 }
