@@ -33,14 +33,18 @@ export default function AnalysisDashboard({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-40">
-        <div className="relative">
+        {/* Icon Wrapper */}
+        <div className="relative flex items-center justify-center">
           <RefreshCw className="animate-spin text-primary/40" size={48} />
+
           <Cpu
-            className="absolute top-1/2 left-1/2 -tranprimary-x-1/2 -tranprimary-y-1/2 opacity-40"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-40"
             size={20}
           />
         </div>
-        <p className="mt-6 font-mono uppercase tracking-[0.3em] text-xs opacity-50 animate-pulse">
+
+        {/* Text */}
+        <p className="mt-6 font-mono text-xs uppercase tracking-[0.3em] opacity-50 animate-pulse">
           Analyzing Plugins...
         </p>
       </div>

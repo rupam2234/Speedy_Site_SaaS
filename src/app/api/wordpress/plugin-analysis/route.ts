@@ -107,10 +107,6 @@ export async function POST(req: NextRequest) {
                   type: Type.OBJECT,
                   properties: {
                     name: { type: Type.STRING },
-                    benefit: {
-                      type: Type.STRING,
-                      description: "Why is this better in short?",
-                    },
                   },
                 },
               },
