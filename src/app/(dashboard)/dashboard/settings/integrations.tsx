@@ -5,7 +5,7 @@ import { ClipboardList, InfoIcon, Settings2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSiteContext } from "../siteContext";
-import { getRateLimiter, setRatelimiter } from "@/components/utils";
+import { cachedData } from "@/components/utils";
 import { OrderData } from "@/app/api/dataTypes";
 import { CustomTooltip } from "@/components/theme";
 
@@ -337,51 +337,83 @@ export default function Integrations({
       return;
     }
 
-    const key = selectedSite;
-    const FIVE_MINUTES = 5 * 60 * 1000;
-
-    // rate limiting...
-    const lastCall: boolean = getRateLimiter(key);
-
-    if (lastCall) {
-      console.log("API call skipped: still within 5 minutes window");
-      setRumScript({ loading: false, isAvailable: lastCall, isSet: true });
-      return;
-    }
+    const key = `rum-connection:${selectedSite}`;
 
     setRumScript({ loading: true, isAvailable: false });
 
-    try {
-      const res = await fetch(
-        "https://speedy-site-rum-check-production.up.railway.app/api/check-script",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+    const { response } = await cachedData({
+      fn: async () => {
+        const res = await fetch(
+          "https://speedy-site-rum-check-production.up.railway.app/api/check-script",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ domain: selectedSite }),
           },
-          body: JSON.stringify({ domain: selectedSite }),
-        },
-      );
+        );
 
-      let body: any;
-      try {
-        body = await res.json();
-      } catch {
-        throw new Error(body?.message || `API returned status ${res.status}`);
-      }
+        let body: any;
+        try {
+          body = await res.json();
+        } catch {
+          throw new Error(body?.message || `API returned status ${res.status}`);
+        }
 
-      const scriptExists = body.scriptExists;
+        return body;
+      },
+      key: key,
+      session_Storage: true,
+      ttl: 5 * 60 * 1000,
+    });
 
-      setRatelimiter({ key: key, ttl: FIVE_MINUTES, value: scriptExists });
-
+    if (response) {
+      console.log("API call skipped: still within 5 minutes window");
       setRumScript({
-        isAvailable: scriptExists,
         loading: false,
+        isAvailable: response.scriptExists,
         isSet: true,
       });
-    } catch (error: any) {
+    } else {
       setRumScript({ loading: false, isAvailable: false, isSet: true });
-      console.error(error.message);
+    }
+
+    // also update the cached site data to display connected instantly
+    const cachedOrder = sessionStorage.getItem("orders");
+
+    let updatedOrder: OrderData;
+
+    if (cachedOrder) {
+      const parsedOrders: OrderData[] = JSON.parse(cachedOrder);
+
+      const filteredSite = parsedOrders.find(
+        (x) => x.website_name === selectedSite,
+      );
+
+      if (!filteredSite) {
+        console.error("Order not found");
+        return;
+      }
+
+      updatedOrder = {
+        ...filteredSite,
+        rum_connection: response.scriptExists,
+      };
+
+      // updated order list
+      const newOrders = parsedOrders.map((x) =>
+        x.website_name === updatedOrder.website_name ? updatedOrder : x,
+      );
+
+      // saving update in cache
+      sessionStorage.setItem("orders", JSON.stringify(newOrders));
+
+      if (setSiteData) {
+        setSiteData(updatedOrder);
+      }
+    } else {
+      console.error("Error occured updating RUM connection status");
     }
   }
 
