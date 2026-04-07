@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   const { email }: any = await req.json();
 
   if (!email) {
-    return Response.json({ error: "Email is missing" }, { status: 404 });
+    return Response.json({ error: "Email is missing" }, { status: 400 });
   }
 
   const { data, error: PasswordError } =

@@ -12,10 +12,22 @@ export default function AuthCallbackClient() {
   }, []);
 
   async function handleAuthFlow() {
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+
+    if (!code) {
+      router.replace("/sign-in?error=no-code");
+      return;
+    }
+
     const {
       data: { session },
       error,
-    } = await supabase_client.auth.getSession();
+    } = await supabase_client.auth.exchangeCodeForSession(code);
+    // const {
+    //   data: { session },
+    //   error,
+    // } = await supabase_client.auth.getSession();
 
     if (error) {
       console.error("Failed to get session:", error);
@@ -29,17 +41,20 @@ export default function AuthCallbackClient() {
       return;
     }
 
+    window.history.replaceState({}, document.title, "/auth/callback"); // cleans the URL after exchange {code?= is not needed}
+
     const access_token = session.access_token;
 
     const response = await fetch("/api/account/auth", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${access_token}`,
-        "Content-Type": "application/json",
+        // "Content-Type": "application/json",
       },
     });
 
     const result: any = await response.json();
+
     if (!response.ok) {
       router.replace(
         `/sign-in?error=${encodeURIComponent(result.message || "unauthorized")}`,
