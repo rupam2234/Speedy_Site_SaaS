@@ -6,7 +6,6 @@ import {
   FlaskConical,
   LayoutDashboardIcon,
   Settings2,
-  Tickets,
   User2Icon,
 } from "lucide-react";
 import {
@@ -61,11 +60,11 @@ export default function AppSidebar({
           url: "/account/subscription",
           icon: CreditCard,
         },
-        {
-          title: "Tickets",
-          url: "/account/tickets",
-          icon: Tickets,
-        },
+        // {
+        //   title: "Tickets",
+        //   url: "/account/tickets",
+        //   icon: Tickets,
+        // },
       ],
     },
     navMain: [

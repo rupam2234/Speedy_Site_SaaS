@@ -9,6 +9,7 @@ import {
   Bug,
   Copy,
   Check,
+  LoaderCircle,
 } from "lucide-react";
 import TooltipIcon from "@/components/theme/customTooltip";
 import { LoadingAnimation, PrimaryToolbar } from "@/components/theme";
@@ -22,6 +23,7 @@ export default function PagePerformanceAnalysis() {
   const [activeTab, setActiveTab] = useState<PerformanceGroup>("poor");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const lastFetched = useRef<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     // clear all expired cache
@@ -125,7 +127,15 @@ export default function PagePerformanceAnalysis() {
 
       <div className="text-primary">
         <div className="w-full">
-          {filteredList.length > 0 ? (
+          {loading && filteredList.length === 0 && (
+            <div className="flex items-center justify-center min-h-[calc(100vh-500px)]">
+              <LoaderCircle
+                size={25}
+                className="text-primary/20 animate-spin"
+              />
+            </div>
+          )}
+          {!loading && filteredList.length > 0 && (
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="text-[10px] uppercase tracking-widest text-primary/40 border-b border-primary/10">
@@ -217,7 +227,8 @@ export default function PagePerformanceAnalysis() {
                 ))}
               </tbody>
             </table>
-          ) : (
+          )}
+          {!loading && filteredList.length === 0 && (
             <div className="py-20 text-center opacity-30 text-sm italic font-medium">
               No pages found in this category.
             </div>
@@ -228,6 +239,9 @@ export default function PagePerformanceAnalysis() {
   );
 
   async function fetchData() {
+    // start loading
+    setLoading(true);
+
     const { response } = await cachedData({
       fn: async () => {
         const res = await fetch("/api/rum/page_performance", {
@@ -242,11 +256,17 @@ export default function PagePerformanceAnalysis() {
       key: `page-groups:${selectedSite}`,
       ttl: 5 * 60 * 1000,
     });
-    if (response) setPageData(response);
+
+    if (!response) {
+      setPageData([]);
+      setLoading(false);
+      return;
+    }
+
+    setPageData(response);
+    setLoading(false);
   }
 }
-
-// ... MetricCell and TargetList components stay the same
 
 function MetricCell({
   value,

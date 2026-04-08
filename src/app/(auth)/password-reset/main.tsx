@@ -96,10 +96,6 @@ export default function Main() {
     }
   }
 
-  // function handleEyeClick() {
-  //   setEye((prev) => !prev);
-  // }
-
   return (
     <div className="min-h-screen md:py-0 pb-15 w-full grid grid-cols-1 md:grid-cols-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white overflow-hidden relative">
       <div className="col-span-full flex justify-between items-center px-6 py-4 absolute top-2 left-2 md:top-2 md:left-2 right-0 z-50">
