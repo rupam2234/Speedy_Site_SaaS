@@ -72,7 +72,7 @@ export default function CLSInsights({
     }
 
     const timer = setTimeout(() => {
-      setLoading(false); // fallback after 3s
+      setLoading(false);
     }, 5000);
 
     return () => clearTimeout(timer);
@@ -195,12 +195,12 @@ export default function CLSInsights({
                   key={`${item.target_element}-${item.device}`}
                   onMouseEnter={() => setActiveElement(item)}
                   className={`group relative flex items-center justify-between p-4 border-2 rounded-md cursor-pointer transition-all overflow-hidden
-          ${
-            isActive
-              ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-400 dark:border-neutral-500"
-              : "bg-white dark:bg-secondary-background border-neutral-100 dark:border-neutral-900 hover:border-neutral-300"
-          }
-        `}
+                    ${
+                      isActive
+                        ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-400 dark:border-neutral-500"
+                        : "bg-white dark:bg-secondary-background border-neutral-100 dark:border-neutral-900 hover:border-neutral-300"
+                    }
+                  `}
                 >
                   <div
                     className="absolute left-0 top-0 bottom-0 w-1.5"
@@ -222,7 +222,7 @@ export default function CLSInsights({
                   </div>
 
                   <div className="text-right">
-                    <div
+                    {/* <div
                       className="text-xl font-mono font-black tabular-nums leading-none"
                       style={{ color: isUrgent ? THEME.red : THEME.orange }}
                     >
@@ -230,7 +230,7 @@ export default function CLSInsights({
                       <span className="text-[11px] ml-1 opacity-50 font-sans tracking-tighter">
                         score
                       </span>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               );
@@ -300,7 +300,7 @@ export default function CLSInsights({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-neutral-50 dark:bg-neutral-800/50 p-3 rounded-md border border-neutral-100 dark:border-neutral-800">
                     <p className="text-[9px] font-black text-neutral-400 uppercase mb-1">
-                      Avg. Shift Magnitude
+                      Avg. Layout Shift
                     </p>
                     <p className="text-lg font-mono font-black">
                       {activeElement.avg_magnitude.toFixed(3)}
@@ -351,7 +351,7 @@ export default function CLSInsights({
                 {/* TEST PAGES */}
                 <div className="pt-4 border-t-2 border-neutral-100 dark:border-neutral-800">
                   <span className="text-[10px] font-black uppercase text-neutral-400 block mb-3">
-                    Live URL Test Samples
+                    Affacted Pages
                   </span>
                   <div className="space-y-2">
                     {activeElement.sample_pages_to_test.map((url, i) => (
