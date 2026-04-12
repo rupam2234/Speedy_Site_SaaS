@@ -69,6 +69,46 @@ export type Database = {
           },
         ];
       };
+      email_reporting: {
+        Row: {
+          optional_email: string | null;
+          order_id: string;
+          report_verbosity: number;
+        };
+        Insert: {
+          optional_email?: string | null;
+          order_id: string;
+          report_verbosity: number;
+        };
+        Update: {
+          optional_email?: string | null;
+          order_id?: string;
+          report_verbosity?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_reporting_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: true;
+            referencedRelation: "cloudflare_kv_tracking";
+            referencedColumns: ["order_id"];
+          },
+          {
+            foreignKeyName: "email_reporting_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: true;
+            referencedRelation: "orders";
+            referencedColumns: ["order_id"];
+          },
+          {
+            foreignKeyName: "email_reporting_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: true;
+            referencedRelation: "v_cf_zone_per_site";
+            referencedColumns: ["order_id"];
+          },
+        ];
+      };
       notifications: {
         Row: {
           created_at: string;
@@ -220,7 +260,29 @@ export type Database = {
           poor?: Json;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "rum_daily_distributions_domain_name_fkey";
+            columns: ["domain_name"];
+            isOneToOne: false;
+            referencedRelation: "cloudflare_kv_tracking";
+            referencedColumns: ["website_name"];
+          },
+          {
+            foreignKeyName: "rum_daily_distributions_domain_name_fkey";
+            columns: ["domain_name"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["website_name"];
+          },
+          {
+            foreignKeyName: "rum_daily_distributions_domain_name_fkey";
+            columns: ["domain_name"];
+            isOneToOne: false;
+            referencedRelation: "v_cf_zone_per_site";
+            referencedColumns: ["website_name"];
+          },
+        ];
       };
       rum_history_new: {
         Row: {
@@ -253,7 +315,29 @@ export type Database = {
           lcp?: Json;
           ttfb?: Json;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "rum_history_new_domain_name_fkey";
+            columns: ["domain_name"];
+            isOneToOne: false;
+            referencedRelation: "cloudflare_kv_tracking";
+            referencedColumns: ["website_name"];
+          },
+          {
+            foreignKeyName: "rum_history_new_domain_name_fkey";
+            columns: ["domain_name"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["website_name"];
+          },
+          {
+            foreignKeyName: "rum_history_new_domain_name_fkey";
+            columns: ["domain_name"];
+            isOneToOne: false;
+            referencedRelation: "v_cf_zone_per_site";
+            referencedColumns: ["website_name"];
+          },
+        ];
       };
       rum_metrics: {
         Row: {
@@ -851,14 +935,16 @@ export type Database = {
       font_analysis: {
         Args: { p_domain: string };
         Returns: {
-          avg_font_load_ms: number;
-          avg_lcp_ms: number;
-          avg_render_delay_ms: number;
-          device_type: string;
+          avg_lcp: number;
+          avg_render_delay: number;
+          avg_resource_size: number;
+          device: string;
           font_family: string;
+          font_file_url: string;
           font_weight: string;
-          poor_lcp_pct: number;
-          sample_count: number;
+          major_pages: string[];
+          poor_lcp_percentage: number;
+          total_occurrences: number;
         }[];
       };
       get_ai_citation: {
@@ -929,6 +1015,14 @@ export type Database = {
           pct_exceeding_cwv: number;
           pct_lazy: number;
           period: string;
+        }[];
+      };
+      get_mailing_list: {
+        Args: never;
+        Returns: {
+          email: string;
+          report_verbosity: number;
+          website_name: string;
         }[];
       };
       get_rum_history: {
@@ -1376,6 +1470,10 @@ export type Database = {
           total_sessions: number;
         }[];
       };
+      verify_website_user_match: {
+        Args: { user_id_arg: string; website_name_arg: string };
+        Returns: boolean;
+      };
       web_vitals: {
         Args: { p_domain_name: string; p_time_range: string };
         Returns: {
@@ -1391,7 +1489,11 @@ export type Database = {
       };
     };
     Enums: {
-      [_ in never]: never;
+      email_verbosity:
+        | "summary_only"
+        | "analytics_only"
+        | "summary_analytics"
+        | "full_report";
     };
     CompositeTypes: {
       http_header: {
@@ -1537,6 +1639,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      email_verbosity: [
+        "summary_only",
+        "analytics_only",
+        "summary_analytics",
+        "full_report",
+      ],
+    },
   },
 } as const;

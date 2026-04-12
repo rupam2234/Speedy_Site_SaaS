@@ -1,5 +1,7 @@
 "use client";
 
+import { ReactNode } from "react";
+
 interface imageMetric {
   avg_transfer_size: number | null;
   avg_decoded_body_size: number | null;
@@ -8,6 +10,8 @@ interface imageMetric {
   avg_element_render_delay: number | null;
   avg_time_to_first_byte: number | null;
   isLazyloaded: boolean;
+  sample: number | null;
+  poor_lcp: number | null;
 }
 
 export default function Performancetab({
@@ -18,6 +22,8 @@ export default function Performancetab({
   avg_element_render_delay,
   avg_time_to_first_byte,
   isLazyloaded,
+  poor_lcp,
+  sample,
 }: imageMetric) {
   const loadDelay = Number(avg_resource_load_delay || 0);
   const ttfb = Number(avg_time_to_first_byte || 0);
@@ -39,18 +45,29 @@ export default function Performancetab({
   };
 
   const getObservations = () => {
-    const obs: { msg: string; type: "error" | "warning" | "info" }[] = [];
+    const obs: {
+      msg: string | ReactNode;
+      type: "error" | "warning" | "info";
+    }[] = [];
 
     if (isLazyloaded && loadDelay > 400) {
       obs.push({
-        msg: "Discovery: Image is lazy-loaded, adding significant delay. Switch to 'eager' if this is a main image.",
+        msg:
+          "This image is lazy-loaded, which can delay when it appears on screen." +
+          " If this is an important image (such as a hero or above-the-fold content), consider loading it eagerly (loading=" +
+          "eager" +
+          ") or set fetchpriority=" +
+          "'high'" +
+          " to improve LCP. ",
         type: "error",
       });
     }
 
     if (ttfb > 500) {
       obs.push({
-        msg: `Server: High TTFB (${ttfb.toFixed(0)}ms). Fixing server response time is more urgent than reducing file size.`,
+        msg:
+          `Your server is responding slowly, which delays the image load more than the image size itself.` +
+          "Focus on improving server response time — for example, optimize backend processing, enable caching, or use a faster hosting/CDN.",
         type: "error",
       });
     }
@@ -60,7 +77,7 @@ export default function Performancetab({
         ttfb < 200
           ? `File Size: ${formatFileSize(transferSize)} is heavy. Use WebP/AVIF to speed up the blue 'Download' phase.`
           : `File Size: Large image (${formatFileSize(transferSize)}) is making a slow server connection even worse.`;
-      obs.push({ msg, type: ttfb < 200 ? "warning" : "info" });
+      obs.push({ msg, type: ttfb < 200 ? "warning" : "error" });
     }
 
     if (renderDelay > 1500) {
@@ -75,7 +92,12 @@ export default function Performancetab({
 
     return obs.length > 0
       ? obs
-      : [{ msg: "Performance flow is optimal.", type: "info" }];
+      : [
+          {
+            msg: `Image performance seems optimal, however, ${poor_lcp}% of total ${sample} samples still experienced slow loading.`,
+            type: "info",
+          },
+        ];
   };
 
   return (

@@ -30,3 +30,6 @@ export type Notifications =
 
 export type PluginAudits =
   Database["public"]["Views"]["wp_plugin_scans"]["Row"];
+
+export type EmailReporting =
+  Database["public"]["Tables"]["email_reporting"]["Insert"];

@@ -97,16 +97,16 @@ const extraFeatures: FeatureCore[] = [
 
 const headlines: { head: string; tail: string }[] = [
   {
-    head: "Know Your Visitors’ Experience",
-    tail: "Fix What's Needed! No Guesswork",
+    head: "Understand Your Visitors’ Experience",
+    tail: "Find Responsible Elements Quicker",
   },
   {
     head: "Fix Customer Costing Bottlenecks",
-    tail: "Optimize Conversion Rates",
+    tail: "Improve Conversion Rates",
   },
   {
-    head: "Make Every Page Load Lightning Fast",
-    tail: "Keep Your Visitors Engaged",
+    head: "Maintain Your Site' Web Vitals",
+    tail: "Ensure Optimization Is On Right Track",
   },
 ];
 
@@ -160,11 +160,11 @@ export default function Home() {
           </AnimatePresence>
 
           <p className="mt-8 max-w-3xl mx-auto text-lg md:text-xl text-slate-600 leading-relaxed font-normal">
-            Monitor Core Web Vitals and page performance across devices and
-            geographic regions for real users and identify bottlenecks accross
-            all pages with a single integration. Proactively resolve issues to
-            keep user experience seamless, search rankings high, and AI
-            discoverability intact.
+            Speedy Site helps you monitor Core Web Vitals and page performance
+            across devices and geographic regions. It identifies the bottlenecks
+            accross all pages and brings you the key optimizations needed to
+            maintain seamless user experience, lower bounce rates, high search
+            rankings, and improves LLM citation chances.
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
@@ -254,8 +254,8 @@ export default function Home() {
                       Monitor User Experience
                     </h3>
                     <p className="text-slate-600 text-lg">
-                      Start collecting privacy-first performance and user
-                      experience data {"->"} break it down by device, network,
+                      Collects privacy-first performance and user experience
+                      data {"->"} break it down by device, browser, network,
                       pages and geographic locations to find issues faster.
                     </p>
                     <p className="text-slate-600 text-lg">

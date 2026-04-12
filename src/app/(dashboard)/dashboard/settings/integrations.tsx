@@ -1,13 +1,13 @@
 "use client";
 
 import TooltipIcon from "@/components/theme/customTooltip";
-import { ClipboardList, InfoIcon, Settings2 } from "lucide-react";
+import { ClipboardList, Settings2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSiteContext } from "../siteContext";
-import { cachedData } from "@/components/utils";
+import { cachedData, cleanExpiredCache } from "@/components/utils";
 import { OrderData } from "@/app/api/dataTypes";
-import { CustomTooltip } from "@/components/theme";
+import { EmailReporting } from ".";
 
 interface Props {
   siteData: OrderData | undefined;
@@ -53,6 +53,13 @@ export default function Integrations({
   }>({ isAvailable: false, loading: false });
 
   const trackingScript = `<script src="https://rum.speedy.site/rum.js?v=0.0.1&id=${siteData?.order_id?.split("-")[0]}" defer></script>`;
+
+  useEffect(() => {
+    cleanExpiredCache({
+      prefix: `weekly-report-settings`,
+      session_Storage: true,
+    });
+  }, []);
 
   useEffect(() => {
     if (status.status === "success" || status.status === "error") {
@@ -287,11 +294,7 @@ export default function Integrations({
           </div>
         </>
       ) : (
-        <WeeklyReview
-          weeklyEmail={siteData?.weekly_report}
-          emailAddressForWeekly={siteData?.report_email}
-          updateWeeklySetting={handleWeeklySetting}
-        />
+        <EmailReporting />
       )}
     </div>
   );
@@ -440,158 +443,4 @@ export default function Integrations({
       console.error(error);
     }
   }
-
-  async function handleWeeklySetting({
-    sendEmail,
-    address,
-  }: {
-    sendEmail: boolean | null | undefined;
-    address: string | null | undefined;
-  }) {
-    // try to get the orders
-    const cachedOrders = sessionStorage.getItem("orders");
-
-    let updatedOrder: OrderData;
-
-    if (cachedOrders) {
-      const parsedOrders: OrderData[] = JSON.parse(cachedOrders);
-
-      const existing = parsedOrders.find(
-        (x) => x.website_name === selectedSite,
-      );
-
-      if (!existing) {
-        console.error("Order not found");
-        return;
-      }
-
-      updatedOrder = {
-        ...existing,
-        report_email: address,
-        weekly_report: sendEmail,
-      };
-
-      // orders with updated data
-      const newOrders = parsedOrders.map((x) =>
-        x.website_name === updatedOrder.website_name ? updatedOrder : x,
-      );
-
-      sessionStorage.setItem("orders", JSON.stringify(newOrders));
-
-      // update main data
-      if (setSiteData) {
-        setSiteData(updatedOrder);
-      }
-
-      // udpate on db
-      try {
-        const res = await fetch("/api/orders/update-order", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ data: updatedOrder }),
-        });
-
-        const body: any = await res.json();
-
-        if (!res.ok) {
-          throw new Error(body.message ?? "Error updating order!");
-        }
-      } catch (error: any) {
-        console.error(
-          error ?? "Error updating weekly review settings on order",
-        );
-      }
-    }
-
-    console.error("Error occured: weekly report settings");
-  }
-}
-
-function WeeklyReview({
-  weeklyEmail,
-  emailAddressForWeekly,
-  updateWeeklySetting,
-}: {
-  weeklyEmail: boolean | null | undefined;
-  emailAddressForWeekly: string | null | undefined;
-  updateWeeklySetting: ({
-    sendEmail,
-    address,
-  }: {
-    sendEmail: boolean | null | undefined;
-    address: string | null | undefined;
-  }) => void;
-}) {
-  const [emailReportCheck, setEmailReportCheck] = useState<
-    boolean | null | undefined
-  >(weeklyEmail);
-  const [address, setEmailAddress] = useState<string | null | undefined>(
-    emailAddressForWeekly,
-  );
-  const [displaySave, setSaveButton] = useState<boolean>(false);
-
-  useEffect(() => {
-    const normalizedAddress = address?.trim() || "";
-    const originalAddress = emailAddressForWeekly?.trim() || "";
-
-    const isChanged =
-      emailReportCheck !== weeklyEmail || normalizedAddress !== originalAddress;
-
-    setSaveButton(isChanged);
-  }, [emailReportCheck, address, weeklyEmail, emailAddressForWeekly]);
-
-  return (
-    <div className="space-y-3 text-sm text-primary/80 border-x border-b border-primary/10 p-4">
-      <p>Configure your weekly report preference.</p>
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
-        <input
-          type="checkbox"
-          checked={emailReportCheck !== null ? emailReportCheck : false}
-          onChange={(e) => setEmailReportCheck(e.target.checked)}
-        />
-        <p>Report to email</p>
-        {emailReportCheck && (
-          <>
-            <input
-              type="text"
-              value={address ?? ""}
-              className="min-w-55 px-2 border border-primary/10 rounded-sm"
-              placeholder="email address"
-              onChange={(e) => setEmailAddress(e.target.value)}
-            />
-            <CustomTooltip
-              content={
-                <p>
-                  Overrides your primary address for report delivery, keep it
-                  blank if you want reports at primary email instead
-                </p>
-              }
-              side="right"
-              trigger={
-                <InfoIcon
-                  size={14}
-                  className="text-primary/40 hover:text-primary/80 transition-all duration-300"
-                />
-              }
-            />
-          </>
-        )}
-      </div>
-      {displaySave && (
-        <button
-          className="text-sm px-2 py-0.5 bg-blue-400 text-primary-foreground cursor-pointer hover:bg-blue-500 rounded-sm"
-          onClick={() =>
-            updateWeeklySetting({
-              sendEmail: emailReportCheck,
-              address: address,
-            })
-          }
-        >
-          Save
-        </button>
-      )}
-    </div>
-  );
 }

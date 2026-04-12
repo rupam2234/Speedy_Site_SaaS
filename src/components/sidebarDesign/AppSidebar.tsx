@@ -103,7 +103,7 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "Slow Images",
+            title: "Images",
             url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
           },
           {
