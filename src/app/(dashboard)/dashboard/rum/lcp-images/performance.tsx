@@ -53,7 +53,7 @@ export default function Performancetab({
     if (isLazyloaded && loadDelay > 400) {
       obs.push({
         msg:
-          "This image is lazy-loaded, which can delay when it appears on screen." +
+          "This image is lazy-loaded, which can delay it's arrival on users' screen." +
           " If this is an important image (such as a hero or above-the-fold content), consider loading it eagerly (loading=" +
           "eager" +
           ") or set fetchpriority=" +
@@ -66,8 +66,8 @@ export default function Performancetab({
     if (ttfb > 500) {
       obs.push({
         msg:
-          `Your server is responding slowly, which delays the image load more than the image size itself.` +
-          "Focus on improving server response time — for example, optimize backend processing, enable caching, or use a faster hosting/CDN.",
+          `Server is responding slowly, which delays the image load more than the image size itself.` +
+          " Optimize backend processing, enable caching, or use a faster hosting/CDN to improve server response time.",
         type: "error",
       });
     }
