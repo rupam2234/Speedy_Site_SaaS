@@ -545,7 +545,8 @@ export default function Main() {
             className="px-2 min-h-96 mt-2 md:mt-7 py-4"
           >
             <p className="text-primary/80 text-[12px] mb-3 font-semibold">
-              Page elements you can optimize to enhance user experience:
+              Optimize these page elements to immediately improve Core Web
+              Vitals:
             </p>
             {filteredContributors === undefined ? (
               <></>
