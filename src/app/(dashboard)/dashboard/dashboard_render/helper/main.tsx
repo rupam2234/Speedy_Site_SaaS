@@ -170,7 +170,7 @@ export default function Main() {
               }}
             />
             <h2 className="text-xl font-bold text-primary/90">
-              {isMobile ? "CWV Status" : "Core Web Vitals (Google's Data)"}
+              {isMobile ? "Chrome UX Report" : "Chrome User Experience Report"}
             </h2>
             <MoveRight />
             {(() => {
@@ -285,55 +285,10 @@ export default function Main() {
                 <div className="space-y-1">
                   <p className="text-[13px] font-medium leading-relaxed text-primary-foreground dark:text-primary">
                     Provides a real-world summary of your site&apos;s
-                    performance and user experience based on Google&apos;s most
-                    recent data.
+                    performance and user experience based on data is collected
+                    from Chrome browser users.
                   </p>
                 </div>
-
-                <div className="space-y-2 border-t border-primary-foreground/10 dark:border-primary/10 pt-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-foreground dark:text-primary">
-                    Core Focus Areas
-                  </p>
-                  <ul className="space-y-2">
-                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                      <p>Loading Speed</p>
-                    </li>
-                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                      <p>Interactivity</p>
-                    </li>
-                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                      <p>Visual Stability</p>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="space-y-2 border-t border-primary-foreground/10 dark:border-primary/10 pt-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-foreground dark:text-primary">
-                    Device Breakdown
-                  </p>
-                  <ul className="space-y-2">
-                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                      <p>Desktop</p>
-                    </li>
-                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                      <p>Mobile</p>
-                    </li>
-                    <li className="flex items-start gap-2 text-[12px] text-primary-foreground/90 dark:text-primary/90">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[#50a2ff] mt-1 shrink-0" />
-                      <p>Tablet</p>
-                    </li>
-                  </ul>
-                </div>
-
-                <p className="text-[11px] italic text-primary-foreground/70 dark:text-primary/70">
-                  It&apos;s the same dataset appears on your Google Search
-                  Console.
-                </p>
               </div>
             }
             trigger={

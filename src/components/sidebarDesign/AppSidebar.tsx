@@ -146,7 +146,7 @@ export default function AppSidebar({
       <SidebarContent>
         <MainNav
           DashboardItems={{
-            title: "Google's CWV",
+            title: "CrUX Data",
             url: `/dashboard?site=${selectedSite}`,
             icon: LayoutDashboardIcon,
             isActive: false,

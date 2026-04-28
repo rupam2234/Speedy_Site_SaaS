@@ -17,7 +17,6 @@ export async function POST(req: NextRequest) {
   try {
     const { data, error } = await worker.rpc("analyze_lcp_by_device", {
       domain_filter: domain_name,
-      days_back: 7,
     });
 
     if (error) {

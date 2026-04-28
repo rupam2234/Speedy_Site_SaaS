@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const props: EmailReporting = await req.json();
 
   const action: "update" | "delete" =
-    props.report_verbosity > 0 ? "update" : "delete";
+    props?.report_verbosity && props.report_verbosity > 0 ? "update" : "delete";
 
   try {
     const { error } =

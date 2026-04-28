@@ -71,17 +71,17 @@ export type Database = {
       };
       email_reporting: {
         Row: {
-          optional_email: string | null;
+          optional_email: string;
           order_id: string;
           report_verbosity: number;
         };
         Insert: {
-          optional_email?: string | null;
+          optional_email?: string;
           order_id: string;
-          report_verbosity: number;
+          report_verbosity?: number;
         };
         Update: {
-          optional_email?: string | null;
+          optional_email?: string;
           order_id?: string;
           report_verbosity?: number;
         };
@@ -807,7 +807,7 @@ export type Database = {
         }[];
       };
       analyze_lcp_by_device: {
-        Args: { days_back?: number; domain_filter: string };
+        Args: { domain_filter: string };
         Returns: {
           avg_element_render_delay: number;
           avg_lcp_value: number;
@@ -821,15 +821,12 @@ export type Database = {
           font_weight: string;
           good_count: number;
           image_url: string;
-          max_lcp_value: number;
-          min_lcp_value: number;
           needs_improvement_count: number;
           occurrence_count: number;
-          p50_lcp_value: number;
           p75_lcp_value: number;
-          p95_lcp_value: number;
           page_url: string;
           poor_count: number;
+          top_3_render_blockers: string;
         }[];
       };
       analyze_web_vitals_by_page: {

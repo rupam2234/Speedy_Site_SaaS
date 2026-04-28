@@ -228,7 +228,7 @@ export default function Main() {
           .filter((x: any) => {
             const key = x.element_target || "unknown";
 
-            if (x.avg_lcp_value <= cwv_ranges.lcp[0]) return false;
+            // if (x.avg_lcp_value <= cwv_ranges.lcp[0]) return false;
 
             if (seen.has(key)) return false;
             seen.add(key);
@@ -545,8 +545,8 @@ export default function Main() {
             className="px-2 min-h-96 mt-2 md:mt-7 py-4"
           >
             <p className="text-primary/80 text-[12px] mb-3 font-semibold">
-              Optimize these page elements to immediately improve Core Web
-              Vitals:
+              These elements are currently impacting key Web Vitals metrics, and
+              optimizing them can lead to immediate improvements in performance.
             </p>
             {filteredContributors === undefined ? (
               <></>

@@ -9,73 +9,35 @@ import {
   LCPThresholds,
 } from "web-vitals/attribution";
 
-/* =========================================================
-   1. CONFIGURATION & STATE
-   ========================================================= */
 const CONFIG = {
   API_URL: "https://buffer.speedy.site/collect",
-  COOKIE_MAX_AGE: 2592000,
+  COOKIE_MAX_AGE: 2592000, // 30 days
   MAX_EVENTS_PER_SESSION: 100,
   FCP_THRESHOLDS: [1800, 3000],
   TTFB_THRESHOLDS: [800, 1800],
 };
 
+const FCPThresholds = CONFIG.FCP_THRESHOLDS;
+const TTFBThresholds = CONFIG.TTFB_THRESHOLDS;
 const siteDomain = location.hostname;
+
 let previousPage = document.referrer || null;
 let currentPage = location.pathname + location.search;
-let sessionId = null;
 
 const batchedData = [];
-const latestMetrics = { INP: null };
-const elementSummaryCache = new WeakMap();
+const latestMetrics = {
+  INP: null,
+};
 
 let maxCustomEntry = null;
 let webVitalsINP = null;
+
 let worstLCP = null;
 let worstCLS = null;
+
 let isFlushing = false;
 let hasFlushed = false;
 
-// for main thread profiling (INP)
-let profiler;
-if ("Profiler" in window) {
-  try {
-    profiler = new Profiler({ sampleInterval: 10, maxBufferSize: 10000 });
-  } catch (e) {
-    console.warn("JS Profiling is disabled by Document Policy.");
-  }
-}
-
-/* =========================================================
-   2. ADMIN EXCLUSION
-   ========================================================= */
-// function shouldExcludeUser() {
-//   const path = window.location.pathname;
-
-//   // Check URL paths
-//   if (
-//     path.includes("/wp-admin/") ||
-//     path.includes("/wp-login.php") ||
-//     path.includes("/admin")
-//   )
-//     return true;
-
-//   // Check preview mode
-//   if (window.location.search.includes("preview=true")) return true;
-
-//   // Check for presence of Admin Bar or body classes (WordPress specific)
-//   const isAdmin = !!(
-//     document.getElementById("wpadminbar") ||
-//     document.body?.classList.contains("wp-admin") ||
-//     document.body?.classList.contains("logged-in")
-//   );
-
-//   return isAdmin;
-// }
-
-/* =========================================================
-   3. COOKIE & SESSION MANAGEMENT
-   ========================================================= */
 function getCookie(name) {
   return document.cookie
     .split("; ")
@@ -87,22 +49,33 @@ function setCookie(name, value) {
   document.cookie = `${name}=${value}; path=/; max-age=${CONFIG.COOKIE_MAX_AGE}; Secure; SameSite=Strict`;
 }
 
-function initSession() {
-  sessionId = getCookie("sessionId");
-  if (!sessionId) {
-    sessionId = crypto.randomUUID
-      ? crypto.randomUUID()
-      : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    setCookie("sessionId", sessionId);
+let sessionId = getCookie("sessionId");
+if (!sessionId) {
+  sessionId = crypto.randomUUID
+    ? crypto.randomUUID()
+    : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`; // Fallback for older browsers
+  setCookie("sessionId", sessionId);
+}
+
+// for main thread profiling (INP)
+let profiler;
+if ("Profiler" in window) {
+  try {
+    profiler = new Profiler({ sampleInterval: 10, maxBufferSize: 10000 });
+  } catch (e) {
+    console.warn("JS Profiling is disabled by Document Policy.");
   }
 }
 
-/* =========================================================
-   4. DOM & ATTRIBUTION HELPERS (Logic Fully Intact)
-   ========================================================= */
+const elementSummaryCache = new WeakMap();
+
 function summarizeElement(el) {
-  if (!el || !el.tagName) return "(unknown)";
-  if (elementSummaryCache.has(el)) return elementSummaryCache.get(el);
+  if (!el || !el.tagName) {
+    return "(unknown)";
+  }
+  if (elementSummaryCache.has(el)) {
+    return elementSummaryCache.get(el);
+  }
 
   function isSignificantElement(element) {
     if (!element || !element.tagName) return false;
@@ -134,98 +107,127 @@ function summarizeElement(el) {
     currentEl = currentEl.parentElement;
   }
 
-  if (!currentEl || !currentEl.tagName) return "(unknown)";
+  if (!currentEl || !currentEl.tagName) {
+    return "(unknown)";
+  }
 
   let summary = `<${currentEl.tagName.toLowerCase()}`;
   if (currentEl.id) summary += ` id="${currentEl.id}"`;
   if (currentEl.className && typeof currentEl.className === "string")
     summary += ` class="${currentEl.className}"`;
   summary += ">";
-
   elementSummaryCache.set(el, summary);
   return summary;
 }
 
-function getDeviceType() {
-  const w = window.innerWidth;
-  return w <= 768 ? "mobile" : w <= 1024 ? "tablet" : "desktop";
-}
+// to collect navigation timings
+// if ("PerformanceObserver" in window) {
+//   let navTimingQueued = false;
 
-function collectPerformanceMetrics() {
-  const nav = performance.getEntriesByType("navigation")[0];
+//   const observer = new PerformanceObserver((list) => {
+//     if (navTimingQueued) return;
 
-  if (!nav) return null;
+//     const entry = list.getEntries()[0];
+//     if (!entry) return;
 
-  const dnsLookup = nav.domainLookupEnd - nav.domainLookupStart;
-  const tcpConnectionTime = nav.connectEnd - nav.connectStart;
-  const requestQueueTime = nav.requestStart - nav.connectEnd;
-  const timeToFirstByte = nav.responseStart - nav.requestStart;
+//     queueEvent({
+//       type: "navigation-timing",
+//       navigationType: entry.type, // navigate | reload | back_forward | prerender
+//       incomplete:
+//         entry.loadEventEnd === 0 ||
+//         entry.domComplete === 0 ||
+//         entry.responseEnd === 0,
+//       raw: {
+//         startTime: entry.startTime,
+//         requestStart: entry.requestStart,
+//         responseStart: entry.responseStart,
+//         responseEnd: entry.responseEnd,
+//         domInteractive: entry.domInteractive,
+//         loadEventEnd: entry.loadEventEnd,
+//       },
+//     });
 
-  const userConnectionTime = dnsLookup + tcpConnectionTime;
+//     navTimingQueued = true;
+//     observer.disconnect();
+//   });
 
-  // Estimated backend/CDN processing time
-  const serverProcessingTime = Math.max(
-    0,
-    timeToFirstByte - userConnectionTime - requestQueueTime,
-  );
+//   observer.observe({ type: "navigation", buffered: true });
+// }
 
-  // Optional cache signal
-  let cacheStatus = null;
-  const serverTiming = nav.serverTiming || [];
-  const cacheEntry = serverTiming.find((x) => x.name === "cache");
-  if (cacheEntry?.description) {
-    cacheStatus = cacheEntry.description;
-  }
+function initializeWebVitals() {
+  onCLS(handleCLS, { reportAllChanges: true });
+  onLCP(handleLCP, { reportAllChanges: true });
+  onFCP(handleFCP);
+  onTTFB(handleTTFB);
+  onINP(handleINP, { reportAllChanges: true });
 
-  // Experience classification
-  let experienceCategory = "good";
-  if (userConnectionTime > 200) {
-    experienceCategory = "poor_connection";
-  } else if (timeToFirstByte > 600) {
-    experienceCategory = "slow_server";
-  }
-
-  return {
-    type: "navigation-timings",
-    timeToFirstByte,
-    serverProcessingTime,
-    userConnectionTime,
-    dnsLookup,
-    tcpConnectionTime,
-    requestQueueTime,
-    experienceCategory,
-    cacheStatus,
-  };
-}
-
-function getTopBlockingScript(loafEntries) {
-  let maxScript = null;
-
-  loafEntries.forEach((loaf) => {
-    loaf.scripts?.forEach((script) => {
-      if (!maxScript || script.duration > maxScript.duration) {
-        maxScript = script;
+  if (
+    "PerformanceObserver" in window &&
+    PerformanceObserver.supportedEntryTypes.includes("event")
+  ) {
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (
+          [
+            "click",
+            "mousedown",
+            "mouseup",
+            "pointerdown",
+            "pointerup",
+            "keydown",
+            "keyup",
+            "touchstart",
+            "touchend",
+          ].includes(entry.name)
+        ) {
+          if (!maxCustomEntry || entry.duration > maxCustomEntry.duration) {
+            maxCustomEntry = entry;
+          }
+        }
       }
     });
-  });
 
-  return maxScript;
+    observer.observe({
+      type: "event",
+      buffered: true,
+      durationThreshold: 0,
+    });
+  } else {
+    console.warn(
+      "PerformanceObserver or 'event' entry type not supported; INP tracking disabled.",
+    );
+    queueEvent({
+      type: "error",
+      message: "PerformanceObserver or 'event' entry type not supported",
+      siteDomain,
+    });
+  }
 }
 
-function getNetworkScore(conn) {
-  if (!conn) return "unknown";
-  if (conn.effectiveType === "4g" && conn.downlink > 10) return "fast";
-  if (conn.effectiveType === "3g") return "moderate";
-  return "slow";
-}
+initializeWebVitals();
 
-/* =========================================================
-   5. WEB VITAL HANDLERS (Logic Fully Intact)
-   ========================================================= */
+// Reset INP data on SPA navigation
+window.addEventListener("popstate", () => {
+  previousPage = currentPage;
+  currentPage = location.pathname + location.search;
+
+  maxCustomEntry = null;
+  webVitalsINP = null;
+  latestMetrics.INP = null;
+});
+
 function classifyMetric(value, thresholds) {
   if (value <= thresholds[0]) return "good";
   if (value <= thresholds[1]) return "needs improvement";
   return "poor";
+}
+
+function queueEvent(event) {
+  if (batchedData.length >= CONFIG.MAX_EVENTS_PER_SESSION) {
+    console.warn("Event queue limit reached; flushing early.");
+    flushMetrics();
+  }
+  batchedData.push(event);
 }
 
 function handleCLS(metric) {
@@ -243,6 +245,11 @@ function handleCLS(metric) {
     };
   }
 }
+
+// function handleINP(metric) {
+//   webVitalsINP = metric;
+//   latestMetrics.INP = metric.value;
+// }
 
 async function handleINP(metric) {
   const primaryAddress = location.hostname;
@@ -314,6 +321,7 @@ async function handleINP(metric) {
 function handleLCP(metric) {
   const rating = classifyMetric(metric.value, LCPThresholds);
   const resourceEntries = performance.getEntriesByType("resource");
+
   let targetEl = metric.attribution?.target;
 
   if (typeof targetEl === "string") {
@@ -328,15 +336,18 @@ function handleLCP(metric) {
 
   const isImage =
     targetEl?.tagName?.toLowerCase() === "img" ||
-    metric.attribution?.url?.match(/\.(jpeg|jpg|png|webp|gif|avif|svg)$/i);
+    metric.attribution?.url?.match(/\.(jpe?g|png|webp|gif|avif|svg)$/i);
+
   const entryByExactUrl =
     metric.attribution?.url &&
     resourceEntries.find((e) => e.name === metric.attribution.url);
+
   const entryByLooseMatch =
     !entryByExactUrl &&
     resourceEntries.find((e) =>
       e.name.includes(metric.attribution?.url?.split("/").pop()),
     );
+
   const matchedEntry = entryByExactUrl || entryByLooseMatch;
 
   const findImage =
@@ -347,13 +358,17 @@ function handleLCP(metric) {
         null;
 
   let fontAttribution = null;
+
   if (!isImage && targetEl instanceof Element) {
     const styles = getComputedStyle(targetEl);
+
     const fontFamily = styles.fontFamily
       ?.split(",")[0]
       ?.replace(/["']/g, "")
       .trim();
+
     const normalize = (str) => str.toLowerCase().replace(/[\s_\-\+]+/g, "-");
+
     const fontResource = performance
       .getEntriesByType("resource")
       .filter((x) => normalize(x.name).includes(normalize(fontFamily)));
@@ -378,11 +393,13 @@ function handleLCP(metric) {
       rating,
       attribution: {
         target: metric.attribution?.target,
+
         resourceLoadDelay: metric.attribution?.resourceLoadDelay,
         resourceLoadDuration: metric.attribution?.resourceLoadDuration,
         elementRenderDelay: metric.attribution?.elementRenderDelay,
         timeToFirstByte: metric.attribution?.timeToFirstByte,
         url: metric.attribution?.url,
+
         ...(isImage && {
           decodedBodySize: matchedEntry?.decodedBodySize ?? null,
           transferSize: matchedEntry?.transferSize ?? null,
@@ -392,30 +409,36 @@ function handleLCP(metric) {
             findImage?.classList.contains("lazyloaded") ||
             findImage?.classList.contains("lazyload"),
         }),
-        ...(fontAttribution && { font: fontAttribution }),
+
+        ...(fontAttribution && {
+          font: fontAttribution,
+        }),
       },
     };
   }
 }
 
 function handleFCP(metric) {
+  const rating = classifyMetric(metric.value, FCPThresholds);
   queueEvent({
     type: "web-vital",
     siteDomain,
     name: "FCP",
     value: metric.value,
-    rating: classifyMetric(metric.value, CONFIG.FCP_THRESHOLDS),
+    rating,
+    attribution: {},
   });
 }
 
 function handleTTFB(metric) {
+  const rating = classifyMetric(metric.value, TTFBThresholds);
   const navEntry = performance.getEntriesByType("navigation")[0];
   queueEvent({
     type: "web-vital",
     siteDomain,
     name: "TTFB",
     value: metric.value,
-    rating: classifyMetric(metric.value, CONFIG.TTFB_THRESHOLDS),
+    rating,
     attribution: {
       dnsLookup: navEntry?.domainLookupEnd - navEntry?.domainLookupStart,
       tcpConnection: navEntry?.connectEnd - navEntry?.connectStart,
@@ -423,6 +446,73 @@ function handleTTFB(metric) {
       requestStart: navEntry?.requestStart,
     },
   });
+}
+
+function getDeviceType() {
+  const w = window.innerWidth;
+  return w <= 768 ? "mobile" : w <= 1024 ? "tablet" : "desktop";
+}
+
+function collectPerformanceMetrics() {
+  const nav = performance.getEntriesByType("navigation")[0];
+
+  if (!nav) return null;
+
+  const dnsLookup = nav.domainLookupEnd - nav.domainLookupStart;
+  const tcpConnectionTime = nav.connectEnd - nav.connectStart;
+  const requestQueueTime = nav.requestStart - nav.connectEnd;
+  const timeToFirstByte = nav.responseStart - nav.requestStart;
+
+  const userConnectionTime = dnsLookup + tcpConnectionTime;
+
+  // Estimated backend/CDN processing time
+  const serverProcessingTime = Math.max(
+    0,
+    timeToFirstByte - userConnectionTime - requestQueueTime,
+  );
+
+  // Optional cache signal
+  let cacheStatus = null;
+  const serverTiming = nav.serverTiming || [];
+  const cacheEntry = serverTiming.find((x) => x.name === "cache");
+  if (cacheEntry?.description) {
+    cacheStatus = cacheEntry.description;
+  }
+
+  // Experience classification
+  let experienceCategory = "good";
+  if (userConnectionTime > 200) {
+    experienceCategory = "poor_connection";
+  } else if (timeToFirstByte > 600) {
+    experienceCategory = "slow_server";
+  }
+
+  return {
+    type: "navigation-timings",
+    timeToFirstByte,
+    serverProcessingTime,
+    userConnectionTime,
+    dnsLookup,
+    tcpConnectionTime,
+    requestQueueTime,
+    experienceCategory,
+    cacheStatus,
+  };
+}
+
+// for INP
+function getTopBlockingScript(loafEntries) {
+  let maxScript = null;
+
+  loafEntries.forEach((loaf) => {
+    loaf.scripts?.forEach((script) => {
+      if (!maxScript || script.duration > maxScript.duration) {
+        maxScript = script;
+      }
+    });
+  });
+
+  return maxScript;
 }
 
 function getRenderBlockers() {
@@ -473,56 +563,37 @@ function getRenderBlockers() {
   }
 }
 
-/* =========================================================
-   6. EVENT OBSERVERS
-   ========================================================= */
-function setupObservers() {
-  if ("PerformanceObserver" in window) {
-    if (PerformanceObserver.supportedEntryTypes.includes("event")) {
-      const eventObserver = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (
-            [
-              "click",
-              "mousedown",
-              "mouseup",
-              "pointerdown",
-              "pointerup",
-              "keydown",
-              "keyup",
-              "touchstart",
-              "touchend",
-            ].includes(entry.name)
-          ) {
-            if (!maxCustomEntry || entry.duration > maxCustomEntry.duration)
-              maxCustomEntry = entry;
-          }
+(function collectClientMeta() {
+  queueEvent({
+    type: "client-info",
+    deviceType: getDeviceType(),
+    deviceMemory: navigator.deviceMemory || "unknown",
+    hardwareConcurrency: navigator.hardwareConcurrency || "unknown",
+    connection: navigator.connection
+      ? {
+          effectiveType: navigator.connection.effectiveType,
+          downlink: navigator.connection.downlink,
+          rtt: navigator.connection.rtt,
         }
-      });
-      eventObserver.observe({
-        type: "event",
-        buffered: true,
-        durationThreshold: 0,
-      });
-    }
+      : null,
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+  });
+})();
+
+function checkMetricsReady() {
+  // this checks for completion of vitals data to send on page unload, tab shift or page change
+  if (
+    worstCLS !== null &&
+    worstLCP !== null &&
+    (webVitalsINP !== null || maxCustomEntry === null)
+  ) {
+    return true;
   }
 }
 
-/* =========================================================
-   7. QUEUE & FLUSH (Safety Guards Fully Intact)
-   ========================================================= */
-function queueEvent(event) {
-  if (batchedData.length >= CONFIG.MAX_EVENTS_PER_SESSION) flushMetrics();
-  batchedData.push(event);
-}
-
-// function checkMetricsReady() {
-//   return worstCLS !== null && worstLCP !== null;
-// }
-
-function flushMetrics({ force = false } = {}) {
-  if (isFlushing) return;
-  if (hasFlushed && !force) return;
+function flushMetrics() {
+  if (isFlushing || hasFlushed) return;
 
   isFlushing = true;
   hasFlushed = true;
@@ -597,7 +668,10 @@ function flushMetrics({ force = false } = {}) {
       }
     }
 
+    // aggregate CLS
     if (worstCLS) batchedData.push(worstCLS);
+
+    //aggregate LCP
     if (worstLCP) batchedData.push(worstLCP);
 
     const navigationTimingInfo = collectPerformanceMetrics();
@@ -612,6 +686,7 @@ function flushMetrics({ force = false } = {}) {
       batchedData.push(r_blockings);
     }
 
+    // then we prep the payload
     if (batchedData.length > 0) {
       const payload = JSON.stringify({
         sessionId,
@@ -620,102 +695,76 @@ function flushMetrics({ force = false } = {}) {
         previousPage,
         data: [...batchedData],
       });
+
+      let success = false;
+
       if (navigator.sendBeacon) {
-        navigator.sendBeacon(
-          CONFIG.API_URL,
-          new Blob([payload], { type: "application/json" }),
-        );
-      } else {
-        fetch(CONFIG.API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-          keepalive: true,
-        }).catch(() => {});
+        const blob = new Blob([payload], { type: "application/json" });
+        success = navigator.sendBeacon(CONFIG.API_URL, blob);
+      }
+      if (!success) {
+        try {
+          fetch(CONFIG.API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload,
+            keepalive: true,
+          })
+            .then(() => {
+              success = true;
+            })
+            .catch((error) => {
+              console.error("Failed to send metrics via fetch:", error);
+              // if (payload.length < 50000) { // avoids filling it with large payloads
+              //   localStorage.setItem(
+              //     "unsentMetrics",
+              //     JSON.stringify({
+              //       payload,
+              //       timestamp: Date.now()
+              //     })
+              //   );
+              // }
+            });
+        } catch (error) {
+          console.error("Fetch error:", error);
+          // if (payload.length < 50000) { // avoids filling it with large payloads
+          //   localStorage.setItem(
+          //     "unsentMetrics",
+          //     JSON.stringify({
+          //       payload,
+          //       timestamp: Date.now()
+          //     })
+          //   );
+          // }
+        }
       }
     }
   } finally {
     batchedData.length = 0;
-    // worstCLS = null;
-    // worstLCP = null;
+    worstCLS = null;
+    worstLCP = null;
     isFlushing = false;
   }
 }
 
-/* =========================================================
-   8. BOOTSTRAP & EVENT LISTENERS
-   ========================================================= */
-function boot() {
-  // if (shouldExcludeUser()) return;
+setTimeout(() => {
+  if (document.visibilityState === "visible") {
+    const isReady = checkMetricsReady();
+    if (isReady) flushMetrics();
+  }
+}, 15000); // flush after 15 seconds of page load
 
-  initSession();
-  setupObservers();
+// iOS Safari and modern browsers
+window.addEventListener("pagehide", () => {
+  if (!hasFlushed) flushMetrics();
+});
 
-  // Initialize Web Vitals
-  onCLS(handleCLS, { reportAllChanges: true });
-  onLCP(handleLCP, { reportAllChanges: true });
-  onFCP(handleFCP);
-  onTTFB(handleTTFB);
-  onINP(handleINP, { reportAllChanges: true });
+// Android/Chrome and most browsers
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && !hasFlushed) {
+    flushMetrics();
+  }
+});
 
-  // SPA Navigation handling
-  window.addEventListener("popstate", () => {
-    flushMetrics({ force: true });
-
-    previousPage = currentPage;
-    currentPage = location.pathname + location.search;
-    maxCustomEntry = null;
-    webVitalsINP = null;
-    latestMetrics.INP = null;
-    hasFlushed = false;
-    isFlushing = false;
-    worstCLS = null;
-    worstLCP = null;
-    batchedData.length = 0;
-  });
-
-  // Client Metadata
-  queueEvent({
-    type: "client-info",
-    deviceType: getDeviceType(),
-    deviceMemory: navigator.deviceMemory ?? "unknown",
-    hardwareConcurrency: navigator.hardwareConcurrency ?? "unknown",
-
-    connection: navigator.connection
-      ? {
-          effectiveType: navigator.connection.effectiveType,
-          downlink: navigator.connection.downlink,
-          rtt: navigator.connection.rtt,
-          score: getNetworkScore(navigator.connection),
-        }
-      : null,
-
-    browser: navigator.userAgentData?.brands ?? "unknown",
-    platform: navigator.userAgentData?.platform ?? "unknown",
-
-    // Fallback
-    userAgent: navigator.userAgent,
-    language: navigator.language,
-  });
-
-  // Lifecycle Flush triggers
-  // setTimeout(() => {
-  //   if (document.visibilityState === "visible" && checkMetricsReady())
-  //     flushMetrics();
-  // }, 15000);
-
-  window.addEventListener("pagehide", () => {
-    if (!hasFlushed) flushMetrics({ force: true });
-  });
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && !hasFlushed)
-      flushMetrics({ force: true });
-  });
-}
-
-// Start execution
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", boot);
-} else {
-  boot();
-}
+// fallback
+// window.addEventListener("beforeunload", flushMetrics);

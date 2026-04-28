@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, Fragment } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -8,40 +8,61 @@ import {
   ChevronRight,
   Copy,
   ExternalLink,
-  ImageIcon,
-  Type,
   CheckCircle2,
-  MoveRightIcon,
+  ChevronDown,
+  ChevronUp,
+  ZapIcon,
+  StarsIcon,
+  LoaderCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSiteContext } from "../../../siteContext";
 import { CustomTooltip, LoadingAnimation } from "@/components/theme";
-import { LcpElements, timings } from "./types";
-
-interface Contributor {
-  device_type: string;
-  element_target: string;
-  page_url: string;
-  image_url: string | null;
-  font_family: string | null;
-  font_weight: number | null;
-  font_size: number | null;
-  font_transfer_size: number | null;
-  occurrence_count: number;
-  avg_lcp_value: number;
-  p75_lcp_value: number;
-  avg_resource_load_delay: number | null;
-  avg_resource_load_duration: number | null;
-  avg_element_render_delay: number | null;
-  good_count: number;
-  needs_improvement_count: number;
-  poor_count: number;
-}
+import { ColorCodes } from "./types";
 
 const getVitalColor = (ms: number) => {
   if (ms <= 2500) return "text-emerald-500";
   if (ms <= 4000) return "text-amber-500";
   return "text-red-500";
+};
+
+export interface Contributor {
+  device_type: "Desktop" | "Mobile" | "Tablet" | string;
+
+  element_target: string;
+  page_url: string;
+
+  lcp_asset_url: string | null;
+
+  font_family: string | null;
+  font_weight: string | number | null;
+  font_size: string | null;
+
+  network_transfer_bytes: number | null;
+  memory_usage_bytes: number | null;
+  ttfb_ms: number | null;
+  loading_priority: "high" | "low" | "auto" | string | null;
+  device_memory_gb: string | number | null;
+
+  occurrence_count: number;
+
+  avg_lcp_value: number;
+  p75_lcp_value: number;
+
+  avg_resource_load_delay: number;
+  avg_resource_load_duration: number;
+  avg_element_render_delay: number;
+
+  top_3_render_blockers: string | null;
+
+  good_count: number;
+  needs_improvement_count: number;
+  poor_count: number;
+}
+
+export type AnalysisType<T> = {
+  metric: "LCP" | "INP" | "CLS" | "TTFB";
+  data: T;
 };
 
 export default function LCPelements({
@@ -54,6 +75,10 @@ export default function LCPelements({
   const [rows, setRows] = useState(5);
   const [loading, setLoading] = useState(true);
   const { selectedSite } = useSiteContext();
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
+  const [copied, setCopied] = useState<number | null>(null);
+  const [analyzing, setAnalyzing] = useState<number | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (contributors.length > 0) {
@@ -62,11 +87,21 @@ export default function LCPelements({
     }
 
     const timer = setTimeout(() => {
-      setLoading(false); // fallback after 3s
-    }, 5000);
+      setLoading(false); // fallback after 10s
+    }, 10000);
 
     return () => clearTimeout(timer);
   }, [contributors]);
+
+  useEffect(() => {
+    if (!copied) return;
+
+    const timer = setTimeout(() => {
+      setCopied(null);
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [copied]);
 
   const filtered = useMemo(
     () =>
@@ -160,14 +195,39 @@ export default function LCPelements({
           const delay = item.avg_resource_load_delay || 0;
           const load = item.avg_resource_load_duration || 0;
           const render = item.avg_element_render_delay || 0;
-          const totalPhases = delay + load + render;
+          const ttfb = item.ttfb_ms || 0;
+          const totalPhases = delay + load + render + ttfb;
 
-          const analysis = analyzeLoadTime({
-            asset_type: item.image_url === null ? "font" : "image",
-            load_delay: delay,
-            load_duration: load,
-            render_delay: render,
-          });
+          const avg = item.needs_improvement_count || 0;
+          const poor = item.poor_count || 0;
+
+          const exceededGoodLcp = avg + poor;
+
+          const max = Math.max(
+            item?.avg_resource_load_delay ?? 0,
+            item.avg_resource_load_duration ?? 0,
+            item.avg_element_render_delay ?? 0,
+          );
+
+          const hasRenderDelay =
+            (max === item.avg_resource_load_delay ||
+              max === item.avg_element_render_delay) &&
+            item.top_3_render_blockers !== null;
+
+          const renderBlockingAssets =
+            item.top_3_render_blockers &&
+            item.top_3_render_blockers
+              .split("\n")
+              .map((line) => {
+                const match = line.match(/^(.*?) \((?:Finish: )?(\d+)ms\)$/);
+                if (!match) return null;
+
+                return {
+                  asset: match[1],
+                  timing: Number(match[2]),
+                };
+              })
+              .filter(Boolean);
 
           return (
             <div
@@ -176,7 +236,7 @@ export default function LCPelements({
             >
               <div className="grid grid-cols-1 lg:grid-cols-12">
                 {/* 1. LCP Metric Column (Left) */}
-                <div className="lg:col-span-2 p-5 bg-neutral-50 dark:bg-neutral-900/40 border-b lg:border-b-0 lg:border-r border-neutral-200 dark:border-neutral-800 flex flex-col justify-center items-center lg:items-start">
+                <div className="lg:col-span-2 p-5 bg-neutral-50 dark:bg-neutral-900/40 border-b lg:border-b-0 lg:border-r border-neutral-200 dark:border-neutral-800 flex flex-col items-center lg:items-start">
                   <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-1">
                     Avg LCP
                   </span>
@@ -197,68 +257,57 @@ export default function LCPelements({
 
                 {/* 2. Content Details (Center) */}
                 <div className="lg:col-span-6 p-5 space-y-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <CustomTooltip
-                        content={
-                          <>
-                            Target element is associated with{" "}
-                            {item.image_url
-                              ? LcpElements.image
-                              : LcpElements.font}{" "}
-                            file
-                          </>
-                        }
-                        side="bottom"
-                        width="100px"
-                        trigger={
-                          <div className="p-1.5 rounded-sm bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                            {item.image_url ? (
-                              <ImageIcon size={14} />
-                            ) : (
-                              <Type size={14} />
-                            )}
-                          </div>
-                        }
-                      />
-
-                      <code className="text-[12px] font-mono font-bold text-neutral-700 dark:text-neutral-200 bg-neutral-100 dark:bg-neutral-900/80 px-2 py-1 border border-neutral-200 dark:border-neutral-700 rounded-sm truncate flex-1 shadow-sm">
+                  <div className="space-y-3  dark:bg-neutral-950">
+                    <div className="group flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                          Element Target
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(item.element_target);
+                            toast.success("Copied to clipboard");
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded text-neutral-400 transition-all"
+                          title="Copy selector"
+                        >
+                          <Copy size={13} />
+                        </button>
+                      </div>
+                      <code className="text-[13px] font-mono leading-relaxed text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 px-2 py-1.5 rounded border border-blue-100 dark:border-blue-900/50 break-all">
                         {item.element_target}
                       </code>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(item.element_target);
-                          toast.success("Copied to clipboard");
-                        }}
-                        className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 rounded-sm transition-all"
-                      >
-                        <Copy size={14} className="text-neutral-500" />
-                      </button>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    {/* Page Row */}
+                    <div className="flex items-center justify-between pt-2 border-t border-neutral-100 dark:border-neutral-800">
                       <span className="text-xs font-medium text-neutral-500">
-                        Most affacted page:{" "}
+                        Affected Page
                       </span>
                       <Link
                         href={`https://${selectedSite}${item.page_url}`}
                         target="_blank"
-                        className="text-xs font-medium text-neutral-500 hover:text-foreground flex items-center gap-1.5 transition-colors underline decoration-neutral-300 dark:decoration-neutral-700 underline-offset-4"
+                        className="group/link flex items-center gap-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                       >
-                        <ExternalLink size={12} />
-                        {item.page_url}
+                        <span className="truncate max-w-[180px]">
+                          {item.page_url}
+                        </span>
+                        <ExternalLink
+                          size={12}
+                          className="text-neutral-400 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform"
+                        />
                       </Link>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-4 items-center">
-                    {item.image_url ? (
+                    {item.lcp_asset_url ? (
                       <Link
-                        href={item.image_url}
+                        href={item.lcp_asset_url}
                         target="_blank"
                         className="text-[11px] font-bold text-amber-600 dark:text-amber-500 hover:underline flex items-center gap-1.5"
                       >
-                        View Image Source
+                        View Asset Source
                       </Link>
                     ) : (
                       item.font_family && (
@@ -270,18 +319,19 @@ export default function LCPelements({
                             {item.font_family.replace(/['"]/g, "")} (
                             {item.font_weight})
                           </span>
-                          {item.font_transfer_size && (
+                          {item.network_transfer_bytes && (
                             <span className="ml-1 opacity-70">
-                              {(item.font_transfer_size / 1024).toFixed(0)}KB
+                              {(item.network_transfer_bytes / 1024).toFixed(0)}
+                              KB
                             </span>
                           )}
                         </div>
                       )
                     )}
-                    <span className="text-[10px] text-neutral-500 font-bold uppercase tabular-nums border-l border-neutral-300 dark:border-neutral-700 pl-4">
-                      Occured {item.occurrence_count} times for{" "}
-                      {item.device_type} users
-                    </span>
+                    <p className="text-xs text-primary/80">
+                      {exceededGoodLcp} out of {item.occurrence_count} times
+                      exceeded good LCP (2.5 seconds)
+                    </p>
                   </div>
                 </div>
 
@@ -289,14 +339,19 @@ export default function LCPelements({
                 <div className="lg:col-span-4 p-5 bg-neutral-50/50 dark:bg-neutral-900/20 lg:border-l border-neutral-200 dark:border-neutral-800">
                   <div className="flex gap-2 items-end mb-3">
                     <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
-                      Key Asset Timings
+                      Asset Timings
                     </span>
-                    {/* <span className="text-[12px] font-mono font-bold text-foreground tabular-nums">
-                      {Math.round(totalPhases)}ms
-                    </span> */}
+                    <span className="text-xs text-primary/80">
+                      {totalPhases?.toFixed(2)} ms
+                    </span>
                   </div>
 
                   <div className="h-2 w-full bg-neutral-200 dark:bg-neutral-800 rounded-sm flex overflow-hidden shadow-inner">
+                    <div
+                      title={`Avg. TTFB: ${ttfb}ms\nShare: ${((ttfb / totalPhases) * 100).toFixed(1)}%\nTime To First Byte from server.`}
+                      style={{ width: `${(ttfb / totalPhases) * 100}%` }}
+                      className="h-full bg-green-600 dark:bg-neutral-600 border-r cursor-pointer border-black/5"
+                    />
                     <div
                       title={`Avg. Load Delay: ${delay}ms\nShare: ${((delay / totalPhases) * 100).toFixed(1)}%\nDelay before asset request starts.`}
                       style={{ width: `${(delay / totalPhases) * 100}%` }}
@@ -310,65 +365,315 @@ export default function LCPelements({
                     <div
                       title={`Avg. Render Delay: ${render}ms\nShare: ${((render / totalPhases) * 100).toFixed(1)}%\nTime after download until asset is painted.`}
                       style={{ width: `${(render / totalPhases) * 100}%` }}
-                      className="h-full bg-emerald-500 cursor-pointer"
+                      className="h-full bg-purple-500 cursor-pointer"
                     />
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <CustomTooltip
-                      width="550px"
-                      trigger={
-                        <div className="bg-primary/20 hover:bg-primary/40 text-xs mt-3 text-primary/80 px-2 py-0.5 rounded-sm">
-                          Potential Reasons
-                        </div>
-                      }
-                      content={
-                        <div className="p-2 space-y-3">
-                          <section className="space-y-1">
-                            <p className="text-primary-foreground/80">
-                              Potential Reasons:
-                            </p>
-                            {analysis.reasons.map((x, idx) => (
-                              <div
-                                className="flex items-center gap-2"
-                                key={idx}
-                              >
-                                <MoveRightIcon size={14} className="min-w-5" />
-                                {x}
-                              </div>
-                            ))}
-                          </section>
-                        </div>
-                      }
-                    />
+                  <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ZapIcon size={12} className="text-neutral-400" />
+                      <span className="text-[10px] text-neutral-500 uppercase font-black tracking-widest">
+                        Resource Metrics
+                      </span>
+                    </div>
 
-                    <CustomTooltip
-                      width="550px"
-                      trigger={
-                        <div className="bg-primary/20 hover:bg-primary/40 text-xs mt-3 text-primary/80 px-2 py-0.5 rounded-sm">
-                          Solutions
-                        </div>
-                      }
-                      content={
-                        <div className="p-2 space-y-3">
-                          <section className="space-y-1">
-                            <p className="text-primary-foreground/80">
-                              Solutions:
-                            </p>
-                            {analysis.solutions.map((x, idx) => (
-                              <div
-                                className="flex items-center gap-2"
-                                key={idx}
-                              >
-                                <MoveRightIcon size={14} className="min-w-5" />
-                                {x}
-                              </div>
-                            ))}
-                          </section>
-                        </div>
-                      }
-                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Network Transfer */}
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-neutral-400 uppercase font-bold">
+                          Transfer Size
+                        </span>
+                        <span
+                          className={`text-xs font-mono font-semibold truncate ${getTransferSizeColor({ size: item.network_transfer_bytes ? item.network_transfer_bytes : 0, downloadTime: item.avg_resource_load_duration })}`}
+                        >
+                          {item.network_transfer_bytes
+                            ? `${(item.network_transfer_bytes / 1024).toFixed(1)}KB`
+                            : "--"}
+                        </span>
+                      </div>
+
+                      {/* Decoded Size */}
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-neutral-400 uppercase font-bold">
+                          Asset Size
+                        </span>
+                        <span className="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 truncate">
+                          {item.memory_usage_bytes
+                            ? `${(item.memory_usage_bytes / 1024).toFixed(1)}KB`
+                            : "--"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+
+                  <div className="flex flex-wrap items-center mt-3 gap-2">
+                    {hasRenderDelay && (
+                      <CustomTooltip
+                        width="550px"
+                        trigger={
+                          <div className="bg-primary/20 hover:bg-green-500/40 text-xs text-primary/80 px-2 py-0.5 rounded-sm">
+                            Render Blocking Assets
+                          </div>
+                        }
+                        content={
+                          <div className="p-2 space-y-3">
+                            <section className="space-y-1">
+                              {renderBlockingAssets &&
+                                renderBlockingAssets.length > 0 && (
+                                  <>
+                                    <p className="text-primary-foreground/80">
+                                      We found the following render-blocking
+                                      assets relevent to LCP of this element &
+                                      similar across thesite. You can optimize
+                                      these to instantly improve LCP of the
+                                      current element.
+                                    </p>
+                                    <table className="w-full text-left border-collapse">
+                                      <thead>
+                                        <tr className="border-b">
+                                          <th className="py-2 px-3 font-medium">
+                                            Asset
+                                          </th>
+                                          <th className="py-2 px-3 font-medium">
+                                            Finished loading at
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {renderBlockingAssets.map(
+                                          (x, index) => {
+                                            const timing = x?.timing ?? 0;
+
+                                            const getSeverity = () => {
+                                              if (timing > 2000) return "High";
+                                              if (timing > 1000)
+                                                return "Medium";
+                                              return "Low";
+                                            };
+
+                                            const getRecommendation = (
+                                              asset: string,
+                                            ) => {
+                                              if (!asset)
+                                                return "Review asset impact on performance";
+
+                                              const url = asset.split("?")[0];
+
+                                              const isThirdParty =
+                                                url.includes(
+                                                  "google-analytics",
+                                                ) ||
+                                                url.includes(
+                                                  "googletagmanager",
+                                                ) ||
+                                                url.includes("facebook.net") ||
+                                                url.includes("doubleclick") ||
+                                                url.includes("ads") ||
+                                                (!url.startsWith("/") &&
+                                                  !url.includes(
+                                                    window?.location?.host,
+                                                  ));
+
+                                              // Fonts
+                                              if (
+                                                url.includes(
+                                                  "fonts.googleapis.com",
+                                                ) ||
+                                                url.includes(
+                                                  "fonts.gstatic.com",
+                                                )
+                                              ) {
+                                                return "Preconnect and preload fonts; use font-display: swap";
+                                              }
+
+                                              if (
+                                                /\.(woff2?|ttf|otf)$/.test(url)
+                                              ) {
+                                                return "Preload fonts and use font-display: swap";
+                                              }
+
+                                              // CSS
+                                              if (url.endsWith(".css")) {
+                                                return "Inline critical CSS and defer non-critical stylesheets";
+                                              }
+
+                                              // JavaScript
+                                              if (url.endsWith(".js")) {
+                                                if (isThirdParty) {
+                                                  return "Load asynchronously and delay execution until after main content";
+                                                }
+
+                                                if (
+                                                  url.includes("chunk") ||
+                                                  url.includes("vendor")
+                                                ) {
+                                                  return "Split routes/chunks and lazy-load non-critical modules";
+                                                }
+
+                                                return "Use defer/async and load only when needed";
+                                              }
+
+                                              // Images
+                                              if (
+                                                /\.(png|jpg|jpeg|webp|avif|gif|svg)$/.test(
+                                                  url,
+                                                )
+                                              ) {
+                                                return "Compress and serve next-gen formats; lazy-load offscreen images";
+                                              }
+
+                                              // Third-party fallback
+                                              if (isThirdParty) {
+                                                return "Load after critical content, consider async or deferred injection";
+                                              }
+
+                                              return "Defer or lazy-load if non-critical; evaluate impact on LCP and interaction delay";
+                                            };
+
+                                            const isOpen =
+                                              expandedRow === index;
+
+                                            return (
+                                              <Fragment key={index}>
+                                                <tr
+                                                  key={index}
+                                                  className="border-b last:border-none hover:bg-primary-foreground/20"
+                                                  onClick={() => {
+                                                    setExpandedRow(
+                                                      isOpen ? null : index,
+                                                    );
+                                                  }}
+                                                >
+                                                  <td className="py-2 px-3 truncate max-w-80">
+                                                    {x?.asset}
+                                                  </td>
+                                                  <td className="py-2 px-3 text-primary-foreground/50 dark:text-primary/50 whitespace-nowrap">
+                                                    {x?.timing} ms
+                                                  </td>
+                                                  <td>
+                                                    {isOpen ? (
+                                                      <ChevronUp size={15} />
+                                                    ) : (
+                                                      <ChevronDown size={15} />
+                                                    )}
+                                                  </td>
+                                                </tr>
+                                                {isOpen && (
+                                                  <tr className="">
+                                                    <td
+                                                      colSpan={2}
+                                                      className="px-3 py-3"
+                                                    >
+                                                      <div className="text-xs space-y-1">
+                                                        <p>
+                                                          <span className="font-medium">
+                                                            Severity:
+                                                          </span>{" "}
+                                                          <span
+                                                            className={
+                                                              timing > 2000
+                                                                ? "text-red-500"
+                                                                : timing > 1000
+                                                                  ? "text-yellow-500"
+                                                                  : "text-green-500"
+                                                            }
+                                                          >
+                                                            {getSeverity()}
+                                                          </span>
+                                                        </p>
+
+                                                        <p className="text-primary-foreground/80 dark:text-primary/60">
+                                                          {getRecommendation(
+                                                            x?.asset !==
+                                                              undefined
+                                                              ? x.asset
+                                                              : "",
+                                                          )}
+                                                        </p>
+                                                        <div className="flex items-center gap-2">
+                                                          Copy asset url:{" "}
+                                                          <Copy
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              if (
+                                                                item.lcp_asset_url
+                                                              ) {
+                                                                navigator.clipboard.writeText(
+                                                                  item.lcp_asset_url,
+                                                                );
+                                                                setCopied(
+                                                                  index,
+                                                                );
+                                                              }
+                                                            }}
+                                                            size={14}
+                                                            className="text-primary-foreground/60 cursor-pointer"
+                                                          />
+                                                          {copied !== null &&
+                                                            copied ===
+                                                              index && (
+                                                              <p className="text-green-400">
+                                                                Copied
+                                                              </p>
+                                                            )}
+                                                        </div>
+                                                      </div>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                              </Fragment>
+                                            );
+                                          },
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </>
+                                )}
+                            </section>
+                          </div>
+                        }
+                      />
+                    )}
+
+                    <button
+                      onClick={() => {
+                        AnalyzeContributors({
+                          input: {
+                            metric: "LCP",
+                            data: item !== undefined && item,
+                          },
+                          index: i,
+                        });
+                      }}
+                      className="rounded-sm bg-purple-600 text-xs px-3 py-0.5 cursor-pointer hover:bg-purple-800 text-primary-foreground font-medium flex gap-2 items-center"
+                    >
+                      <StarsIcon size={14} className="fill-yellow-200" />{" "}
+                      Analyze
+                    </button>
+                  </div>
+                  {analyzing === i && (
+                    <div className="mt-2 z-20 border text-sm border-primary/20 bg-white rounded-sm shadow-xm p-4">
+                      {analysisResult !== null && analysisResult?.length > 0 ? (
+                        <div className="px-2 py-0.5 rounded-xs text-xs">
+                          <ol className="list-disc space-y-2">
+                            {analysisResult.map((x, index) => (
+                              <li key={index}>{x}</li>
+                            ))}
+                          </ol>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 px-2 py-0.5 text-xs">
+                          <LoaderCircle
+                            className="animate-spin text-primary/20"
+                            size={14}
+                          />
+                          <span>Analyzing element...</span>
+                        </div>
+                      )}
+
+                      <div className="absolute -top-1.5 left-4 w-3 h-3 bg-white border-r border-b border-primary/20 rotate-225" />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -377,138 +682,97 @@ export default function LCPelements({
       </div>
     </div>
   );
+
+  async function AnalyzeContributors<T>({
+    input,
+    index,
+  }: {
+    input: AnalysisType<T>;
+    index: number;
+  }) {
+    setAnalyzing(index);
+    setAnalysisResult(null);
+
+    try {
+      const res = await fetch("/api/analysis/contributors", {
+        method: "POST",
+        headers: {
+          "Content-Type": "apllication/json",
+        },
+        body: JSON.stringify({ metric: input.metric, data: input.data }),
+      });
+
+      const body: any = await res.json();
+
+      if (!res.ok) {
+        setAnalysisResult(null);
+        throw new Error(body.message ?? "Couldn't get analysis");
+      }
+      // setAnalyzing(null);
+
+      setAnalysisResult(body?.json?.fixes);
+    } catch (error: any) {
+      setAnalyzing(null);
+      setAnalysisResult(null);
+      console.error(error.message ?? "UNexpacted Error");
+    }
+  }
 }
 
-function analyzeLoadTime({
-  load_delay,
-  load_duration,
-  render_delay,
-  asset_type,
+/**
+ * determines the color for transfersize of a LCP asset
+ */
+function getTransferSizeColor({
+  size,
+  downloadTime,
 }: {
-  load_delay: number;
-  load_duration: number;
-  render_delay: number;
-  asset_type: "image" | "font";
+  size: number;
+  downloadTime: number;
 }) {
-  // major phase
-  const maxVal = Math.max(load_delay, load_duration, render_delay);
-  let phase: keyof typeof timings;
+  const sizeKB = size / 1024;
 
-  if (maxVal === load_delay) phase = "load_delay";
-  else if (maxVal === load_duration) phase = "load_duration";
-  else phase = "render_delay";
+  const thresholds = {
+    size: { excellent: 100, good: 200, heavy: 500 },
+    timing: { excellent: 500, good: 1000, average: 1500 },
+  };
 
-  const threshold = timings[phase][asset_type];
-  if (maxVal <= threshold) {
-    return { status: "healthy", major_issue: null, reasons: [], solutions: [] };
+  /**
+   * CASE: POOR
+   * If the file is too heavy (>500KB) -> ALWAYS POOR (due to memory/decoding cost)
+   * If the download takes > 1.5s -> ALWAYS POOR (ruins LCP budget)
+   */
+  if (
+    sizeKB >= thresholds.size.heavy ||
+    downloadTime >= thresholds.timing.average
+  ) {
+    return ColorCodes.poor;
   }
 
-  const diagnostics: Record<
-    keyof typeof timings,
-    Record<"image" | "font", { reasons: string[]; solutions: string[] }>
-  > = {
-    load_delay: {
-      image: {
-        reasons: [
-          "Image is not present in initial HTML (client-side rendered)",
-          "Lazy-loaded for above the fold image (request deferred by browser)",
-          "Image is discovered late due to external CSS or delayed stylesheet parsing",
-          "Low fetch priority or missing preload hint causing browser to deprioritize request",
-          "Main-thread blocking (JS execution or long tasks) delaying image request initiation",
-          "Resource priority competition from higher priority assets delaying LCP image fetch",
-        ],
-        solutions: [
-          "Remove loading='lazy' from the LCP image or exclude the asset from lazy load",
-          "In WordPress, you can use WordPress `Featured Image` or direct HTML image instead of plugin-generated blocks",
-          "Enable `preload` or `high priority` for the main image if your theme supports it",
-          "Move image reference from CSS to an <img> tag in HTML",
-          "Remove unnecessary plugins and defer third-party scripts until after main content loads",
-        ],
-      },
-      font: {
-        reasons: [
-          "Font is defined in a CSS @import which delays discovery",
-          "No preload hint provided or not marked as important so they load after other resources",
-          "The browser delays fonts because other scripts or styles are still loading",
-          "Slow font loading methods that delay text display",
-          "",
-        ],
-        solutions: [
-          "Add <link rel='preload' as='font'> in the HTML <head> or enable font preloading in your theme / performance plugin",
-          "Switch to system fonts where possible for better performance",
-          "Avoid using @import for font CSS files",
-          "Inline the @font-face declaration in the HTML <style> tag",
-          "Ensure the font is hosted on the same origin to avoid DNS lookup",
-          "Remove unused fonts from theme or page builder settings",
-        ],
-      },
-    },
-    load_duration: {
-      image: {
-        reasons: [
-          "File size is too large for the current network connection",
-          "Image format is inefficient (e.g., using PNG/JPG instead of WebP)",
-          "Slow Time to First Byte (TTFB) from the server or CDN",
-          "Lack of responsive image sizes (serving desktop size to mobile)",
-        ],
-        solutions: [
-          "Convert image to AVIF or WebP format",
-          "Implement srcset and sizes for responsive delivery",
-          "Use a Global CDN to reduce physical distance to the user",
-          "Increase image compression levels (aim for < 100kb for LCP)",
-        ],
-      },
-      font: {
-        reasons: [
-          "Font file includes unused glyphs (no subsetting)",
-          "Using older formats like TTF or OTF instead of WOFF2",
-          "Slow server response or high network latency",
-          "Missing Cache-Control headers causing repeated downloads",
-        ],
-        solutions: [
-          "Subset the font to include only required character sets",
-          "Convert and serve only WOFF2 format",
-          "Implement a long-term caching strategy (max-age=31536000)",
-          "Use a faster Font CDN or self-host on a high-perf server",
-        ],
-      },
-    },
-    render_delay: {
-      image: {
-        reasons: [
-          "Main thread is busy with heavy JavaScript execution",
-          "Large image decoding is blocking the paint process",
-          "Missing width/height attributes causing layout shifts",
-          "Image is hidden behind a complex CSS filter or transform",
-        ],
-        solutions: [
-          "Add decoding='async' to the image tag",
-          "Minimize or defer non-critical JS during initial load",
-          "Ensure width and height attributes are explicitly set",
-          "Reduce CSS selector complexity affecting the image container",
-        ],
-      },
-      font: {
-        reasons: [
-          "font-display is not set to 'swap' or 'fallback'",
-          "JavaScript execution is blocking the rendering of text",
-          "The browser is waiting for the font to avoid FOIT",
-          "Heavy layout recalculations are occurring during font swap",
-        ],
-        solutions: [
-          "Add font-display: swap to your @font-face CSS",
-          "Reduce render-blocking JavaScript in the <head>",
-          "Optimize the Critical CSS path for text blocks",
-          "Ensure the fallback system font has similar metrics (size-adjust)",
-        ],
-      },
-    },
-  };
+  /**
+   * CASE: SMALL BUT SLOW (Latency/CDN Bottleneck)
+   * If size is tiny (<100KB) but takes > 1s to download.
+   * The developer did their job, but the server/CDN is failing.
+   */
+  if (
+    sizeKB < thresholds.size.excellent &&
+    downloadTime > thresholds.timing.good
+  ) {
+    return ColorCodes.average; // Or ColorCodes.poor depending on how strict you are
+  }
 
-  const result = diagnostics[phase][asset_type];
+  /**
+   * CASE: GOOD / EXCELLENT
+   * File is within reasonable limits and downloaded promptly.
+   */
+  if (
+    sizeKB <= thresholds.size.good &&
+    downloadTime <= thresholds.timing.good
+  ) {
+    return sizeKB < thresholds.size.excellent
+      ? ColorCodes.good
+      : ColorCodes.good;
+  }
 
-  return {
-    reasons: result.reasons,
-    solutions: result.solutions,
-  };
+  // Fallback for middle-ground (e.g., 300KB file in 800ms)
+  return ColorCodes.average;
 }
