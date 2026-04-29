@@ -25,9 +25,6 @@ let previousPage = document.referrer || null;
 let currentPage = location.pathname + location.search;
 
 const batchedData = [];
-const latestMetrics = {
-  INP: null,
-};
 
 let maxCustomEntry = null;
 let webVitalsINP = null;
@@ -37,6 +34,101 @@ let worstCLS = null;
 
 let isFlushing = false;
 let hasFlushed = false;
+
+function createLongTaskTracker() {
+  const buffer = [];
+
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      buffer.push({
+        start: entry.startTime,
+        duration: entry.duration,
+        name: entry.name,
+      });
+
+      if (buffer.length > 200) buffer.shift();
+    }
+  });
+
+  if (
+    typeof PerformanceObserver !== "undefined" &&
+    PerformanceObserver.supportedEntryTypes?.includes("longtask")
+  ) {
+    observer.observe({ type: "longtask", buffered: true });
+  }
+
+  return {
+    stop: () => observer.disconnect(),
+    get: () => buffer,
+    // flush: () => {
+    //   const now = performance.now();
+    //   const out = buffer.filter((t) => now - t.start < 5000);
+    //   return out;
+    // },
+  };
+}
+
+const longTaskTracker = createLongTaskTracker();
+
+function createCLSObserver() {
+  const buffer = [];
+  let worst = null;
+
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      if (entry.hadRecentInput) continue;
+
+      buffer.push(entry);
+      if (buffer.length > 200) buffer.shift();
+
+      if (!worst || entry.value > worst.value) {
+        worst = entry;
+      }
+    }
+  });
+
+  if (PerformanceObserver.supportedEntryTypes?.includes("layout-shift")) {
+    observer.observe({ type: "layout-shift", buffered: true });
+  }
+
+  return {
+    buffer,
+    getWorst: () => worst,
+    // flush: () => {
+    //   const out = buffer.slice();
+    //   buffer.length = 0;
+    //   return out;
+    // },
+    stop: () => observer.disconnect(),
+  };
+}
+
+const clsObserver = createCLSObserver();
+
+function computeSessionCLS(entries) {
+  let maxCLS = 0;
+  let sessionValue = 0;
+  let sessionStartTime = 0;
+  let lastEntryTime = 0;
+
+  for (const entry of entries) {
+    if (
+      sessionValue === 0 ||
+      entry.startTime - lastEntryTime > 1000 ||
+      entry.startTime - sessionStartTime > 5000
+    ) {
+      sessionValue = entry.value;
+      sessionStartTime = entry.startTime;
+    } else {
+      sessionValue += entry.value;
+    }
+
+    lastEntryTime = entry.startTime;
+    maxCLS = Math.max(maxCLS, sessionValue);
+  }
+
+  return maxCLS;
+}
 
 function getCookie(name) {
   return document.cookie
@@ -57,24 +149,17 @@ if (!sessionId) {
   setCookie("sessionId", sessionId);
 }
 
-// for main thread profiling (INP)
-let profiler;
-if ("Profiler" in window) {
-  try {
-    profiler = new Profiler({ sampleInterval: 10, maxBufferSize: 10000 });
-  } catch (e) {
-    console.warn("JS Profiling is disabled by Document Policy.");
-  }
-}
-
-const elementSummaryCache = new WeakMap();
+const elementSummaryCache = new Map();
 
 function summarizeElement(el) {
   if (!el || !el.tagName) {
     return "(unknown)";
   }
-  if (elementSummaryCache.has(el)) {
-    return elementSummaryCache.get(el);
+
+  const key = el.tagName + "|" + (el.id || "") + "|" + (el.className || "");
+
+  if (elementSummaryCache.has(key)) {
+    return elementSummaryCache.get(key);
   }
 
   function isSignificantElement(element) {
@@ -116,43 +201,11 @@ function summarizeElement(el) {
   if (currentEl.className && typeof currentEl.className === "string")
     summary += ` class="${currentEl.className}"`;
   summary += ">";
-  elementSummaryCache.set(el, summary);
+
+  elementSummaryCache.set(key, summary);
+
   return summary;
 }
-
-// to collect navigation timings
-// if ("PerformanceObserver" in window) {
-//   let navTimingQueued = false;
-
-//   const observer = new PerformanceObserver((list) => {
-//     if (navTimingQueued) return;
-
-//     const entry = list.getEntries()[0];
-//     if (!entry) return;
-
-//     queueEvent({
-//       type: "navigation-timing",
-//       navigationType: entry.type, // navigate | reload | back_forward | prerender
-//       incomplete:
-//         entry.loadEventEnd === 0 ||
-//         entry.domComplete === 0 ||
-//         entry.responseEnd === 0,
-//       raw: {
-//         startTime: entry.startTime,
-//         requestStart: entry.requestStart,
-//         responseStart: entry.responseStart,
-//         responseEnd: entry.responseEnd,
-//         domInteractive: entry.domInteractive,
-//         loadEventEnd: entry.loadEventEnd,
-//       },
-//     });
-
-//     navTimingQueued = true;
-//     observer.disconnect();
-//   });
-
-//   observer.observe({ type: "navigation", buffered: true });
-// }
 
 function initializeWebVitals() {
   onCLS(handleCLS, { reportAllChanges: true });
@@ -161,9 +214,11 @@ function initializeWebVitals() {
   onTTFB(handleTTFB);
   onINP(handleINP, { reportAllChanges: true });
 
+  const supported = PerformanceObserver.supportedEntryTypes || [];
+
   if (
-    "PerformanceObserver" in window &&
-    PerformanceObserver.supportedEntryTypes.includes("event")
+    typeof PerformanceObserver !== "undefined" &&
+    supported.includes("event")
   ) {
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
@@ -204,7 +259,18 @@ function initializeWebVitals() {
   }
 }
 
-initializeWebVitals();
+function init() {
+  initializeWebVitals();
+}
+
+if (
+  document.readyState === "complete" ||
+  document.readyState === "interactive"
+) {
+  init();
+} else {
+  document.addEventListener("DOMContentLoaded", init);
+}
 
 // Reset INP data on SPA navigation
 window.addEventListener("popstate", () => {
@@ -213,7 +279,7 @@ window.addEventListener("popstate", () => {
 
   maxCustomEntry = null;
   webVitalsINP = null;
-  latestMetrics.INP = null;
+  // latestMetrics.INP = null;
 });
 
 function classifyMetric(value, thresholds) {
@@ -231,63 +297,156 @@ function queueEvent(event) {
 }
 
 function handleCLS(metric) {
-  if (!worstCLS || metric.value > worstCLS.value) {
-    worstCLS = {
-      type: "web-vital",
-      siteDomain,
-      name: "CLS",
-      value: metric.value,
-      rating: classifyMetric(metric.value, CLSThresholds),
-      attribution: {
-        largestShiftTarget: metric.attribution?.largestShiftTarget,
-        largestShiftTime: metric.attribution?.largestShiftTime,
-      },
-    };
-  }
-}
+  const shifts = metric.attribution?.largestShiftEntries || [];
 
-// function handleINP(metric) {
-//   webVitalsINP = metric;
-//   latestMetrics.INP = metric.value;
-// }
+  const validShifts = shifts.filter((e) => e?.previousRect && e?.currentRect);
 
-async function handleINP(metric) {
-  const primaryAddress = location.hostname;
+  let enrichedShifts = validShifts
+    .map((entry) => {
+      const prev = entry.previousRect;
+      const curr = entry.currentRect;
+      const node =
+        entry.sources?.[0]?.node || entry.sources?.[0]?.element || null;
 
-  // Stop the profiler to get the samples
-  const trace = profiler ? await profiler.stop() : null;
-  const interactionStart = metric.startTime;
-  const interactionEnd = metric.startTime + metric.value;
+      if (!prev || !curr) return null;
 
-  let mainThreadBreakdown = [];
+      const dx = curr.x - prev.x;
+      const dy = curr.y - prev.y;
 
-  if (trace) {
-    // Filter and Map samples
-    const filteredSamples = trace.samples.filter(
-      (s) => s.timestamp >= interactionStart && s.timestamp <= interactionEnd,
+      const areaBefore = prev.width * prev.height;
+      const areaAfter = curr.width * curr.height;
+      const viewportArea = window.innerWidth * window.innerHeight || 1;
+      const distanceMoved = Math.sqrt(dx * dx + dy * dy);
+
+      return {
+        element: summarizeElement(node),
+        shift: {
+          dx,
+          dy,
+          direction: {
+            horizontal: dx > 0 ? "right" : dx < 0 ? "left" : "none",
+            vertical: dy > 0 ? "down" : dy < 0 ? "up" : "none",
+          },
+        },
+        rect: { previous: prev, current: curr },
+        impact: {
+          areaBefore,
+          distanceMoved,
+          areaAfter,
+          areaDelta: areaAfter - areaBefore,
+          viewportRatio: areaBefore / viewportArea,
+        },
+      };
+    })
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        b.impact.viewportRatio - a.impact.viewportRatio ||
+        b.impact.distanceMoved - a.impact.distanceMoved ||
+        b.rect.current.y - a.rect.current.y,
     );
 
-    // Deduplicate functions (so we don't send 1000 identical "react-dom" entries)
-    const uniqueFunctions = new Set();
-    mainThreadBreakdown = filteredSamples
-      .map((sample) => {
-        const frame = trace.frames[sample.frameId];
-        const script = trace.scripts[frame.scriptId];
-        const identifier = `${frame.name}-${script?.url}-${frame.line}`;
+  if (enrichedShifts.length === 0 && clsObserver) {
+    const rawShifts = clsObserver.buffer;
 
-        if (uniqueFunctions.has(identifier)) return null;
-        uniqueFunctions.add(identifier);
-
-        return {
-          fn: frame.name,
-          file: script?.url || "inline/eval",
-          isFirstParty: script?.url?.includes(primaryAddress),
-          line: frame.line,
-          col: frame.column,
-        };
-      })
-      .filter(Boolean); // Remove nulls (duplicates)
+    enrichedShifts = rawShifts
+      .filter((e) => e.value > 0)
+      .map((entry) => ({
+        element: entry.sources?.[0]?.node
+          ? summarizeElement(entry.sources[0].node)
+          : "(unknown)",
+        shift: null,
+        rect: null,
+        impact: {
+          areaBefore: null,
+          areaAfter: null,
+          areaDelta: null,
+          distanceMoved: null,
+          viewportRatio: entry.value,
+        },
+        value: entry.value,
+        time: entry.startTime,
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
   }
+
+  const rawBuffer = clsObserver?.buffer || [];
+
+  const debug = {
+    totalShifts: rawBuffer.length,
+    cumulativeSessionValue: computeSessionCLS(rawBuffer),
+    webVitalsValue: metric.value,
+    worstSingleShift: clsObserver?.getWorst()?.value || 0,
+    recentShifts: rawBuffer.slice(-5).map((e) => ({
+      value: e.value,
+      time: e.startTime,
+    })),
+  };
+
+  const topShift = enrichedShifts[0];
+
+  worstCLS = {
+    type: "web-vital",
+    siteDomain,
+    name: "CLS",
+    value: metric.value,
+    rating: classifyMetric(metric.value, CLSThresholds),
+    attribution: {
+      largestShiftTarget: metric.attribution?.largestShiftTarget,
+      largestShiftTime: metric.attribution?.largestShiftTime,
+      loadState: metric.attribution?.loadState,
+      shifts: enrichedShifts,
+      summary: topShift
+        ? {
+            element: topShift.element,
+            biggestShift: topShift.shift,
+            impact: topShift.impact,
+            rect: topShift.rect,
+          }
+        : null,
+    },
+    debug,
+  };
+}
+
+async function handleINP(metric) {
+  const isFirstParty = (url) => {
+    try {
+      const u = new URL(url);
+      return u.hostname === location.hostname;
+    } catch {
+      return false;
+    }
+  };
+
+  // latestMetrics.INP = metric.value;
+  // if (!webVitalsINP) {
+  //   webVitalsINP = { value: metric.value };
+  // }
+
+  // Expand interaction window slightly
+  const BUFFER = 50;
+  const interactionStart = metric.startTime - BUFFER;
+  const interactionEnd = metric.startTime + metric.value + BUFFER;
+
+  const longTasks = longTaskTracker.get();
+
+  const relevantLongTasks = longTasks.filter((t) => {
+    const taskStart = t.start;
+    const taskEnd = t.start + t.duration;
+
+    return taskEnd >= interactionStart && taskStart <= interactionEnd;
+  });
+
+  let mainThreadBreakdown = relevantLongTasks
+    .sort((a, b) => b.duration - a.duration)
+    .slice(0, 10)
+    .map((t) => ({
+      task: "main-thread-block",
+      duration: t.duration,
+      start: t.start,
+    }));
 
   const loafs = metric.attribution?.longAnimationFrameEntries || [];
 
@@ -297,25 +456,21 @@ async function handleINP(metric) {
     loaf: loafs.map((loaf) => ({
       blockingDuration: loaf.blockingDuration,
       duration: loaf.duration,
-      scripts:
-        loaf.scripts?.map((x) => ({
+      scripts: (loaf.scripts || [])
+        .map((x) => ({
           sourceURL: x.sourceURL,
-          isFirstParty: x.sourceURL?.includes(primaryAddress),
+          isFirstParty: isFirstParty(x.sourceURL),
           duration: x.duration,
           entryType: x.entryType,
           type: x.invokerType,
           invoker: x.invoker,
           sourceCharPosition: x.sourceCharPosition,
           layoutImpact: x.forcedStyleAndLayoutDuration,
-        })) || [],
+        }))
+        .sort((a, b) => b.duration - a.duration)
+        .slice(0, 5),
     })),
   };
-
-  latestMetrics.INP = metric.value;
-
-  if ("Profiler" in window) {
-    profiler = new Profiler({ sampleInterval: 10, maxBufferSize: 10000 });
-  }
 }
 
 function handleLCP(metric) {
@@ -539,7 +694,7 @@ function getRenderBlockers() {
       !res.name.includes("defer");
     const isCSS =
       res.initiatorType === "link" &&
-      (res.name.includes(".css") || res.name.includes("fonts.googleapis"));
+      (res.name.includes(".css") || res.name.includes("fonts.googleapis.com"));
 
     return isBeforeFCP && (isSyncJS || isCSS);
   });
@@ -586,7 +741,7 @@ function checkMetricsReady() {
   if (
     worstCLS !== null &&
     worstLCP !== null &&
-    (webVitalsINP !== null || maxCustomEntry === null)
+    (webVitalsINP !== null || maxCustomEntry !== null)
   ) {
     return true;
   }
@@ -599,7 +754,7 @@ function flushMetrics() {
   hasFlushed = true;
 
   try {
-    if (latestMetrics.INP || maxCustomEntry) {
+    if (webVitalsINP || maxCustomEntry) {
       let inpAttribution = {};
       let inpValue = webVitalsINP
         ? webVitalsINP.value
@@ -608,11 +763,11 @@ function flushMetrics() {
           : null;
       const attr = webVitalsINP?.attribution;
       const topScript = getTopBlockingScript(webVitalsINP?.loaf || []);
-      const inpTime = webVitalsINP?.startTime ?? maxCustomEntry?.startTime;
+      // const inpTime = webVitalsINP?.startTime ?? maxCustomEntry?.startTime;
 
       if (webVitalsINP?.attribution) {
         inpAttribution = {
-          target: summarizeElement(attr.target),
+          target: attr?.target ? summarizeElement(attr.target) : "(unknown)",
           eventType: attr.interactionType,
           inputDelay: attr.inputDelay,
           processingDuration: attr.processingDuration,
@@ -636,7 +791,9 @@ function flushMetrics() {
         const processingTime = maxCustomEntry.duration - inputDelay;
 
         inpAttribution = {
-          target: summarizeElement(maxCustomEntry.target),
+          target: maxCustomEntry?.target
+            ? summarizeElement(maxCustomEntry.target)
+            : "(unknown)",
           eventType: maxCustomEntry.name,
           inputDelay: inputDelay,
           processingDuration: processingTime,
@@ -696,47 +853,18 @@ function flushMetrics() {
         data: [...batchedData],
       });
 
-      let success = false;
-
       if (navigator.sendBeacon) {
-        const blob = new Blob([payload], { type: "application/json" });
-        success = navigator.sendBeacon(CONFIG.API_URL, blob);
-      }
-      if (!success) {
-        try {
-          fetch(CONFIG.API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: payload,
-            keepalive: true,
-          })
-            .then(() => {
-              success = true;
-            })
-            .catch((error) => {
-              console.error("Failed to send metrics via fetch:", error);
-              // if (payload.length < 50000) { // avoids filling it with large payloads
-              //   localStorage.setItem(
-              //     "unsentMetrics",
-              //     JSON.stringify({
-              //       payload,
-              //       timestamp: Date.now()
-              //     })
-              //   );
-              // }
-            });
-        } catch (error) {
-          console.error("Fetch error:", error);
-          // if (payload.length < 50000) { // avoids filling it with large payloads
-          //   localStorage.setItem(
-          //     "unsentMetrics",
-          //     JSON.stringify({
-          //       payload,
-          //       timestamp: Date.now()
-          //     })
-          //   );
-          // }
-        }
+        navigator.sendBeacon(
+          CONFIG.API_URL,
+          new Blob([payload], { type: "application/json" }),
+        );
+      } else {
+        fetch(CONFIG.API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
       }
     }
   } finally {

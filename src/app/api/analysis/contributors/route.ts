@@ -9,45 +9,51 @@ export async function POST<T>(req: NextRequest) {
   }
 
   const prompt = `You are a web performance expert.
-                  Analyze the following ${metric} contributor data.
 
-                  Give:
-                    1. Fixes (max 3), wordpress and non wordpress suggestion in a user friendly manner.
-
-                    Rules:
-
-                      - Check if metric is already under good range
-                      - Keep each point under 20 words
-                      - Rely heavily on the asset timings i.e TTFB, Load Delay, Load Duration and Render Delay to make your judgements
-                      - Provide asset-specific, actionable recommendations only
-                      - Focus on measurable performance improvements aligned with industry standards
-                      - Avoid suggestions that are not supported by the provided data
-                      - Ensure consistency: repeat the same recommendation for similar inputs
-                      - For TTFB or LCP TTFB:
-                         > Do not suggest fixes directly
-                         > State if TTFB is high
-                         > Compare against asset-average TTFB
-                         > Recommend action only if both exceed healthy thresholds
-                      - Respect asset type strictly; do not mix guidance across different asset categories
-                      - Avoid conflicting or misleading suggestions (e.g., never recommend lazy loading for LCP images)
-                      - Ensure recommendations match actual asset size (e.g., do not suggest 150KB optimization for a 20KB asset)
-
-                  Return ONLY in pure JSON:
-
-                  {
-                    "fixes": string[]
-                  }
-
-                  Do NOT include:
-                  - markdown
-                  - code fences (\`\`\` or \`\`\`json)
-                  - explanations
-                  - extra text before or after
-
-
-                  Data:
-                  ${JSON.stringify(data, null, 2)}
-                `;
+      Task:
+      Analyze ${metric} contributor data using STRICT timing hierarchy.
+      
+      Priority Order:
+      1. TTFB
+      2. Load Delay
+      3. Load Duration
+      4. Render Delay
+      
+      Rules:
+      - Always evaluate higher priority metrics first
+      - Prioritize higher metrics, but if no actionable fix is allowed, evaluate the next metric
+      
+      Thresholds:
+      TTFB: good <800ms, poor >1800ms
+      Load Delay: good <250ms, poor >1000ms
+      Load Duration: good <1000ms, poor >2500ms
+      Render Delay: good <200ms, poor >800ms
+      
+      TTFB Logic:
+      - Do NOT suggest direct fixes
+      - If TTFB is high, return a diagnostic insight
+      - Compare with asset-average TTFB
+      - Suggest high-level action ONLY if both are poor
+      
+      Output:
+      Return ONLY JSON:
+      {"fixes": string[]}
+      
+      Output Rules:
+      - Always return at least 1 item
+      - Max 3 items
+      - Each item <= 20 words
+      - Items can be fixes OR diagnostic insights
+      - Do not return input structure or hints such as top_3_render_blockers
+      
+      Constraints:
+      - Asset-specific only
+      - No generic advice
+      - No markdown or extra text
+      
+      Data:
+      ${JSON.stringify(data)}
+      `;
 
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {

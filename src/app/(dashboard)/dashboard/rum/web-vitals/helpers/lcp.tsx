@@ -342,7 +342,7 @@ export default function LCPelements({
                       Asset Timings
                     </span>
                     <span className="text-xs text-primary/80">
-                      {totalPhases?.toFixed(2)} ms
+                      (Total: {totalPhases?.toFixed(2)} ms)
                     </span>
                   </div>
 
@@ -595,11 +595,9 @@ export default function LCPelements({
                                                           <Copy
                                                             onClick={(e) => {
                                                               e.stopPropagation();
-                                                              if (
-                                                                item.lcp_asset_url
-                                                              ) {
+                                                              if (x?.asset) {
                                                                 navigator.clipboard.writeText(
-                                                                  item.lcp_asset_url,
+                                                                  x.asset,
                                                                 );
                                                                 setCopied(
                                                                   index,
