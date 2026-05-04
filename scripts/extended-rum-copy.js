@@ -72,7 +72,7 @@ const longTaskTracker = createLongTaskTracker();
 
 function createCLSObserver() {
   const buffer = [];
-  let worst = null;
+  // let worst = null;
 
   const observer = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
@@ -81,9 +81,9 @@ function createCLSObserver() {
       buffer.push(entry);
       if (buffer.length > 200) buffer.shift();
 
-      if (!worst || entry.value > worst.value) {
-        worst = entry;
-      }
+      // if (!worst || entry.value > worst.value) {
+      //   worst = entry;
+      // }
     }
   });
 
@@ -93,7 +93,7 @@ function createCLSObserver() {
 
   return {
     buffer,
-    getWorst: () => worst,
+    // getWorst: () => worst,
     // flush: () => {
     //   const out = buffer.slice();
     //   buffer.length = 0;
@@ -105,30 +105,30 @@ function createCLSObserver() {
 
 const clsObserver = createCLSObserver();
 
-function computeSessionCLS(entries) {
-  let maxCLS = 0;
-  let sessionValue = 0;
-  let sessionStartTime = 0;
-  let lastEntryTime = 0;
+// function computeSessionCLS(entries) {
+//   let maxCLS = 0;
+//   let sessionValue = 0;
+//   let sessionStartTime = 0;
+//   let lastEntryTime = 0;
 
-  for (const entry of entries) {
-    if (
-      sessionValue === 0 ||
-      entry.startTime - lastEntryTime > 1000 ||
-      entry.startTime - sessionStartTime > 5000
-    ) {
-      sessionValue = entry.value;
-      sessionStartTime = entry.startTime;
-    } else {
-      sessionValue += entry.value;
-    }
+//   for (const entry of entries) {
+//     if (
+//       sessionValue === 0 ||
+//       entry.startTime - lastEntryTime > 1000 ||
+//       entry.startTime - sessionStartTime > 5000
+//     ) {
+//       sessionValue = entry.value;
+//       sessionStartTime = entry.startTime;
+//     } else {
+//       sessionValue += entry.value;
+//     }
 
-    lastEntryTime = entry.startTime;
-    maxCLS = Math.max(maxCLS, sessionValue);
-  }
+//     lastEntryTime = entry.startTime;
+//     maxCLS = Math.max(maxCLS, sessionValue);
+//   }
 
-  return maxCLS;
-}
+//   return maxCLS;
+// }
 
 function getCookie(name) {
   return document.cookie
@@ -344,44 +344,88 @@ function handleCLS(metric) {
         b.impact.viewportRatio - a.impact.viewportRatio ||
         b.impact.distanceMoved - a.impact.distanceMoved ||
         b.rect.current.y - a.rect.current.y,
-    );
+    )
+    .slice(0, 5);
 
   if (enrichedShifts.length === 0 && clsObserver) {
     const rawShifts = clsObserver.buffer;
 
     enrichedShifts = rawShifts
-      .filter((e) => e.value > 0)
-      .map((entry) => ({
-        element: entry.sources?.[0]?.node
-          ? summarizeElement(entry.sources[0].node)
-          : "(unknown)",
-        shift: null,
-        rect: null,
-        impact: {
+      .filter((e) => e.sources?.length > 0 || e.value > 0.001)
+      .map((entry) => {
+        const sources = entry.sources || [];
+        const nodes = sources.map((s) => s.node || s.element).filter(Boolean);
+        const primary = sources[0] || null;
+        const node = primary?.node || primary?.element || null;
+        const prev = primary?.previousRect || null;
+        const curr = primary?.currentRect || null;
+
+        let shift = null;
+        let impact = {
           areaBefore: null,
           areaAfter: null,
           areaDelta: null,
           distanceMoved: null,
           viewportRatio: entry.value,
-        },
-        value: entry.value,
-        time: entry.startTime,
-      }))
+        };
+
+        if (prev && curr) {
+          const dx = curr.x - prev.x;
+          const dy = curr.y - prev.y;
+
+          const areaBefore = prev.width * prev.height;
+          const areaAfter = curr.width * curr.height;
+          const viewportArea = window.innerWidth * window.innerHeight || 1;
+          const distanceMoved = Math.sqrt(dx * dx + dy * dy);
+
+          shift = {
+            dx,
+            dy,
+            direction: {
+              horizontal: dx > 0 ? "right" : dx < 0 ? "left" : "none",
+              vertical: dy > 0 ? "down" : dy < 0 ? "up" : "none",
+            },
+          };
+
+          impact = {
+            areaDelta: areaAfter - areaBefore,
+            distanceMoved,
+            viewportRatio: areaBefore / viewportArea,
+          };
+        }
+
+        return {
+          // Primary element (most likely culprit)
+          element: node ? summarizeElement(node) : "(unknown)",
+          // All affected elements in this shift
+          elements: nodes.map(summarizeElement),
+          // Geometry shift (if available)
+          shift,
+          rect: {
+            previous: prev,
+            current: curr,
+          },
+          impact,
+          value: entry.value,
+          time: entry.startTime,
+          sourcesCount: sources.length,
+        };
+      })
       .sort((a, b) => b.value - a.value)
-      .slice(0, 10);
+      .slice(0, 5);
   }
 
   const rawBuffer = clsObserver?.buffer || [];
 
   const debug = {
     totalShifts: rawBuffer.length,
-    cumulativeSessionValue: computeSessionCLS(rawBuffer),
+    // cumulativeSessionValue: computeSessionCLS(rawBuffer),
     webVitalsValue: metric.value,
-    worstSingleShift: clsObserver?.getWorst()?.value || 0,
-    recentShifts: rawBuffer.slice(-5).map((e) => ({
-      value: e.value,
-      time: e.startTime,
-    })),
+    // worstSingleShift: clsObserver?.getWorst()?.value || 0,
+    // recentShifts: rawBuffer.slice(-5).map((e) => ({
+    //   value: e.value,
+    //   time: e.startTime,
+    // })),
   };
 
   const topShift = enrichedShifts[0];
@@ -397,14 +441,14 @@ function handleCLS(metric) {
       largestShiftTime: metric.attribution?.largestShiftTime,
       loadState: metric.attribution?.loadState,
       shifts: enrichedShifts,
-      summary: topShift
-        ? {
-            element: topShift.element,
-            biggestShift: topShift.shift,
-            impact: topShift.impact,
-            rect: topShift.rect,
-          }
-        : null,
+      // summary: topShift
+      //   ? {
+      //       element: topShift.element,
+      //       // biggestShift: topShift.shift,
+      //       impact: topShift.impact,
+      //       rect: topShift.rect,
+      //     }
+      //   : null,
     },
     debug,
   };
@@ -699,17 +743,20 @@ function getRenderBlockers() {
     return isBeforeFCP && (isSyncJS || isCSS);
   });
 
-  const report = blockers.map((res) => {
-    const fcpDelayVal = fcpTime - res.responseEnd;
+  const report = blockers
+    .map((res) => {
+      const fcpDelayVal = fcpTime - res.responseEnd;
 
-    return {
-      type: "render-blocking-scripts",
-      URL: res.name,
-      "Finish Time": res.responseEnd.toFixed(2) + "ms",
-      "FCP Delay":
-        fcpDelayVal > 0 ? fcpDelayVal.toFixed(2) + "ms" : "Critical Path",
-    };
-  });
+      return {
+        type: "render-blocking-scripts",
+        URL: res.name,
+        "Finish Time": res.responseEnd.toFixed(2) + "ms",
+        "FCP Delay":
+          fcpDelayVal > 0 ? fcpDelayVal.toFixed(2) + "ms" : "Critical Path",
+      };
+    })
+    .sort((a, b) => b["Finish Time"] - a["Finish Time"])
+    .slice(0, 5);
 
   if (report.length > 0) {
     return report;

@@ -116,7 +116,7 @@ export default function LCPelements({
   const activeItems = filtered.slice((page - 1) * rows, page * rows);
   const totalPages = Math.ceil(filtered.length / rows) || 1;
 
-  if (loading) {
+  if (loading && contributors.length > 0) {
     return <LoadingAnimation />;
   }
 
@@ -174,7 +174,7 @@ export default function LCPelements({
       </div>
 
       {/* Empty State */}
-      {contributors.length === 0 && (
+      {contributors.length === 0 && !loading && (
         <div className="flex flex-col items-center justify-center py-24 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-sm bg-neutral-50/30 dark:bg-secondary-background/50 text-center">
           <div className="p-3 bg-emerald-500/10 rounded-full mb-4">
             <CheckCircle2 size={32} className="text-emerald-500" />
@@ -289,7 +289,7 @@ export default function LCPelements({
                         target="_blank"
                         className="group/link flex items-center gap-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                       >
-                        <span className="truncate max-w-[180px]">
+                        <span className="truncate max-w-45">
                           {item.page_url}
                         </span>
                         <ExternalLink
@@ -665,7 +665,7 @@ export default function LCPelements({
                             className="animate-spin text-primary/20"
                             size={14}
                           />
-                          <span>Analyzing element...</span>
+                          <span>Analyzing asset timings...</span>
                         </div>
                       )}
 

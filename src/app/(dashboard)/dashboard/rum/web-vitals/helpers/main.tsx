@@ -20,6 +20,7 @@ import {
   lazyload,
   RumWebVitalToolbar,
 } from "@/components/utils";
+import { CLSelementData } from "@/app/api/rum/elements/cls/route";
 
 interface Metric {
   name: string;
@@ -237,12 +238,13 @@ export default function Main() {
           });
 
       case "CLS":
-        return contributors?.filter((x: any) => {
-          if (x.device !== selectedDevice?.toLowerCase()) return false;
-          if (x.avg_magnitude <= 0.1) return false;
+        return contributors?.filter((x: CLSelementData) => {
+          if (x.dev_type !== selectedDevice?.toLowerCase()) return false;
+          // if (x.avg_magnitude <= 0.1) return false;
+          if (x.occ_count < 2) return false;
 
-          if (seen.has(x.target_element)) return false;
-          seen.add(x.target_element);
+          // if (seen.has(x.most_frequent_element)) return false;
+          // seen.add(x.primary_target);
 
           return true;
         });

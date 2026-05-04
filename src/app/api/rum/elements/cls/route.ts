@@ -3,13 +3,26 @@ import { NextRequest, NextResponse } from "next/server";
 
 const worker = setupDB();
 
+export type CLSelementData = {
+  cls_score: number;
+  current_page: string;
+  dev_type: string;
+  impact_json: Record<string, unknown>;
+  involved_elems: Record<string, unknown>;
+  l_mode: string;
+  most_frequent_element: string;
+  occ_count: number;
+  rect_json: Record<string, unknown>;
+  shift_json: Record<string, unknown>;
+  time_avg: number;
+};
+
 interface ReqProps {
   domain: string;
 }
 
 export async function POST(req: NextRequest) {
- 
-  const {domain}: ReqProps = await req.json()
+  const { domain }: ReqProps = await req.json();
 
   if (!domain) {
     return NextResponse.json(
@@ -21,12 +34,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { data, error } = await worker.rpc("rum_cls", {
+    const { data, error } = await worker.rpc("cls_elements", {
       p_domain_name: domain,
     });
 
     if (error) {
-      throw new Error(error.message ?? "Error fetching cls elements")
+      throw new Error(error.message ?? "Error fetching cls elements");
     }
 
     return NextResponse.json({ data }, { status: 200 });

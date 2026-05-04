@@ -71,17 +71,17 @@ export type Database = {
       };
       email_reporting: {
         Row: {
-          optional_email: string;
+          optional_email: string | null;
           order_id: string;
           report_verbosity: number;
         };
         Insert: {
-          optional_email?: string;
+          optional_email?: string | null;
           order_id: string;
           report_verbosity?: number;
         };
         Update: {
-          optional_email?: string;
+          optional_email?: string | null;
           order_id?: string;
           report_verbosity?: number;
         };
@@ -813,20 +813,24 @@ export type Database = {
           avg_lcp_value: number;
           avg_resource_load_delay: number;
           avg_resource_load_duration: number;
+          device_memory_gb: string;
           device_type: string;
           element_target: string;
           font_family: string;
           font_size: string;
-          font_transfer_size: number;
           font_weight: string;
           good_count: number;
-          image_url: string;
+          lcp_asset_url: string;
+          loading_priority: string;
+          memory_usage_bytes: number;
           needs_improvement_count: number;
+          network_transfer_bytes: number;
           occurrence_count: number;
           p75_lcp_value: number;
           page_url: string;
           poor_count: number;
           top_3_render_blockers: string;
+          ttfb_ms: number;
         }[];
       };
       analyze_web_vitals_by_page: {
@@ -883,6 +887,22 @@ export type Database = {
           server_processing_time: number;
           tcp_time: number;
           ttfb_total: number;
+        }[];
+      };
+      cls_elements: {
+        Args: { p_domain_name: string };
+        Returns: {
+          cls_score: number;
+          current_page: string;
+          dev_type: string;
+          impact_json: Json;
+          involved_elems: Json;
+          l_mode: string;
+          most_frequent_element: string;
+          occ_count: number;
+          rect_json: Json;
+          shift_json: Json;
+          time_avg: number;
         }[];
       };
       cwv_dist_by_connection: {
@@ -1339,18 +1359,6 @@ export type Database = {
       refresh_rum_daily_distributions: {
         Args: { p_day?: string };
         Returns: undefined;
-      };
-      rum_cls: {
-        Args: { p_domain_name: string };
-        Returns: {
-          avg_magnitude: number;
-          device: string;
-          most_frequent_timing: string;
-          sample_pages_to_test: string[];
-          shift_count: number;
-          target_element: string;
-          total_impact_score: number;
-        }[];
       };
       rum_distributions_all_metrics: {
         Args: { p_domain_name: string; p_end: string; p_start: string };

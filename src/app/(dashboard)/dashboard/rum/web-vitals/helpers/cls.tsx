@@ -2,390 +2,403 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import {
-  CheckCircle2,
-  ListFilter,
   ExternalLink,
-  ChevronLeft,
-  ChevronRight,
-  Layout,
+  Smartphone,
+  Monitor,
+  ArrowDown,
+  ArrowUp,
   MousePointer2,
-  Clock,
+  AlertCircle,
   Copy,
-  Activity,
+  Layers,
+  ChevronDown,
+  ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSiteContext } from "../../../siteContext";
-import { LoadingAnimation } from "@/components/theme";
+import { CustomTooltip, LoadingAnimation, THEME } from "@/components/theme";
 
-export type CLSGroup = {
-  target_element: string;
-  device: string;
-  shift_count: number;
-  total_impact_score: number;
-  avg_magnitude: number;
-  most_frequent_timing: string;
-  sample_pages_to_test: string[];
+export type CLSMetricEntry = {
+  cls_score: number;
+  current_page: string;
+  dev_type: string;
+  impact_json: { distanceMoved?: number };
+  involved_elems: Record<string, number> | string[]; // Handling both potential formats
+  l_mode: string;
+  most_frequent_element: string;
+  occ_count: number;
+  rect_json: any;
+  shift_json: { dx: number; dy: number };
+  time_avg: number;
 };
 
-const THEME = {
-  red: "#ff6467",
-  orange: "#ffb86a",
-  green: "#00c950",
+type PageGroup = {
+  url: string;
+  maxScore: number;
+  shifts: CLSMetricEntry[];
 };
 
-const ITEMS_PER_PAGE = 7;
-
-// Diagnostic Logic for the Right Column
-const getActionableFix = (target: string, timing: string) => {
-  const t = target.toLowerCase();
-  if (timing.includes("<3s")) {
-    if (t.includes("header") || t.includes("nav"))
-      return "Header Shift: Set a 'min-height' on the navigation container to reserve space before menu rendering.";
-    if (t.includes("img") || t.includes("figure"))
-      return "Image Layout: Add explicit width/height attributes or 'aspect-ratio' in CSS to prevent layout jumps on load.";
-    return "Initial Paint Shift: Likely caused by custom fonts loading. Use 'font-display: swap' or check for late-loading global CSS.";
-  }
-  if (timing.includes("3-8s")) {
-    if (t.includes("ad") || t.includes("ins") || t.includes("slot"))
-      return "Ad-Slot Instability: Wrap your ad unit in a placeholder div with a fixed minimum height to reserve the space.";
-    return "Dynamic Content: An element entered the viewport late. Consider pre-sizing dynamic containers or disabling lazy-loading for hero items.";
-  }
-  return "Late Interaction Shift: Likely a popup, cookie banner, or late JS injection. Avoid inserting DOM elements above the user's current scroll position.";
-};
-
-export default function CLSInsights({
+export default function CLSPageInsightsAdvanced({
   contributors = [],
 }: {
-  contributors: CLSGroup[];
+  contributors: CLSMetricEntry[];
 }) {
-  const [activeElement, setActiveElement] = useState<CLSGroup | null>(null);
-  const [sortBy, setSortBy] = useState<"impact" | "count">("impact");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [activeUrl, setActiveUrl] = useState<string | null>(null);
+  const [activeShiftIdx, setActiveShiftIdx] = useState(0);
+  const [showInvolved, setShowInvolved] = useState(false);
   const [loading, setLoading] = useState(true);
   const { selectedSite } = useSiteContext();
 
-  useEffect(() => {
-    if (contributors.length > 0) {
-      setLoading(false); // data arrived -> stop immediately
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 5000);
-
-    return () => clearTimeout(timer);
+  const pageGroups = useMemo(() => {
+    const groups: Record<string, PageGroup> = {};
+    contributors.forEach((c) => {
+      if (!groups[c.current_page]) {
+        groups[c.current_page] = {
+          url: c.current_page,
+          maxScore: 0,
+          shifts: [],
+        };
+      }
+      groups[c.current_page].shifts.push(c);
+      groups[c.current_page].maxScore = Math.max(
+        groups[c.current_page].maxScore,
+        c.cls_score,
+      );
+    });
+    return Object.values(groups).sort((a, b) => b.maxScore - a.maxScore);
   }, [contributors]);
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [sortBy]);
+    if (pageGroups.length > 0) {
+      setActiveUrl(pageGroups[0].url);
+      setLoading(false);
+    } else {
+      const t = setTimeout(() => setLoading(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [pageGroups]);
 
-  const problematicElements = useMemo(() => {
-    return [...contributors].sort((a, b) => {
-      if (sortBy === "impact")
-        return b.total_impact_score - a.total_impact_score;
-      return b.shift_count - a.shift_count;
+  const activeGroup = pageGroups.find((g) => g.url === activeUrl);
+  const activeShift = activeGroup?.shifts[activeShiftIdx];
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Selector copied", {
+      description: "Element is ready to paste.",
+      duration: 2000,
+      style: {
+        color: "white",
+        backgroundColor: "black",
+      },
     });
-  }, [contributors, sortBy]);
+  };
 
-  const totalPages = Math.ceil(problematicElements.length / ITEMS_PER_PAGE);
-  const paginatedItems = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return problematicElements.slice(start, start + ITEMS_PER_PAGE);
-  }, [problematicElements, currentPage]);
+  const involvedArray = useMemo(() => {
+    if (!activeShift?.involved_elems) return [];
+    if (Array.isArray(activeShift.involved_elems))
+      return activeShift.involved_elems;
+    return Object.keys(activeShift.involved_elems);
+  }, [activeShift]);
 
-  if (loading) {
-    return <LoadingAnimation />;
-  }
-
-  if (problematicElements.length === 0) {
-    return (
-      <div className="py-24 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg bg-neutral-50/50 dark:bg-secondary-background/50 text-center">
-        <CheckCircle2
-          size={48}
-          style={{ color: THEME.green }}
-          className="mx-auto mb-4"
-        />
-        <h3 className="text-xl font-black">Visuals: Stable</h3>
-        <p className="max-w-xs mx-auto text-sm text-neutral-500 mt-2 font-medium leading-relaxed px-6">
-          No layout shifts detected above the 0.1 threshold. Your site provides
-          a stable reading experience.
-        </p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingAnimation />;
 
   return (
-    <div className="w-full space-y-6 font-sans text-foreground">
-      {/* 1. TOP SUMMARY */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-5 border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-secondary-background rounded-md flex items-center gap-5">
-          <div className="p-3 bg-red-500/20 rounded-full">
-            <Layout size={28} style={{ color: THEME.red }} />
-          </div>
-          <div>
-            <h2
-              className="text-3xl font-black tabular-nums leading-none mb-1"
-              style={{ color: THEME.red }}
-            >
-              {problematicElements.length}
-            </h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
-              Unstable Selectors Found
-            </p>
-          </div>
-        </div>
-
-        <div className="relative p-5 border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-secondary-background rounded-md flex items-center gap-5">
-          <div className="p-3 bg-amber-500/20 rounded-full">
-            <MousePointer2 size={28} style={{ color: THEME.orange }} />
-          </div>
-          <div>
-            <h2
-              className="text-3xl font-black tabular-nums leading-none mb-1"
-              style={{ color: THEME.orange }}
-            >
-              {Math.max(...contributors.map((d) => d.shift_count))}
-            </h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
-              Max Shift Events per Element
-            </p>
-          </div>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+      {/* LEFT: Wide URL Sidebar */}
+      <div className="lg:col-span-5  border-neutral-200 dark:border-neutral-800 ">
+        {/* <div className="border-b border-neutral-200 dark:border-neutral-800 ">
+          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+            Unstable Routes
+          </span>
+        </div> */}
+        <div
+          className="overflow-y-auto max-h-140 divide-y divide-neutral-100 dark:divide-neutral-800"
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "#fffff",
+            scrollBehavior: "smooth",
+          }}
+        >
+          {pageGroups.map((group) => {
+            return (
+              <button
+                key={group.url}
+                onClick={() => {
+                  setActiveUrl(group.url);
+                  setActiveShiftIdx(0);
+                  setShowInvolved(false);
+                }}
+                className={`w-full cursor-pointer text-left p-4 transition-all flex items-start gap-4}`}
+                style={
+                  activeUrl === group.url
+                    ? getBoxShadowColor(group.maxScore)
+                    : {}
+                }
+              >
+                {/* <div
+                className={`mt-1 p-1.5 rounded-md shrink-0 ${getScoreColor(group.maxScore)}`}
+              >
+                <CircleAlert size={14} />
+              </div> */}
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                    Layout Shift:{" "}
+                    <span
+                      style={getClsColor(group.maxScore, "color")}
+                      className=""
+                    >
+                      {group.maxScore.toFixed(3)}
+                    </span>
+                  </div>
+                  <div
+                    className={`text-xs font-mono break-all leading-relaxed ${activeUrl === group.url ? "text-primary font-bold" : "text-neutral-600 dark:text-neutral-400"}`}
+                  >
+                    {group.url}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* 2. TWO-COLUMN LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start relative">
-        {/* Left: Scrollable List */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="flex justify-between items-center px-1">
-            <span className="text-[10px] font-black uppercase text-neutral-500 flex items-center gap-2">
-              <ListFilter size={14} />
-              Sorting by {sortBy === "impact" ? "Impact Score" : "Frequency"}
-            </span>
-            <div className="flex bg-neutral-200 dark:bg-neutral-800 p-1 rounded-md">
-              <button
-                onClick={() => setSortBy("impact")}
-                className={`px-3 py-1 text-[10px] font-black uppercase rounded-sm transition-all ${sortBy === "impact" ? "bg-white dark:bg-neutral-700 shadow-sm" : "text-neutral-500"}`}
-              >
-                Impact
-              </button>
-              <button
-                onClick={() => setSortBy("count")}
-                className={`px-3 py-1 text-[10px] font-black uppercase rounded-sm transition-all ${sortBy === "count" ? "bg-white dark:bg-neutral-700 shadow-sm" : "text-neutral-500"}`}
-              >
-                Frequency
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {paginatedItems.map((item) => {
-              const isUrgent = item.total_impact_score > 2.0;
-
-              // Check if this specific item + device combo is the one currently hovered
-              const isActive =
-                activeElement?.target_element === item.target_element &&
-                activeElement?.device === item.device;
-
-              return (
-                <div
-                  key={`${item.target_element}-${item.device}`}
-                  onMouseEnter={() => setActiveElement(item)}
-                  className={`group relative flex items-center justify-between p-4 border-2 rounded-md cursor-pointer transition-all overflow-hidden
-                    ${
-                      isActive
-                        ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-400 dark:border-neutral-500"
-                        : "bg-white dark:bg-secondary-background border-neutral-100 dark:border-neutral-900 hover:border-neutral-300"
-                    }
-                  `}
-                >
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-1.5"
-                    style={{
-                      backgroundColor: isUrgent ? THEME.red : THEME.orange,
-                    }}
-                  />
-
-                  <div className="min-w-0 flex-1 pr-4 pl-2">
-                    {/* We use a span or div here with font-mono to keep the styling consistent */}
-                    <div className="text-[12px] font-mono font-bold truncate leading-none mb-2 text-primary">
-                      {item.target_element}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-black uppercase text-neutral-400">
-                        {item.shift_count} events
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    {/* <div
-                      className="text-xl font-mono font-black tabular-nums leading-none"
-                      style={{ color: isUrgent ? THEME.red : THEME.orange }}
-                    >
-                      {item.total_impact_score.toFixed(2)}
-                      <span className="text-[11px] ml-1 opacity-50 font-sans tracking-tighter">
-                        score
-                      </span>
-                    </div> */}
-                  </div>
+      {/* RIGHT: Detail & Diagnostics */}
+      <div className="lg:col-span-7 flex flex-col">
+        A
+        {activeGroup && activeShift ? (
+          <div className="flex flex-col h-full">
+            {/* Page Header */}
+            <div className="p-4 border-b border-neutral-100 dark:border-neutral-800">
+              <div className="text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                Page
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="text-sm font-mono text-neutral-800 dark:text-neutral-200 truncate">
+                  {activeGroup.url}
                 </div>
-              );
-            })}
-          </div>
-
-          {/* PAGINATION */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-2 px-1">
-              <span className="text-[10px] font-black uppercase text-neutral-400 tracking-widest">
-                Page {currentPage} of {totalPages}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                  className="p-2 border-2 border-neutral-200 dark:border-neutral-800 rounded disabled:opacity-30"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                  className="p-2 border-2 border-neutral-200 dark:border-neutral-800 rounded disabled:opacity-30"
-                >
-                  <ChevronRight size={16} />
-                </button>
+                <CustomTooltip
+                  content={<>Go to page</>}
+                  width="100px"
+                  trigger={
+                    <Link
+                      href={`https://${selectedSite}${activeGroup.url}`}
+                      target="_blank"
+                      className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg shrink-0"
+                    >
+                      <ExternalLink size={14} />
+                    </Link>
+                  }
+                />
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Right: Sticky Diagnostic Card */}
-        <div className="lg:col-span-5 lg:sticky lg:top-6 self-start">
-          <div className="border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-md overflow-hidden shadow-xl">
-            <div className="p-4 border-b-2 border-neutral-100 dark:border-neutral-800 flex items-center gap-2 bg-neutral-50 dark:bg-secondary-background">
-              <Activity size={18} className="text-neutral-400" />
-              <span className="text-[11px] font-black uppercase tracking-widest text-neutral-500">
-                Impact Analysis
-              </span>
-            </div>
-
-            {activeElement ? (
-              <div className="p-6 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div className="text-[10px] font-black text-neutral-500 uppercase">
-                      Target Selector:
-                    </div>
+            <div className="p-4 space-y-4 overflow-y-auto">
+              {/* Elements List */}
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                  Shifted Elements
+                </h4>
+                {activeGroup.shifts.map((shift, idx) => (
+                  <div
+                    key={idx}
+                    className={`relative rounded-lg border transition-all overflow-hidden ${activeShiftIdx === idx ? "border-primary/30 bg-primary/5" : "border-neutral-100 dark:border-neutral-800 hover:border-neutral-300"}`}
+                  >
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(
-                          activeElement.target_element,
-                        );
-                        toast.success("Copied Selector");
+                        setActiveShiftIdx(idx);
+                        setShowInvolved(false);
                       }}
-                      className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded"
+                      className="w-full flex items-center justify-between p-4 text-left"
                     >
-                      <Copy size={12} className="text-neutral-400" />
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={`p-2 rounded-lg ${activeShiftIdx === idx ? "bg-primary text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400"}`}
+                        >
+                          {shift.dev_type === "mobile" ? (
+                            <Smartphone size={14} />
+                          ) : (
+                            <Monitor size={14} />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div
+                            className={`text-[11px] font-mono truncate max-w-70 ${activeShiftIdx === idx ? "text-primary font-bold" : "text-neutral-700 dark:text-neutral-300"}`}
+                          >
+                            {shift.most_frequent_element}
+                          </div>
+                          <div className="text-[9px] text-neutral-400 font-bold uppercase mt-1">
+                            {shift.l_mode} • {shift.occ_count} Events
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="ml-4 font-mono font-bold text-sm"
+                        style={getClsColor(
+                          Number(shift.cls_score.toFixed(3)),
+                          "color",
+                        )}
+                      >
+                        {shift.cls_score.toFixed(3)}
+                      </div>
                     </button>
-                  </div>
-                  <code className="block p-3 bg-neutral-50 dark:bg-neutral-800 border-2 border-neutral-100 dark:border-neutral-800 rounded text-[11px] font-mono break-all text-primary leading-relaxed">
-                    {activeElement.target_element}
-                  </code>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-neutral-50 dark:bg-neutral-800/50 p-3 rounded-md border border-neutral-100 dark:border-neutral-800">
-                    <p className="text-[9px] font-black text-neutral-400 uppercase mb-1">
-                      Avg. Layout Shift
-                    </p>
-                    <p className="text-lg font-mono font-black">
-                      {activeElement.avg_magnitude.toFixed(3)}
-                    </p>
-                  </div>
-                  <div className="bg-neutral-50 dark:bg-neutral-800/50 p-3 rounded-md border border-neutral-100 dark:border-neutral-800">
-                    <p className="text-[9px] font-black text-neutral-400 uppercase mb-1">
-                      Occurred on
-                    </p>
-                    <div className="flex items-center gap-1.5 font-black uppercase text-xs">
-                      {activeElement.device}
+                    {/* Integrated Selector Tools */}
+                    <div className="flex items-center gap-2 px-4 pb-3">
+                      <button
+                        onClick={() => handleCopy(shift.most_frequent_element)}
+                        className="flex items-center gap-1.5 text-[10px] font-bold text-primary-foreground/80 cursor-pointer hover:text-primary-foreground transition-colors bg-primary dark:bg-primary-foreground px-2 py-1 rounded"
+                      >
+                        <Copy size={12} /> Copy Selector
+                      </button>
                     </div>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                {/* Developer Recommendation Box (Matches your Origin/Edge hit style) */}
-                <div
-                  className="p-5 border-2 rounded-md space-y-3"
-                  style={{
-                    borderColor: `${THEME.green}33`,
-                    backgroundColor: `${THEME.green}08`,
-                  }}
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-neutral-500 uppercase">
-                      Most Frequent Timing
-                    </span>
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded uppercase bg-neutral-800 text-white flex items-center gap-1">
-                      <Clock size={10} /> {activeElement.most_frequent_timing}
-                    </span>
+              {/* Movement Metadata */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Vertical Shift */}
+                <div className="p-3 rounded-sm border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                  <div className="text-[10px] uppercase text-neutral-400 mb-1">
+                    Vertical Shift
                   </div>
-                  <div className="space-y-2">
-                    <h3
-                      className="text-xs font-black uppercase"
-                      style={{ color: THEME.green }}
-                    >
-                      Potential Fix
-                    </h3>
-                    <p className="text-[11px] font-medium leading-relaxed text-neutral-600 dark:text-neutral-400">
-                      {getActionableFix(
-                        activeElement.target_element,
-                        activeElement.most_frequent_timing,
-                      )}
-                    </p>
+                  <div className="flex items-center gap-2 font-mono text-sm font-semibold">
+                    {activeShift.shift_json.dy !== 0 ? (
+                      <>
+                        {activeShift.shift_json.dy > 0 ? (
+                          <ArrowDown className="text-red-500" size={14} />
+                        ) : (
+                          <ArrowUp className="text-emerald-500" size={14} />
+                        )}
+                        {Math.abs(activeShift.shift_json.dy).toFixed(1)}px
+                      </>
+                    ) : (
+                      <span className="text-neutral-400 text-xs">0.0px</span>
+                    )}
                   </div>
                 </div>
 
-                {/* TEST PAGES */}
-                <div className="pt-4 border-t-2 border-neutral-100 dark:border-neutral-800">
-                  <span className="text-[10px] font-black uppercase text-neutral-400 block mb-3">
-                    Affacted Pages
-                  </span>
-                  <div className="space-y-2">
-                    {activeElement.sample_pages_to_test.map((url, i) => (
-                      <Link
-                        key={i}
-                        href={`https://${selectedSite}${url}`}
-                        target="_blank"
-                        className="flex items-center justify-between p-2 rounded border border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-secondary-background group transition-all"
-                      >
-                        <span className="text-[11px] font-mono truncate w-48">
-                          {url}
-                        </span>
-                        <ExternalLink
-                          size={12}
-                          className="text-neutral-400 group-hover:text-primary"
-                        />
-                      </Link>
-                    ))}
+                {/* Horizontal Shift */}
+                <div className="p-3 rounded-sm border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                  <div className="text-[10px] uppercase text-neutral-400 mb-1">
+                    Horizontal Shift
+                  </div>
+                  <div className="flex items-center gap-2 font-mono text-sm font-semibold">
+                    {activeShift.shift_json.dx !== 0 ? (
+                      <>
+                        {activeShift.shift_json.dx > 0 ? (
+                          <ArrowRight className="text-red-500" size={14} />
+                        ) : (
+                          <ArrowLeft className="text-emerald-500" size={14} />
+                        )}
+                        {Math.abs(activeShift.shift_json.dx).toFixed(1)}px
+                      </>
+                    ) : (
+                      <span className="text-neutral-400 text-xs">0.0px</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Distance Moved */}
+                <div className="p-3 rounded-sm border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                  <div className="text-[10px] uppercase text-neutral-400 mb-1">
+                    Total Distance Moved
+                  </div>
+                  <div className="font-mono text-sm font-semibold flex items-center gap-2">
+                    <Layers className="text-primary" size={14} />
+                    {(activeShift.impact_json?.distanceMoved || 0).toFixed(1)}px
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="p-16 text-center flex flex-col items-center justify-center space-y-4">
-                <div className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-full animate-pulse">
-                  <Layout size={32} className="text-neutral-400" />
+
+              {/* CHAIN REACTION: Involved Elements */}
+              {involvedArray.length > 0 && (
+                <div className="border rounded-sm bg-primary/90 overflow-hidden">
+                  <button
+                    onClick={() => setShowInvolved(!showInvolved)}
+                    className="w-full flex items-center justify-between p-4 text-left group"
+                  >
+                    <div className="flex items-center gap-2 text-amber-300 dark:text-amber-500 font-bold text-[10px] uppercase">
+                      <Layers size={14} /> Shift Cluster ({involvedArray.length}{" "}
+                      Elements)
+                    </div>
+                    <ChevronDown
+                      size={14}
+                      className={`text-amber-500 transition-transform ${showInvolved ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {showInvolved && (
+                    <div className="px-4 pb-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                      <p className="text-[11px] text-primary-foreground/80 mb-3 italic">
+                        These elements are also contributing to CLS on this page
+                      </p>
+                      {involvedArray.map((el, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between group/item p-2 rounded bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800"
+                        >
+                          <code className="text-[10px] font-mono text-neutral-600 dark:text-neutral-400 truncate max-w-[80%]">
+                            {el}
+                          </code>
+                          <button
+                            onClick={() => handleCopy(el)}
+                            className="opacity-0 group-hover/item:opacity-100 p-1 hover:text-primary transition-all"
+                          >
+                            <Copy size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <p className="text-xs font-black text-neutral-400 uppercase tracking-widest">
-                  Select a Selector to Diagnose
+              )}
+
+              {/* Recommendation */}
+              <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-sm">
+                <div className="flex items-center gap-2 text-blue-600 font-bold text-[10px] uppercase mb-1">
+                  <AlertCircle size={14} /> Optimization Tip
+                </div>
+                <p className="text-[11px] text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                  {activeShift.shift_json.dy > 0
+                    ? "This element was pushed down. Check for images or ads above it without 'aspect-ratio' or fixed dimensions."
+                    : "This element jumped up. A preceding placeholder likely collapsed or a webfont loaded late with a different line-height."}
                 </p>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center p-20 text-neutral-300">
+            <MousePointer2 size={32} className="mb-4 opacity-20" />
+            <span className="text-xs font-bold uppercase tracking-widest">
+              Select a route to begin audit
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+const getBoxShadowColor = (score: number) => {
+  if (score >= 0.1) return { boxShadow: `inset 4px 0 0 0 ${THEME.red}` };
+  if (score >= 0.05) return { boxShadow: `inset 4px 0 0 0 ${THEME.orange}` };
+  return { boxShadow: `inset 4px 0 0 0 ${THEME.green}` };
+};
+
+const getClsColor = (score: number, property: "color" | "backgroundColor") => {
+  const color =
+    score >= 0.1 ? THEME.red : score >= 0.05 ? THEME.orange : THEME.green;
+
+  if (property === "color") {
+    return {
+      color: `${color}`,
+    };
+  }
+
+  return {
+    [property]: color,
+  };
+};
