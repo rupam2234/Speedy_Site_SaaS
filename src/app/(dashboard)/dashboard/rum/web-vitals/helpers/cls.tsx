@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import {
-  ExternalLink,
   Smartphone,
   Monitor,
   ArrowDown,
@@ -14,6 +13,8 @@ import {
   ChevronDown,
   ArrowRight,
   ArrowLeft,
+  Bug,
+  ExternalLinkIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -166,7 +167,6 @@ export default function CLSPageInsightsAdvanced({
 
       {/* RIGHT: Detail & Diagnostics */}
       <div className="lg:col-span-7 flex flex-col">
-        A
         {activeGroup && activeShift ? (
           <div className="flex flex-col h-full">
             {/* Page Header */}
@@ -179,16 +179,78 @@ export default function CLSPageInsightsAdvanced({
                   {activeGroup.url}
                 </div>
                 <CustomTooltip
-                  content={<>Go to page</>}
-                  width="100px"
+                  content={
+                    <div className="space-y-3 text-sm">
+                      <p>
+                        To identify layout shifts on your page, you can use the{" "}
+                        <Link
+                          className="text-blue-300 hover:text-blue-400"
+                          href={"#"}
+                        >
+                          Layout Shift Highlighter
+                        </Link>{" "}
+                        extension, that helps you either detect shifted elements
+                        in real time or review all elements we&apos;ve
+                        identified on the page during user sessions.
+                      </p>
+                      <p>
+                        After installing the extension you can follow the link
+                        below to instantly debug the elements with layout shift
+                        on the page.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            window.open(
+                              `https://${selectedSite}${activeShift.current_page}`,
+                              "_blank",
+                            );
+                          }}
+                          className="flex items-center gap-2 px-2 py-0.5 rounded-xs bg-primary-foreground/20 hover:bg-primary-foreground/40"
+                        >
+                          Go to page <ExternalLinkIcon size={14} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (!selectedSite) return;
+
+                            const involved =
+                              (activeShift.involved_elems as any)?.map(
+                                (x: string) => {
+                                  const { className, tag } = parseFromDom(x);
+
+                                  return `${tag}.${className?.split(" ").join(".")}`;
+                                },
+                              ) || [];
+
+                            const debugUrl = prepareDebugUrl({
+                              domain: selectedSite,
+                              elements: involved,
+                              page: activeShift.current_page,
+                            });
+
+                            window.open(debugUrl, "_blank"); // oepn in new tab
+                          }}
+                          className="flex items-center gap-2 px-2 py-0.5 rounded-xs bg-primary-foreground/20 hover:bg-primary-foreground/40"
+                        >
+                          Debug CLS
+                          <ExternalLinkIcon size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  }
                   trigger={
-                    <Link
-                      href={`https://${selectedSite}${activeGroup.url}`}
-                      target="_blank"
-                      className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg shrink-0"
-                    >
-                      <ExternalLink size={14} />
-                    </Link>
+                    // <Link
+                    //   href={`https://${selectedSite}${activeGroup.url}`}
+                    //   target="_blank"
+                    //   className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg shrink-0"
+                    // >
+                    //   <ExternalLink size={14} />
+                    // </Link>
+                    <Bug
+                      size={27}
+                      className="fill-primary/30 text-primary/80 p-1 hover:bg-primary/10 rounded-lg"
+                    />
                   }
                 />
               </div>
@@ -214,7 +276,7 @@ export default function CLSPageInsightsAdvanced({
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div
-                          className={`p-2 rounded-lg ${activeShiftIdx === idx ? "bg-primary text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400"}`}
+                          className={`p-2 rounded-lg ${activeShiftIdx === idx ? "bg-primary dark:bg-primary-foreground dark:text-primary text-primary-foreground" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400"}`}
                         >
                           {shift.dev_type === "mobile" ? (
                             <Smartphone size={14} />
@@ -248,7 +310,7 @@ export default function CLSPageInsightsAdvanced({
                     <div className="flex items-center gap-2 px-4 pb-3">
                       <button
                         onClick={() => handleCopy(shift.most_frequent_element)}
-                        className="flex items-center gap-1.5 text-[10px] font-bold text-primary-foreground/80 cursor-pointer hover:text-primary-foreground transition-colors bg-primary dark:bg-primary-foreground px-2 py-1 rounded"
+                        className="flex items-center gap-1.5 text-[10px] font-bold text-primary-foreground/80 dark:text-primary/80 cursor-pointer hover:text-primary-foreground transition-colors bg-primary dark:bg-primary-foreground px-2 py-1 rounded"
                       >
                         <Copy size={12} /> Copy Selector
                       </button>
@@ -315,7 +377,7 @@ export default function CLSPageInsightsAdvanced({
 
               {/* CHAIN REACTION: Involved Elements */}
               {involvedArray.length > 0 && (
-                <div className="border rounded-sm bg-primary/90 overflow-hidden">
+                <div className="border rounded-sm bg-primary/90 dark:bg-secondary-background overflow-hidden">
                   <button
                     onClick={() => setShowInvolved(!showInvolved)}
                     className="w-full flex items-center justify-between p-4 text-left group"
@@ -333,24 +395,30 @@ export default function CLSPageInsightsAdvanced({
                   {showInvolved && (
                     <div className="px-4 pb-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
                       <p className="text-[11px] text-primary-foreground/80 mb-3 italic">
-                        These elements are also contributing to CLS on this page
+                        Elements that are also contributing to Cumulative Layout
+                        Shift (CLS) on this page.
                       </p>
-                      {involvedArray.map((el, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between group/item p-2 rounded bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800"
-                        >
-                          <code className="text-[10px] font-mono text-neutral-600 dark:text-neutral-400 truncate max-w-[80%]">
-                            {el}
-                          </code>
-                          <button
-                            onClick={() => handleCopy(el)}
-                            className="opacity-0 group-hover/item:opacity-100 p-1 hover:text-primary transition-all"
+                      {involvedArray.map((el, i) => {
+                        const compile = parseFromDom(el);
+                        const compiledElement = `${compile.tag}.${compile.className?.split(" ").join(".")}`;
+
+                        return (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between group/item p-2 rounded bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800"
                           >
-                            <Copy size={12} />
-                          </button>
-                        </div>
-                      ))}
+                            <code className="text-[10px] font-mono text-neutral-600 dark:text-neutral-400 truncate max-w-[80%]">
+                              {compiledElement}
+                            </code>
+                            <button
+                              onClick={() => handleCopy(compiledElement)}
+                              className="opacity-0 group-hover/item:opacity-100 p-1 hover:text-primary transition-all"
+                            >
+                              <Copy size={12} />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -402,3 +470,24 @@ const getClsColor = (score: number, property: "color" | "backgroundColor") => {
     [property]: color,
   };
 };
+
+function parseFromDom(dom: string) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(dom, "text/html");
+  const tag = doc.body.firstElementChild?.tagName.toLowerCase() || null;
+  const className = doc.body.firstElementChild?.className || null;
+
+  return { tag, className };
+}
+
+function prepareDebugUrl({
+  domain,
+  page,
+  elements,
+}: {
+  domain: string;
+  page: string;
+  elements: string[];
+}) {
+  return `https://${domain}${page}?cls=${elements.map((x, index) => `${x}${index !== elements.length - 1 ? "" : ","}`)}`;
+}
