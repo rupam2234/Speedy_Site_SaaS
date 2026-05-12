@@ -649,6 +649,7 @@ export default function LCPelements({
                       Analyze
                     </button>
                   </div>
+
                   {analyzing === i && (
                     <div className="mt-2 z-20 border text-sm border-primary/20 bg-white rounded-sm shadow-xm p-4">
                       {analysisResult !== null && analysisResult?.length > 0 ? (
@@ -692,7 +693,7 @@ export default function LCPelements({
     setAnalysisResult(null);
 
     try {
-      const res = await fetch("/api/analysis/contributors", {
+      const res = await fetch("/api/analysis/lcp/contributors", {
         method: "POST",
         headers: {
           "Content-Type": "apllication/json",

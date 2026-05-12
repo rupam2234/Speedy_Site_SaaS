@@ -71,16 +71,19 @@ export type Database = {
       };
       email_reporting: {
         Row: {
+          id: string;
           optional_email: string | null;
           order_id: string;
           report_verbosity: number;
         };
         Insert: {
+          id?: string;
           optional_email?: string | null;
           order_id: string;
           report_verbosity?: number;
         };
         Update: {
+          id?: string;
           optional_email?: string | null;
           order_id?: string;
           report_verbosity?: number;
@@ -89,21 +92,21 @@ export type Database = {
           {
             foreignKeyName: "email_reporting_order_id_fkey";
             columns: ["order_id"];
-            isOneToOne: true;
+            isOneToOne: false;
             referencedRelation: "cloudflare_kv_tracking";
             referencedColumns: ["order_id"];
           },
           {
             foreignKeyName: "email_reporting_order_id_fkey";
             columns: ["order_id"];
-            isOneToOne: true;
+            isOneToOne: false;
             referencedRelation: "orders";
             referencedColumns: ["order_id"];
           },
           {
             foreignKeyName: "email_reporting_order_id_fkey";
             columns: ["order_id"];
-            isOneToOne: true;
+            isOneToOne: false;
             referencedRelation: "v_cf_zone_per_site";
             referencedColumns: ["order_id"];
           },
@@ -793,19 +796,6 @@ export type Database = {
           poor_count: number;
         }[];
       };
-      analyze_inp_by_device: {
-        Args: { domain_filter: string };
-        Returns: {
-          _avg_inp_ms: number;
-          _device: string;
-          _interaction_type: string;
-          _main_cause: string;
-          _occurrence_count: number;
-          _p75_inp_ms: number;
-          _sample_pages: string[];
-          _target_selector: string;
-        }[];
-      };
       analyze_lcp_by_device: {
         Args: { domain_filter: string };
         Returns: {
@@ -1305,6 +1295,22 @@ export type Database = {
       http_set_curlopt: {
         Args: { curlopt: string; value: string };
         Returns: boolean;
+      };
+      inp_elements: {
+        Args: { p_domain_name: string };
+        Returns: {
+          created_at: string;
+          current_page: string;
+          device: string;
+          inp_value: number;
+          input_delay: number;
+          interaction_type: string;
+          presentation_delay: number;
+          processing_duration: number;
+          rating: string;
+          responsible_scripts: string;
+          target_element: string;
+        }[];
       };
       lcp_attribution_by_device: {
         Args: {

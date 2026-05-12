@@ -1,441 +1,486 @@
-"use client";
-
-import React, { useState, useMemo, useEffect } from "react";
+import { InpElementType } from "@/app/api/rum/elements/inp/route";
+import { CustomTooltip, LoadingAnimation, THEME } from "@/components/theme";
 import {
-  Zap,
   CheckCircle2,
-  ListFilter,
-  ExternalLink,
-  ChevronLeft,
   ChevronRight,
-  MousePointer2,
-  Copy,
-  Activity,
-  Wrench,
-  Code2,
-  Layers,
-  Info,
-  Lightbulb,
+  ExternalLink,
+  Search,
+  SortDesc,
+  StarsIcon,
 } from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
-import { CustomTooltip, LoadingAnimation } from "@/components/theme";
-
-export interface INPContributor {
-  _target_selector: string;
-  _interaction_type: string;
-  _device: string;
-  _occurrence_count: number;
-  _avg_inp_ms: number;
-  _p75_inp_ms: number;
-  _main_cause: string;
-  _sample_pages: string[];
-}
-
-const THEME = {
-  red: "#ff6467",
-  orange: "#ffb86a",
-  green: "#00c950",
-};
-
-const ITEMS_PER_PAGE = 7;
-
-/**
- * DOUBLE-SIDED DIAGNOSTIC LOGIC
- */
-const getAdvice = (cause: string, selector: string) => {
-  const s = selector.toLowerCase();
-
-  // WP Version
-  let wp =
-    "Resource Review: Several active features may be competing for the main thread. Consider reviewing active plugins or simplifying the page layout.";
-  // Dev Version
-  let dev =
-    "Main Thread Yielding: Break up long tasks (>50ms) using scheduler.yield() or requestIdleCallback to keep the UI responsive.";
-
-  if (s.includes("ad") || s.includes("google") || s.includes("amazon")) {
-    wp =
-      "Ad Optimization: Ad scripts are slowing down clicks. Try delaying ads until the first scroll or check your ad provider's 'Lite' mode.";
-    dev =
-      "Third-Party Scripting: Move non-critical 3rd party scripts to a Web Worker or use 'requestIdleCallback' to prevent them from blocking user input.";
-  } else if (
-    s.includes("wprm") ||
-    s.includes("recipe") ||
-    s.includes("slick") ||
-    s.includes("carousel")
-  ) {
-    wp =
-      "Plugin Choice: This widget is resource-heavy. Try disabling unused animations in the plugin settings or use a faster Gutenberg-native block.";
-    dev =
-      "Event Handler Overhead: The interaction triggers heavy synchronous JS. Refactor the callback to handle only UI updates, deferring logic with setTimeout.";
-  } else if (s.includes("menu") || s.includes("nav") || s.includes("cky")) {
-    wp =
-      "Exclusion Setting: If you use a 'Delay JavaScript' feature, ensure this element is EXCLUDED so it responds instantly to the first touch.";
-    dev =
-      "Hydration / Interaction: If using a framework, ensure this element isn't waiting on a heavy hydration task before responding to events.";
-  }
-
-  return { wp, dev };
-};
+import Link from "next/link";
 
 export default function INPelements({
   contributors = [],
 }: {
-  contributors: INPContributor[];
+  contributors: InpElementType[];
 }) {
-  const [activeElement, setActiveElement] = useState<INPContributor | null>(
-    null,
-  );
-  const [sortBy, setSortBy] = useState<"p75" | "count">("p75");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const { selectedSite } = useSiteContext();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"INP value" | "Processing Duration">(
+    "INP value",
+  );
+  const [dataLoaded, setDataLoaded] = useState<boolean>(false);
+  const [activeItem, setActiveItem] = useState<InpElementType | null>(null);
+  const [dropDownOpen, setDropDownOpen] = useState<boolean>(false);
+  const [analysing, setAnalysing] = useState<string | null>(null);
+
+  const [analysisResult, setAnalysisResult] = useState<string>("");
+
+  const parsedLines = useMemo(() => {
+    return analysisResult
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => l.replace(/^•\s?/, ""));
+  }, [analysisResult]);
 
   useEffect(() => {
+    // data loaded immediately
     if (contributors.length > 0) {
-      setLoading(false); // data arrived -> stop immediately
-      return;
+      setDataLoaded(true);
     }
 
-    const timer = setTimeout(() => {
-      setLoading(false); // fallback after 3s
-    }, 5000);
+    // const timer = setTimeout(() => {
+    //   setDataLoaded(true);
+    // }, 10000);
 
-    return () => clearTimeout(timer);
+    // return () => clearTimeout(timer);
   }, [contributors]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [sortBy]);
+  const sortedElements = useMemo(() => {
+    const sorted = [...contributors];
 
-  const problematicElements = useMemo(() => {
-    return [...contributors].sort((a, b) => {
-      if (sortBy === "p75") return b._p75_inp_ms - a._p75_inp_ms;
-      return b._occurrence_count - a._occurrence_count;
-    });
-  }, [contributors, sortBy]);
+    switch (filter) {
+      case "INP value":
+        return sorted.sort((a, b) => b.inp_value - a.inp_value);
 
-  const totalPages = Math.ceil(problematicElements.length / ITEMS_PER_PAGE);
-  const paginatedItems = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return problematicElements.slice(start, start + ITEMS_PER_PAGE);
-  }, [problematicElements, currentPage]);
+      case "Processing Duration":
+        return sorted.sort(
+          (a, b) => b.processing_duration - a.processing_duration,
+        );
 
-  if (loading) {
+      default:
+        return contributors;
+    }
+  }, [contributors, filter]);
+
+  const timeShare = useMemo(() => {
+    if (!activeItem) return null;
+
+    const { input_delay, processing_duration, presentation_delay } = activeItem;
+
+    const total = input_delay + processing_duration + presentation_delay;
+
+    if (total === 0) {
+      return {
+        input_delay_p: 0,
+        processing_duration_p: 0,
+        presentation_delay_p: 0,
+      };
+    }
+
+    return {
+      input_delay_p: (input_delay / total) * 100,
+      processing_duration_p: (processing_duration / total) * 100,
+      presentation_delay_p: (presentation_delay / total) * 100,
+      total,
+    };
+  }, [activeItem]);
+
+  const items = [
+    { title: "Input Delay", value: activeItem?.input_delay },
+    { title: "Processing Duration", value: activeItem?.processing_duration },
+    { title: "Presentation Delay", value: activeItem?.presentation_delay },
+  ];
+
+  if (sortedElements.length === 0) {
     return <LoadingAnimation />;
   }
 
-  if (problematicElements.length === 0) {
-    return (
-      <div className="py-24 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg bg-neutral-50/50 dark:bg-secondary-background/50 text-center">
-        <CheckCircle2
-          size={48}
-          style={{ color: THEME.green }}
-          className="mx-auto mb-4"
-        />
-        <h3 className="text-xl font-black uppercase tracking-tight">
-          Interactions: Healthy
-        </h3>
-        <p className="max-w-xs mx-auto text-sm text-neutral-500 mt-2 font-medium px-6">
-          Your site responds to interactions in under 200ms.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full space-y-6 font-sans text-foreground">
-      {/* 1. TOP SUMMARY */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 shrink-0">
-        <div className="p-5 border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-secondary-background rounded-md flex items-center gap-5">
-          <div className="p-3 bg-red-500/10 rounded-full">
-            <Zap size={28} style={{ color: THEME.red }} />
-          </div>
-          <div>
-            <h2
-              className="text-3xl font-black tabular-nums leading-none"
-              style={{ color: THEME.red }}
-            >
-              {Math.max(...contributors.map((d) => d._p75_inp_ms))}ms
-            </h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mt-1">
-              Highest P75 Delay
-            </p>
-          </div>
+    <div className="w-full text-foreground font-sans">
+      <div className="flex items-center justify-between p-3 border border-neutral-300 dark:border-neutral-700 bg-neutral-100/50 dark:bg-secondary-background rounded-sm mb-4">
+        <div className="flex items-center gap-3 flex-1 px-2">
+          <Search size={16} className="text-neutral-500" />
+          <input
+            placeholder="Search elements or URLs..."
+            className="bg-transparent outline-none w-full text-sm placeholder:text-neutral-500 text-foreground"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
+          />
         </div>
-        <div className="p-5 border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-secondary-background rounded-md flex items-center gap-5">
-          <div className="p-3 bg-amber-500/10 rounded-full">
-            <Layers size={28} style={{ color: THEME.orange }} />
-          </div>
-          <div>
-            <h2
-              className="text-3xl font-black tabular-nums leading-none"
-              style={{ color: THEME.orange }}
-            >
-              {contributors.length}
-            </h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mt-1">
-              Interection Events You Can Fix
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left List */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="flex justify-between items-center px-1">
-            <span className="text-[10px] font-black uppercase text-neutral-500 flex items-center gap-2">
-              <ListFilter size={14} />{" "}
-              {sortBy === "p75" ? "Worst Latency" : "Frequency"}
-            </span>
-            <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-md">
-              <button
-                onClick={() => setSortBy("p75")}
-                className={`px-3 py-1 text-[10px] font-black uppercase rounded-sm transition-all ${sortBy === "p75" ? "bg-white dark:bg-neutral-700 shadow-sm" : "text-neutral-500"}`}
-              >
-                Latency
-              </button>
-              <button
-                onClick={() => setSortBy("count")}
-                className={`px-3 py-1 text-[10px] font-black uppercase rounded-sm transition-all ${sortBy === "count" ? "bg-white dark:bg-neutral-700 shadow-sm" : "text-neutral-500"}`}
-              >
-                Frequency
-              </button>
+        <div className="flex items-center gap-6 text-xs font-bold text-neutral-500 uppercase tracking-tighter">
+          <div className="flex items-center text-sm text-primary/80 gap-1">
+            <SortDesc size={16} />
+            <div className="flex items-center">
+              {["INP value", "Processing Duration"].map((x, index) => (
+                <button
+                  onClick={() =>
+                    setFilter(x as "INP value" | "Processing Duration")
+                  }
+                  className={`px-2 py-0.5 rounded-sm ${filter === x ? "bg-primary/80 text-primary-foreground" : ""}`}
+                  key={index}
+                >
+                  {x}
+                </button>
+              ))}
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="space-y-2">
-            {paginatedItems.map((item) => (
-              <div
-                key={`${item._target_selector}-${item._device}`}
-                onMouseEnter={() => setActiveElement(item)}
-                className={`group relative flex items-center justify-between p-4 border-2 rounded-md cursor-pointer transition-all h-20
-                  ${activeElement?._target_selector === item._target_selector && activeElement?._device === item._device ? "bg-neutral-50 dark:bg-neutral-800 border-neutral-400 shadow-sm" : "bg-white dark:bg-secondary-background border-neutral-100 dark:border-neutral-900 hover:border-neutral-300"}`}
+      {/* Empty Data */}
+      {!dataLoaded && (
+        <div className="flex flex-col items-center justify-center py-24 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-sm bg-neutral-50/30 dark:bg-secondary-background/50 text-center">
+          <div className="p-3 bg-emerald-500/10 rounded-full mb-4">
+            <CheckCircle2 size={32} className="text-emerald-500" />
+          </div>
+          <h3 className="text-lg font-bold text-foreground">
+            No INP Elements Found
+          </h3>
+          <p className="max-w-md text-sm text-neutral-500 dark:text-neutral-400 mt-2 px-6">
+            Your INP is likely within the healthy range, or we don&apos;t have
+            enought data to show yet. No specific slow or unresponsive events
+            were identified as of now.
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+        {/* left side */}
+        <div
+          className="md:col-span-5 text-sm max-h-140 overflow-y-auto"
+          style={{
+            scrollbarWidth: "thin",
+            scrollBehavior: "smooth",
+            scrollbarColor: "#d1d5dc",
+          }}
+        >
+          {sortedElements?.map((x) => {
+            const pageUrl = `${x.current_page.toString().split("?")[0].slice(0, -1)}`;
+            const link = `https://${selectedSite}${pageUrl}`;
+
+            const inpTextColor = getClsColor(x.inp_value, "color");
+            const inpInsetColor = getClsColor(x.inp_value, "boxShadow");
+
+            return (
+              <button
+                key={`${x.current_page}-${x.target_element}`}
+                onClick={() => {
+                  setActiveItem(x);
+                  setAnalysisResult("");
+                }}
+                className={`w-full p-3 cursor-pointer text-left text-[13px] transition-colors ${
+                  activeItem?.current_page === x.current_page &&
+                  activeItem?.target_element === x.target_element
+                    ? "bg-primary/5"
+                    : "hover:bg-muted/50"
+                }`}
+                style={
+                  activeItem?.current_page === x.current_page &&
+                  activeItem?.target_element === x.target_element
+                    ? inpInsetColor
+                    : {}
+                }
               >
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-1.5"
-                  style={{
-                    backgroundColor:
-                      item._p75_inp_ms > 500 ? THEME.red : THEME.orange,
-                  }}
-                />
-                <div className="min-w-0 flex-1 pr-4 pl-2">
-                  <code className="text-[11px] font-mono font-bold truncate block text-primary mb-1">
-                    {item._target_selector}
-                  </code>
-                  <div className="flex items-center gap-3 text-[10px] font-bold text-neutral-400 uppercase">
-                    <span className="bg-neutral-100 dark:bg-neutral-700 px-1 rounded">
-                      {item._interaction_type}
-                    </span>
-                  </div>
+                <div className="flex flex-col font-medium space-y-1 items-start">
+                  <p className="uppercase text-primary/60">
+                    INP: <span style={inpTextColor}>{x.inp_value}</span>
+                  </p>
+
+                  <span className="flex cursor-pointer items-center gap-2 text-primary/80 hover:text-blue-400">
+                    <a href={link} target="_blank" rel="nofollow">
+                      {pageUrl}
+                    </a>
+                    <ExternalLink size={12} />
+                  </span>
                 </div>
-                <div className="text-right shrink-0">
-                  <div
-                    className="text-xl font-mono font-black"
+              </button>
+            );
+          })}
+        </div>
+
+        {/* right side */}
+        <div className="md:col-span-7 px-2 py-3">
+          {activeItem !== null ? (
+            <div className="space-y-1">
+              <div className="flex gap-2 items-center">
+                <p className="capitalize text-sm font-semibold text-primary/60">
+                  {activeItem.interaction_type} Interaction{" "}
+                  <span
+                    className={`px-2 py-1 ml-1 rounded-xl text-[13px] border`}
                     style={{
-                      color: item._p75_inp_ms > 500 ? THEME.red : THEME.orange,
+                      ...getClsColor(
+                        activeItem.inp_value,
+                        "backgroundColor",
+                        0.1,
+                      ),
+                      ...getPillTextColor(activeItem.inp_value),
+                      ...getClsColor(activeItem.inp_value, "borderColor"),
                     }}
                   >
-                    {Math.round(item._p75_inp_ms)}
-                    <span className="text-[10px] ml-0.5 opacity-50">ms</span>
-                  </div>
+                    {activeItem.rating}
+                  </span>
+                </p>
+              </div>
+              <Link
+                href={`https://${selectedSite}${activeItem.current_page}`}
+                target="_blank"
+                rel="nofollow"
+                className="text-primary/60 hover:text-blue-400 cursor-pointer flex items-center gap-1 text-[13px] font-medium max-w-full truncate"
+              >
+                {`https://${selectedSite}${activeItem.current_page}`}
+                <ExternalLink size={13} className="mb-0.5" />
+              </Link>
+              <div className="mt-4">
+                <span className="flex font-semibold uppercase text-primary/50 text-xs items-center justify-between">
+                  <p>Latency Breakdown</p>
+                  <p>TOTAL {`${timeShare?.total}ms`}</p>
+                </span>
+                <div className="cursor-pointer bg-primary/10 h-2.5 rounded-xl mt-2 overflow-hidden flex">
+                  <div
+                    title="Input Delay"
+                    className="h-full bg-purple-300"
+                    style={{ width: `${timeShare?.input_delay_p || 0}%` }}
+                  />
+
+                  <div
+                    title="Processing Duration"
+                    className="h-full bg-yellow-300"
+                    style={{
+                      width: `${timeShare?.processing_duration_p || 0}%`,
+                    }}
+                  />
+
+                  <div
+                    title="Presentation Delay"
+                    className="h-full bg-green-300"
+                    style={{
+                      width: `${timeShare?.presentation_delay_p || 0}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs mt-2 text-primary/80">
+                  {items.map((X, index) => (
+                    <div key={index}>
+                      <p>{X.title}</p>
+                      <p>{X.value?.toFixed(2)}ms</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-2 px-1">
-              <span className="text-[10px] font-black text-neutral-400 uppercase">
-                Page {currentPage} of {totalPages}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                  className="p-2 border-2 rounded-md disabled:opacity-30"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                  className="p-2 border-2 rounded-md disabled:opacity-30"
-                >
-                  <ChevronRight size={16} />
-                </button>
+              <div className="mt-6 space-y-1 font-semibold uppercase text-primary/50 text-xs">
+                <p>Target Element</p>
+                <div className="px-4 py-3 text-xs lowercase rounded-sm bg-primary/10 border border-primary/20">
+                  {activeItem.target_element === "(unknown)"
+                    ? "Unknown target (possibly page scroll with mouse drag or touch)"
+                    : activeItem.target_element}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Sticky Card (FIXED STABLE HEIGHT) */}
-        <div className="lg:col-span-5 lg:sticky lg:top-6 self-start">
-          <div className="border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-md overflow-hidden shadow-xl h-187.5 flex flex-col">
-            <div className="p-4 border-b-2 border-neutral-100 dark:border-neutral-800 flex items-center gap-2 bg-neutral-50 dark:bg-secondary-background shrink-0">
-              <Activity size={18} className="text-neutral-400" />
-              <span className="text-[11px] font-black uppercase tracking-widest text-neutral-500">
-                Diagnostic Analysis
-              </span>
-            </div>
-
-            {activeElement ? (
-              <div className="p-6 space-y-5 animate-in fade-in duration-300 overflow-hidden">
-                <div className="space-y-2 shrink-0">
-                  <div className="flex justify-between items-center text-[10px] font-black text-neutral-500 uppercase">
-                    <div className="flex items-center gap-1">
-                      <p>Target Selector</p>
+              {activeItem.responsible_scripts !== null && (
+                <div className="w-full text-primary/80 text-sm mt-6 py-2 border px-2 rounded-sm border-primary/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <p>Assets observed during the INP event</p>
                       <CustomTooltip
-                        content={
-                          <div className="space-y-3">
-                            <p>
-                              Copy this selector → go to a page from the sample
-                              URLs below → open Developer Tools (Ctrl + Shift +
-                              I on Windows) → go to the Elements tab → press
-                              Ctrl + F and paste the copied selector to locate
-                              the element.
-                            </p>
-
-                            <p>
-                              Keep in mind that INP measures interaction events,
-                              so it&apos;s usually related to menus, forms,
-                              closing pop-ups, etc. In such cases, if the target
-                              DOM element was captured during a dynamic
-                              interaction, you may not be able to find the same
-                              INP target in the static DOM.
-                            </p>
-                          </div>
-                        }
-                        side="left"
-                        trigger={
-                          <Lightbulb
-                            size={20}
-                            className="ml-1 rounded-full p-1 bg-primary/10 text-primary/80 cursor-pointer fill-amber-300"
-                          />
-                        }
+                        content={`Assets observed during the INP event are important for debugging because they may contribute to input delay, long processing time, or delayed visual updates. Scripts executing on the main thread, large network requests, heavy style/layout calculations, or resource loading triggered around the interaction can block responsiveness and increase the final INP value.`}
                       />
                     </div>
-                    <button
+
+                    <ChevronRight
                       onClick={() => {
-                        navigator.clipboard.writeText(
-                          activeElement._target_selector,
-                        );
-                        toast.success("Copied");
+                        setDropDownOpen((prev) => !prev);
                       }}
-                      className="p-1 hover:bg-neutral-100 rounded transition-colors"
-                    >
-                      <Copy size={12} />
-                    </button>
+                      className={`${dropDownOpen ? "rotate-45 transition-all duration-300" : "rotate-0 transition-all duration-300"} cursor-pointer`}
+                      size={14}
+                    />
                   </div>
-                  <code className="block p-3 bg-neutral-50 dark:bg-neutral-800 border rounded text-[11px] font-mono overflow-y-auto text-primary leading-relaxed">
-                    {activeElement._target_selector}
-                  </code>
-                </div>
+                  {dropDownOpen && (
+                    <div className="mt-2 space-y-2">
+                      {activeItem.responsible_scripts
+                        ?.split(",")
+                        .map((x) => x.trim())
+                        .filter(Boolean)
+                        .map((script, index) => {
+                          let formattedScript = script;
 
-                <div className="grid grid-cols-2 gap-3 shrink-0">
-                  <div className="bg-neutral-50 dark:bg-neutral-800/50 p-3 rounded-md border text-center">
-                    <p className="text-[9px] font-black text-neutral-400 uppercase mb-1">
-                      P75 Latency
-                    </p>
-                    <p
-                      className="text-lg font-mono font-black"
-                      style={{
-                        color:
-                          activeElement._p75_inp_ms > 500
-                            ? THEME.red
-                            : THEME.orange,
-                      }}
-                    >
-                      {Math.round(activeElement._p75_inp_ms)}ms
-                    </p>
-                  </div>
-                  <div className="bg-neutral-50 dark:bg-neutral-800/50 p-3 rounded-md border text-center">
-                    <p className="text-[9px] font-black text-neutral-400 uppercase mb-1">
-                      Frequency
-                    </p>
-                    <p className="text-lg font-mono font-black">
-                      {activeElement._occurrence_count}
-                    </p>
-                  </div>
-                </div>
+                          try {
+                            const url = new URL(script);
 
-                {/* DUAL RECOMMENDATION BOXES */}
-                <div className="space-y-3 overflow-y-auto pr-1">
-                  {/* WordPress Box */}
-                  <div className="p-4 border-2 rounded-md space-y-2 bg-blue-500/5 border-blue-500/20">
-                    <div className="flex items-center gap-2 text-[10px] font-black text-blue-500 uppercase">
-                      <Wrench size={12} /> WordPress Recommendation
+                            if (url.hostname === selectedSite) {
+                              formattedScript =
+                                url.pathname + url.search + url.hash;
+                            }
+                          } catch {
+                            // keep original if invalid URL
+                          }
+
+                          return (
+                            <div
+                              key={`${script}-${index}`}
+                              className="group flex items-start gap-2 rounded-sm border border-primary/10 bg-primary/80 px-2 py-1 text-xs font-mono text-primary-foreground/80 transition-all hover:bg-primary/70"
+                            >
+                              <span className="break-all leading-relaxed">
+                                {formattedScript}
+                              </span>
+                            </div>
+                          );
+                        })}
                     </div>
-                    <p className="text-[11px] font-bold leading-relaxed text-neutral-700 dark:text-neutral-300">
-                      {
-                        getAdvice(
-                          activeElement._main_cause,
-                          activeElement._target_selector,
-                        ).wp
-                      }
-                    </p>
-                  </div>
-
-                  {/* Developer Box */}
-                  <div className="p-4 border-2 rounded-md space-y-2 bg-green-500/5 border-green-500/20">
-                    <div className="flex items-center gap-2 text-[10px] font-black text-green-500 uppercase">
-                      <Code2 size={12} /> For Developers
+                  )}
+                </div>
+              )}
+              <button
+                onClick={() => {
+                  setAnalysing(activeItem.current_page);
+                  AnalyzeInpElement(activeItem);
+                  setAnalysisResult("");
+                }}
+                className="rounded-sm cursor-pointer mt-6 bg-purple-600 text-xs px-3 py-1 hover:bg-purple-800 text-primary-foreground font-medium flex gap-2 items-center"
+              >
+                <StarsIcon
+                  size={14}
+                  className={`fill-yellow-200 ${analysing === activeItem.current_page ? "animate-spin duration-500" : ""}`}
+                />
+                {analysing === activeItem.current_page
+                  ? "Analyzing..."
+                  : "Analyze INP"}
+              </button>
+              {parsedLines.length > 0 && (
+                <div className="space-y-2 mt-3">
+                  {parsedLines.map((line, i) => (
+                    <div
+                      key={i}
+                      className="p-2 rounded-sm border border-primary/10 bg-primary/5 text-sm text-primary/80"
+                    >
+                      {line}
                     </div>
-                    <p className="text-[11px] font-bold leading-relaxed text-neutral-700 dark:text-neutral-300">
-                      {
-                        getAdvice(
-                          activeElement._main_cause,
-                          activeElement._target_selector,
-                        ).dev
-                      }
-                    </p>
-                  </div>
+                  ))}
                 </div>
-
-                {/* URL SAMPLES - Fixed Height Area */}
-                <div className="pt-4 space-y-3 border-t-2 border-neutral-100 dark:border-neutral-800 shrink-0">
-                  <span className="text-[10px] font-black uppercase text-neutral-400 block">
-                    Sample pages
-                  </span>
-                  <div className="space-y-2 ">
-                    {activeElement._sample_pages.slice(0, 3).map((url, i) => (
-                      <Link
-                        key={url + i}
-                        href={`https://${selectedSite}${url}`}
-                        target="_blank"
-                        className="flex items-center justify-between p-2 rounded border hover:bg-neutral-50 dark:hover:bg-neutral-800 group transition-all"
-                      >
-                        <span className="text-[11px] font-mono truncate w-48">
-                          {url}
-                        </span>
-                        <ExternalLink
-                          size={12}
-                          className="text-neutral-400 group-hover:text-primary"
-                        />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-12 text-center">
-                <div className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-full animate-pulse">
-                  <MousePointer2 size={32} className="text-neutral-400" />
-                </div>
-                <p className="text-xs font-black text-neutral-400 uppercase tracking-widest">
-                  Select an Element to Diagnose
-                </p>
-                <div className="flex items-center gap-2 text-[10px] text-neutral-500 font-bold uppercase bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full">
-                  <Info size={12} /> Analyzes Input, Processing, and Paint
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-primary/60 text-sm">
+              Please select an item on the left
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
+
+  async function AnalyzeInpElement(data: InpElementType) {
+    setAnalysing(data.current_page);
+
+    const res = await fetch("/api/analysis/inp/contributors", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        metric: "INP",
+        data,
+      }),
+    });
+
+    if (!res.body) {
+      setAnalysing(null);
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+
+        if (!trimmed.startsWith("data:")) continue;
+
+        const json = trimmed.replace("data:", "").trim();
+
+        if (json === "[DONE]") continue;
+
+        try {
+          const parsed = JSON.parse(json);
+          const token = parsed.choices?.[0]?.delta?.content ?? "";
+
+          if (token) {
+            setAnalysisResult((prev) => prev + token);
+          }
+        } catch (err) {
+          console.error("PARSE ERROR", err);
+        }
+      }
+    }
+
+    setAnalysing(null);
+  }
 }
+
+const getClsColor = (
+  score: number,
+  property: "color" | "backgroundColor" | "boxShadow" | "borderColor",
+  backgourndOpacity?: number,
+) => {
+  function hexToRgba(hex: string, backgourndOpacity: number) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${backgourndOpacity})`;
+  }
+
+  const colorEquation =
+    score >= 500 ? THEME.red : score >= 200 ? THEME.orange : THEME.green;
+
+  const color = {
+    color: `${colorEquation}`,
+  };
+
+  const backgroundColor = {
+    backgroundColor: `${backgourndOpacity ? hexToRgba(colorEquation, backgourndOpacity) : colorEquation}`,
+  };
+
+  const boxShadow = {
+    boxShadow: `inset 4px 0 0 0 ${colorEquation}`,
+  };
+
+  const borderColor = {
+    borderColor: `${colorEquation}`,
+  };
+
+  switch (property) {
+    case "color":
+      return color;
+    case "backgroundColor":
+      return backgroundColor;
+    case "boxShadow":
+      return boxShadow;
+    case "borderColor":
+      return borderColor;
+  }
+};
+
+const getPillTextColor = (score: number) => {
+  const colorCode =
+    score >= 500 ? THEME.red : score >= 200 ? THEME.orange : THEME.green;
+
+  return {
+    color: colorCode,
+  };
+};

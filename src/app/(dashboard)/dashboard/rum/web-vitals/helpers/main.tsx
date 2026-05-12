@@ -21,6 +21,7 @@ import {
   RumWebVitalToolbar,
 } from "@/components/utils";
 import { CLSelementData } from "@/app/api/rum/elements/cls/route";
+import { InpElementType } from "@/app/api/rum/elements/inp/route";
 
 interface Metric {
   name: string;
@@ -250,12 +251,14 @@ export default function Main() {
         });
 
       case "INP":
-        return contributors?.filter((x: any) => {
-          if (x._device !== selectedDevice.toLowerCase()) return false;
-          if (x._avg_inp_ms <= 200) return false;
+        return contributors?.filter((x: InpElementType) => {
+          if (x.device !== selectedDevice.toLowerCase()) return false;
+          // if (x.inp_value <= 200) return false;
 
-          if (seen.has(x._target_selector)) return false;
-          seen.add(x._target_selector);
+          if (seen.has(x.current_page)) {
+            return false;
+          }
+          seen.add(x.current_page);
 
           return true;
         });

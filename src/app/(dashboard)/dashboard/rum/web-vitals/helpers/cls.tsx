@@ -7,7 +7,6 @@ import {
   ArrowDown,
   ArrowUp,
   MousePointer2,
-  AlertCircle,
   Copy,
   Layers,
   ChevronDown,
@@ -15,18 +14,22 @@ import {
   ArrowLeft,
   Bug,
   ExternalLinkIcon,
+  StarsIcon,
+  LoaderCircle,
+  TabletIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSiteContext } from "../../../siteContext";
 import { CustomTooltip, LoadingAnimation, THEME } from "@/components/theme";
+import { clsAnalysisType } from "@/app/api/analysis/cls/contributors/route";
 
 export type CLSMetricEntry = {
   cls_score: number;
   current_page: string;
   dev_type: string;
   impact_json: { distanceMoved?: number };
-  involved_elems: Record<string, number> | string[]; // Handling both potential formats
+  involved_elems: Record<string, number> | string[];
   l_mode: string;
   most_frequent_element: string;
   occ_count: number;
@@ -50,6 +53,8 @@ export default function CLSPageInsightsAdvanced({
   const [activeShiftIdx, setActiveShiftIdx] = useState(0);
   const [showInvolved, setShowInvolved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isAnalyzing, setAnalyze] = useState<boolean>(false);
+  const [analysisResult, setAnalysisResult] = useState<string[] | null>(null);
   const { selectedSite } = useSiteContext();
 
   const pageGroups = useMemo(() => {
@@ -109,11 +114,6 @@ export default function CLSPageInsightsAdvanced({
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
       {/* LEFT: Wide URL Sidebar */}
       <div className="lg:col-span-5  border-neutral-200 dark:border-neutral-800 ">
-        {/* <div className="border-b border-neutral-200 dark:border-neutral-800 ">
-          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
-            Unstable Routes
-          </span>
-        </div> */}
         <div
           className="overflow-y-auto max-h-140 divide-y divide-neutral-100 dark:divide-neutral-800"
           style={{
@@ -129,6 +129,8 @@ export default function CLSPageInsightsAdvanced({
                 onClick={() => {
                   setActiveUrl(group.url);
                   setActiveShiftIdx(0);
+                  setAnalyze(false);
+                  setAnalysisResult(null);
                   setShowInvolved(false);
                 }}
                 className={`w-full cursor-pointer text-left p-4 transition-all flex items-start gap-4}`}
@@ -138,11 +140,6 @@ export default function CLSPageInsightsAdvanced({
                     : {}
                 }
               >
-                {/* <div
-                className={`mt-1 p-1.5 rounded-md shrink-0 ${getScoreColor(group.maxScore)}`}
-              >
-                <CircleAlert size={14} />
-              </div> */}
                 <div className="min-w-0 flex-1">
                   <div className="text-[10px] font-bold text-neutral-400 uppercase mb-1">
                     Layout Shift:{" "}
@@ -265,23 +262,19 @@ export default function CLSPageInsightsAdvanced({
                 {activeGroup.shifts.map((shift, idx) => (
                   <div
                     key={idx}
-                    className={`relative rounded-lg border transition-all overflow-hidden ${activeShiftIdx === idx ? "border-primary/30 bg-primary/5" : "border-neutral-100 dark:border-neutral-800 hover:border-neutral-300"}`}
+                    className={`relative rounded-sm border transition-all overflow-hidden ${activeShiftIdx === idx ? "border-primary/30 bg-primary/5" : "border-neutral-100 dark:border-neutral-800 hover:border-neutral-300"}`}
                   >
-                    <button
-                      onClick={() => {
-                        setActiveShiftIdx(idx);
-                        setShowInvolved(false);
-                      }}
-                      className="w-full flex items-center justify-between p-4 text-left"
-                    >
+                    <div className="w-full flex items-center justify-between p-4 text-left">
                       <div className="flex items-center gap-3 min-w-0">
                         <div
                           className={`p-2 rounded-lg ${activeShiftIdx === idx ? "bg-primary dark:bg-primary-foreground dark:text-primary text-primary-foreground" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400"}`}
                         >
                           {shift.dev_type === "mobile" ? (
                             <Smartphone size={14} />
-                          ) : (
+                          ) : shift.dev_type === "desktop" ? (
                             <Monitor size={14} />
+                          ) : (
+                            <TabletIcon size={14} />
                           )}
                         </div>
                         <div className="min-w-0">
@@ -304,7 +297,7 @@ export default function CLSPageInsightsAdvanced({
                       >
                         {shift.cls_score.toFixed(3)}
                       </div>
-                    </button>
+                    </div>
 
                     {/* Integrated Selector Tools */}
                     <div className="flex items-center gap-2 px-4 pb-3">
@@ -375,7 +368,7 @@ export default function CLSPageInsightsAdvanced({
                 </div>
               </div>
 
-              {/* CHAIN REACTION: Involved Elements */}
+              {/* Involved Elements */}
               {involvedArray.length > 0 && (
                 <div className="border rounded-sm bg-primary/90 dark:bg-secondary-background overflow-hidden">
                   <button
@@ -425,16 +418,39 @@ export default function CLSPageInsightsAdvanced({
               )}
 
               {/* Recommendation */}
-              <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-sm">
-                <div className="flex items-center gap-2 text-blue-600 font-bold text-[10px] uppercase mb-1">
-                  <AlertCircle size={14} /> Optimization Tip
+              <button
+                onClick={handleClick}
+                className="rounded-sm bg-purple-600 text-xs px-3 py-1 cursor-pointer hover:bg-purple-800 text-primary-foreground font-medium flex gap-2 items-center"
+              >
+                <StarsIcon size={14} className="fill-yellow-200" />{" "}
+                {isAnalyzing && analysisResult === null
+                  ? "Analyzing..."
+                  : "Analyze CLS data"}
+              </button>
+
+              {isAnalyzing && (
+                <div className="mt-2 z-20 bg-green-200 border text-sm border-primary/20 rounded-sm shadow-xm p-4">
+                  {analysisResult !== null && analysisResult?.length > 0 ? (
+                    <div className="px-2 py-0.5 rounded-xs text-xs">
+                      <ol className="list-decimal space-y-2">
+                        {analysisResult.map((x: any, index: number) => (
+                          <li key={index}>{x}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-2 py-0.5 text-xs">
+                      <LoaderCircle
+                        className="animate-spin text-primary/20"
+                        size={14}
+                      />
+                      <span>Analyzing CLS Data...</span>
+                    </div>
+                  )}
+
+                  <div className="absolute -top-1.5 left-4 w-3 h-3 bg-white border-r border-b border-primary/20 rotate-225" />
                 </div>
-                <p className="text-[11px] text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                  {activeShift.shift_json.dy > 0
-                    ? "This element was pushed down. Check for images or ads above it without 'aspect-ratio' or fixed dimensions."
-                    : "This element jumped up. A preceding placeholder likely collapsed or a webfont loaded late with a different line-height."}
-                </p>
-              </div>
+              )}
             </div>
           </div>
         ) : (
@@ -448,6 +464,55 @@ export default function CLSPageInsightsAdvanced({
       </div>
     </div>
   );
+
+  async function handleClick() {
+    if (!activeShift) {
+      return;
+    }
+
+    if (analysisResult !== null) {
+      return;
+    }
+
+    try {
+      setAnalyze(true);
+
+      const result = await analyzeClsElements(activeShift);
+
+      if (!result) {
+        throw new Error("Unable to get result");
+      }
+
+      setAnalysisResult(result);
+    } catch (error: any) {
+      setAnalysisResult(null);
+      console.error(error);
+    }
+
+    // retry ? optional
+  }
+}
+
+async function analyzeClsElements<T>(data: CLSMetricEntry) {
+  try {
+    const res = await fetch("/api/analysis/cls/contributors", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ metric: "CLS", data: data } as clsAnalysisType<T>),
+    });
+
+    const body: any = await res.json();
+
+    if (!res.ok) {
+      throw new Error(body.message ?? "Couldn't get analysis");
+    }
+
+    return body?.json?.fixes;
+  } catch (error: any) {
+    console.error(error.message ?? "UNexpacted Error");
+  }
 }
 
 const getBoxShadowColor = (score: number) => {
