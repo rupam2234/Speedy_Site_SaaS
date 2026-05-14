@@ -190,7 +190,8 @@ export default function INPelements({
               >
                 <div className="flex flex-col font-medium space-y-1 items-start">
                   <p className="uppercase text-primary/60">
-                    INP: <span style={inpTextColor}>{x.inp_value}</span>
+                    INP:{" "}
+                    <span style={inpTextColor}>{x.inp_value.toFixed(0)}</span>
                   </p>
 
                   <span className="flex cursor-pointer items-center gap-2 text-primary/80 hover:text-blue-400">
