@@ -79,6 +79,10 @@ export default function AppSidebar({
             url: `/dashboard/rum/web-vitals?site=${selectedSite}`,
           },
           {
+            title: "Page Groups",
+            url: `/dashboard/rum/pages?site=${selectedSite}`,
+          },
+          {
             title: "Trace",
             url: `/dashboard/rum/trace?site=${selectedSite}`,
           },
@@ -90,10 +94,6 @@ export default function AppSidebar({
           {
             title: "Analytics",
             url: `/dashboard/rum/analytics?site=${selectedSite}`,
-          },
-          {
-            title: "Page Groups",
-            url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
         ],
       },

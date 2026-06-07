@@ -5,14 +5,12 @@ import { useSiteContext } from "../../siteContext";
 import {
   ChevronDown,
   ChevronUp,
-  InfoIcon,
   Bug,
   Copy,
   Check,
   LoaderCircle,
 } from "lucide-react";
-import TooltipIcon from "@/components/theme/customTooltip";
-import { LoadingAnimation, PrimaryToolbar } from "@/components/theme";
+import { LoadingAnimation, PrimaryToolbar, Title } from "@/components/theme";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 
 type PerformanceGroup = "poor" | "average" | "good";
@@ -76,26 +74,18 @@ export default function PagePerformanceAnalysis() {
   return (
     <>
       <div className="px-5 py-4 flex flex-col md:flex-row justify-between items-center">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <h2 className="font-extrabold text-2xl tracking-tight bg-linear-to-r from-primary via-primary/80 to-primary/50 bg-clip-text text-transparent">
-              Page Groups
-            </h2>
-            <TooltipIcon
-              content="Page groups aggregate field data by unique URL paths and most prominent contributors."
-              trigger={
-                <InfoIcon
-                  size={18}
-                  className="rounded-full cursor-pointer text-primary/30 hover:text-primary transition-colors"
-                />
-              }
-              side="right"
-            />
-          </div>
-          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-70">
-            URL-BASED PERFORMANCE SEGMENTATION
-          </p>
-        </div>
+        <Title
+          title={"Page Groups"}
+          description={"Url based performance segmentation"}
+          tooltip={
+            <div className="space-y-3 text-sm">
+              <p>
+                Page groups aggregate field data by unique URL paths and most
+                prominent contributors.
+              </p>
+            </div>
+          }
+        />
       </div>
 
       <PrimaryToolbar
@@ -105,24 +95,29 @@ export default function PagePerformanceAnalysis() {
         enableAllDevices={false}
         disableCalender={true}
       >
-        <div className="flex gap-1 bg-primary/5 p-1 rounded-md border border-primary/10">
-          {(["good", "average", "poor"] as PerformanceGroup[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab);
-                setExpandedRow(null);
-              }}
-              className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-tight transition-all rounded-sm ${
-                activeTab === tab
-                  ? "bg-white dark:bg-primary text-primary dark:text-primary-foreground shadow-sm"
-                  : "bg-transparent text-primary/50 hover:text-primary"
-              }`}
-            >
-              {tab} <span className="opacity-60 ml-1">({counts[tab]})</span>
-            </button>
-          ))}
-        </div>
+        <>
+          <span className="text-sm font-medium text-primary/60">
+            Web Vital Status:{" "}
+          </span>
+          <div className="flex gap-1 bg-primary/5 p-1 rounded-md border border-primary/10">
+            {(["good", "average", "poor"] as PerformanceGroup[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setExpandedRow(null);
+                }}
+                className={`px-4 cursor-pointer py-1.5 text-[11px] font-bold uppercase tracking-tight transition-all rounded-sm ${
+                  activeTab === tab
+                    ? "bg-white dark:bg-primary text-primary dark:text-primary-foreground shadow-sm"
+                    : "bg-transparent text-primary/50 hover:text-primary"
+                }`}
+              >
+                {tab} <span className="opacity-60 ml-1">({counts[tab]})</span>
+              </button>
+            ))}
+          </div>
+        </>
       </PrimaryToolbar>
 
       <div className="text-primary">

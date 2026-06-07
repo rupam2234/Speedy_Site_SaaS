@@ -20,21 +20,24 @@ export default function Logs({ logData }: { logData: NetworkServerSchema }) {
   const [displayFilters, setDisplayFilters] = useState<boolean>(false);
 
   const filteredLogs = (logData || []).filter((item: any) => {
-    if (filters.has("all")) return true;
+    if (filters.has("all") || filters.size === 0) return true;
 
     const pageCompression = calculatePageCompression(item?.navigation_timing);
+
     const isUncompressed = pageCompression && !pageCompression.isOptimized;
     const isSlowBackend =
       (item?.navigation_timing?.backendResponseTime || 0) > 800;
     const isHighQueue = (item?.navigation_timing?.requestQueueTime || 0) > 200;
 
-    if (filters.has("slow-host")) return isSlowBackend;
-    if (filters.has("uncompressed")) return isUncompressed;
-    if (filters.has("high-queue")) return isHighQueue;
-    if (filters.has("healthy"))
-      return !isSlowBackend && !isUncompressed && !isHighQueue;
+    const matches: boolean[] = [];
 
-    return true;
+    if (filters.has("slow-host")) matches.push(isSlowBackend);
+    if (filters.has("uncompressed")) matches.push(!!isUncompressed);
+    if (filters.has("high-queue")) matches.push(isHighQueue);
+    if (filters.has("healthy"))
+      matches.push(!isSlowBackend && !isUncompressed && !isHighQueue);
+
+    return matches.some(Boolean);
   });
 
   return (

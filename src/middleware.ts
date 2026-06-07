@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createRouteSupabaseClient } from "./lib/db/server";
 
-export async function proxy(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const pathname = req.nextUrl.pathname;
 
