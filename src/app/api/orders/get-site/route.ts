@@ -1,5 +1,5 @@
 import { setupDB } from "@/lib/db";
-import { serverClient } from "@/lib/db/server_client";
+import { createRouteSupabaseClient } from "@/lib/db/server";
 import { NextRequest, NextResponse } from "next/server";
 
 const worker = setupDB();
@@ -11,15 +11,15 @@ interface Props {
 export async function POST(req: NextRequest) {
 
   const res = NextResponse.next();
-  const supabase = serverClient(req, res);
+  const supabase = createRouteSupabaseClient(req, res);
 
-  const {domain}: Props = await req.json();
+  const { domain }: Props = await req.json();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  
-  if(!user?.id){
+
+  if (!user?.id) {
     return NextResponse.json(
       { message: "User unauthorized" },
       { status: 401 }
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { data:data },
+      { data: data },
       { status: 200 }
     );
   } catch (error) {

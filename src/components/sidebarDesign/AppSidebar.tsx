@@ -75,13 +75,18 @@ export default function AppSidebar({
         isActive: true,
         items: [
           {
-            title: "Global Experience",
-            url: `/dashboard/rum/ux?site=${selectedSite}`,
-          },
-          {
             title: "Web Vitals",
             url: `/dashboard/rum/web-vitals?site=${selectedSite}`,
           },
+          {
+            title: "Trace",
+            url: `/dashboard/rum/trace?site=${selectedSite}`,
+          },
+          {
+            title: "Global Experience",
+            url: `/dashboard/rum/ux?site=${selectedSite}`,
+          },
+
           {
             title: "Analytics",
             url: `/dashboard/rum/analytics?site=${selectedSite}`,
@@ -89,10 +94,6 @@ export default function AppSidebar({
           {
             title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
-          },
-          {
-            title: "Cache Efficiency",
-            url: `/dashboard/rum/edge-cache-performance?site=${selectedSite}`,
           },
         ],
       },

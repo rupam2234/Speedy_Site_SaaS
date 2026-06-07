@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
-import { GetServerSupabase } from "@/lib/db/getUser";
+import { getSupabaseServerUser } from "../..";
 
 const db = setupDB();
 
 export async function GET() {
-  const { user } = await GetServerSupabase();
+  const { user } = await getSupabaseServerUser();
 
   if (!user?.id) {
     return NextResponse.json({ message: "User unauthorized" }, { status: 401 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { OrderData } from "@/app/api/dataTypes";
+import { OrderData } from "@/app/api";
 import { useState } from "react";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
 import { cachedData } from "../utils";

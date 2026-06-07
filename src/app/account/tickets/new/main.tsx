@@ -1,6 +1,6 @@
 "use client";
 
-import { OrderData } from "@/app/api/dataTypes";
+import { OrderData } from "@/app/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function Main() {

@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { serverClient } from "./lib/db/server_client";
-
+import { createRouteSupabaseClient } from "./lib/db/server";
 
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next();
@@ -10,7 +9,7 @@ export async function proxy(req: NextRequest) {
   const isSignIn = pathname.startsWith("/sign-in");
   const isAuthCallback = pathname.startsWith("/sign-in/auth/callback");
 
-  const supabase = serverClient(req, res);
+  const supabase = createRouteSupabaseClient(req, res);
   const {
     data: { user },
   } = await supabase.auth.getUser();

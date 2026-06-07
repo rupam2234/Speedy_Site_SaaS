@@ -1,7 +1,7 @@
-import { GetServerSupabase } from "@/lib/db/getUser";
+import { getSupabaseServerUser } from "../..";
 
 export async function GET() {
-  const { user, error } = await GetServerSupabase();
+  const { user, error } = await getSupabaseServerUser();
 
   if (error || !user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });

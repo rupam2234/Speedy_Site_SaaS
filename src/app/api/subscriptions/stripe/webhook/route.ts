@@ -7,7 +7,7 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
-}); // updated
+});
 
 const worker = setupDB();
 
@@ -18,9 +18,12 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
 
   try {
+
+    if (!signature) return new Response("Missing signature!", { status: 500 });
+
     event = stripe.webhooks.constructEvent(
       body,
-      signature!,
+      signature,
       process.env.STRIPE_WEBHOOK_SECRET!,
     );
   } catch (error: any) {
@@ -35,14 +38,39 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
 
-        await worker
-          .from("subscriptions")
-          .update({
-            stripe_subscription_status: "session completed",
+        if (session.mode === "payment") {
+          await worker.from("one_time_orders").insert({
+            user_id: userId as string,
             stripe_customer_id: session.customer as string,
             stripe_session_id: session.id,
+            stripe_payment_intent_id: session.payment_intent as string,
+            amount_total: session.amount_total as number,
+            item_type: session.metadata?.item_type as string,
+            payment_status: session.payment_status as string,
+            created_at: new Date().toISOString(),
+            currency: session.currency as string,
+            id: session.id,
+            item_id: session.metadata?.item_id as string,
+            metadata: session.metadata as any,
+            quantity: Number(session.metadata?.quantity),
+            status: session.status as string,
           })
-          .eq("user_id", userId as string);
+
+          break;
+        }
+
+        if (session.mode === "subscription") {
+          await worker
+            .from("subscriptions")
+            .update({
+              stripe_subscription_status: "session completed",
+              stripe_customer_id: session.customer as string,
+              stripe_session_id: session.id,
+            })
+            .eq("user_id", userId as string);
+
+          break;
+        }
 
         break;
       }
@@ -119,7 +147,7 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({
             customer_id: subscription.customer,
-            message: `You have upgraded to the ${activeplan.toLowerCase()} plan. You have maximum 2 site slots and 50,000 monthly pageview limit.`,
+            message: `You have upgraded to the ${activeplan?.toLowerCase()} plan. You have maximum 2 site slots and 50,000 monthly pageview limit.`,
           }),
         });
 
@@ -231,7 +259,7 @@ export async function POST(req: Request) {
         // Skip updates that only changed the current period (i.e., renewal)
         const periodChanged =
           previous?.current_period_start !==
-            subscription.current_period_start ||
+          subscription.current_period_start ||
           previous?.current_period_end !== subscription.current_period_end;
 
         if (periodChanged) {

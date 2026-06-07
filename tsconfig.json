@@ -1,16 +1,13 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
@@ -23,9 +20,7 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "noImplicitAny": true
   },
@@ -41,10 +36,8 @@
     "scripts/journey.js",
     ".next/dev/types/**/*.ts",
     "src/app/(dashboard)/dashboard/rum/web-vitals/helpers/charts/index.js",
-    "src/app/account/subscription/index.js",
+    "src/app/account/subscription/index.ts",
     "src/app/(auth)/auth/callback/page_backup.tsx"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

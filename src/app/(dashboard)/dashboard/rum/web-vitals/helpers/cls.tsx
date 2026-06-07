@@ -535,7 +535,7 @@ export default function CLSPageInsightsAdvanced({
     } catch (error: any) {
       setAnalysisResult("");
       setAnalyzing(false);
-      console.error(error);
+      console.error(error ?? "Unexpacted error");
     }
 
     // retry ? optional

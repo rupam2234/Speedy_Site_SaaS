@@ -2,19 +2,106 @@
 
 import { UserPlan } from "@/app/api/subscriptions/plan/route";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
-import { BadgeCheck, CheckCircle, X, LayoutPanelTop } from "lucide-react";
+import { X, LayoutPanelTop } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { CustomTooltip, LoadingAnimation } from "@/components/theme";
+import { LoadingAnimation } from "@/components/theme";
 import ActivePlanCard from "./activePlan";
-import { PlanType, priceMap } from ".";
+import { PlanCardProps } from ".";
+import { PricingCardContent } from "@/app/(home)";
 
-interface PlanCardProps {
-  name: PlanType;
-  price: number;
-  description: string;
-  features: string[];
-  current: boolean;
-}
+export const planCards: PlanCardProps[] = [
+  {
+    name: "Starter",
+    price: 9,
+    description:
+      "User experience & performance monitoring + optimization assistance",
+    features: [
+      "1 site",
+      "Real-Time Performance Tracking",
+      "20,000 pageviews/month",
+      "History + Realtime data",
+      "1 year data retention",
+      "AI backed element debugging",
+      "5 WP Plugin Audits",
+      "Image & Font Flagging",
+      "Weekly Email Report",
+      "Standard Support",
+    ],
+  },
+  {
+    name: "Basic",
+    price: 19,
+    description:
+      "User experience & performance monitoring + optimization assistance",
+    features: [
+      "Up to 2 sites",
+      "Real-Time Performance Tracking",
+      "50,000 pageviews/month",
+      "History + Realtime data",
+      "1 year data retention",
+      "AI backed element debugging",
+      "WP Plugin Monitoring + Audits",
+      "Image & Font Analysis",
+      "Weekly Email Report",
+      "Standard Support",
+    ],
+  },
+  // {
+  //   name: "Pro",
+  //   price: 49,
+  //   description: "Advanced monitoring for growing teams",
+  //   current: planData?.plan === "Pro",
+  //   features: [
+  //     "Up to 6 sites",
+  //     "Real-Time Performance Tracking",
+  //     "200,000 pageviews/month",
+  //     "History + Realtime data",
+  //     "1 year data retention",
+  //     "Element Debugging",
+  //     "WP Plugin Monitoring + Audits",
+  //     "Image & Font Flagging",
+  //     "Weekly Email Report",
+  //     "Priority Support",
+  //   ],
+  // },
+  // {
+  //   name: "Agency",
+  //   price: 149,
+  //   description: "Premium insights for high-traffic clients and agencies",
+  //   current: planData?.plan === "Agency",
+  //   features: [
+  //     "Up to 20 sites",
+  //     "Real-Time Performance Tracking",
+  //     "800,000 pageviews/month",
+  //     "History + Realtime data",
+  //     "1 year data retention",
+  //     "Element Debugging",
+  //     "WP Plugin Monitoring + Audits",
+  //     "Image & Font Flagging",
+  //     "Weekly Email Report",
+  //     "Priority Support",
+  //   ],
+  // },
+  {
+    name: "Managed WordPress Performance",
+    price: 299,
+    description:
+      "WordPress performance optimization + weekly reports + 1 year of real-user monitoring access",
+    features: [
+      "1 Site Per Purchese",
+      "Dedicated WordPress Optimization Service (pass web vitals and maintain performance)",
+      "Real-Time Performance Tracking",
+      "Unlimited pageviews/month for 1 year",
+      "History + Realtime data",
+      "1 year data retention",
+      "AI backed element debugging",
+      "WP Plugin Monitoring + Audits",
+      "Image & font analysis",
+      "Weekly Email Report",
+      "Standard Support",
+    ],
+  },
+];
 
 export default function SubscriptionManager() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
@@ -24,6 +111,7 @@ export default function SubscriptionManager() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const user = useSupabaseUser();
+
   const currentUser = useRef<string | null>(null);
 
   useEffect(() => {
@@ -61,79 +149,12 @@ export default function SubscriptionManager() {
     current_usage: planData?.current_usage,
   };
 
-  const planCards: PlanCardProps[] = [
-    {
-      name: "Starter",
-      price: 9,
-      description: "Core features for individuals",
-      current: planData?.plan === "Starter",
-      features: [
-        "1 site",
-        "Real-Time Performance Tracking",
-        "20,000 pageviews/month",
-        "History + Realtime data",
-        "1 year data retention",
-        "Element Debugging",
-        "5 WP Plugin Audits",
-        "Image & Font Flagging",
-        "Weekly Email Report",
-        "Standard Support",
-      ],
-    },
-    {
-      name: "Basic",
-      price: 19,
-      description: "Core features for individuals",
-      current: planData?.plan === "Basic",
-      features: [
-        "Up to 2 sites",
-        "Real-Time Performance Tracking",
-        "50,000 pageviews/month",
-        "History + Realtime data",
-        "1 year data retention",
-        "Element Debugging",
-        "WP Plugin Monitoring + Audits",
-        "Image & Font Flagging",
-        "Weekly Email Report",
-        "Standard Support",
-      ],
-    },
-    {
-      name: "Pro",
-      price: 49,
-      description: "Advanced monitoring for growing teams",
-      current: planData?.plan === "Pro",
-      features: [
-        "Up to 6 sites",
-        "Real-Time Performance Tracking",
-        "200,000 pageviews/month",
-        "History + Realtime data",
-        "1 year data retention",
-        "Element Debugging",
-        "WP Plugin Monitoring + Audits",
-        "Image & Font Flagging",
-        "Weekly Email Report",
-        "Priority Support",
-      ],
-    },
-    {
-      name: "Agency",
-      price: 149,
-      description: "Premium insights for high-traffic clients and agencies",
-      current: planData?.plan === "Agency",
-      features: [
-        "Up to 20 sites",
-        "Real-Time Performance Tracking",
-        "800,000 pageviews/month",
-        "History + Realtime data",
-        "1 year data retention",
-        "Element Debugging",
-        "WP Plugin Monitoring + Audits",
-        "Image & Font Flagging",
-        "Weekly Email Report",
-        "Priority Support",
-      ],
-    },
+  const allPlans = [
+    ...planCards,
+    ...planCards.map((x) => ({
+      ...x,
+      current: planData?.plan === X.name,
+    })),
   ];
 
   const calculatePrice = (monthlyPrice: number): number => {
@@ -141,7 +162,7 @@ export default function SubscriptionManager() {
     return (monthlyPrice * 12 * 0.9) / 12; // 10% discount
   };
 
-  if (!planData) {
+  if (!allPlans) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
         <LoadingAnimation />
@@ -153,9 +174,7 @@ export default function SubscriptionManager() {
     <div className="p-5 relative">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div className="py-2 px-5 bg-primary/5 dark:bg-secondary-background text-primary font-medium rounded">
-          <h3 className="text-[16px] text-primary/80">
-            Manage your subscription
-          </h3>
+          <h3 className="text-[16px] text-primary/80">Manage your plan</h3>
         </div>
 
         <div className="flex items-center gap-6">
@@ -210,16 +229,20 @@ export default function SubscriptionManager() {
       {/* 4 PLANS IN ONE LINE */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {planCards.map((plan) => (
-          <PlanCard
+          <PricingCardContent
+            needCtaButtons={true}
             key={plan.name}
-            name={plan.name}
-            price={plan.price}
-            description={plan.description}
-            features={plan.features}
-            current={plan.current}
-            highlight={plan.name === planData.plan}
-            displayPrice={calculatePrice(plan.price)}
-            billingCycle={billingCycle}
+            props={{
+              name: plan.name,
+              price: plan.price,
+              description: plan.description,
+              features: plan.features,
+              current: plan.current ? plan.current : false,
+              highlight: plan.name === planData?.plan,
+              defaultPrice: plan.price,
+              displayPrice: calculatePrice(plan.price),
+              billingCycle: billingCycle,
+            }}
           />
         ))}
       </div>
@@ -238,7 +261,7 @@ export default function SubscriptionManager() {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <ActivePlanCard userPlan={planData.plan} usage={usage} />
+          <ActivePlanCard userPlan={planData?.plan} usage={usage} />
         </div>
       </div>
 
@@ -249,123 +272,6 @@ export default function SubscriptionManager() {
           onClick={() => setIsDrawerOpen(false)}
         />
       )}
-    </div>
-  );
-}
-
-function PlanCard({
-  name,
-  description,
-  features,
-  current,
-  highlight = false,
-  displayPrice,
-  billingCycle,
-}: {
-  name: PlanType;
-  price: number;
-  description: string;
-  features: string[];
-  current: boolean;
-  highlight?: boolean;
-  displayPrice: number;
-  billingCycle: "monthly" | "yearly";
-}) {
-  async function handleSubscribe(priceId: string) {
-    try {
-      const res = await fetch("/api/subscriptions/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId }),
-      });
-      const data: any = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  return (
-    <div
-      className={`p-6 border rounded flex flex-col justify-between transition ${highlight ? "bg-blue-50 dark:bg-secondary-background border-blue-300" : "bg-white dark:bg-secondary-background border-primary/15"}`}
-    >
-      <div>
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2 items-center">
-            <h3 className="text-lg font-semibold text-primary/80">{name}</h3>
-            {name === "Pro" && (
-              <div className="px-2 text-[10px] py-1 text-primary-foreground dark:text-primary font-semibold bg-green-500/60">
-                Most Popular
-              </div>
-            )}
-          </div>
-          {highlight && (
-            <BadgeCheck className="w-4 h-4 text-blue-600 shrink-0" />
-          )}
-        </div>
-
-        <div className="h-14">
-          <p className="text-sm text-primary/60 mt-1">{description}</p>
-        </div>
-
-        <div className="-mx-6 bg-accent/80 dark:bg-accent-foreground/20 w-[calc(100%+3rem)] px-6 py-4">
-          <p className="text-2xl font-bold text-blue-500/90 dark:text-amber-200">
-            <span>${displayPrice.toFixed(0)}</span>
-            <span className="text-sm font-medium ml-1">
-              /month {billingCycle === "yearly" && "(billed yearly)"}
-            </span>
-          </p>
-        </div>
-
-        <ul className="mt-4 space-y-2">
-          {features.map((feature) => {
-            const match = feature.match(/(\d[\d,]*)/);
-            const numberPart = match?.[0];
-            const shouldUnderline =
-              feature.toLowerCase().includes("pageviews") && numberPart;
-            const [before, after] = numberPart
-              ? feature.split(numberPart)
-              : [feature, ""];
-
-            return (
-              <li
-                key={feature}
-                className="flex items-start text-xs text-primary/60 relative group"
-              >
-                <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 shrink-0" />
-                <span>
-                  {before}
-                  {shouldUnderline ? (
-                    <CustomTooltip
-                      trigger={
-                        <span className="underline decoration-dotted decoration-primary/40">
-                          {numberPart}
-                        </span>
-                      }
-                      side="bottom"
-                      content="Tracking throttles on exceed"
-                    />
-                  ) : (
-                    numberPart
-                  )}
-                  {after}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
-      <button
-        disabled={current}
-        onClick={() => {
-          const key = billingCycle === "monthly" ? name : `${name}_yearly`;
-          if (!current) handleSubscribe(priceMap[key as keyof typeof priceMap]);
-        }}
-        className={`mt-6 w-full text-sm font-medium py-2 rounded-md transition-all duration-150 ${current ? "bg-blue-500/30 text-primary cursor-not-allowed" : highlight ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-100 text-gray-800 hover:bg-blue-500/30 hover:text-primary"}`}
-      >
-        {current ? "✓ Current Plan" : `Change to ${name}`}
-      </button>
     </div>
   );
 }

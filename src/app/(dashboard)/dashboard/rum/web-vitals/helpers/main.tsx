@@ -652,13 +652,39 @@ export default function Main() {
   async function AnalysisHandler() {
     if (hasRun.current) return; // prevent duplicate runs
 
+    const maxRetires = 3;
+    const sleep = (delay: number) => new Promise((rs) => setTimeout(rs, delay));
+
     if (activeMetric === "LCP") {
       try {
-        setContributors([]);
+        // setContributors([]);
         const key = `lcp-elements:${selectedSite}`;
 
         const { response } = await cachedData({
-          fn: geLcpElements,
+          fn: async () => {
+            for (let attempt = 0; attempt < maxRetires; attempt++) {
+              const res = await fetch("/api/rum/elements/lcp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  domain_name: selectedSite,
+                }),
+              });
+
+              const body: any = await res.json();
+
+              if (!res.ok) {
+                if (attempt < maxRetires - 1) {
+                  await sleep(3000 * (attempt + 1));
+                  continue;
+                }
+
+                throw new Error(body?.message || "Request failed");
+              }
+
+              return body;
+            }
+          },
           key: key,
           session_Storage: false,
           ttl: 5 * 50 * 1000,
@@ -666,24 +692,6 @@ export default function Main() {
         setContributors(response.data);
       } catch (error: any) {
         console.error(error.message);
-      }
-
-      async function geLcpElements() {
-        const res = await fetch("/api/rum/elements/lcp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            domain_name: selectedSite,
-          }),
-        });
-
-        const body: any = await res.json();
-
-        if (!res.ok) {
-          throw new Error(body.message);
-        }
-
-        return body;
       }
     } else if (activeMetric === "CLS") {
       try {

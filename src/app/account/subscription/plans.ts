@@ -8,7 +8,10 @@ type PlanKey =
   | "Starter_yearly"
   | "Basic_yearly"
   | "Pro_yearly"
-  | "Agency_yearly";
+  | "Agency_yearly"
+  | "ManagedWp"
+  | "ManagedWp_yearly";
+
 
 export const priceMap: Record<PlanKey, string> = {
   Starter: "price_1TEH3oFudyIXBfXknI5rIubA",
@@ -19,6 +22,8 @@ export const priceMap: Record<PlanKey, string> = {
   Basic_yearly: "price_1SV7F9FudyIXBfXk8dez9wT1",
   Pro_yearly: "price_1SV7N3FudyIXBfXkngR9eZRh",
   Agency_yearly: "price_1SV7OMFudyIXBfXkEeO7i2TS",
+  ManagedWp_yearly: "price_1TZQBfFudyIXBfXk2hEwAKxG",
+  ManagedWp: "price_1TZVtwFudyIXBfXk49PVzAij"
 };
 
 export type PlanType =
@@ -30,7 +35,10 @@ export type PlanType =
   | "Starter (Yearly)"
   | "Basic (Yearly)"
   | "Pro (Yearly)"
-  | "Agency (Yearly)";
+  | "Agency (Yearly)"
+  | "Managed WordPress Performance (Yearly)"
+  | "Managed WordPress Performance"
+  | undefined;
 
 export const getPlanFromSubscription = (
   subscription: Stripe.Subscription,
@@ -44,8 +52,20 @@ export const getPlanFromSubscription = (
     [priceMap.Pro_yearly]: "Pro (Yearly)",
     [priceMap.Agency]: "Agency",
     [priceMap.Agency_yearly]: "Agency (Yearly)",
+    [priceMap.ManagedWp_yearly]: "Managed WordPress Performance (Yearly)",
+    [priceMap.ManagedWp]: "Managed WordPress Performance"
   };
 
   const priceId = subscription.items.data[0].price.id;
   return priceIdToPlan[priceId] ?? "Free";
 };
+
+export type PlanCardProps = {
+  name: PlanType;
+  price: number;
+  description: string;
+  features: string[];
+  current?: boolean;
+};
+
+

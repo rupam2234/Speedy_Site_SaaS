@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { jwtVerify } from "jose";
 import { newUserSignup } from "../../emails/newSignUp";
+import { createServerSupabaseClient } from "@/lib/db/server";
 
-const supabaseAdmin = () => {
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(url, key);
-};
 
 export async function GET(req: NextRequest) {
-  const supabase = supabaseAdmin();
+  const supabase = createServerSupabaseClient();
 
   try {
     const authHeader = req.headers.get("Authorization");

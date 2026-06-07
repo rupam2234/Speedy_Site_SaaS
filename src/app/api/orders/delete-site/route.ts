@@ -1,5 +1,5 @@
 import { setupDB } from "@/lib/db";
-import { serverClient } from "@/lib/db/server_client";
+import { createRouteSupabaseClient } from "@/lib/db/server";
 import { NextRequest, NextResponse } from "next/server";
 
 const worker = setupDB();
@@ -11,7 +11,7 @@ interface Props {
 export async function POST(req: NextRequest) {
 
   const res = NextResponse.next();
-  const supabase = serverClient(req, res);
+  const supabase = createRouteSupabaseClient(req, res);
 
   const { domain }: Props = await req.json();
 
@@ -33,9 +33,9 @@ export async function POST(req: NextRequest) {
   try {
 
     // validate the domain for user
-    const {data: verifiedDomain, error: validationError} = await worker.from("orders").select("website_name").eq("website_name", domain).eq("user_id", user.id).maybeSingle();
+    const { data: verifiedDomain, error: validationError } = await worker.from("orders").select("website_name").eq("website_name", domain).eq("user_id", user.id).maybeSingle();
 
-    if(validationError || verifiedDomain?.website_name !== domain){
+    if (validationError || verifiedDomain?.website_name !== domain) {
       throw new Error(validationError?.message || "Unauthorised")
     }
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ message: "website deleted" }, { status: 200 });
-  } catch (error:any) {
+  } catch (error: any) {
     return NextResponse.json(
       { message: error.message || "Error deleting website" },
       { status: 500 }

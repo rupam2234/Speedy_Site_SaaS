@@ -1,5 +1,5 @@
 import { setupDB } from "@/lib/db";
-import { GetServerSupabase } from "@/lib/db/getUser";
+import { getSupabaseServerUser } from "../..";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
@@ -14,7 +14,7 @@ const baseAddress = process.env?.NEXT_PUBLIC_PROD_BASE_URL;
 
 export async function POST(req: Request) {
   const { token, site }: Props = await req.json();
-  const user = await GetServerSupabase();
+  const user = await getSupabaseServerUser();
 
   if (!token) {
     return NextResponse.json({ error: "Missing token" }, { status: 400 });

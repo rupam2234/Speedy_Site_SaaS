@@ -1,6 +1,6 @@
+import { getSupabaseServerUser } from "@/app/api";
 import { CacheRuleDisabled } from "@/app/api/emails/cloudflareRules";
 import { setupDB } from "@/lib/db";
-import { GetServerSupabase } from "@/lib/db/getUser";
 import { NextRequest, NextResponse } from "next/server";
 
 const worker = setupDB();
@@ -13,7 +13,7 @@ interface Props {
 
 export async function POST(req: NextRequest) {
   const { site, rule_id, isEnabled }: Props = await req.json();
-  const user = await GetServerSupabase();
+  const user = await getSupabaseServerUser();
 
   if (!site || !rule_id) {
     return NextResponse.json({ message: "Bad Request" }, { status: 401 });

@@ -2,7 +2,7 @@
 
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, Zap, Rocket } from "lucide-react";
+import { ArrowRight, ChevronDown, Rocket } from "lucide-react";
 import { useIsMobile } from "@/components/theme/use-mobile";
 import { SpeedySiteLogo } from "@/components/theme";
 import { useEffect, useState } from "react";
@@ -27,12 +27,12 @@ export default function SiteHeader({ enableNav }: { enableNav: boolean }) {
   }, [user, delayedUser]);
 
   const services = [
-    {
-      title: "WP Optimization",
-      desc: "Standalone WordPress speed optimization service.",
-      icon: <Zap size={18} className="text-amber-500" />,
-      href: "/wordpress-optimization",
-    },
+    // {
+    //   title: "WP Optimization",
+    //   desc: "Standalone WordPress speed optimization service.",
+    //   icon: <Zap size={18} className="text-amber-500" />,
+    //   href: "/wordpress-optimization",
+    // },
     {
       title: "Speedy Pixel",
       desc: "Convert and optimize images instantly to improve site speed",
@@ -64,7 +64,7 @@ export default function SiteHeader({ enableNav }: { enableNav: boolean }) {
                   : "hover:bg-slate-50"
               }`}
             >
-              Legacy Services
+              Tools
               <ChevronDown
                 size={14}
                 className={`transition-transform duration-200 ${

@@ -2,11 +2,11 @@
 
 import { LoaderCircle, Tickets, Wrench } from "lucide-react";
 import { useDeferredValue, useEffect, useRef, useState } from "react";
-import { SpeedySiteTickets, TicketMessages } from "@/app/api/dataTypes";
 import { useFormStatus } from "react-dom";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { CustomTooltip } from "@/components/theme";
 import { useRouter } from "next/navigation";
+import { SpeedySiteTickets, TicketMessages } from "@/app/api";
 
 interface SendMessageProps<T> {
   message: T;
@@ -117,7 +117,7 @@ export default function Main() {
 
                                 setOpenStatusId(undefined);
 
-                                setSelectedTicket((prev) =>
+                                setSelectedTicket((prev: any) =>
                                   prev ? { ...prev, status } : prev,
                                 );
 

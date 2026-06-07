@@ -1,7 +1,7 @@
 import { IMAGE_EXTENSIONS } from "@/app/(dashboard)/dashboard/cloudflare/imageExtensionSelector";
+import { getSupabaseServerUser } from "@/app/api";
 import { CacheRuleUpdated } from "@/app/api/emails/cloudflareRules";
 import { setupDB } from "@/lib/db";
-import { GetServerSupabase } from "@/lib/db/getUser";
 import { NextRequest, NextResponse } from "next/server";
 
 interface Props {
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     cacheByDevice,
     excluded_images,
   }: Props = await req.json();
-  const user = await GetServerSupabase();
+  const user = await getSupabaseServerUser();
 
   if (!site) {
     return NextResponse.json({ message: "Bad Request" }, { status: 401 });

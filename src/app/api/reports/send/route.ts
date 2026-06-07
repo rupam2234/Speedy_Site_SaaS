@@ -1,6 +1,6 @@
 import { setupDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import { EmailReporting } from "../../dataTypes";
+import { EmailReporting } from "../..";
 
 const worker = setupDB();
 
@@ -14,12 +14,12 @@ export async function POST(req: NextRequest) {
     const { error } =
       action === "update"
         ? await worker
-            .from("email_reporting")
-            .upsert(props, { onConflict: "order_id" })
+          .from("email_reporting")
+          .upsert(props, { onConflict: "order_id" })
         : await worker
-            .from("email_reporting")
-            .delete()
-            .eq("order_id", props.order_id);
+          .from("email_reporting")
+          .delete()
+          .eq("order_id", props.order_id);
 
     if (error) {
       throw new Error(error.message);

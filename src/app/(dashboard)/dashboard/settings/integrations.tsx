@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSiteContext } from "../siteContext";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
-import { OrderData } from "@/app/api/dataTypes";
 import { EmailReporting } from ".";
+import { OrderData } from "@/app/api";
 
 interface Props {
   siteData: OrderData | undefined;

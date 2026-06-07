@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GetServerSupabase, setupDB } from "@/lib/db";
-import { OrderData } from "../../dataTypes";
+import { getSupabaseServerUser, OrderData } from "../..";
+import { setupDB } from "@/lib/db";
 
 interface Props {
   data: OrderData;
@@ -11,7 +11,7 @@ const worker = setupDB();
 export async function POST(req: NextRequest) {
   const { data }: Props = await req.json();
 
-  const { user } = await GetServerSupabase();
+  const { user } = await getSupabaseServerUser();
 
   if (!user) {
     return NextResponse.json({ message: "Unauthorized user" }, { status: 401 });

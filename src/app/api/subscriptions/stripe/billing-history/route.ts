@@ -1,16 +1,16 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
-import { GetServerSupabase } from "@/lib/db/getUser";
+import { getSupabaseServerUser } from "@/app/api";
+
+const worker = setupDB();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
 });
 
-const worker = setupDB();
-
 export async function GET() {
-  const { user, error: authError } = await GetServerSupabase();
+  const { user, error: authError } = await getSupabaseServerUser();
 
   if (authError || !user) {
     return NextResponse.json(
@@ -27,11 +27,9 @@ export async function GET() {
       .single();
 
     if (error || !data) {
-      return NextResponse.json(
-        { error: "No subscription found" },
-        { status: 404 }
-      );
+      throw new Error(error.message)
     }
+
 
     const invoices = await stripe.invoices.list({
       customer: data.stripe_customer_id!,

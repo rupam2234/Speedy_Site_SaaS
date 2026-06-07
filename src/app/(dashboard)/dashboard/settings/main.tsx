@@ -8,7 +8,7 @@ import {
 import { Edit, LoaderIcon, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
-import { OrderData } from "@/app/api/dataTypes";
+import { OrderData } from "@/app/api";
 import { useSiteContext } from "../siteContext";
 import { toast } from "sonner";
 import { LoadingAnimation } from "@/components/theme/loadingAnimation";

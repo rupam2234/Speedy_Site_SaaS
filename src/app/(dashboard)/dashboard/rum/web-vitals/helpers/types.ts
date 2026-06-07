@@ -176,3 +176,37 @@ export enum ColorCodes {
   average = "text-orange-500",
   poor = "text-red-500",
 }
+
+export interface Contributor {
+  device_type: "Desktop" | "Mobile" | "Tablet" | string;
+
+  element_target: string;
+  page_url: string;
+
+  lcp_asset_url: string | null;
+
+  font_family: string | null;
+  font_weight: string | number | null;
+  font_size: string | null;
+
+  network_transfer_bytes: number | null;
+  memory_usage_bytes: number | null;
+  ttfb_ms: number | null;
+  loading_priority: "high" | "low" | "auto" | string | null;
+  device_memory_gb: string | number | null;
+
+  occurrence_count: number;
+
+  avg_lcp_value: number;
+  p75_lcp_value: number;
+
+  avg_resource_load_delay: number;
+  avg_resource_load_duration: number;
+  avg_element_render_delay: number;
+
+  top_3_render_blockers: string | null;
+
+  good_count: number;
+  needs_improvement_count: number;
+  poor_count: number;
+}

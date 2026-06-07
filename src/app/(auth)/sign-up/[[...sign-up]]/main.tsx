@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase_client } from "@/lib/db/browser_client";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import Link from "next/link";
 import { MobileViewHandler } from "../../helpers/mobileView";
 import { DesktopSideContent } from "../../helpers/sideContent";
 import { SpeedySiteLogo } from "@/components/theme";
+import { browserClient } from "@/lib/db";
 
 export default function Main() {
   // --- Form State ---
@@ -77,7 +77,7 @@ export default function Main() {
 
     const authRedirect = `${window.location.origin}/auth/callback`;
 
-    const { error } = await supabase_client.auth.signUp({
+    const { error } = await browserClient.auth.signUp({
       email,
       password,
       options: {

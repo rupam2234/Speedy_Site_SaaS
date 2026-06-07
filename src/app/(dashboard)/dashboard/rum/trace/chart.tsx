@@ -1,6 +1,5 @@
 "use client";
 
-import { CacheEfficiency } from "@/app/api/dataTypes";
 import { useSiteContext } from "../../siteContext";
 import { useEffect, useRef } from "react";
 import * as echarts from "echarts/core";
@@ -20,6 +19,7 @@ import {
 import { LineChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { UniversalTransition } from "echarts/features";
+import { CacheEfficiency } from "@/app/api";
 
 echarts.use([
   TooltipComponent,
@@ -74,12 +74,12 @@ export default function OriginPerformanceChart({ data }: Props) {
               tooltipText += `<span style="display:inline-block;margin-right:5px;
                                border-radius:50%;width:10px;height:10px;
                                background-color:${item.color};"></span>
-                               <b>Origin Hits:</b> ${item.data.toFixed(2)}%<br/>`;
+                               <b>Cache Miss:</b> ${item.data.toFixed(2)}%<br/>`;
             } else if (item.seriesIndex === 1) {
               tooltipText += `<span style="display:inline-block;margin-right:5px;
                                border-radius:50%;width:10px;height:10px;
                                background-color:#937eb5;"></span>
-                               <b>Total Events Captured:</b> ${item.data.toLocaleString()}<br/>`;
+                               <b>Pageview Sample:</b> ${item.data.toLocaleString()}<br/>`;
             }
           });
           return tooltipText;
@@ -105,7 +105,7 @@ export default function OriginPerformanceChart({ data }: Props) {
       yAxis: {
         type: "value",
         show: true,
-        name: "Origin Hit %",
+        name: "Cache Miss %",
         splitLine: {
           show: false,
         },
@@ -216,7 +216,7 @@ export default function OriginPerformanceChart({ data }: Props) {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full overflow-x-hidden">
+    <div ref={containerRef} className="w-full">
       <div ref={chartRef} className="w-full h-95" />
     </div>
   );

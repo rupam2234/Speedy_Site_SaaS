@@ -13,52 +13,17 @@ import {
   ChevronUp,
   ZapIcon,
   StarsIcon,
-  LoaderCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSiteContext } from "../../../siteContext";
 import { CustomTooltip, LoadingAnimation } from "@/components/theme";
-import { ColorCodes } from "./types";
+import { ColorCodes, Contributor } from "./types";
 
 const getVitalColor = (ms: number) => {
   if (ms <= 2500) return "text-emerald-500";
   if (ms <= 4000) return "text-amber-500";
   return "text-red-500";
 };
-
-export interface Contributor {
-  device_type: "Desktop" | "Mobile" | "Tablet" | string;
-
-  element_target: string;
-  page_url: string;
-
-  lcp_asset_url: string | null;
-
-  font_family: string | null;
-  font_weight: string | number | null;
-  font_size: string | null;
-
-  network_transfer_bytes: number | null;
-  memory_usage_bytes: number | null;
-  ttfb_ms: number | null;
-  loading_priority: "high" | "low" | "auto" | string | null;
-  device_memory_gb: string | number | null;
-
-  occurrence_count: number;
-
-  avg_lcp_value: number;
-  p75_lcp_value: number;
-
-  avg_resource_load_delay: number;
-  avg_resource_load_duration: number;
-  avg_element_render_delay: number;
-
-  top_3_render_blockers: string | null;
-
-  good_count: number;
-  needs_improvement_count: number;
-  poor_count: number;
-}
 
 export type AnalysisType<T> = {
   metric: "LCP" | "INP" | "CLS" | "TTFB";
@@ -78,7 +43,7 @@ export default function LCPelements({
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
   const [analyzing, setAnalyzing] = useState<number | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<string[] | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<string>("");
 
   useEffect(() => {
     if (contributors.length > 0) {
@@ -86,11 +51,11 @@ export default function LCPelements({
       return;
     }
 
-    const timer = setTimeout(() => {
-      setLoading(false); // fallback after 10s
-    }, 10000);
+    // const timer = setTimeout(() => {
+    //   setLoading(false); // fallback after 10s
+    // }, 10000);
 
-    return () => clearTimeout(timer);
+    // return () => clearTimeout(timer);
   }, [contributors]);
 
   useEffect(() => {
@@ -103,8 +68,17 @@ export default function LCPelements({
     return () => clearTimeout(timer);
   }, [copied]);
 
+  const parsedLines = useMemo(() => {
+    return analysisResult
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => l.replace(/^•\s?/, ""));
+  }, [analysisResult]);
+
   const filtered = useMemo(
     () =>
+      contributors &&
       contributors.filter(
         (c) =>
           c.element_target.toLowerCase().includes(search.toLowerCase()) ||
@@ -113,10 +87,10 @@ export default function LCPelements({
     [contributors, search],
   );
 
-  const activeItems = filtered.slice((page - 1) * rows, page * rows);
+  const lcpItems = filtered.slice((page - 1) * rows, page * rows);
   const totalPages = Math.ceil(filtered.length / rows) || 1;
 
-  if (loading && contributors.length > 0) {
+  if (loading) {
     return <LoadingAnimation />;
   }
 
@@ -191,7 +165,7 @@ export default function LCPelements({
       )}
 
       <div className="space-y-4">
-        {activeItems.map((item, i) => {
+        {lcpItems.map((item, i) => {
           const delay = item.avg_resource_load_delay || 0;
           const load = item.avg_resource_load_duration || 0;
           const render = item.avg_element_render_delay || 0;
@@ -643,34 +617,29 @@ export default function LCPelements({
                           index: i,
                         });
                       }}
+                      disabled={analysisResult.length > 0 && analyzing === i}
                       className="rounded-sm bg-purple-600 text-xs px-3 py-0.5 cursor-pointer hover:bg-purple-800 text-primary-foreground font-medium flex gap-2 items-center"
                     >
-                      <StarsIcon size={14} className="fill-yellow-200" />{" "}
-                      Analyze
+                      <StarsIcon
+                        size={14}
+                        className={`fill-yellow-200 ${analyzing === i && analysisResult.length === 0 ? "animate-spin duration-500" : ""}`}
+                      />
+                      {analyzing === i && analysisResult.length === 0
+                        ? "Analyzing..."
+                        : "Analyze LCP"}
                     </button>
                   </div>
 
-                  {analyzing === i && (
-                    <div className="mt-2 z-20 border text-sm border-primary/20 bg-white rounded-sm shadow-xm p-4">
-                      {analysisResult !== null && analysisResult?.length > 0 ? (
-                        <div className="px-2 py-0.5 rounded-xs text-xs">
-                          <ol className="list-disc space-y-2">
-                            {analysisResult.map((x, index) => (
-                              <li key={index}>{x}</li>
-                            ))}
-                          </ol>
+                  {parsedLines.length > 0 && analyzing === i && (
+                    <div className="space-y-2 mt-3">
+                      {parsedLines.map((line, i) => (
+                        <div
+                          key={i}
+                          className="p-2 rounded-sm border border-primary/10 bg-primary/5 wrap-break-word text-xs text-primary/80"
+                        >
+                          {line}
                         </div>
-                      ) : (
-                        <div className="flex items-center gap-2 px-2 py-0.5 text-xs">
-                          <LoaderCircle
-                            className="animate-spin text-primary/20"
-                            size={14}
-                          />
-                          <span>Analyzing asset timings...</span>
-                        </div>
-                      )}
-
-                      <div className="absolute -top-1.5 left-4 w-3 h-3 bg-white border-r border-b border-primary/20 rotate-225" />
+                      ))}
                     </div>
                   )}
                 </div>
@@ -690,7 +659,7 @@ export default function LCPelements({
     index: number;
   }) {
     setAnalyzing(index);
-    setAnalysisResult(null);
+    setAnalysisResult("");
 
     try {
       const res = await fetch("/api/analysis/lcp/contributors", {
@@ -701,18 +670,54 @@ export default function LCPelements({
         body: JSON.stringify({ metric: input.metric, data: input.data }),
       });
 
-      const body: any = await res.json();
-
       if (!res.ok) {
-        setAnalysisResult(null);
-        throw new Error(body.message ?? "Couldn't get analysis");
+        const error: any = await res.json();
+        setAnalysisResult("");
+        // setAnalyzing(null);
+        throw new Error(error.message ?? "Error in analysis");
       }
-      // setAnalyzing(null);
 
-      setAnalysisResult(body?.json?.fixes);
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+
+      let buffer = "";
+
+      while (true && reader) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          // setAnalyzing(null);
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue; // skip if does not have data: at front
+
+          const json = trimmed.replace("data:", "").trim();
+
+          if (json === "[DONE]") continue; // skip if [DONE]
+
+          const parsed = JSON.parse(json);
+
+          const content = parsed.choices?.[0]?.delta?.content ?? "";
+
+          if (!content) continue;
+
+          setAnalysisResult((prev) => prev + content);
+        }
+      }
+
+      // setAnalysisResult(body?.json?.fixes);
     } catch (error: any) {
-      setAnalyzing(null);
-      setAnalysisResult(null);
+      // setAnalyzing(null);
+      setAnalysisResult("");
       console.error(error.message ?? "UNexpacted Error");
     }
   }

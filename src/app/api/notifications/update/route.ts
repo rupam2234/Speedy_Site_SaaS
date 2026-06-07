@@ -1,5 +1,6 @@
-import { GetServerSupabase, setupDB } from "@/lib/db";
+import { setupDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseServerUser } from "../../helpers/getSupabaseUser";
 
 interface Props {
   ids: string[];
@@ -8,7 +9,7 @@ interface Props {
 const worker = setupDB();
 
 export async function POST(req: NextRequest) {
-  const { user } = await GetServerSupabase();
+  const { user } = await getSupabaseServerUser();
 
   if (!user?.id) {
     return NextResponse.json({ message: "User unauthorized" }, { status: 401 });

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase_client } from "@/lib/db/browser_client";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useRouter } from "next/navigation";
@@ -9,6 +8,7 @@ import Link from "next/link";
 import { MobileViewHandler } from "../../helpers/mobileView";
 import { DesktopSideContent } from "../../helpers/sideContent";
 import { SpeedySiteLogo } from "@/components/theme";
+import { browserClient } from "@/lib/db";
 
 export default function Main() {
   const { theme } = useTheme();
@@ -19,7 +19,7 @@ export default function Main() {
     async function checkSession() {
       const {
         data: { session },
-      } = await supabase_client.auth.getSession();
+      } = await browserClient.auth.getSession();
       if (session) {
         router.push("/dashboard");
       }
@@ -61,7 +61,7 @@ function SignInForm() {
     setLoading(true);
     setMessage("");
 
-    const { error } = await supabase_client.auth.signInWithPassword({
+    const { error } = await browserClient.auth.signInWithPassword({
       email,
       password,
     });

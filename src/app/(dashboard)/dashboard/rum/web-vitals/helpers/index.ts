@@ -7,9 +7,5 @@ export { default as LCPelements } from "./lcp";
 export { default as Main } from "./main";
 export { default as TTFBelements } from "./ttfb";
 export { default as SimpleTrendInsight } from "./performanceInsight";
-export {
-  getP75Status,
-  Metric,
-  getDistStatus,
-  getSidebarTooltip,
-} from "./status";
+export type { Metric } from "./status";
+export { getP75Status, getDistStatus, getSidebarTooltip } from "./status";

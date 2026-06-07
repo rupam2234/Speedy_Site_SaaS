@@ -652,50 +652,113 @@ function getDeviceType() {
   return w <= 768 ? "mobile" : w <= 1024 ? "tablet" : "desktop";
 }
 
+function detectCacheStatus(nav) {
+  // 1. Server-Timing (best signal if available)
+  const serverTiming = nav.serverTiming || [];
+
+  const cacheEntry = serverTiming.find((entry) =>
+    entry.name.toLowerCase().includes("cache"),
+  );
+
+  if (cacheEntry?.description) {
+    return cacheEntry.description;
+  }
+
+  // 2. Memory cache (very strong signal)
+  if (nav.transferSize === 0 && nav.encodedBodySize === 0) {
+    return "memory-cache";
+  }
+
+  // 3. BFCache (back/forward navigation)
+  const navEntry = performance.getEntriesByType("navigation")[0];
+  if (navEntry?.type === "back_forward") {
+    return "bfcache";
+  }
+
+  // 4. Heuristic: strong cache reuse
+  if (
+    nav.transferSize > 0 &&
+    nav.encodedBodySize > 0 &&
+    nav.transferSize < nav.encodedBodySize * 0.2
+  ) {
+    return "disk-cache";
+  }
+
+  return "unknown";
+}
+
 function collectPerformanceMetrics() {
   const nav = performance.getEntriesByType("navigation")[0];
 
   if (!nav) return null;
 
+  // Connection timing
   const dnsLookup = nav.domainLookupEnd - nav.domainLookupStart;
+
   const tcpConnectionTime = nav.connectEnd - nav.connectStart;
+
+  const tlsHandshakeTime =
+    nav.secureConnectionStart > 0
+      ? nav.connectEnd - nav.secureConnectionStart
+      : 0;
+
   const requestQueueTime = nav.requestStart - nav.connectEnd;
-  const timeToFirstByte = nav.responseStart - nav.requestStart;
 
-  const userConnectionTime = dnsLookup + tcpConnectionTime;
+  // REAL browser TTFB (correct CWV definition)
+  const timeToFirstByte = nav.responseStart - nav.startTime;
 
-  // Estimated backend/CDN processing time
-  const serverProcessingTime = Math.max(
-    0,
-    timeToFirstByte - userConnectionTime - requestQueueTime,
-  );
+  // Backend-only processing time
+  const backendResponseTime = nav.responseStart - nav.requestStart;
 
-  // Optional cache signal
-  let cacheStatus = null;
+  // Connection overhead
+  const userConnectionTime = dnsLookup + tcpConnectionTime + tlsHandshakeTime;
+
+  // Redirect overhead
+  const redirectDuration = nav.redirectEnd - nav.redirectStart;
+
+  // Cache detection
+  const cacheStatus = detectCacheStatus(nav);
+
+  // Server-Timing (debug visibility)
   const serverTiming = nav.serverTiming || [];
-  const cacheEntry = serverTiming.find((x) => x.name === "cache");
-  if (cacheEntry?.description) {
-    cacheStatus = cacheEntry.description;
-  }
 
   // Experience classification
   let experienceCategory = "good";
-  if (userConnectionTime > 200) {
+
+  if (userConnectionTime > 300) {
     experienceCategory = "poor_connection";
-  } else if (timeToFirstByte > 600) {
+  } else if (backendResponseTime > 600) {
     experienceCategory = "slow_server";
+  } else if (timeToFirstByte > 800) {
+    experienceCategory = "high_ttfb";
   }
 
   return {
     type: "navigation-timings",
+
+    // Core Web Vitals-related
     timeToFirstByte,
-    serverProcessingTime,
-    userConnectionTime,
+    backendResponseTime,
+
+    // Connection breakdown
     dnsLookup,
     tcpConnectionTime,
+    tlsHandshakeTime,
     requestQueueTime,
-    experienceCategory,
+    redirectDuration,
+    userConnectionTime,
+
+    // Cache + diagnostics
     cacheStatus,
+    serverTiming,
+
+    // Classification
+    experienceCategory,
+
+    // Useful debugging signals
+    transferSize: nav.transferSize,
+    encodedBodySize: nav.encodedBodySize,
+    decodedBodySize: nav.decodedBodySize,
   };
 }
 

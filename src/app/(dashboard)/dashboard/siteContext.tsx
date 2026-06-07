@@ -1,6 +1,6 @@
 "use client";
 
-import { OrderData } from "@/app/api/dataTypes";
+import { OrderData } from "@/app/api";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { CruxData, DailyCruxData } from "@/data-types/index";
 import React, {

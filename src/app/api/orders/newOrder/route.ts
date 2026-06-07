@@ -1,6 +1,6 @@
 import { setupDB } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { OrderData } from "../../dataTypes";
+import { OrderData } from "../..";
 
 const worker = setupDB();
 

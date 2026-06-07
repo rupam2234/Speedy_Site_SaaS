@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useSiteContext } from "../siteContext";
 import { CustomTooltip } from "@/components/theme";
 import { InfoIcon } from "lucide-react";
-import { OrderData } from "@/app/api/dataTypes";
 import { cachedData } from "@/components/utils";
 import {
   OriginalRefs,
@@ -12,7 +11,7 @@ import {
   ReportVerbostyTypes,
   SaveStates,
 } from "./types";
-import { EmailReporting as EmailConfigData } from "@/app/api/dataTypes";
+import { OrderData } from "@/app/api";
 
 export default function EmailReporting() {
   const { selectedSite } = useSiteContext();
@@ -308,7 +307,7 @@ async function saveWeeklySettings({
       (verbosity.analytics ? ReportVerbosty.analytics : 0) |
       (verbosity.raw_data ? ReportVerbosty.raw_data : 0);
 
-    const newEmailReportSetting: EmailConfigData = {
+    const newEmailReportSetting = {
       order_id: orderId,
       report_verbosity: verbosityNumber,
       optional_email: emailAddress ? emailAddress : "null",

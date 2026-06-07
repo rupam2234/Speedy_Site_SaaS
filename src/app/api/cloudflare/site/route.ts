@@ -1,5 +1,5 @@
 import { setupDB } from "@/lib/db";
-import { GetServerSupabase } from "@/lib/db/getUser";
+import { getSupabaseServerUser } from "../..";
 import { NextRequest, NextResponse } from "next/server";
 
 const worker = setupDB();
@@ -10,7 +10,7 @@ interface Props {
 
 export async function POST(req: NextRequest) {
   const { site }: Props = await req.json();
-  const user = await GetServerSupabase();
+  const user = await getSupabaseServerUser();
 
   if (!user.user?.id) {
     return NextResponse.json(

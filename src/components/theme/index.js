@@ -12,3 +12,4 @@ export { default as SegmentedBar } from "./webVitalBars";
 export { default as SiteFooter } from "./footer";
 export { DeviceController } from "./deviceController";
 export { THEME } from "./colors";
+export { Title } from "./title";

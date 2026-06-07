@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase_client } from "@/lib/db/browser_client";
+import { browserClient } from "@/lib/db";
 
 export default function AuthCallbackClient() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function AuthCallbackClient() {
     const {
       data: { session },
       error,
-    } = await supabase_client.auth.exchangeCodeForSession(code);
+    } = await browserClient.auth.exchangeCodeForSession(code);
     // const {
     //   data: { session },
     //   error,

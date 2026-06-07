@@ -1,1662 +1,1727 @@
 export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+    | string
+    | number
+    | boolean
+    | null
+    | { [key: string]: Json | undefined }
+    | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)";
-  };
-  public: {
-    Tables: {
-      cloudflare_auth: {
-        Row: {
-          config_backup: Json | null;
-          created_at: string;
-          id: number;
-          site_id: string | null;
-          status: string | null;
-          token: string | null;
-          updated_at: string | null;
-          user_id: string | null;
-        };
-        Insert: {
-          config_backup?: Json | null;
-          created_at?: string;
-          id?: number;
-          site_id?: string | null;
-          status?: string | null;
-          token?: string | null;
-          updated_at?: string | null;
-          user_id?: string | null;
-        };
-        Update: {
-          config_backup?: Json | null;
-          created_at?: string;
-          id?: number;
-          site_id?: string | null;
-          status?: string | null;
-          token?: string | null;
-          updated_at?: string | null;
-          user_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "cloudflare_auth_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "cloudflare_kv_tracking";
-            referencedColumns: ["order_id"];
-          },
-          {
-            foreignKeyName: "cloudflare_auth_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "orders";
-            referencedColumns: ["order_id"];
-          },
-          {
-            foreignKeyName: "cloudflare_auth_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "v_cf_zone_per_site";
-            referencedColumns: ["order_id"];
-          },
-        ];
-      };
-      email_reporting: {
-        Row: {
-          id: string;
-          optional_email: string | null;
-          order_id: string;
-          report_verbosity: number;
-        };
-        Insert: {
-          id?: string;
-          optional_email?: string | null;
-          order_id: string;
-          report_verbosity?: number;
-        };
-        Update: {
-          id?: string;
-          optional_email?: string | null;
-          order_id?: string;
-          report_verbosity?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "email_reporting_order_id_fkey";
-            columns: ["order_id"];
-            isOneToOne: false;
-            referencedRelation: "cloudflare_kv_tracking";
-            referencedColumns: ["order_id"];
-          },
-          {
-            foreignKeyName: "email_reporting_order_id_fkey";
-            columns: ["order_id"];
-            isOneToOne: false;
-            referencedRelation: "orders";
-            referencedColumns: ["order_id"];
-          },
-          {
-            foreignKeyName: "email_reporting_order_id_fkey";
-            columns: ["order_id"];
-            isOneToOne: false;
-            referencedRelation: "v_cf_zone_per_site";
-            referencedColumns: ["order_id"];
-          },
-        ];
-      };
-      notifications: {
-        Row: {
-          created_at: string;
-          id: string;
-          link: string | null;
-          message: string;
-          read: boolean;
-          type: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          id?: string;
-          link?: string | null;
-          message: string;
-          read?: boolean;
-          type: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          link?: string | null;
-          message?: string;
-          read?: boolean;
-          type?: string;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
-      orders: {
-        Row: {
-          favicon_file: string | null;
-          order_date: string;
-          order_id: string;
-          order_status: boolean;
-          report_email: string | null;
-          rum_connection: boolean | null;
-          usage_by_site: number;
-          user_id: string;
-          website_address: string;
-          website_name: string;
-          weekly_report: boolean | null;
-        };
-        Insert: {
-          favicon_file?: string | null;
-          order_date?: string;
-          order_id?: string;
-          order_status: boolean;
-          report_email?: string | null;
-          rum_connection?: boolean | null;
-          usage_by_site?: number;
-          user_id?: string;
-          website_address: string;
-          website_name: string;
-          weekly_report?: boolean | null;
-        };
-        Update: {
-          favicon_file?: string | null;
-          order_date?: string;
-          order_id?: string;
-          order_status?: boolean;
-          report_email?: string | null;
-          rum_connection?: boolean | null;
-          usage_by_site?: number;
-          user_id?: string;
-          website_address?: string;
-          website_name?: string;
-          weekly_report?: boolean | null;
-        };
-        Relationships: [];
-      };
-      plan_metadata: {
-        Row: {
-          default_billing_interval: string | null;
-          degradation_policy: string;
-          plan: string;
-          price: number;
-          site_limit: number | null;
-          usage_limit: number;
-          wp_plugin_audits: number;
-        };
-        Insert: {
-          default_billing_interval?: string | null;
-          degradation_policy?: string;
-          plan: string;
-          price?: number;
-          site_limit?: number | null;
-          usage_limit: number;
-          wp_plugin_audits?: number;
-        };
-        Update: {
-          default_billing_interval?: string | null;
-          degradation_policy?: string;
-          plan?: string;
-          price?: number;
-          site_limit?: number | null;
-          usage_limit?: number;
-          wp_plugin_audits?: number;
-        };
-        Relationships: [];
-      };
-      profiles: {
-        Row: {
-          email: string | null;
-          id: string;
-          role: string | null;
-        };
-        Insert: {
-          email?: string | null;
-          id: string;
-          role?: string | null;
-        };
-        Update: {
-          email?: string | null;
-          id?: string;
-          role?: string | null;
-        };
-        Relationships: [];
-      };
-      rum_daily_distributions: {
-        Row: {
-          day: string;
-          device_type: string;
-          domain_name: string;
-          good: Json;
-          inserted_at: string;
-          needs_improvement: Json;
-          poor: Json;
-          updated_at: string;
-        };
-        Insert: {
-          day: string;
-          device_type: string;
-          domain_name: string;
-          good?: Json;
-          inserted_at?: string;
-          needs_improvement?: Json;
-          poor?: Json;
-          updated_at?: string;
-        };
-        Update: {
-          day?: string;
-          device_type?: string;
-          domain_name?: string;
-          good?: Json;
-          inserted_at?: string;
-          needs_improvement?: Json;
-          poor?: Json;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "rum_daily_distributions_domain_name_fkey";
-            columns: ["domain_name"];
-            isOneToOne: false;
-            referencedRelation: "cloudflare_kv_tracking";
-            referencedColumns: ["website_name"];
-          },
-          {
-            foreignKeyName: "rum_daily_distributions_domain_name_fkey";
-            columns: ["domain_name"];
-            isOneToOne: false;
-            referencedRelation: "orders";
-            referencedColumns: ["website_name"];
-          },
-          {
-            foreignKeyName: "rum_daily_distributions_domain_name_fkey";
-            columns: ["domain_name"];
-            isOneToOne: false;
-            referencedRelation: "v_cf_zone_per_site";
-            referencedColumns: ["website_name"];
-          },
-        ];
-      };
-      rum_history_new: {
-        Row: {
-          cls: Json;
-          created_at: string;
-          day: string;
-          domain_name: string;
-          fcp: Json;
-          inp: Json;
-          lcp: Json;
-          ttfb: Json;
-        };
-        Insert: {
-          cls?: Json;
-          created_at?: string;
-          day: string;
-          domain_name: string;
-          fcp?: Json;
-          inp?: Json;
-          lcp?: Json;
-          ttfb?: Json;
-        };
-        Update: {
-          cls?: Json;
-          created_at?: string;
-          day?: string;
-          domain_name?: string;
-          fcp?: Json;
-          inp?: Json;
-          lcp?: Json;
-          ttfb?: Json;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "rum_history_new_domain_name_fkey";
-            columns: ["domain_name"];
-            isOneToOne: false;
-            referencedRelation: "cloudflare_kv_tracking";
-            referencedColumns: ["website_name"];
-          },
-          {
-            foreignKeyName: "rum_history_new_domain_name_fkey";
-            columns: ["domain_name"];
-            isOneToOne: false;
-            referencedRelation: "orders";
-            referencedColumns: ["website_name"];
-          },
-          {
-            foreignKeyName: "rum_history_new_domain_name_fkey";
-            columns: ["domain_name"];
-            isOneToOne: false;
-            referencedRelation: "v_cf_zone_per_site";
-            referencedColumns: ["website_name"];
-          },
-        ];
-      };
-      rum_metrics: {
-        Row: {
-          created_at: string | null;
-          current_page: string | null;
-          domain_name: string | null;
-          events: Json | null;
-          id: number;
-          previous_page: string | null;
-          session_id: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          current_page?: string | null;
-          domain_name?: string | null;
-          events?: Json | null;
-          id?: number;
-          previous_page?: string | null;
-          session_id?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          current_page?: string | null;
-          domain_name?: string | null;
-          events?: Json | null;
-          id?: number;
-          previous_page?: string | null;
-          session_id?: string | null;
-        };
-        Relationships: [];
-      };
-      rum_origin_hits_agg: {
-        Row: {
-          agg_time: string;
-          domain_name: string;
-          origin_hit_count: number;
-          origin_hit_percentage: number;
-          total_origin_events: number;
-        };
-        Insert: {
-          agg_time: string;
-          domain_name: string;
-          origin_hit_count: number;
-          origin_hit_percentage: number;
-          total_origin_events: number;
-        };
-        Update: {
-          agg_time?: string;
-          domain_name?: string;
-          origin_hit_count?: number;
-          origin_hit_percentage?: number;
-          total_origin_events?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "rum_origin_hits_agg_domain_name_fkey";
-            columns: ["domain_name"];
-            isOneToOne: false;
-            referencedRelation: "cloudflare_kv_tracking";
-            referencedColumns: ["website_name"];
-          },
-          {
-            foreignKeyName: "rum_origin_hits_agg_domain_name_fkey";
-            columns: ["domain_name"];
-            isOneToOne: false;
-            referencedRelation: "orders";
-            referencedColumns: ["website_name"];
-          },
-          {
-            foreignKeyName: "rum_origin_hits_agg_domain_name_fkey";
-            columns: ["domain_name"];
-            isOneToOne: false;
-            referencedRelation: "v_cf_zone_per_site";
-            referencedColumns: ["website_name"];
-          },
-        ];
-      };
-      subscriptions: {
-        Row: {
-          billing_interval: string | null;
-          created_at: string | null;
-          current_usage: number;
-          period_ends_at: string | null;
-          period_starts_at: string | null;
-          plan: string;
-          quantity: number;
-          status: string;
-          stripe_customer_id: string | null;
-          stripe_session_id: string | null;
-          stripe_subscription_id: string | null;
-          stripe_subscription_status: string | null;
-          trial_ends_at: string | null;
-          updated_at: string | null;
-          user_id: string;
-          wp_plugin_audits: number | null;
-        };
-        Insert: {
-          billing_interval?: string | null;
-          created_at?: string | null;
-          current_usage?: number;
-          period_ends_at?: string | null;
-          period_starts_at?: string | null;
-          plan?: string;
-          quantity?: number;
-          status?: string;
-          stripe_customer_id?: string | null;
-          stripe_session_id?: string | null;
-          stripe_subscription_id?: string | null;
-          stripe_subscription_status?: string | null;
-          trial_ends_at?: string | null;
-          updated_at?: string | null;
-          user_id: string;
-          wp_plugin_audits?: number | null;
-        };
-        Update: {
-          billing_interval?: string | null;
-          created_at?: string | null;
-          current_usage?: number;
-          period_ends_at?: string | null;
-          period_starts_at?: string | null;
-          plan?: string;
-          quantity?: number;
-          status?: string;
-          stripe_customer_id?: string | null;
-          stripe_session_id?: string | null;
-          stripe_subscription_id?: string | null;
-          stripe_subscription_status?: string | null;
-          trial_ends_at?: string | null;
-          updated_at?: string | null;
-          user_id?: string;
-          wp_plugin_audits?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_plan_fkey";
-            columns: ["plan"];
-            isOneToOne: false;
-            referencedRelation: "plan_metadata";
-            referencedColumns: ["plan"];
-          },
-        ];
-      };
-      ticket_messages: {
-        Row: {
-          created_at: string | null;
-          id: string;
-          message: string;
-          sender_name: string | null;
-          sender_role: string | null;
-          ticket_id: string | null;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string | null;
-          id?: string;
-          message: string;
-          sender_name?: string | null;
-          sender_role?: string | null;
-          ticket_id?: string | null;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string | null;
-          id?: string;
-          message?: string;
-          sender_name?: string | null;
-          sender_role?: string | null;
-          ticket_id?: string | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "ticket_messages_ticket_id_fkey";
-            columns: ["ticket_id"];
-            isOneToOne: false;
-            referencedRelation: "tickets";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      tickets: {
-        Row: {
-          created_at: string | null;
-          id: string;
-          message: string;
-          related_order: string | null;
-          status: string | null;
-          subject: string;
-          updated_at: string | null;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string | null;
-          id?: string;
-          message: string;
-          related_order?: string | null;
-          status?: string | null;
-          subject: string;
-          updated_at?: string | null;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string | null;
-          id?: string;
-          message?: string;
-          related_order?: string | null;
-          status?: string | null;
-          subject?: string;
-          updated_at?: string | null;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
-      website_metadata: {
-        Row: {
-          description: string | null;
-          id: number;
-          last_updated: string | null;
-          mobile_optimized: boolean | null;
-          site_type: string | null;
-          title: string | null;
-          url: string;
-        };
-        Insert: {
-          description?: string | null;
-          id?: number;
-          last_updated?: string | null;
-          mobile_optimized?: boolean | null;
-          site_type?: string | null;
-          title?: string | null;
-          url: string;
-        };
-        Update: {
-          description?: string | null;
-          id?: number;
-          last_updated?: string | null;
-          mobile_optimized?: boolean | null;
-          site_type?: string | null;
-          title?: string | null;
-          url?: string;
-        };
-        Relationships: [];
-      };
-      wp_key: {
-        Row: {
-          created_at: string;
-          domain: string | null;
-          id: number;
-          wp_secret: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          domain?: string | null;
-          id?: number;
-          wp_secret?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          domain?: string | null;
-          id?: number;
-          wp_secret?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "wp_key_domain_fkey";
-            columns: ["domain"];
-            isOneToOne: true;
-            referencedRelation: "cloudflare_kv_tracking";
-            referencedColumns: ["website_name"];
-          },
-          {
-            foreignKeyName: "wp_key_domain_fkey";
-            columns: ["domain"];
-            isOneToOne: true;
-            referencedRelation: "orders";
-            referencedColumns: ["website_name"];
-          },
-          {
-            foreignKeyName: "wp_key_domain_fkey";
-            columns: ["domain"];
-            isOneToOne: true;
-            referencedRelation: "v_cf_zone_per_site";
-            referencedColumns: ["website_name"];
-          },
-        ];
-      };
-    };
-    Views: {
-      cloudflare_kv_tracking: {
-        Row: {
-          created_at: string | null;
-          current_usage: number | null;
-          default_billing_interval: string | null;
-          degradation_policy: string | null;
-          order_id: string | null;
-          period_ends_at: string | null;
-          period_starts_at: string | null;
-          plan: string | null;
-          price: number | null;
-          quantity: number | null;
-          status: string | null;
-          stripe_customer_id: string | null;
-          stripe_subscription_id: string | null;
-          updated_at: string | null;
-          usage_limit: number | null;
-          user_id: string | null;
-          website_name: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_plan_fkey";
-            columns: ["plan"];
-            isOneToOne: false;
-            referencedRelation: "plan_metadata";
-            referencedColumns: ["plan"];
-          },
-        ];
-      };
-      subscription_with_limit: {
-        Row: {
-          active_sites: number | null;
-          computed_usage_limit: number | null;
-          created_at: string | null;
-          current_usage: number | null;
-          degradation_policy: string | null;
-          period_ends_at: string | null;
-          period_starts_at: string | null;
-          plan: string | null;
-          quantity: number | null;
-          status: string | null;
-          trial_ends_at: string | null;
-          updated_at: string | null;
-          usage_limit: number | null;
-          user_id: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_plan_fkey";
-            columns: ["plan"];
-            isOneToOne: false;
-            referencedRelation: "plan_metadata";
-            referencedColumns: ["plan"];
-          },
-        ];
-      };
-      v_cf_zone_per_site: {
-        Row: {
-          config_backup: Json | null;
-          order_id: string | null;
-          order_status: boolean | null;
-          site_id: string | null;
-          status: string | null;
-          token: string | null;
-          user_id: string | null;
-          website_name: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "cloudflare_auth_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "cloudflare_kv_tracking";
-            referencedColumns: ["order_id"];
-          },
-          {
-            foreignKeyName: "cloudflare_auth_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "orders";
-            referencedColumns: ["order_id"];
-          },
-          {
-            foreignKeyName: "cloudflare_auth_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "v_cf_zone_per_site";
-            referencedColumns: ["order_id"];
-          },
-        ];
-      };
-      wp_plugin_scans: {
-        Row: {
-          audit_completed: number | null;
-          audit_limit: number | null;
-          user_id: string | null;
-        };
-        Relationships: [];
-      };
-    };
-    Functions: {
-      aggregate_daily_web_metrics: {
-        Args: { target_date: string };
-        Returns: undefined;
-      };
-      aggregate_web_metrics_for_date_range: {
-        Args: { end_date: string; start_date: string };
-        Returns: undefined;
-      };
-      aggregate_web_metrics_for_today: { Args: never; Returns: undefined };
-      analyze_domain_performance: {
-        Args: { end_date?: string; start_date?: string; target_domain: string };
-        Returns: {
-          cls_p75: number;
-          cls_status: string;
-          cwv_failure_score: number;
-          device_type: string;
-          domain: string;
-          fcp_p75: number;
-          inp_p75: number;
-          inp_status: string;
-          lcp_p75: number;
-          lcp_status: string;
-          measurement_count: number;
-          measurement_date: string;
-          metrics_available: number;
-          normalized_score: number;
-          overall_cwv_pass_rate: number;
-          page_address: string;
-          page_rank: number;
-          page_size_mb: number;
-          pct_css_content: number;
-          pct_image_content: number;
-          pct_js_content: number;
-          pct_passing_cls: number;
-          pct_passing_inp: number;
-          pct_passing_lcp: number;
-          pct_passing_ttfb: number;
-          pct_third_party_content: number;
-          pct_third_party_requests: number;
-          performance_impact: number;
-          performance_rank: number;
-          performance_score: number;
-          request_count: number;
-          result_type: string;
-          ttfb_p75: number;
-          unique_pages: number;
-        }[];
-      };
-      analyze_fcp_by_device: {
-        Args: { domain_filter?: string; time_range?: string };
-        Returns: {
-          avg_fcp_value: number;
-          connection_type: string;
-          device_type: string;
-          good_count: number;
-          max_fcp_value: number;
-          min_fcp_value: number;
-          needs_improvement_count: number;
-          occurrence_count: number;
-          p75_fcp_value: number;
-          p90_fcp_value: number;
-          p95_fcp_value: number;
-          poor_count: number;
-        }[];
-      };
-      analyze_lcp_by_device: {
-        Args: { domain_filter: string };
-        Returns: {
-          avg_element_render_delay: number;
-          avg_lcp_value: number;
-          avg_resource_load_delay: number;
-          avg_resource_load_duration: number;
-          device_memory_gb: string;
-          device_type: string;
-          element_target: string;
-          font_family: string;
-          font_size: string;
-          font_weight: string;
-          good_count: number;
-          lcp_asset_url: string;
-          loading_priority: string;
-          memory_usage_bytes: number;
-          needs_improvement_count: number;
-          network_transfer_bytes: number;
-          occurrence_count: number;
-          p75_lcp_value: number;
-          page_url: string;
-          poor_count: number;
-          top_3_render_blockers: string;
-          ttfb_ms: number;
-        }[];
-      };
-      analyze_web_vitals_by_page: {
-        Args: { domain_filter?: string; time_range?: string };
-        Returns: {
-          avg_cls: number;
-          avg_fcp: number;
-          avg_fid: number;
-          avg_inp: number;
-          avg_lcp: number;
-          avg_ttfb: number;
-          cls_good_pct: number;
-          cls_needs_improvement_pct: number;
-          cls_poor_pct: number;
-          device_type: string;
-          fcp_good_pct: number;
-          fcp_needs_improvement_pct: number;
-          fcp_poor_pct: number;
-          fid_good_pct: number;
-          fid_needs_improvement_pct: number;
-          fid_poor_pct: number;
-          inp_good_pct: number;
-          inp_needs_improvement_pct: number;
-          inp_poor_pct: number;
-          lcp_good_pct: number;
-          lcp_needs_improvement_pct: number;
-          lcp_poor_pct: number;
-          overall_score: number;
-          page_address: string;
-          page_url: string;
-          page_view_count: number;
-          performance_category: string;
-          ttfb_good_pct: number;
-          ttfb_needs_improvement_pct: number;
-          ttfb_poor_pct: number;
-        }[];
-      };
-      bytea_to_text: { Args: { data: string }; Returns: string };
-      cache_analysis: {
-        Args: { domain_name_param: string };
-        Returns: {
-          cache_status: string;
-          cdn_provider: string;
-          city: string;
-          country: string;
-          created_at: string;
-          current_page: string;
-          device: string;
-          dns_time: number;
-          id: string;
-          is_origin_hit: string;
-          network_rtt: string;
-          network_type: string;
-          server_processing_time: number;
-          tcp_time: number;
-          ttfb_total: number;
-        }[];
-      };
-      cls_elements: {
-        Args: { p_domain_name: string };
-        Returns: {
-          cls_score: number;
-          current_page: string;
-          dev_type: string;
-          impact_json: Json;
-          involved_elems: Json;
-          l_mode: string;
-          most_frequent_element: string;
-          occ_count: number;
-          rect_json: Json;
-          shift_json: Json;
-          time_avg: number;
-        }[];
-      };
-      cwv_dist_by_connection: {
-        Args: {
-          p_domain: string;
-          p_end: string;
-          p_metric: string;
-          p_start: string;
-        };
-        Returns: {
-          connection_type: string;
-          desktop_good: number;
-          desktop_needs_improvement: number;
-          desktop_poor: number;
-          mobile_good: number;
-          mobile_needs_improvement: number;
-          mobile_poor: number;
-          other_good: number;
-          other_needs_improvement: number;
-          other_poor: number;
-          tablet_good: number;
-          tablet_needs_improvement: number;
-          tablet_poor: number;
-        }[];
-      };
-      daily_aggregate_usage_by_userid: {
-        Args: never;
-        Returns: {
-          total_usage: number;
-          user_id: string;
-        }[];
-      };
-      dashboard_multimetrix: {
-        Args: { date_range_days?: number; domain_name_param: string };
-        Returns: {
-          country_code: string;
-          country_name: string;
-          device_type: string;
-          dom_load_avg: number;
-          sample_count: number;
-          speed_index: number;
-          ttfb_avg: number;
-        }[];
-      };
-      delete_old_rum_hits: { Args: never; Returns: undefined };
-      delete_old_rum_metrics: { Args: never; Returns: undefined };
-      font_analysis: {
-        Args: { p_domain: string };
-        Returns: {
-          avg_lcp: number;
-          avg_render_delay: number;
-          avg_resource_size: number;
-          device: string;
-          font_family: string;
-          font_file_url: string;
-          font_weight: string;
-          major_pages: string[];
-          poor_lcp_percentage: number;
-          total_occurrences: number;
-        }[];
-      };
-      get_ai_citation: {
-        Args: { p_domain_name: string };
-        Returns: {
-          ai_citation_possibility: string;
-          avg_citation_score: number;
-          avg_dom_content_loaded: number;
-          avg_ttfb: number;
-          device_type: string;
-          domain: string;
-          max_citation_score: number;
-          min_citation_score: number;
-          std_dev_citation_score: number;
-          total_sessions: number;
-        }[];
-      };
-      get_analytics_by_device_and_country: {
-        Args: { p_domain_name: string; p_time_range?: string };
-        Returns: {
-          avg_pages_per_session: number;
-          bounce_rate_percentage: number;
-          country: string;
-          device_type: string;
-          total_page_views: number;
-          total_sessions: number;
-          unique_languages: number;
-          unique_visitors: number;
-        }[];
-      };
-      get_daily_web_metrics: { Args: { target_date: string }; Returns: Json[] };
-      get_filtered_rum_metrics: {
-        Args: {
-          p_date_range: string;
-          p_device_type?: string;
-          p_domain_name: string;
-          p_end_date?: string;
-          p_top_countries_limit?: number;
-        };
-        Returns: {
-          result_data: Json;
-          result_type: string;
-        }[];
-      };
-      get_lcp_image_metrics: {
-        Args: {
-          p_domain_name?: string;
-          p_end_date?: string;
-          p_start_date?: string;
-        };
-        Returns: {
-          avg_decoded_body_size: number;
-          avg_element_render_delay: number;
-          avg_height: number;
-          avg_lcp_ms: number;
-          avg_resource_load_delay: number;
-          avg_resource_load_duration: number;
-          avg_time_to_first_byte: number;
-          avg_transfer_size: number;
-          avg_width: number;
-          device_type: string;
-          domain_name: string;
-          image_url: string;
-          max_lcp_ms: number;
-          min_lcp_ms: number;
-          occurrence_count: number;
-          p75_lcp_ms: number;
-          pct_exceeding_cwv: number;
-          pct_lazy: number;
-          period: string;
-        }[];
-      };
-      get_mailing_list: {
-        Args: never;
-        Returns: {
-          email: string;
-          report_verbosity: number;
-          website_name: string;
-        }[];
-      };
-      get_rum_history: {
-        Args: { p_domain: string; p_from: string; p_to: string };
-        Returns: {
-          cls: Json;
-          day: string;
-          fcp: Json;
-          inp: Json;
-          lcp: Json;
-          ttfb: Json;
-        }[];
-      };
-      get_rum_web_vitals_metrics: {
-        Args: { p_date_range?: string; p_domain_name: string };
-        Returns: {
-          cls_avg: number;
-          cls_max: number;
-          cls_min: number;
-          cls_p50: number;
-          cls_p75: number;
-          cls_p90: number;
-          cls_p95: number;
-          cls_p99: number;
-          cls_samples: number;
-          device_category: string;
-          fcp_avg: number;
-          fcp_max: number;
-          fcp_min: number;
-          fcp_p50: number;
-          fcp_p75: number;
-          fcp_p90: number;
-          fcp_p95: number;
-          fcp_p99: number;
-          fcp_samples: number;
-          inp_avg: number;
-          inp_max: number;
-          inp_min: number;
-          inp_p50: number;
-          inp_p75: number;
-          inp_p90: number;
-          inp_p95: number;
-          inp_p99: number;
-          inp_samples: number;
-          lcp_avg: number;
-          lcp_max: number;
-          lcp_min: number;
-          lcp_p50: number;
-          lcp_p75: number;
-          lcp_p90: number;
-          lcp_p95: number;
-          lcp_p99: number;
-          lcp_samples: number;
-          report_date: string;
-          ttfb_avg: number;
-          ttfb_max: number;
-          ttfb_min: number;
-          ttfb_p50: number;
-          ttfb_p75: number;
-          ttfb_p90: number;
-          ttfb_p95: number;
-          ttfb_p99: number;
-          ttfb_samples: number;
-        }[];
-      };
-      get_web_vital_counts_by_url:
-        | {
-            Args: {
-              p_device_type?: string;
-              p_domain: string;
-              p_end?: string;
-              p_limit?: number;
-              p_metric: string;
-              p_start?: string;
-            };
-            Returns: {
-              good: number;
-              needs_improvement: number;
-              poor: number;
-              url: string;
-            }[];
-          }
-        | {
-            Args: { p_domain: string; p_limit?: number; p_metric: string };
-            Returns: {
-              good: number;
-              needs_improvement: number;
-              poor: number;
-              url: string;
-            }[];
-          };
-      get_web_vitals_metrics:
-        | {
-            Args: { p_domain: string };
-            Returns: {
-              avg_value: number;
-              device_type: string;
-              domain_name: string;
-              good_percent: number;
-              max_value: number;
-              metric_name: string;
-              min_value: number;
-              needs_improvement_percent: number;
-              p50: number;
-              p75: number;
-              p90: number;
-              p95: number;
-              p99: number;
-              page: string;
-              poor_percent: number;
-              sample_count: number;
-            }[];
-          }
-        | {
-            Args: { p_date_range?: string; p_domain: string };
-            Returns: {
-              avg_value: number;
-              device_type: string;
-              domain_name: string;
-              good_percent: number;
-              max_value: number;
-              metric_name: string;
-              min_value: number;
-              needs_improvement_percent: number;
-              p50: number;
-              p75: number;
-              p90: number;
-              p95: number;
-              p99: number;
-              page: string;
-              poor_percent: number;
-              sample_count: number;
-            }[];
-          };
-      get_yesterday_usage_counts: {
-        Args: never;
-        Returns: {
-          domain_name: string;
-          usage_count: number;
-        }[];
-      };
-      http: {
-        Args: { request: Database["public"]["CompositeTypes"]["http_request"] };
-        Returns: Database["public"]["CompositeTypes"]["http_response"];
-        SetofOptions: {
-          from: "http_request";
-          to: "http_response";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      http_delete:
-        | {
-            Args: { uri: string };
-            Returns: Database["public"]["CompositeTypes"]["http_response"];
-            SetofOptions: {
-              from: "*";
-              to: "http_response";
-              isOneToOne: true;
-              isSetofReturn: false;
-            };
-          }
-        | {
-            Args: { content: string; content_type: string; uri: string };
-            Returns: Database["public"]["CompositeTypes"]["http_response"];
-            SetofOptions: {
-              from: "*";
-              to: "http_response";
-              isOneToOne: true;
-              isSetofReturn: false;
-            };
-          };
-      http_get:
-        | {
-            Args: { uri: string };
-            Returns: Database["public"]["CompositeTypes"]["http_response"];
-            SetofOptions: {
-              from: "*";
-              to: "http_response";
-              isOneToOne: true;
-              isSetofReturn: false;
-            };
-          }
-        | {
-            Args: { data: Json; uri: string };
-            Returns: Database["public"]["CompositeTypes"]["http_response"];
-            SetofOptions: {
-              from: "*";
-              to: "http_response";
-              isOneToOne: true;
-              isSetofReturn: false;
-            };
-          };
-      http_head: {
-        Args: { uri: string };
-        Returns: Database["public"]["CompositeTypes"]["http_response"];
-        SetofOptions: {
-          from: "*";
-          to: "http_response";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      http_header: {
-        Args: { field: string; value: string };
-        Returns: Database["public"]["CompositeTypes"]["http_header"];
-        SetofOptions: {
-          from: "*";
-          to: "http_header";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      http_list_curlopt: {
-        Args: never;
-        Returns: {
-          curlopt: string;
-          value: string;
-        }[];
-      };
-      http_patch: {
-        Args: { content: string; content_type: string; uri: string };
-        Returns: Database["public"]["CompositeTypes"]["http_response"];
-        SetofOptions: {
-          from: "*";
-          to: "http_response";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      http_post:
-        | {
-            Args: { content: string; content_type: string; uri: string };
-            Returns: Database["public"]["CompositeTypes"]["http_response"];
-            SetofOptions: {
-              from: "*";
-              to: "http_response";
-              isOneToOne: true;
-              isSetofReturn: false;
-            };
-          }
-        | {
-            Args: { data: Json; uri: string };
-            Returns: Database["public"]["CompositeTypes"]["http_response"];
-            SetofOptions: {
-              from: "*";
-              to: "http_response";
-              isOneToOne: true;
-              isSetofReturn: false;
-            };
-          };
-      http_put: {
-        Args: { content: string; content_type: string; uri: string };
-        Returns: Database["public"]["CompositeTypes"]["http_response"];
-        SetofOptions: {
-          from: "*";
-          to: "http_response";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      http_reset_curlopt: { Args: never; Returns: boolean };
-      http_set_curlopt: {
-        Args: { curlopt: string; value: string };
-        Returns: boolean;
-      };
-      inp_elements: {
-        Args: { p_domain_name: string };
-        Returns: {
-          created_at: string;
-          current_page: string;
-          device: string;
-          inp_value: number;
-          input_delay: number;
-          interaction_type: string;
-          presentation_delay: number;
-          processing_duration: number;
-          rating: string;
-          responsible_scripts: string;
-          target_element: string;
-        }[];
-      };
-      lcp_attribution_by_device: {
-        Args: {
-          p_domain?: string;
-          p_from?: string;
-          p_min_lcp?: number;
-          p_path_like?: string;
-          p_to?: string;
-        };
-        Returns: {
-          avg_lcp: number;
-          decodedbodysize: number;
-          device_type: string;
-          elementrenderdelay: number;
-          height: number;
-          islazy: boolean;
-          lcp_type: string;
-          max_lcp: number;
-          occurrences: number;
-          resourceloaddelay: number;
-          resourceloadduration: number;
-          target: string;
-          target_url: string;
-          transfersize: number;
-          ttfb: number;
-          url: string;
-          width: number;
-        }[];
-      };
-      page_performance_analysis: {
-        Args: { p_domain?: string };
-        Returns: {
-          avg_cls: number;
-          avg_inp_ms: number;
-          avg_lcp_ms: number;
-          cls_elements: Json;
-          current_page: string;
-          device_type: string;
-          inp_elements: Json;
-          lcp_elements: Json;
-          performance_group: string;
-          visit_count: number;
-        }[];
-      };
-      process_web_vitals_date_range: {
-        Args: { end_date?: string; start_date: string };
-        Returns: {
-          process_date: string;
-          rows_inserted: number;
-        }[];
-      };
-      refresh_rum_daily_distributions: {
-        Args: { p_day?: string };
-        Returns: undefined;
-      };
-      rum_distributions_all_metrics: {
-        Args: { p_domain_name: string; p_end: string; p_start: string };
-        Returns: {
-          device_type: string;
-          good_count: number;
-          metric: string;
-          needs_improvement_count: number;
-          poor_count: number;
-        }[];
-      };
-      rum_origin_hits_agg_run: { Args: never; Returns: undefined };
-      text_to_bytea: { Args: { data: string }; Returns: string };
-      third_party_domains: {
-        Args: { site_filter?: string; time_range?: string };
-        Returns: {
-          device_type: string;
-          site_domain: string;
-          top_domains: Json;
-        }[];
-      };
-      top_landing_page: {
-        Args: { p_date_range: string; p_domain_name: string };
-        Returns: {
-          current_page: string;
-          hits: number;
-          previous_page: string;
-        }[];
-      };
-      traffic_source: {
-        Args: never;
-        Returns: {
-          count: number;
-          day: string;
-          device_type: string;
-          domain: string;
-          referral_domain: string;
-        }[];
-      };
-      ttfb_contributors: {
-        Args: { p_domain: string };
-        Returns: {
-          avg_downlink: number;
-          avg_rtt: number;
-          device_type: string;
-          occurrence_count: number;
-          origin_hit_rate: number;
-          p75_dns: number;
-          p75_server: number;
-          p75_tcp: number;
-          p75_ttfb: number;
-          page_path: string;
-          top_country: string;
-          top_isp: string;
-        }[];
-      };
-      urlencode:
-        | { Args: { data: Json }; Returns: string }
-        | {
-            Args: { string: string };
-            Returns: {
-              error: true;
-            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved";
-          }
-        | {
-            Args: { string: string };
-            Returns: {
-              error: true;
-            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved";
-          };
-      user_happiness: {
-        Args: { p_date_range?: string; p_domain?: string };
-        Returns: {
-          avg_cls: number;
-          avg_fcp: number;
-          avg_inp: number;
-          avg_lcp: number;
-          avg_long_tasks: number;
-          avg_performance_score: number;
-          avg_slow_api_calls: number;
-          avg_trackers: number;
-          avg_ttfb: number;
-          country_count: number;
-          device_type: string;
-          experience_quality: string;
-          percentage_in_device_type: number;
-          session_count: number;
-        }[];
-      };
-      user_happiness_dist: {
-        Args: { domain_filter: string; end_date: string; start_date: string };
-        Returns: {
-          country_iso: string;
-          device_type: string;
-          happy_percentage: number;
-          moderate_percentage: number;
-          total_sessions: number;
-          unhappy_percentage: number;
-        }[];
-      };
-      ux_map_data: {
-        Args: { domain_url: string };
-        Returns: {
-          average_pct: number;
-          bad_pct: number;
-          country: string;
-          device_type: string;
-          good_pct: number;
-          network: string;
-          p75_cls: number;
-          p75_inp: number;
-          p75_lcp: number;
-          p75_ttfb: number;
-          total_sessions: number;
-        }[];
-      };
-      verify_website_user_match: {
-        Args: { user_id_arg: string; website_name_arg: string };
-        Returns: boolean;
-      };
-      web_vitals: {
-        Args: { p_domain_name: string; p_time_range: string };
-        Returns: {
-          avg_pages_per_session: number;
-          bounce_rate_percentage: number;
-          country: string;
-          device_type: string;
-          total_page_views: number;
-          total_sessions: number;
-          unique_languages: number;
-          unique_visitors: number;
-        }[];
-      };
-    };
-    Enums: {
-      email_verbosity:
-        | "summary_only"
-        | "analytics_only"
-        | "summary_analytics"
-        | "full_report";
-    };
-    CompositeTypes: {
-      http_header: {
-        field: string | null;
-        value: string | null;
-      };
-      http_request: {
-        method: unknown;
-        uri: string | null;
-        headers: Database["public"]["CompositeTypes"]["http_header"][] | null;
-        content_type: string | null;
-        content: string | null;
-      };
-      http_response: {
-        status: number | null;
-        content_type: string | null;
-        headers: Database["public"]["CompositeTypes"]["http_header"][] | null;
-        content: string | null;
-      };
-    };
-  };
-};
+    // Allows to automatically instantiate createClient with right options
+    // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+    __InternalSupabase: {
+        PostgrestVersion: "12.2.3 (519615d)"
+    }
+    public: {
+        Tables: {
+            cloudflare_auth: {
+                Row: {
+                    config_backup: Json | null
+                    created_at: string
+                    id: number
+                    site_id: string | null
+                    status: string | null
+                    token: string | null
+                    updated_at: string | null
+                    user_id: string | null
+                }
+                Insert: {
+                    config_backup?: Json | null
+                    created_at?: string
+                    id?: number
+                    site_id?: string | null
+                    status?: string | null
+                    token?: string | null
+                    updated_at?: string | null
+                    user_id?: string | null
+                }
+                Update: {
+                    config_backup?: Json | null
+                    created_at?: string
+                    id?: number
+                    site_id?: string | null
+                    status?: string | null
+                    token?: string | null
+                    updated_at?: string | null
+                    user_id?: string | null
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "cloudflare_auth_site_id_fkey"
+                        columns: ["site_id"]
+                        isOneToOne: false
+                        referencedRelation: "cloudflare_kv_tracking"
+                        referencedColumns: ["order_id"]
+                    },
+                    {
+                        foreignKeyName: "cloudflare_auth_site_id_fkey"
+                        columns: ["site_id"]
+                        isOneToOne: false
+                        referencedRelation: "orders"
+                        referencedColumns: ["order_id"]
+                    },
+                    {
+                        foreignKeyName: "cloudflare_auth_site_id_fkey"
+                        columns: ["site_id"]
+                        isOneToOne: false
+                        referencedRelation: "v_cf_zone_per_site"
+                        referencedColumns: ["order_id"]
+                    },
+                ]
+            }
+            email_reporting: {
+                Row: {
+                    id: string
+                    optional_email: string | null
+                    order_id: string
+                    report_verbosity: number
+                }
+                Insert: {
+                    id?: string
+                    optional_email?: string | null
+                    order_id: string
+                    report_verbosity?: number
+                }
+                Update: {
+                    id?: string
+                    optional_email?: string | null
+                    order_id?: string
+                    report_verbosity?: number
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "email_reporting_order_id_fkey"
+                        columns: ["order_id"]
+                        isOneToOne: false
+                        referencedRelation: "cloudflare_kv_tracking"
+                        referencedColumns: ["order_id"]
+                    },
+                    {
+                        foreignKeyName: "email_reporting_order_id_fkey"
+                        columns: ["order_id"]
+                        isOneToOne: false
+                        referencedRelation: "orders"
+                        referencedColumns: ["order_id"]
+                    },
+                    {
+                        foreignKeyName: "email_reporting_order_id_fkey"
+                        columns: ["order_id"]
+                        isOneToOne: false
+                        referencedRelation: "v_cf_zone_per_site"
+                        referencedColumns: ["order_id"]
+                    },
+                ]
+            }
+            notifications: {
+                Row: {
+                    created_at: string
+                    id: string
+                    link: string | null
+                    message: string
+                    read: boolean
+                    type: string
+                    user_id: string
+                }
+                Insert: {
+                    created_at?: string
+                    id?: string
+                    link?: string | null
+                    message: string
+                    read?: boolean
+                    type: string
+                    user_id: string
+                }
+                Update: {
+                    created_at?: string
+                    id?: string
+                    link?: string | null
+                    message?: string
+                    read?: boolean
+                    type?: string
+                    user_id?: string
+                }
+                Relationships: []
+            }
+            one_time_orders: {
+                Row: {
+                    amount_total: number
+                    created_at: string | null
+                    currency: string
+                    id: string
+                    item_id: string | null
+                    item_type: string
+                    metadata: Json | null
+                    payment_status: string
+                    quantity: number
+                    status: string
+                    stripe_customer_id: string | null
+                    stripe_payment_intent_id: string | null
+                    stripe_session_id: string | null
+                    user_id: string
+                }
+                Insert: {
+                    amount_total: number
+                    created_at?: string | null
+                    currency?: string
+                    id?: string
+                    item_id?: string | null
+                    item_type: string
+                    metadata?: Json | null
+                    payment_status: string
+                    quantity?: number
+                    status?: string
+                    stripe_customer_id?: string | null
+                    stripe_payment_intent_id?: string | null
+                    stripe_session_id?: string | null
+                    user_id: string
+                }
+                Update: {
+                    amount_total?: number
+                    created_at?: string | null
+                    currency?: string
+                    id?: string
+                    item_id?: string | null
+                    item_type?: string
+                    metadata?: Json | null
+                    payment_status?: string
+                    quantity?: number
+                    status?: string
+                    stripe_customer_id?: string | null
+                    stripe_payment_intent_id?: string | null
+                    stripe_session_id?: string | null
+                    user_id?: string
+                }
+                Relationships: []
+            }
+            orders: {
+                Row: {
+                    favicon_file: string | null
+                    order_date: string
+                    order_id: string
+                    order_status: boolean
+                    report_email: string | null
+                    rum_connection: boolean | null
+                    usage_by_site: number
+                    user_id: string
+                    website_address: string
+                    website_name: string
+                    weekly_report: boolean | null
+                }
+                Insert: {
+                    favicon_file?: string | null
+                    order_date?: string
+                    order_id?: string
+                    order_status: boolean
+                    report_email?: string | null
+                    rum_connection?: boolean | null
+                    usage_by_site?: number
+                    user_id?: string
+                    website_address: string
+                    website_name: string
+                    weekly_report?: boolean | null
+                }
+                Update: {
+                    favicon_file?: string | null
+                    order_date?: string
+                    order_id?: string
+                    order_status?: boolean
+                    report_email?: string | null
+                    rum_connection?: boolean | null
+                    usage_by_site?: number
+                    user_id?: string
+                    website_address?: string
+                    website_name?: string
+                    weekly_report?: boolean | null
+                }
+                Relationships: []
+            }
+            plan_metadata: {
+                Row: {
+                    default_billing_interval: string | null
+                    degradation_policy: string
+                    plan: string
+                    price: number
+                    site_limit: number | null
+                    usage_limit: number
+                    wp_plugin_audits: number
+                }
+                Insert: {
+                    default_billing_interval?: string | null
+                    degradation_policy?: string
+                    plan: string
+                    price?: number
+                    site_limit?: number | null
+                    usage_limit: number
+                    wp_plugin_audits?: number
+                }
+                Update: {
+                    default_billing_interval?: string | null
+                    degradation_policy?: string
+                    plan?: string
+                    price?: number
+                    site_limit?: number | null
+                    usage_limit?: number
+                    wp_plugin_audits?: number
+                }
+                Relationships: []
+            }
+            profiles: {
+                Row: {
+                    email: string | null
+                    id: string
+                    role: string | null
+                }
+                Insert: {
+                    email?: string | null
+                    id: string
+                    role?: string | null
+                }
+                Update: {
+                    email?: string | null
+                    id?: string
+                    role?: string | null
+                }
+                Relationships: []
+            }
+            rum_daily_distributions: {
+                Row: {
+                    day: string
+                    device_type: string
+                    domain_name: string
+                    good: Json
+                    inserted_at: string
+                    needs_improvement: Json
+                    poor: Json
+                    updated_at: string
+                }
+                Insert: {
+                    day: string
+                    device_type: string
+                    domain_name: string
+                    good?: Json
+                    inserted_at?: string
+                    needs_improvement?: Json
+                    poor?: Json
+                    updated_at?: string
+                }
+                Update: {
+                    day?: string
+                    device_type?: string
+                    domain_name?: string
+                    good?: Json
+                    inserted_at?: string
+                    needs_improvement?: Json
+                    poor?: Json
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "rum_daily_distributions_domain_name_fkey"
+                        columns: ["domain_name"]
+                        isOneToOne: false
+                        referencedRelation: "cloudflare_kv_tracking"
+                        referencedColumns: ["website_name"]
+                    },
+                    {
+                        foreignKeyName: "rum_daily_distributions_domain_name_fkey"
+                        columns: ["domain_name"]
+                        isOneToOne: false
+                        referencedRelation: "orders"
+                        referencedColumns: ["website_name"]
+                    },
+                    {
+                        foreignKeyName: "rum_daily_distributions_domain_name_fkey"
+                        columns: ["domain_name"]
+                        isOneToOne: false
+                        referencedRelation: "v_cf_zone_per_site"
+                        referencedColumns: ["website_name"]
+                    },
+                ]
+            }
+            rum_history_new: {
+                Row: {
+                    cls: Json
+                    created_at: string
+                    day: string
+                    domain_name: string
+                    fcp: Json
+                    inp: Json
+                    lcp: Json
+                    ttfb: Json
+                }
+                Insert: {
+                    cls?: Json
+                    created_at?: string
+                    day: string
+                    domain_name: string
+                    fcp?: Json
+                    inp?: Json
+                    lcp?: Json
+                    ttfb?: Json
+                }
+                Update: {
+                    cls?: Json
+                    created_at?: string
+                    day?: string
+                    domain_name?: string
+                    fcp?: Json
+                    inp?: Json
+                    lcp?: Json
+                    ttfb?: Json
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "rum_history_new_domain_name_fkey"
+                        columns: ["domain_name"]
+                        isOneToOne: false
+                        referencedRelation: "cloudflare_kv_tracking"
+                        referencedColumns: ["website_name"]
+                    },
+                    {
+                        foreignKeyName: "rum_history_new_domain_name_fkey"
+                        columns: ["domain_name"]
+                        isOneToOne: false
+                        referencedRelation: "orders"
+                        referencedColumns: ["website_name"]
+                    },
+                    {
+                        foreignKeyName: "rum_history_new_domain_name_fkey"
+                        columns: ["domain_name"]
+                        isOneToOne: false
+                        referencedRelation: "v_cf_zone_per_site"
+                        referencedColumns: ["website_name"]
+                    },
+                ]
+            }
+            rum_metrics: {
+                Row: {
+                    created_at: string | null
+                    current_page: string | null
+                    domain_name: string | null
+                    events: Json | null
+                    id: number
+                    previous_page: string | null
+                    session_id: string | null
+                }
+                Insert: {
+                    created_at?: string | null
+                    current_page?: string | null
+                    domain_name?: string | null
+                    events?: Json | null
+                    id?: number
+                    previous_page?: string | null
+                    session_id?: string | null
+                }
+                Update: {
+                    created_at?: string | null
+                    current_page?: string | null
+                    domain_name?: string | null
+                    events?: Json | null
+                    id?: number
+                    previous_page?: string | null
+                    session_id?: string | null
+                }
+                Relationships: []
+            }
+            rum_origin_hits_agg: {
+                Row: {
+                    agg_time: string
+                    domain_name: string
+                    origin_hit_count: number
+                    origin_hit_percentage: number
+                    total_origin_events: number
+                }
+                Insert: {
+                    agg_time: string
+                    domain_name: string
+                    origin_hit_count: number
+                    origin_hit_percentage: number
+                    total_origin_events: number
+                }
+                Update: {
+                    agg_time?: string
+                    domain_name?: string
+                    origin_hit_count?: number
+                    origin_hit_percentage?: number
+                    total_origin_events?: number
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "rum_origin_hits_agg_domain_name_fkey"
+                        columns: ["domain_name"]
+                        isOneToOne: false
+                        referencedRelation: "cloudflare_kv_tracking"
+                        referencedColumns: ["website_name"]
+                    },
+                    {
+                        foreignKeyName: "rum_origin_hits_agg_domain_name_fkey"
+                        columns: ["domain_name"]
+                        isOneToOne: false
+                        referencedRelation: "orders"
+                        referencedColumns: ["website_name"]
+                    },
+                    {
+                        foreignKeyName: "rum_origin_hits_agg_domain_name_fkey"
+                        columns: ["domain_name"]
+                        isOneToOne: false
+                        referencedRelation: "v_cf_zone_per_site"
+                        referencedColumns: ["website_name"]
+                    },
+                ]
+            }
+            subscriptions: {
+                Row: {
+                    billing_interval: string | null
+                    created_at: string | null
+                    current_usage: number
+                    period_ends_at: string | null
+                    period_starts_at: string | null
+                    plan: string
+                    quantity: number
+                    status: string
+                    stripe_customer_id: string | null
+                    stripe_session_id: string | null
+                    stripe_subscription_id: string | null
+                    stripe_subscription_status: string | null
+                    trial_ends_at: string | null
+                    updated_at: string | null
+                    user_id: string
+                    wp_plugin_audits: number | null
+                }
+                Insert: {
+                    billing_interval?: string | null
+                    created_at?: string | null
+                    current_usage?: number
+                    period_ends_at?: string | null
+                    period_starts_at?: string | null
+                    plan?: string
+                    quantity?: number
+                    status?: string
+                    stripe_customer_id?: string | null
+                    stripe_session_id?: string | null
+                    stripe_subscription_id?: string | null
+                    stripe_subscription_status?: string | null
+                    trial_ends_at?: string | null
+                    updated_at?: string | null
+                    user_id: string
+                    wp_plugin_audits?: number | null
+                }
+                Update: {
+                    billing_interval?: string | null
+                    created_at?: string | null
+                    current_usage?: number
+                    period_ends_at?: string | null
+                    period_starts_at?: string | null
+                    plan?: string
+                    quantity?: number
+                    status?: string
+                    stripe_customer_id?: string | null
+                    stripe_session_id?: string | null
+                    stripe_subscription_id?: string | null
+                    stripe_subscription_status?: string | null
+                    trial_ends_at?: string | null
+                    updated_at?: string | null
+                    user_id?: string
+                    wp_plugin_audits?: number | null
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "subscriptions_plan_fkey"
+                        columns: ["plan"]
+                        isOneToOne: false
+                        referencedRelation: "plan_metadata"
+                        referencedColumns: ["plan"]
+                    },
+                ]
+            }
+            ticket_messages: {
+                Row: {
+                    created_at: string | null
+                    id: string
+                    message: string
+                    sender_name: string | null
+                    sender_role: string | null
+                    ticket_id: string | null
+                    user_id: string
+                }
+                Insert: {
+                    created_at?: string | null
+                    id?: string
+                    message: string
+                    sender_name?: string | null
+                    sender_role?: string | null
+                    ticket_id?: string | null
+                    user_id: string
+                }
+                Update: {
+                    created_at?: string | null
+                    id?: string
+                    message?: string
+                    sender_name?: string | null
+                    sender_role?: string | null
+                    ticket_id?: string | null
+                    user_id?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "ticket_messages_ticket_id_fkey"
+                        columns: ["ticket_id"]
+                        isOneToOne: false
+                        referencedRelation: "tickets"
+                        referencedColumns: ["id"]
+                    },
+                ]
+            }
+            tickets: {
+                Row: {
+                    created_at: string | null
+                    id: string
+                    message: string
+                    related_order: string | null
+                    status: string | null
+                    subject: string
+                    updated_at: string | null
+                    user_id: string
+                }
+                Insert: {
+                    created_at?: string | null
+                    id?: string
+                    message: string
+                    related_order?: string | null
+                    status?: string | null
+                    subject: string
+                    updated_at?: string | null
+                    user_id: string
+                }
+                Update: {
+                    created_at?: string | null
+                    id?: string
+                    message?: string
+                    related_order?: string | null
+                    status?: string | null
+                    subject?: string
+                    updated_at?: string | null
+                    user_id?: string
+                }
+                Relationships: []
+            }
+            website_metadata: {
+                Row: {
+                    description: string | null
+                    id: number
+                    last_updated: string | null
+                    mobile_optimized: boolean | null
+                    site_type: string | null
+                    title: string | null
+                    url: string
+                }
+                Insert: {
+                    description?: string | null
+                    id?: number
+                    last_updated?: string | null
+                    mobile_optimized?: boolean | null
+                    site_type?: string | null
+                    title?: string | null
+                    url: string
+                }
+                Update: {
+                    description?: string | null
+                    id?: number
+                    last_updated?: string | null
+                    mobile_optimized?: boolean | null
+                    site_type?: string | null
+                    title?: string | null
+                    url?: string
+                }
+                Relationships: []
+            }
+            wp_key: {
+                Row: {
+                    created_at: string
+                    domain: string | null
+                    id: number
+                    wp_secret: string | null
+                }
+                Insert: {
+                    created_at?: string
+                    domain?: string | null
+                    id?: number
+                    wp_secret?: string | null
+                }
+                Update: {
+                    created_at?: string
+                    domain?: string | null
+                    id?: number
+                    wp_secret?: string | null
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "wp_key_domain_fkey"
+                        columns: ["domain"]
+                        isOneToOne: true
+                        referencedRelation: "cloudflare_kv_tracking"
+                        referencedColumns: ["website_name"]
+                    },
+                    {
+                        foreignKeyName: "wp_key_domain_fkey"
+                        columns: ["domain"]
+                        isOneToOne: true
+                        referencedRelation: "orders"
+                        referencedColumns: ["website_name"]
+                    },
+                    {
+                        foreignKeyName: "wp_key_domain_fkey"
+                        columns: ["domain"]
+                        isOneToOne: true
+                        referencedRelation: "v_cf_zone_per_site"
+                        referencedColumns: ["website_name"]
+                    },
+                ]
+            }
+        }
+        Views: {
+            cloudflare_kv_tracking: {
+                Row: {
+                    created_at: string | null
+                    current_usage: number | null
+                    default_billing_interval: string | null
+                    degradation_policy: string | null
+                    order_id: string | null
+                    period_ends_at: string | null
+                    period_starts_at: string | null
+                    plan: string | null
+                    price: number | null
+                    quantity: number | null
+                    status: string | null
+                    stripe_customer_id: string | null
+                    stripe_subscription_id: string | null
+                    updated_at: string | null
+                    usage_limit: number | null
+                    user_id: string | null
+                    website_name: string | null
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "subscriptions_plan_fkey"
+                        columns: ["plan"]
+                        isOneToOne: false
+                        referencedRelation: "plan_metadata"
+                        referencedColumns: ["plan"]
+                    },
+                ]
+            }
+            subscription_with_limit: {
+                Row: {
+                    active_sites: number | null
+                    computed_usage_limit: number | null
+                    created_at: string | null
+                    current_usage: number | null
+                    degradation_policy: string | null
+                    period_ends_at: string | null
+                    period_starts_at: string | null
+                    plan: string | null
+                    quantity: number | null
+                    status: string | null
+                    trial_ends_at: string | null
+                    updated_at: string | null
+                    usage_limit: number | null
+                    user_id: string | null
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "subscriptions_plan_fkey"
+                        columns: ["plan"]
+                        isOneToOne: false
+                        referencedRelation: "plan_metadata"
+                        referencedColumns: ["plan"]
+                    },
+                ]
+            }
+            v_cf_zone_per_site: {
+                Row: {
+                    config_backup: Json | null
+                    order_id: string | null
+                    order_status: boolean | null
+                    site_id: string | null
+                    status: string | null
+                    token: string | null
+                    user_id: string | null
+                    website_name: string | null
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "cloudflare_auth_site_id_fkey"
+                        columns: ["site_id"]
+                        isOneToOne: false
+                        referencedRelation: "cloudflare_kv_tracking"
+                        referencedColumns: ["order_id"]
+                    },
+                    {
+                        foreignKeyName: "cloudflare_auth_site_id_fkey"
+                        columns: ["site_id"]
+                        isOneToOne: false
+                        referencedRelation: "orders"
+                        referencedColumns: ["order_id"]
+                    },
+                    {
+                        foreignKeyName: "cloudflare_auth_site_id_fkey"
+                        columns: ["site_id"]
+                        isOneToOne: false
+                        referencedRelation: "v_cf_zone_per_site"
+                        referencedColumns: ["order_id"]
+                    },
+                ]
+            }
+            wp_plugin_scans: {
+                Row: {
+                    audit_completed: number | null
+                    audit_limit: number | null
+                    user_id: string | null
+                }
+                Relationships: []
+            }
+        }
+        Functions: {
+            aggregate_daily_web_metrics: {
+                Args: { target_date: string }
+                Returns: undefined
+            }
+            aggregate_web_metrics_for_date_range: {
+                Args: { end_date: string; start_date: string }
+                Returns: undefined
+            }
+            aggregate_web_metrics_for_today: { Args: never; Returns: undefined }
+            analyze_domain_performance: {
+                Args: { end_date?: string; start_date?: string; target_domain: string }
+                Returns: {
+                    cls_p75: number
+                    cls_status: string
+                    cwv_failure_score: number
+                    device_type: string
+                    domain: string
+                    fcp_p75: number
+                    inp_p75: number
+                    inp_status: string
+                    lcp_p75: number
+                    lcp_status: string
+                    measurement_count: number
+                    measurement_date: string
+                    metrics_available: number
+                    normalized_score: number
+                    overall_cwv_pass_rate: number
+                    page_address: string
+                    page_rank: number
+                    page_size_mb: number
+                    pct_css_content: number
+                    pct_image_content: number
+                    pct_js_content: number
+                    pct_passing_cls: number
+                    pct_passing_inp: number
+                    pct_passing_lcp: number
+                    pct_passing_ttfb: number
+                    pct_third_party_content: number
+                    pct_third_party_requests: number
+                    performance_impact: number
+                    performance_rank: number
+                    performance_score: number
+                    request_count: number
+                    result_type: string
+                    ttfb_p75: number
+                    unique_pages: number
+                }[]
+            }
+            analyze_fcp_by_device: {
+                Args: { domain_filter?: string; time_range?: string }
+                Returns: {
+                    avg_fcp_value: number
+                    connection_type: string
+                    device_type: string
+                    good_count: number
+                    max_fcp_value: number
+                    min_fcp_value: number
+                    needs_improvement_count: number
+                    occurrence_count: number
+                    p75_fcp_value: number
+                    p90_fcp_value: number
+                    p95_fcp_value: number
+                    poor_count: number
+                }[]
+            }
+            analyze_lcp_by_device: {
+                Args: { domain_filter: string }
+                Returns: {
+                    avg_element_render_delay: number
+                    avg_lcp_value: number
+                    avg_resource_load_delay: number
+                    avg_resource_load_duration: number
+                    device_memory_gb: string
+                    device_type: string
+                    element_target: string
+                    font_family: string
+                    font_size: string
+                    font_weight: string
+                    good_count: number
+                    lcp_asset_url: string
+                    loading_priority: string
+                    memory_usage_bytes: number
+                    needs_improvement_count: number
+                    network_transfer_bytes: number
+                    occurrence_count: number
+                    p75_lcp_value: number
+                    page_url: string
+                    poor_count: number
+                    top_3_render_blockers: string
+                    ttfb_ms: number
+                }[]
+            }
+            analyze_web_vitals_by_page: {
+                Args: { domain_filter?: string; time_range?: string }
+                Returns: {
+                    avg_cls: number
+                    avg_fcp: number
+                    avg_fid: number
+                    avg_inp: number
+                    avg_lcp: number
+                    avg_ttfb: number
+                    cls_good_pct: number
+                    cls_needs_improvement_pct: number
+                    cls_poor_pct: number
+                    device_type: string
+                    fcp_good_pct: number
+                    fcp_needs_improvement_pct: number
+                    fcp_poor_pct: number
+                    fid_good_pct: number
+                    fid_needs_improvement_pct: number
+                    fid_poor_pct: number
+                    inp_good_pct: number
+                    inp_needs_improvement_pct: number
+                    inp_poor_pct: number
+                    lcp_good_pct: number
+                    lcp_needs_improvement_pct: number
+                    lcp_poor_pct: number
+                    overall_score: number
+                    page_address: string
+                    page_url: string
+                    page_view_count: number
+                    performance_category: string
+                    ttfb_good_pct: number
+                    ttfb_needs_improvement_pct: number
+                    ttfb_poor_pct: number
+                }[]
+            }
+            bytea_to_text: { Args: { data: string }; Returns: string }
+            cache_analysis: {
+                Args: { domain_name_param: string }
+                Returns: {
+                    cache_status: string
+                    cdn_provider: string
+                    city: string
+                    country: string
+                    created_at: string
+                    current_page: string
+                    device: string
+                    dns_time: number
+                    id: string
+                    is_origin_hit: string
+                    network_rtt: string
+                    network_type: string
+                    server_processing_time: number
+                    tcp_time: number
+                    ttfb_total: number
+                }[]
+            }
+            cls_elements: {
+                Args: { p_domain_name: string }
+                Returns: {
+                    cls_score: number
+                    current_page: string
+                    dev_type: string
+                    impact_json: Json
+                    involved_elems: Json
+                    l_mode: string
+                    most_frequent_element: string
+                    occ_count: number
+                    rect_json: Json
+                    shift_json: Json
+                    time_avg: number
+                }[]
+            }
+            cwv_dist_by_connection: {
+                Args: {
+                    p_domain: string
+                    p_end: string
+                    p_metric: string
+                    p_start: string
+                }
+                Returns: {
+                    connection_type: string
+                    desktop_good: number
+                    desktop_needs_improvement: number
+                    desktop_poor: number
+                    mobile_good: number
+                    mobile_needs_improvement: number
+                    mobile_poor: number
+                    other_good: number
+                    other_needs_improvement: number
+                    other_poor: number
+                    tablet_good: number
+                    tablet_needs_improvement: number
+                    tablet_poor: number
+                }[]
+            }
+            daily_aggregate_usage_by_userid: {
+                Args: never
+                Returns: {
+                    total_usage: number
+                    user_id: string
+                }[]
+            }
+            dashboard_multimetrix: {
+                Args: { date_range_days?: number; domain_name_param: string }
+                Returns: {
+                    country_code: string
+                    country_name: string
+                    device_type: string
+                    dom_load_avg: number
+                    sample_count: number
+                    speed_index: number
+                    ttfb_avg: number
+                }[]
+            }
+            delete_old_rum_hits: { Args: never; Returns: undefined }
+            delete_old_rum_metrics: { Args: never; Returns: undefined }
+            font_analysis: {
+                Args: { p_domain: string }
+                Returns: {
+                    avg_lcp: number
+                    avg_render_delay: number
+                    avg_resource_size: number
+                    device: string
+                    font_family: string
+                    font_file_url: string
+                    font_weight: string
+                    major_pages: string[]
+                    poor_lcp_percentage: number
+                    total_occurrences: number
+                }[]
+            }
+            get_ai_citation: {
+                Args: { p_domain_name: string }
+                Returns: {
+                    ai_citation_possibility: string
+                    avg_citation_score: number
+                    avg_dom_content_loaded: number
+                    avg_ttfb: number
+                    device_type: string
+                    domain: string
+                    max_citation_score: number
+                    min_citation_score: number
+                    std_dev_citation_score: number
+                    total_sessions: number
+                }[]
+            }
+            get_analytics_by_device_and_country: {
+                Args: { p_domain_name: string; p_time_range?: string }
+                Returns: {
+                    avg_pages_per_session: number
+                    bounce_rate_percentage: number
+                    country: string
+                    device_type: string
+                    total_page_views: number
+                    total_sessions: number
+                    unique_languages: number
+                    unique_visitors: number
+                }[]
+            }
+            get_daily_web_metrics: { Args: { target_date: string }; Returns: Json[] }
+            get_filtered_rum_metrics: {
+                Args: {
+                    p_date_range: string
+                    p_device_type?: string
+                    p_domain_name: string
+                    p_end_date?: string
+                    p_top_countries_limit?: number
+                }
+                Returns: {
+                    result_data: Json
+                    result_type: string
+                }[]
+            }
+            get_lcp_image_metrics: {
+                Args: {
+                    p_domain_name?: string
+                    p_end_date?: string
+                    p_start_date?: string
+                }
+                Returns: {
+                    avg_decoded_body_size: number
+                    avg_element_render_delay: number
+                    avg_height: number
+                    avg_lcp_ms: number
+                    avg_resource_load_delay: number
+                    avg_resource_load_duration: number
+                    avg_time_to_first_byte: number
+                    avg_transfer_size: number
+                    avg_width: number
+                    device_type: string
+                    domain_name: string
+                    image_url: string
+                    max_lcp_ms: number
+                    min_lcp_ms: number
+                    occurrence_count: number
+                    p75_lcp_ms: number
+                    pct_exceeding_cwv: number
+                    pct_lazy: number
+                    period: string
+                }[]
+            }
+            get_mailing_list: {
+                Args: never
+                Returns: {
+                    email: string
+                    report_verbosity: number
+                    website_name: string
+                }[]
+            }
+            get_network_server_keyset: {
+                Args: {
+                    p_domain_name: string
+                    p_last_created_at?: string
+                    p_last_id?: number
+                    p_limit?: number
+                }
+                Returns: {
+                    created_at: string
+                    current_page: string
+                    device_info: Json
+                    id: number
+                    location_info: Json
+                    navigation_timing: Json
+                    session_id: string
+                    ttfb: number
+                }[]
+            }
+            get_rum_history: {
+                Args: { p_domain: string; p_from: string; p_to: string }
+                Returns: {
+                    cls: Json
+                    day: string
+                    fcp: Json
+                    inp: Json
+                    lcp: Json
+                    ttfb: Json
+                }[]
+            }
+            get_rum_web_vitals_metrics: {
+                Args: { p_date_range?: string; p_domain_name: string }
+                Returns: {
+                    cls_avg: number
+                    cls_max: number
+                    cls_min: number
+                    cls_p50: number
+                    cls_p75: number
+                    cls_p90: number
+                    cls_p95: number
+                    cls_p99: number
+                    cls_samples: number
+                    device_category: string
+                    fcp_avg: number
+                    fcp_max: number
+                    fcp_min: number
+                    fcp_p50: number
+                    fcp_p75: number
+                    fcp_p90: number
+                    fcp_p95: number
+                    fcp_p99: number
+                    fcp_samples: number
+                    inp_avg: number
+                    inp_max: number
+                    inp_min: number
+                    inp_p50: number
+                    inp_p75: number
+                    inp_p90: number
+                    inp_p95: number
+                    inp_p99: number
+                    inp_samples: number
+                    lcp_avg: number
+                    lcp_max: number
+                    lcp_min: number
+                    lcp_p50: number
+                    lcp_p75: number
+                    lcp_p90: number
+                    lcp_p95: number
+                    lcp_p99: number
+                    lcp_samples: number
+                    report_date: string
+                    ttfb_avg: number
+                    ttfb_max: number
+                    ttfb_min: number
+                    ttfb_p50: number
+                    ttfb_p75: number
+                    ttfb_p90: number
+                    ttfb_p95: number
+                    ttfb_p99: number
+                    ttfb_samples: number
+                }[]
+            }
+            get_web_vital_counts_by_url:
+            | {
+                Args: {
+                    p_device_type?: string
+                    p_domain: string
+                    p_end?: string
+                    p_limit?: number
+                    p_metric: string
+                    p_start?: string
+                }
+                Returns: {
+                    good: number
+                    needs_improvement: number
+                    poor: number
+                    url: string
+                }[]
+            }
+            | {
+                Args: { p_domain: string; p_limit?: number; p_metric: string }
+                Returns: {
+                    good: number
+                    needs_improvement: number
+                    poor: number
+                    url: string
+                }[]
+            }
+            get_web_vitals_metrics:
+            | {
+                Args: { p_domain: string }
+                Returns: {
+                    avg_value: number
+                    device_type: string
+                    domain_name: string
+                    good_percent: number
+                    max_value: number
+                    metric_name: string
+                    min_value: number
+                    needs_improvement_percent: number
+                    p50: number
+                    p75: number
+                    p90: number
+                    p95: number
+                    p99: number
+                    page: string
+                    poor_percent: number
+                    sample_count: number
+                }[]
+            }
+            | {
+                Args: { p_date_range?: string; p_domain: string }
+                Returns: {
+                    avg_value: number
+                    device_type: string
+                    domain_name: string
+                    good_percent: number
+                    max_value: number
+                    metric_name: string
+                    min_value: number
+                    needs_improvement_percent: number
+                    p50: number
+                    p75: number
+                    p90: number
+                    p95: number
+                    p99: number
+                    page: string
+                    poor_percent: number
+                    sample_count: number
+                }[]
+            }
+            get_yesterday_usage_counts: {
+                Args: never
+                Returns: {
+                    domain_name: string
+                    usage_count: number
+                }[]
+            }
+            http: {
+                Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
+                Returns: Database["public"]["CompositeTypes"]["http_response"]
+                SetofOptions: {
+                    from: "http_request"
+                    to: "http_response"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            http_delete:
+            | {
+                Args: { uri: string }
+                Returns: Database["public"]["CompositeTypes"]["http_response"]
+                SetofOptions: {
+                    from: "*"
+                    to: "http_response"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            | {
+                Args: { content: string; content_type: string; uri: string }
+                Returns: Database["public"]["CompositeTypes"]["http_response"]
+                SetofOptions: {
+                    from: "*"
+                    to: "http_response"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            http_get:
+            | {
+                Args: { uri: string }
+                Returns: Database["public"]["CompositeTypes"]["http_response"]
+                SetofOptions: {
+                    from: "*"
+                    to: "http_response"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            | {
+                Args: { data: Json; uri: string }
+                Returns: Database["public"]["CompositeTypes"]["http_response"]
+                SetofOptions: {
+                    from: "*"
+                    to: "http_response"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            http_head: {
+                Args: { uri: string }
+                Returns: Database["public"]["CompositeTypes"]["http_response"]
+                SetofOptions: {
+                    from: "*"
+                    to: "http_response"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            http_header: {
+                Args: { field: string; value: string }
+                Returns: Database["public"]["CompositeTypes"]["http_header"]
+                SetofOptions: {
+                    from: "*"
+                    to: "http_header"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            http_list_curlopt: {
+                Args: never
+                Returns: {
+                    curlopt: string
+                    value: string
+                }[]
+            }
+            http_patch: {
+                Args: { content: string; content_type: string; uri: string }
+                Returns: Database["public"]["CompositeTypes"]["http_response"]
+                SetofOptions: {
+                    from: "*"
+                    to: "http_response"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            http_post:
+            | {
+                Args: { content: string; content_type: string; uri: string }
+                Returns: Database["public"]["CompositeTypes"]["http_response"]
+                SetofOptions: {
+                    from: "*"
+                    to: "http_response"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            | {
+                Args: { data: Json; uri: string }
+                Returns: Database["public"]["CompositeTypes"]["http_response"]
+                SetofOptions: {
+                    from: "*"
+                    to: "http_response"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            http_put: {
+                Args: { content: string; content_type: string; uri: string }
+                Returns: Database["public"]["CompositeTypes"]["http_response"]
+                SetofOptions: {
+                    from: "*"
+                    to: "http_response"
+                    isOneToOne: true
+                    isSetofReturn: false
+                }
+            }
+            http_reset_curlopt: { Args: never; Returns: boolean }
+            http_set_curlopt: {
+                Args: { curlopt: string; value: string }
+                Returns: boolean
+            }
+            inp_elements: {
+                Args: { p_domain_name: string }
+                Returns: {
+                    created_at: string
+                    current_page: string
+                    device: string
+                    inp_value: number
+                    input_delay: number
+                    interaction_type: string
+                    presentation_delay: number
+                    processing_duration: number
+                    rating: string
+                    responsible_scripts: string
+                    target_element: string
+                }[]
+            }
+            lcp_attribution_by_device: {
+                Args: {
+                    p_domain?: string
+                    p_from?: string
+                    p_min_lcp?: number
+                    p_path_like?: string
+                    p_to?: string
+                }
+                Returns: {
+                    avg_lcp: number
+                    decodedbodysize: number
+                    device_type: string
+                    elementrenderdelay: number
+                    height: number
+                    islazy: boolean
+                    lcp_type: string
+                    max_lcp: number
+                    occurrences: number
+                    resourceloaddelay: number
+                    resourceloadduration: number
+                    target: string
+                    target_url: string
+                    transfersize: number
+                    ttfb: number
+                    url: string
+                    width: number
+                }[]
+            }
+            page_performance_analysis: {
+                Args: { p_domain?: string }
+                Returns: {
+                    avg_cls: number
+                    avg_inp_ms: number
+                    avg_lcp_ms: number
+                    cls_elements: Json
+                    current_page: string
+                    device_type: string
+                    inp_elements: Json
+                    lcp_elements: Json
+                    performance_group: string
+                    visit_count: number
+                }[]
+            }
+            process_web_vitals_date_range: {
+                Args: { end_date?: string; start_date: string }
+                Returns: {
+                    process_date: string
+                    rows_inserted: number
+                }[]
+            }
+            refresh_rum_daily_distributions: {
+                Args: { p_day?: string }
+                Returns: undefined
+            }
+            rum_distributions_all_metrics: {
+                Args: { p_domain_name: string; p_end: string; p_start: string }
+                Returns: {
+                    device_type: string
+                    good_count: number
+                    metric: string
+                    needs_improvement_count: number
+                    poor_count: number
+                }[]
+            }
+            text_to_bytea: { Args: { data: string }; Returns: string }
+            third_party_domains: {
+                Args: { site_filter?: string; time_range?: string }
+                Returns: {
+                    device_type: string
+                    site_domain: string
+                    top_domains: Json
+                }[]
+            }
+            top_landing_page: {
+                Args: { p_date_range: string; p_domain_name: string }
+                Returns: {
+                    current_page: string
+                    hits: number
+                    previous_page: string
+                }[]
+            }
+            traffic_source: {
+                Args: never
+                Returns: {
+                    count: number
+                    day: string
+                    device_type: string
+                    domain: string
+                    referral_domain: string
+                }[]
+            }
+            ttfb_contributors: {
+                Args: { p_domain: string }
+                Returns: {
+                    avg_downlink: number
+                    avg_rtt: number
+                    device_type: string
+                    occurrence_count: number
+                    origin_hit_rate: number
+                    p75_dns: number
+                    p75_server: number
+                    p75_tcp: number
+                    p75_ttfb: number
+                    page_path: string
+                    top_country: string
+                    top_isp: string
+                }[]
+            }
+            urlencode:
+            | { Args: { data: Json }; Returns: string }
+            | {
+                Args: { string: string }
+                Returns: {
+                    error: true
+                } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+            }
+            | {
+                Args: { string: string }
+                Returns: {
+                    error: true
+                } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+            }
+            user_happiness: {
+                Args: { p_date_range?: string; p_domain?: string }
+                Returns: {
+                    avg_cls: number
+                    avg_fcp: number
+                    avg_inp: number
+                    avg_lcp: number
+                    avg_long_tasks: number
+                    avg_performance_score: number
+                    avg_slow_api_calls: number
+                    avg_trackers: number
+                    avg_ttfb: number
+                    country_count: number
+                    device_type: string
+                    experience_quality: string
+                    percentage_in_device_type: number
+                    session_count: number
+                }[]
+            }
+            user_happiness_dist: {
+                Args: { domain_filter: string; end_date: string; start_date: string }
+                Returns: {
+                    country_iso: string
+                    device_type: string
+                    happy_percentage: number
+                    moderate_percentage: number
+                    total_sessions: number
+                    unhappy_percentage: number
+                }[]
+            }
+            ux_map_data: {
+                Args: { domain_url: string }
+                Returns: {
+                    average_pct: number
+                    bad_pct: number
+                    country: string
+                    device_type: string
+                    good_pct: number
+                    network: string
+                    p75_cls: number
+                    p75_inp: number
+                    p75_lcp: number
+                    p75_ttfb: number
+                    total_sessions: number
+                }[]
+            }
+            verify_website_user_match: {
+                Args: { user_id_arg: string; website_name_arg: string }
+                Returns: boolean
+            }
+            web_vitals: {
+                Args: { p_domain_name: string; p_time_range: string }
+                Returns: {
+                    avg_pages_per_session: number
+                    bounce_rate_percentage: number
+                    country: string
+                    device_type: string
+                    total_page_views: number
+                    total_sessions: number
+                    unique_languages: number
+                    unique_visitors: number
+                }[]
+            }
+        }
+        Enums: {
+            email_verbosity:
+            | "summary_only"
+            | "analytics_only"
+            | "summary_analytics"
+            | "full_report"
+        }
+        CompositeTypes: {
+            http_header: {
+                field: string | null
+                value: string | null
+            }
+            http_request: {
+                method: unknown
+                uri: string | null
+                headers: Database["public"]["CompositeTypes"]["http_header"][] | null
+                content_type: string | null
+                content: string | null
+            }
+            http_response: {
+                status: number | null
+                content_type: string | null
+                headers: Database["public"]["CompositeTypes"]["http_header"][] | null
+                content: string | null
+            }
+        }
+    }
+}
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<
-  keyof Database,
-  "public"
->];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
-  DefaultSchemaTableNameOrOptions extends
+    DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-  }
+    TableName extends DefaultSchemaTableNameOrOptions extends {
+        schema: keyof DatabaseWithoutInternals
+    }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R;
-    }
+    ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+            Row: infer R
+        }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+    : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
         DefaultSchema["Views"])
     ? (DefaultSchema["Tables"] &
         DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R;
-      }
-      ? R
-      : never
-    : never;
+            Row: infer R
+        }
+    ? R
+    : never
+    : never
 
 export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
+    DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-  }
+    TableName extends DefaultSchemaTableNameOrOptions extends {
+        schema: keyof DatabaseWithoutInternals
+    }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I;
+    ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+        Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I;
-      }
-      ? I
-      : never
-    : never;
+        Insert: infer I
+    }
+    ? I
+    : never
+    : never
 
 export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
+    DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-  }
+    TableName extends DefaultSchemaTableNameOrOptions extends {
+        schema: keyof DatabaseWithoutInternals
+    }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U;
+    ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+        Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U;
-      }
-      ? U
-      : never
-    : never;
+        Update: infer U
+    }
+    ? U
+    : never
+    : never
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
+    DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-  }
+    EnumName extends DefaultSchemaEnumNameOrOptions extends {
+        schema: keyof DatabaseWithoutInternals
+    }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+    : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never;
+    : never
 
 export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
+    PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-  }
+    CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+        schema: keyof DatabaseWithoutInternals
+    }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+    : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never;
+    : never
 
 export const Constants = {
-  public: {
-    Enums: {
-      email_verbosity: [
-        "summary_only",
-        "analytics_only",
-        "summary_analytics",
-        "full_report",
-      ],
+    public: {
+        Enums: {
+            email_verbosity: [
+                "summary_only",
+                "analytics_only",
+                "summary_analytics",
+                "full_report",
+            ],
+        },
     },
-  },
-} as const;
+} as const

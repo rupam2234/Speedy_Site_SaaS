@@ -7,8 +7,8 @@ import { SidebarTrigger } from "../ui/sidebar";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
 import { useEffect, useRef, useState } from "react";
 import { cachedData, cleanExpiredCache } from "../utils";
-import { Notifications } from "@/app/api/dataTypes";
 import { createPortal } from "react-dom";
+import { Notifications } from "@/app/api";
 
 export default function SidebarInsetHeader() {
   const [notifcations, setNotifications] = useState<Notifications[]>([]);

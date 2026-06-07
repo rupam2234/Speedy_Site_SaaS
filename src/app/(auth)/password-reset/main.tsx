@@ -7,8 +7,8 @@ import { SpeedySiteLogo } from "../../../components/theme/logo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { MobileViewHandler } from "../helpers/mobileView";
 import { DesktopSideContent } from "../helpers/sideContent";
-import { supabase_client } from "@/lib/db/browser_client";
 import { useRouter } from "next/navigation";
+import { browserClient } from "@/lib/db";
 
 export default function Main() {
   const { theme } = useTheme();
@@ -64,7 +64,7 @@ export default function Main() {
       }
 
       // Set session with tokens
-      const { error: sessionError } = await supabase_client.auth.setSession({
+      const { error: sessionError } = await browserClient.auth.setSession({
         access_token: recoverToken,
         refresh_token: refreshToken ?? "",
       });
@@ -75,7 +75,7 @@ export default function Main() {
       }
 
       // Update password
-      const { error: updateError } = await supabase_client.auth.updateUser({
+      const { error: updateError } = await browserClient.auth.updateUser({
         password,
       });
 

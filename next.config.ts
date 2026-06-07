@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     ],
   },
   productionBrowserSourceMaps: false,
+  allowedDevOrigins: ["*.ngrok-free.dev"] // for stripe webhook tests
 };
 
 export default nextConfig;

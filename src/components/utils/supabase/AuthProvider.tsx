@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import type { User } from "@supabase/supabase-js";
-import { supabase_client } from "@/lib/db/browser_client";
+import { browserClient } from "@/lib/db";
 
 type AuthContextType = {
   user: User | null;
@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    supabase_client.auth.getUser().then(({ data, error }) => {
+    browserClient.auth.getUser().then(({ data, error }) => {
       if (error) {
         console.log(error.message);
         setUser(null);

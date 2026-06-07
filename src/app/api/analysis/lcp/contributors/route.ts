@@ -9,46 +9,125 @@ export async function POST<T>(req: NextRequest) {
   }
 
   const prompt = `
-    Task: Act as a Web Performance Expert. Analyze ${metric} contributor data and provide actionable fixes.
+      Task:
+      Act as a Web Performance Expert specializing in Core Web Vitals optimization.
+      Analyze ${metric} contributor data and generate precise, actionable fixes.
 
-    Data: ${JSON.stringify(data)}
+      Data:
+      ${JSON.stringify(data)}
 
-    Rules of Analysis:
-    1. Identify the primary bottleneck using this priority: TTFB > Render Delay > Load Delay > Load Duration.
-    2. Only suggest a fix if the metric exceeds the "Good" threshold:
-      - TTFB: >800ms (Must also exceed page average TTFB)
-      - Render Delay: >200ms
-      - Load Delay: >250ms
-      - Load Duration: >1000ms
+      Analysis Rules:
 
-    Required Fix Mapping:
-    - If TTFB: Suggest Edge Caching or API optimization. (e.g., Use Cloudflare workers for /api/v1)
-    - If Render Delay: Suggest deferring JS or inlining critical CSS. (e.g., Move non-critical script.js to footer)
-    - If Load Delay: Suggest Preload/Fetchpriority headers. (e.g., Add rel="preload" for hero-image.jpg)
-    - If Load Duration: Suggest compression or resizing. (e.g., Convert product.png to WebP/AVIF)
+      1. Identify the PRIMARY bottleneck using this priority:
+      - TTFB
+      - Render Delay
+      - Load Delay
+      - Load Duration
 
-    Output Format:
-    - Return ONLY JSON: {"fixes": string[]}
-    - Max 3 items. Max 20 words per item.
-    - Start every item with an action verb (e.g., "Implement", "Reduce", "Optimize").
-    - Include a specific asset filename or path from the Data in the example.
-    - Avoid using full URLs
-    - The suggestions should be for site owners & developers
-    - Keep in mind not all user uses Cloudflare
+      2. Only analyze metrics exceeding these thresholds:
+      - TTFB → exceeds 800ms AND exceeds page average TTFB
+      - Render Delay → exceeds 200ms
+      - Load Delay → exceeds 250ms
+      - Load Duration → exceeds 1000ms
 
-    Example Output:
-    {
-      "fixes": [
-        "Preload the LCP image (e.g., add fetchpriority='high' to banner-hero.webp)",
-        "Reduce render-blocking JS (e.g., defer analytics.js until after window load)"
-      ]
-    }
+      3. Determine the dominant performance issue:
+      - TTFB → slow backend response, uncached HTML/API requests
+      - Render Delay → render-blocking JavaScript or CSS
+      - Load Delay → delayed resource discovery or low fetch priority
+      - Load Duration → oversized or inefficient assets
 
-    Constraints:
-    - No generic advice. 
-    - Asset-specific based on the provided Data.
-    - No markdown formatting.
-    `;
+      4. Identify likely root causes ONLY when supported by Data:
+      - uncached API responses
+      - missing CDN/edge caching
+      - slow database/backend processing
+      - render-blocking scripts
+      - non-critical CSS blocking paint
+      - missing preload/fetchpriority
+      - lazy-loaded LCP assets
+      - oversized images
+      - uncompressed assets
+      - inefficient image formats
+      - third-party resource blocking
+
+      5. Prioritize fixes by:
+      - highest contributor impact
+      - user-visible loading impact
+      - likelihood of improvement
+
+      Fix Mapping Rules:
+
+      - High TTFB →
+        suggest edge caching, backend optimization, API caching, database optimization
+
+      - High Render Delay →
+        suggest deferring JavaScript, reducing render-blocking resources, inlining critical CSS
+
+      - High Load Delay →
+        suggest preload, preconnect, fetchpriority, earlier resource discovery
+
+      - High Load Duration →
+        suggest compression, resizing, modern formats like WebP/AVIF
+
+      Strict Fix Requirements:
+
+      Every item MUST include:
+      1. Exact asset filename, script, image, or path from Data
+      2. Root cause
+      3. Concrete developer-friendly action
+
+      Avoid generic advice like:
+      - "optimize performance"
+      - "improve loading"
+      - "reduce JavaScript"
+
+      Combine cause + fix into one sentence.
+
+      Good Examples:
+      - "Implement edge caching for /api/v1/products because uncached responses delay initial HTML delivery"
+      - "Preload hero-banner.webp using fetchpriority='high' because late discovery delays rendering"
+      - "Convert gallery-image.png to AVIF because oversized images extend download completion"
+
+      Platform Rules:
+
+      - Do not assume Cloudflare usage
+      - Suggest CDN/edge caching generically unless provider is explicitly present
+      - Suggestions should target developers and site owners
+      - Avoid framework-specific advice unless clearly supported by Data
+
+      Confidence Rules:
+
+      - Only infer causes strongly supported by Data
+      - If evidence is weak, use:
+        - "likely caused by"
+        - "possibly triggered by"
+      - Never invent assets, scripts, or endpoints absent from Data
+
+      Output Format:
+
+      - Return ONLY bullet points
+      - No JSON
+      - No markdown code blocks
+      - No explanations outside bullets
+      - Each bullet MUST start with "•"
+      - Max 3 bullets
+      - Max 20 words each
+      - Never mention:
+        - milliseconds
+        - timing values
+        - latency numbers
+      - Focus only on causes and fixes
+      - Each bullet MUST contain:
+        - exact asset/script/path from Data
+        - root cause
+        - actionable fix
+
+      Constraints:
+
+      - No repetition
+      - No generic advice
+      - Must reflect actual Data fields
+      - Asset-specific recommendations only
+      `;
 
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -58,42 +137,28 @@ export async function POST<T>(req: NextRequest) {
         Authorization: `Bearer ${process.env.OPEN_ROUTER_KEY}`,
       },
       body: JSON.stringify({
+        stream: true,
         model: "openai/gpt-oss-120b:free",
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
-    const data: any = await res.json();
-
     if (!res.ok) {
-      throw new Error(data?.error?.message ?? "Error getting analysis");
+      const error = await res.text();
+      throw new Error(error ?? "Error getting analysis");
     }
 
-    const raw = data.choices[0].message.content;
-
-    const cleanedRow = cleanLLMJson(raw);
-
-    const json = JSON.parse(cleanedRow);
-
-    return NextResponse.json({ json }, { status: 200 });
+    return new NextResponse(res.body, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json(
       { message: error.message ?? "Unexpacted Error" },
       { status: 500 },
     );
   }
-}
-
-function cleanLLMJson(text: string) {
-  const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const raw = codeBlock ? codeBlock[1] : text;
-
-  const first = raw.indexOf("{");
-  const last = raw.lastIndexOf("}");
-
-  if (first === -1 || last === -1) {
-    throw new Error("Invalid JSON response");
-  }
-
-  return raw.slice(first, last + 1).trim();
 }
