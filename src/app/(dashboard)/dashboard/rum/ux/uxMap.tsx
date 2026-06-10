@@ -13,18 +13,21 @@ import {
 import { CanvasRenderer } from "echarts/renderers";
 import * as echarts from "echarts/core";
 import rawWorldMap from "../../../../../../public/maps/worldMap.json";
-import { CustomTooltip, DeviceController, useTheme } from "@/components/theme";
-import { InfoIcon, DatabaseIcon, Wifi, Lightbulb } from "lucide-react";
-import { alpha3ToAlpha2 } from "@/components/countries/countryCodes";
-import { countryNameToAlpha2 } from "@/components/countries/alpha2codes";
 import {
+  CustomTooltip,
+  DeviceController,
+  Title,
+  useTheme,
+} from "@/components/theme";
+import { DatabaseIcon, Wifi, Lightbulb } from "lucide-react";
+import { alpha3ToAlpha2 } from "@/components/countries/countryCodes";
+import {
+  Compare,
   getDominantColor,
   RealtimeUxMap,
   UxGranularData,
   UxLoadingSkeleton,
 } from ".";
-import TooltipIcon from "@/components/theme/customTooltip";
-import { ComparisonMain } from ".";
 
 type Window = "Live Traffic" | "Distributions";
 
@@ -55,21 +58,7 @@ export default function UxReport() {
   const [activeWindow, SetActiveWindow] = useState<Window>("Distributions");
   const windows = ["Distributions", "Live Traffic"] as const;
 
-  const [compAIndex, setCompAIndex] = useState<number>(0);
-  const [compBIndex, setCompBIndex] = useState<number>(1);
-
   const { theme } = useTheme();
-
-  const alphacode2toCountry: Record<string, string> = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(countryNameToAlpha2).map(([country, code]) => [
-          code,
-          country,
-        ]),
-      ),
-    [],
-  );
 
   useEffect(() => {
     cleanExpiredCache({ prefix: "ux", session_Storage: true });
@@ -129,27 +118,36 @@ export default function UxReport() {
     [userHappinessData],
   );
 
-  const comparisonData = useMemo(() => {
-    const segA = userHappinessData[compAIndex];
-    const segB = userHappinessData[compBIndex];
-    if (!segA || !segB) return null;
+  const analysis = useMemo(() => {
+    if (filteredMapData.length === 0) return null;
 
-    // If B is 2000 and A is 4000: ((2000-4000)/4000) = -0.5 (-50%)
-    // A negative percentage in Web Vitals is an IMPROVEMENT.
-    const percentDiffFromA = (a: number, b: number) => {
-      if (!a || a === 0) return 0;
-      return ((b - a) / a) * 100;
-    };
+    // Sort by session volume to focus on what impacts the most users
+    const topRegions = [...filteredMapData]
+      .sort((a, b) => b.total_sessions - a.total_sessions)
+      .slice(0, 5)
+      .map((region) => {
+        // Find the "Worst" metric for this specific region to show as a bottleneck
+        const metrics = [
+          { name: "LCP", val: region.p75_lcp, limit: 2500 },
+          { name: "INP", val: region.p75_inp, limit: 200 },
+          { name: "TTFB", val: region.p75_ttfb, limit: 800 },
+          { name: "CLS", val: region.p75_cls, limit: 0.1 },
+        ];
+        const bottleneck = metrics.reduce((prev, curr) =>
+          curr.val / curr.limit > prev.val / prev.limit ? curr : prev,
+        );
+
+        return { ...region, bottleneck };
+      });
 
     return {
-      segA,
-      segB,
-      lcpDiff: percentDiffFromA(segA.p75_lcp, segB.p75_lcp),
-      inpDiff: percentDiffFromA(segA.p75_inp, segB.p75_inp),
-      ttfbDiff: percentDiffFromA(segA.p75_ttfb, segB.p75_ttfb),
-      clsDiff: segB.p75_cls - segA.p75_cls, // cls differences are tiny, can't rely on percentDiffFromA
+      totalSessions: filteredMapData.reduce(
+        (acc, curr) => acc + curr.total_sessions,
+        0,
+      ),
+      topRegions,
     };
-  }, [userHappinessData, compAIndex, compBIndex]);
+  }, [filteredMapData]);
 
   useEffect(() => {
     if (activeWindow !== "Distributions" || !chartRef.current || loading)
@@ -187,14 +185,18 @@ export default function UxReport() {
         formatter: (params: any) => {
           if (!params.data || !params.data.originalData) return "";
           const d = params.data.originalData;
+
           const getCol = (v: number, g: number, p: number) =>
             v <= g ? "#22c55e" : v <= p ? "#eab308" : "#ef4444";
 
           return `
             <div style="min-width: 200px; border-radius: 8px; overflow: hidden; background: ${theme === "dark" ? "#0f172a" : "#fff"}; border: 1px solid ${theme === "dark" ? "#1e293b" : "#e2e8f0"};">
-              <div style="padding: 10px; background: ${theme === "dark" ? "#1e293b" : "#f8fafc"}; border-bottom: 1px solid ${theme === "dark" ? "#334155" : "#e2e8f0"};">
-                <b style="font-size: 13px;">${params.name}</b>
-                <div style="font-size: 9px; color: #64748b; font-weight: bold;">${d.total_sessions.toLocaleString()} SESSIONS</div>
+              <div style="padding: 10px; color: ${theme === "dark" ? "#f8fafc" : "#1e293b"}; border-bottom: 1px solid ${theme === "dark" ? "#334155" : "#e2e8f0"};">
+                <b style="font-size: 13px; ${theme === "dark" ? "#1e293b" : "#f8fafc"}">${params.name}</b>
+                <div style="font-size: 9px; color: #64748b; font-weight: bold;">${d.total_sessions.toLocaleString()} SESSIONS <span>(${(
+                  (d.total_sessions / analysis?.totalSessions) *
+                  100
+                ).toFixed(0)}% of sample sessions)<span/></div>
               </div>
               <div style="padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <div><div style="font-size: 8px; color: #94a3b8; font-weight: 700;">LCP</div><div style="font-size: 11px; font-weight: 700; color: ${getCol(d.p75_lcp, 2500, 4000)}">${Math.round(d.p75_lcp)}ms</div></div>
@@ -248,37 +250,6 @@ export default function UxReport() {
     };
   }, [filteredMapData, theme, activeWindow, loading]);
 
-  const analysis = useMemo(() => {
-    if (filteredMapData.length === 0) return null;
-
-    // Sort by session volume to focus on what impacts the most users
-    const topRegions = [...filteredMapData]
-      .sort((a, b) => b.total_sessions - a.total_sessions)
-      .slice(0, 5)
-      .map((region) => {
-        // Find the "Worst" metric for this specific region to show as a bottleneck
-        const metrics = [
-          { name: "LCP", val: region.p75_lcp, limit: 2500 },
-          { name: "INP", val: region.p75_inp, limit: 200 },
-          { name: "TTFB", val: region.p75_ttfb, limit: 800 },
-          { name: "CLS", val: region.p75_cls, limit: 0.1 },
-        ];
-        const bottleneck = metrics.reduce((prev, curr) =>
-          curr.val / curr.limit > prev.val / prev.limit ? curr : prev,
-        );
-
-        return { ...region, bottleneck };
-      });
-
-    return {
-      totalSessions: filteredMapData.reduce(
-        (acc, curr) => acc + curr.total_sessions,
-        0,
-      ),
-      topRegions,
-    };
-  }, [filteredMapData]);
-
   async function fetchUserHappinesGeo() {
     if (!selectedSite) return;
     setLoading(true);
@@ -307,26 +278,13 @@ export default function UxReport() {
   return (
     <div className="w-full px-4 md:px-0 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <h2 className="font-extrabold text-2xl tracking-tight bg-linear-to-r from-primary via-primary/80 to-primary/50 bg-clip-text text-transparent">
-              Global Experience
-            </h2>
-            <TooltipIcon
-              content="Representation of the weekly p75 user experience for the active website across global regions, weighted by traffic distribution."
-              trigger={
-                <InfoIcon
-                  size={18}
-                  className="rounded-full cursor-pointer text-primary/30 hover:text-primary transition-colors"
-                />
-              }
-              side="right"
-            />
-          </div>
-          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-70">
-            Data based on 75% of users
-          </p>
-        </div>
+        <Title
+          title="Global User Experience"
+          description="Based on the 75th percentile of users"
+          tooltip={
+            "Shows the weekly 75th-percentile user experience for the active website across global regions, weighted by traffic distribution."
+          }
+        />
 
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2 border rounded-sm border-primary/20 bg-primary/5 px-3 py-1.5 overflow-x-auto scrollbar-none min-h-10.25">
@@ -363,21 +321,34 @@ export default function UxReport() {
       ) : (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
-            <div className="order-1 lg:order-2 lg:col-span-5 relative flex flex-col bg-transparent dark:bg-secondary-background overflow-hidden rounded-xl border">
+            <div className="order-1 lg:order-2 lg:col-span-5 relative flex flex-col bg-transparent dark:bg-secondary-background overflow-hidden rounded-sm border">
               <div className="absolute top-3 left-1 z-20">
                 <CustomTooltip
                   content={
                     <div className="space-y-3">
                       <p>
-                        A region turns Red when its P75 metrics fall into the
-                        &quot;Poor&quot; category. While low sample sizes can
-                        skew data, they could also be a leading indicator of CDN
-                        Cold Caches (in case the site has a CDN).
+                        Web Vitals data is collected from real users worldwide.
+                        As a result, visitors from regions outside your primary
+                        target region can still influence your overall Web
+                        Vitals performance.
                       </p>
+
                       <p>
-                        Higher green regions accross the globe often results in
-                        good aggregate web vitals or atleast upcoming web vitals
-                        likely to be on safer side.
+                        A region is marked{" "}
+                        <span className="text-red-400">Red</span> when its
+                        metrics fall into the <strong>Poor</strong> category,
+                        and <span className="text-yellow-400">Yellow</span> when
+                        metrics are classified as{" "}
+                        <strong>Needs Improvement</strong>.
+                      </p>
+
+                      <p>
+                        Consistently green regions across the globe typically
+                        indicate strong CDN coverage, lower latency, and faster
+                        server response times. While low sample sizes can
+                        occasionally skew results, poor regional performance is
+                        often a sign of genuine Web Vitals issues or CDN cache
+                        misses and cold-cache behavior.
                       </p>
                     </div>
                   }
@@ -424,109 +395,10 @@ export default function UxReport() {
               </figcaption>
             </div>
 
-            <div className="order-2 lg:order-1 lg:col-span-2 border border-primary/20 rounded-xl p-5 bg-primary/3 flex flex-col gap-6">
-              {analysis ? (
-                <>
-                  <div className="p-3 rounded-lg bg-background/50 border border-primary/10">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground block mb-1">
-                      Sample Sessions
-                    </span>
-                    <p className="text-2xl font-bold tracking-tighter text-primary">
-                      {analysis.totalSessions.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-2">
-                        Top Regions by Traffic
-                      </h4>
-                    </div>
-
-                    <div className="space-y-2">
-                      {analysis.topRegions.map((item, i) => {
-                        const isPoor =
-                          item.bottleneck.val > item.bottleneck.limit;
-
-                        return (
-                          <div
-                            key={i}
-                            className="p-3 rounded-md bg-background/40 border border-primary/5 hover:border-primary/20 transition-all"
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <span className="font-bold text-sm">
-                                {alphacode2toCountry[item.country_iso] ||
-                                  item.country_iso}
-                              </span>
-                              <span className="text-[10px] font-medium opacity-60">
-                                {(
-                                  (item.total_sessions /
-                                    analysis.totalSessions) *
-                                  100
-                                ).toFixed(1)}
-                                % traffic
-                              </span>
-                            </div>
-
-                            {/* Health Bar */}
-                            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden flex">
-                              <div
-                                className={`h-full transition-all ${isPoor ? "bg-red-500" : "bg-green-500"}`}
-                                style={{
-                                  width: `${Math.min((item.bottleneck.limit / item.bottleneck.val) * 100, 100)}%`,
-                                }}
-                              />
-                            </div>
-
-                            <div className="flex justify-between mt-2">
-                              <span
-                                className={`text-[9px] uppercase font-bold ${isPoor ? "text-red-500" : "text-green-600"}`}
-                              >
-                                {isPoor
-                                  ? `Slow ${item.bottleneck.name}`
-                                  : "Healthy"}
-                              </span>
-                              <span className="text-[9px] font-mono text-muted-foreground">
-                                {item.total_sessions.toLocaleString()} sess
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="mt-auto p-3 rounded-lg bg-primary/5 border border-primary/10">
-                    <p className="text-[10px] leading-relaxed text-muted-foreground italic">
-                      Tip: Focus on regions with high traffic percentages and
-                      &quot;Slow&quot; labels to maximize ROI on optimizations.
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="p-3 rounded-lg bg-background/50 border border-primary/10">
-                    <p className="text-xs font-medium tracking-tighter text-primary/80">
-                      We don&apos;t have sufficient traffic data to classify
-                      user experience.
-                    </p>
-                  </div>
-                </>
-              )}
+            <div className="order-2 lg:order-1 lg:col-span-2 rounded-sm flex flex-col gap-3">
+              <Compare uxData={userHappinessData ? userHappinessData : []} />
             </div>
           </div>
-
-          {userHappinessData.length > 0 && (
-            <ComparisonMain
-              alphacode2toCountry={alphacode2toCountry}
-              compAIndex={compAIndex}
-              compBIndex={compBIndex}
-              comparisonData={comparisonData}
-              userHappinessData={userHappinessData}
-              setCompAIndex={setCompAIndex}
-              setCompBIndex={setCompBIndex}
-            />
-          )}
         </>
       )}
     </div>

@@ -9,11 +9,14 @@ import {
   Copy,
   Check,
   LoaderCircle,
+  Lightbulb,
 } from "lucide-react";
 import { LoadingAnimation, PrimaryToolbar, Title } from "@/components/theme";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 
 type PerformanceGroup = "poor" | "average" | "good";
+
+const ITEM_PER_PAGE = 6;
 
 export default function PagePerformanceAnalysis() {
   const { selectedSite, selectedDevice } = useSiteContext();
@@ -22,6 +25,7 @@ export default function PagePerformanceAnalysis() {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const lastFetched = useRef<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   useEffect(() => {
     // clear all expired cache
@@ -58,6 +62,13 @@ export default function PagePerformanceAnalysis() {
     return { filteredList: list, counts: countsMap };
   }, [pageData, activeTab, selectedDevice]);
 
+  const indexedData = filteredList.slice(
+    (currentPage - 1) * ITEM_PER_PAGE,
+    currentPage * ITEM_PER_PAGE,
+  );
+
+  const maxPages = Math.ceil(filteredList.length / ITEM_PER_PAGE);
+
   if (!selectedSite)
     return (
       <div className="h-[80vh] flex items-center justify-center">
@@ -81,7 +92,8 @@ export default function PagePerformanceAnalysis() {
             <div className="space-y-3 text-sm">
               <p>
                 Page groups aggregate field data by unique URL paths and most
-                prominent contributors.
+                prominent contributors. This nerrows down your focus on most
+                problematic pages across your site on different devices.
               </p>
             </div>
           }
@@ -131,97 +143,128 @@ export default function PagePerformanceAnalysis() {
             </div>
           )}
           {!loading && filteredList.length > 0 && (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="text-[10px] uppercase tracking-widest text-primary/40 border-b border-primary/10">
-                  <th className="py-3 px-6 font-bold w-12">#</th>
-                  <th className="py-3 px-4 font-bold">URL Path</th>
-                  <th className="py-3 px-4 font-bold text-center">Visits</th>
-                  <th className="py-3 px-4 font-bold text-center">LCP</th>
-                  <th className="py-3 px-4 font-bold text-center">INP</th>
-                  <th className="py-3 px-4 font-bold text-center">CLS</th>
-                  <th className="py-3 px-6 font-bold text-right">Debug</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-primary/5">
-                {filteredList.map((page, idx) => (
-                  <React.Fragment key={idx}>
-                    <tr
-                      className={`group transition-colors cursor-pointer hover:bg-primary/3 ${
-                        expandedRow === page.current_page ? "bg-primary/5" : ""
-                      }`}
-                      onClick={() =>
-                        setExpandedRow(
-                          expandedRow === page.current_page
-                            ? null
-                            : page.current_page,
-                        )
-                      }
-                    >
-                      <td className="py-4 px-6 text-xs opacity-40">
-                        {idx + 1}
-                      </td>
-                      <td className="py-4 px-4 min-w-75">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium truncate max-w-md">
-                            {page.current_page}
-                          </span>
-                          <span className="text-[9px] opacity-30 font-bold uppercase tracking-tight">
-                            {page.device_type}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-center text-xs font-mono">
-                        {page.visit_count}
-                      </td>
-                      <MetricCell value={page.avg_lcp_ms} type="lcp" />
-                      <MetricCell value={page.avg_inp_ms} type="inp" />
-                      <MetricCell value={page.avg_cls} type="cls" />
-                      <td className="py-4 px-6 text-right">
-                        {expandedRow === page.current_page ? (
-                          <ChevronUp size={16} className="ml-auto opacity-20" />
-                        ) : (
-                          <ChevronDown
-                            size={16}
-                            className="ml-auto opacity-20"
-                          />
-                        )}
-                      </td>
-                    </tr>
-
-                    {expandedRow === page.current_page && (
-                      <tr>
-                        <td colSpan={7} className="p-0 bg-primary/2">
-                          <div className="px-14 py-8 grid grid-cols-1 md:grid-cols-3 gap-12 border-b border-primary/10">
-                            <TargetList
-                              title="LCP Elements"
-                              items={page.lcp_elements}
-                              color={getThemeColor()}
-                              site={selectedSite}
-                              path={page.current_page}
-                            />
-                            <TargetList
-                              title="CLS Shifters"
-                              items={page.cls_elements}
-                              color={getThemeColor()}
-                              site={selectedSite}
-                              path={page.current_page}
-                            />
-                            <TargetList
-                              title="INP Targets"
-                              items={page.inp_elements}
-                              color={getThemeColor()}
-                              site={selectedSite}
-                              path={page.current_page}
-                            />
+            <>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-widest text-primary/40 border-b border-primary/10">
+                    <th className="py-3 px-6 font-bold w-12">#</th>
+                    <th className="py-3 px-4 font-bold">URL Path</th>
+                    <th className="py-3 px-4 font-bold text-center">Visits</th>
+                    <th className="py-3 px-4 font-bold text-center">LCP</th>
+                    <th className="py-3 px-4 font-bold text-center">INP</th>
+                    <th className="py-3 px-4 font-bold text-center">CLS</th>
+                    <th className="py-3 px-6 font-bold text-right">Debug</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-primary/5">
+                  {indexedData.map((page, idx) => (
+                    <React.Fragment key={idx}>
+                      <tr
+                        className={`group transition-colors cursor-pointer hover:bg-primary/3 ${expandedRow === page.current_page ? "bg-primary/5" : ""}`}
+                        onClick={() =>
+                          setExpandedRow(
+                            expandedRow === page.current_page
+                              ? null
+                              : page.current_page,
+                          )
+                        }
+                      >
+                        <td className="py-4 px-6 text-xs opacity-40">
+                          {idx + 1}
+                        </td>
+                        <td className="py-4 px-4 min-w-75">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium truncate max-w-md">
+                              {page.current_page}
+                            </span>
+                            <span className="text-[9px] opacity-30 font-bold uppercase tracking-tight">
+                              {page.device_type}
+                            </span>
                           </div>
                         </td>
+                        <td className="py-4 px-4 text-center text-xs font-mono">
+                          {page.visit_count}
+                        </td>
+                        <MetricCell value={page.avg_lcp_ms} type="lcp" />
+                        <MetricCell value={page.avg_inp_ms} type="inp" />
+                        <MetricCell value={page.avg_cls} type="cls" />
+                        <td className="py-4 px-6 text-right">
+                          {expandedRow === page.current_page ? (
+                            <ChevronUp
+                              size={16}
+                              className="ml-auto opacity-20"
+                            />
+                          ) : (
+                            <ChevronDown
+                              size={16}
+                              className="ml-auto opacity-20"
+                            />
+                          )}
+                        </td>
                       </tr>
-                    )}
-                  </React.Fragment>
+
+                      {expandedRow === page.current_page && (
+                        <tr>
+                          <td colSpan={7} className="p-0 bg-primary/2">
+                            <div className="flex px-14 text-[12px] pt-5 items-center gap-1.5">
+                              <Lightbulb size={16} className="fill-amber-400" />
+                              <p>
+                                Copy the affected element selector and locate it
+                                in DevTools, or use the debug icon for quick
+                                inspection.
+                              </p>
+                            </div>
+                            <div className="px-14 py-8 grid grid-cols-1 md:grid-cols-3 gap-12 border-b border-primary/10">
+                              <TargetList
+                                title="LCP Elements"
+                                items={page.lcp_elements}
+                                color={getThemeColor()}
+                                site={selectedSite}
+                                path={page.current_page}
+                              />
+                              <TargetList
+                                title="CLS Shifters"
+                                items={page.cls_elements}
+                                color={getThemeColor()}
+                                site={selectedSite}
+                                path={page.current_page}
+                              />
+                              <TargetList
+                                title="INP Targets"
+                                items={page.inp_elements}
+                                color={getThemeColor()}
+                                site={selectedSite}
+                                path={page.current_page}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+              <div className="my-5 px-6 flex justify-end gap-2 items-center">
+                {["Previous", "Next"].map((button) => (
+                  <button
+                    key={button}
+                    disabled={
+                      button === "Previous"
+                        ? currentPage === 1
+                        : currentPage === maxPages
+                    }
+                    onClick={() =>
+                      handlePagination(button as "Previous" | "Next")
+                    }
+                    className="px-2 py-0.5 bg-primary/90  disabled:bg-primary/50 disabled:cursor-default
+                    text-primary-foreground text-sm cursor-pointer
+                    rounded-sm border-primary/10 shadow-sm hover:bg-primary/80"
+                  >
+                    {button}
+                  </button>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
           {!loading && filteredList.length === 0 && (
             <div className="py-20 text-center opacity-30 text-sm italic font-medium">
@@ -232,6 +275,17 @@ export default function PagePerformanceAnalysis() {
       </div>
     </>
   );
+
+  function handlePagination(direction: "Previous" | "Next") {
+    if (direction === "Next" && currentPage < maxPages) {
+      setCurrentPage((prev) => prev + 1);
+      return;
+    }
+
+    if (direction === "Previous" && currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  }
 
   async function fetchData() {
     // start loading
