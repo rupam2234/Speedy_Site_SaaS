@@ -87,7 +87,7 @@ export default function AppSidebar({
             url: `/dashboard/rum/trace?site=${selectedSite}`,
           },
           {
-            title: "Global Experience",
+            title: "Global UX",
             url: `/dashboard/rum/ux?site=${selectedSite}`,
           },
 

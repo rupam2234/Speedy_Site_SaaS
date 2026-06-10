@@ -58,7 +58,7 @@ export function ComparisonCard({
   ) {
     if (noChange) return "No Change";
 
-    if (valueA == null || valueB == null) {
+    if (!valueA || !valueB) {
       return "Missing Data";
     }
 
@@ -98,5 +98,5 @@ const getBgColor = (
 enum BgColor {
   good = "rgba(21, 159, 20, 0.2)",
   poor = "rgba(190, 75, 75, 0.2)",
-  neutral = "rgba(197, 196, 196, 0.8)",
+  neutral = "rgba(219, 219, 219, 0.8)",
 }
