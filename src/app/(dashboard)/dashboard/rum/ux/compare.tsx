@@ -40,16 +40,18 @@ export function Compare({ uxData }: CompareProps) {
     return new Map(uxData.map((p, i) => [makeKey(p), i]));
   }, [uxData]);
 
-  const cardData: CompareCardProps[] = ["lcp", "cls", "inp", "ttfb"].map(
-    (item) => {
-      return {
-        label: item,
-        metric: item as "lcp" | "cls" | "inp" | "ttfb",
-        valueA: sagmentA[`p75_${item as "lcp" | "cls" | "inp" | "ttfb"}`],
-        valueB: sagmentB[`p75_${item as "lcp" | "cls" | "inp" | "ttfb"}`],
-      };
-    },
-  );
+  const metrics: Metric[] = ["lcp", "cls", "inp", "ttfb"];
+
+  const cardData: CompareCardProps[] = metrics.map((metric) => {
+    const key = `p75_${metric}` as SegmentKey;
+
+    return {
+      label: metric,
+      metric,
+      valueA: sagmentA?.[key] ?? 0,
+      valueB: sagmentB?.[key] ?? 0,
+    };
+  });
 
   if (!uxData || uxData.length === 0) {
     return (
@@ -142,3 +144,6 @@ export function Compare({ uxData }: CompareProps) {
 type CompareProps = {
   uxData: UxGranularData[];
 };
+
+type Metric = "lcp" | "cls" | "inp" | "ttfb";
+type SegmentKey = `p75_${Metric}`;

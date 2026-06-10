@@ -86,13 +86,14 @@ export default function UxReport() {
       };
 
       const weight = item.total_sessions;
-      const total = existing.total_sessions + weight;
+      const total = existing && existing.total_sessions + weight;
 
       aggregated.set(item.country, {
         country_iso: item.country,
         total_sessions: total,
         p75_lcp:
-          (existing.p75_lcp * existing.total_sessions + item.p75_lcp * weight) /
+          (existing?.p75_lcp * existing.total_sessions +
+            item?.p75_lcp * weight) /
           total,
         p75_ttfb:
           (existing.p75_ttfb * existing.total_sessions +
@@ -126,12 +127,13 @@ export default function UxReport() {
       .sort((a, b) => b.total_sessions - a.total_sessions)
       .slice(0, 5)
       .map((region) => {
+        if (!region) return;
         // Find the "Worst" metric for this specific region to show as a bottleneck
         const metrics = [
-          { name: "LCP", val: region.p75_lcp, limit: 2500 },
-          { name: "INP", val: region.p75_inp, limit: 200 },
-          { name: "TTFB", val: region.p75_ttfb, limit: 800 },
-          { name: "CLS", val: region.p75_cls, limit: 0.1 },
+          { name: "LCP", val: region?.p75_lcp, limit: 2500 },
+          { name: "INP", val: region?.p75_inp, limit: 200 },
+          { name: "TTFB", val: region?.p75_ttfb, limit: 800 },
+          { name: "CLS", val: region?.p75_cls, limit: 0.1 },
         ];
         const bottleneck = metrics.reduce((prev, curr) =>
           curr.val / curr.limit > prev.val / prev.limit ? curr : prev,
@@ -196,13 +198,13 @@ export default function UxReport() {
                 <div style="font-size: 9px; color: #64748b; font-weight: bold;">${d.total_sessions.toLocaleString()} SESSIONS <span>(${(
                   (d.total_sessions / analysis?.totalSessions) *
                   100
-                ).toFixed(0)}% of sample sessions)<span/></div>
+                )?.toFixed(0)}% of sample sessions)<span/></div>
               </div>
               <div style="padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div><div style="font-size: 8px; color: #94a3b8; font-weight: 700;">LCP</div><div style="font-size: 11px; font-weight: 700; color: ${getCol(d.p75_lcp, 2500, 4000)}">${Math.round(d.p75_lcp)}ms</div></div>
-                <div><div style="font-size: 8px; color: #94a3b8; font-weight: 700;">INP</div><div style="font-size: 11px; font-weight: 700; color: ${getCol(d.p75_inp, 200, 500)}">${Math.round(d.p75_inp)}ms</div></div>
-                <div><div style="font-size: 8px; color: #94a3b8; font-weight: 700;">TTFB</div><div style="font-size: 11px; font-weight: 700; color: ${getCol(d.p75_ttfb, 800, 1800)}">${Math.round(d.p75_ttfb)}ms</div></div>
-                <div><div style="font-size: 8px; color: #94a3b8; font-weight: 700;">CLS</div><div style="font-size: 11px; font-weight: 700; color: ${getCol(d.p75_cls, 0.1, 0.25)}">${d.p75_cls.toFixed(3)}</div></div>
+                <div><div style="font-size: 8px; color: #94a3b8; font-weight: 700;">LCP</div><div style="font-size: 11px; font-weight: 700; color: ${getCol(d?.p75_lcp, 2500, 4000)}">${Math.round(d?.p75_lcp)}ms</div></div>
+                <div><div style="font-size: 8px; color: #94a3b8; font-weight: 700;">INP</div><div style="font-size: 11px; font-weight: 700; color: ${getCol(d?.p75_inp, 200, 500)}">${Math.round(d?.p75_inp)}ms</div></div>
+                <div><div style="font-size: 8px; color: #94a3b8; font-weight: 700;">TTFB</div><div style="font-size: 11px; font-weight: 700; color: ${getCol(d?.p75_ttfb, 800, 1800)}">${Math.round(d?.p75_ttfb)}ms</div></div>
+                <div><div style="font-size: 8px; color: #94a3b8; font-weight: 700;">CLS</div><div style="font-size: 11px; font-weight: 700; color: ${getCol(d?.p75_cls, 0.1, 0.25)}">${d?.p75_cls.toFixed(3)}</div></div>
               </div>
             </div>`;
         },
