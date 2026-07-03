@@ -227,11 +227,11 @@ export default function SidebarAnalysis({
           </button>
 
           {parsedLines.length > 0 && (
-            <div className="space-y-2 mt-3 overflow-hidden">
+            <div className="space-y-2 mt-3">
               {parsedLines.map((line, i) => (
                 <div
                   key={i}
-                  className="p-2 rounded-sm border border-primary/10 text-sm text-primary/80"
+                  className="p-2 rounded-sm border border-primary/10 text-sm text-primary/80 break-words whitespace-normal"
                 >
                   {renderLineWithCode(line)}
                 </div>
@@ -372,7 +372,7 @@ function renderLineWithCode(line: string) {
       return (
         <code
           key={`b-${idx}`}
-          className="bg-muted text-foreground px-1.5 py-0.5 rounded text-xs font-mono"
+          className="bg-muted text-foreground px-1.5 py-0.5 rounded text-xs font-mono break-all"
         >
           {part.slice(1, -1)}
         </code>
@@ -401,7 +401,7 @@ function renderLineWithCode(line: string) {
       result.push(
         <code
           key={`d-${idx}-${mIdx}`}
-          className="bg-muted text-foreground px-1.5 py-0.5 rounded text-xs font-mono"
+          className="bg-muted text-foreground px-1.5 py-0.5 rounded text-xs font-mono break-all"
         >
           {m[0]}
         </code>,
