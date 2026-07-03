@@ -26,6 +26,7 @@ interface Props {
   isSticky?: boolean;
   limited?: number;
   disableCalender?: boolean;
+  padding_x?: string;
   /**
    * Custom components to render on the right side.
    * If provided, these will show instead of (or alongside) the calendar.
@@ -41,6 +42,7 @@ export default function PrimaryToolbar({
   isSticky,
   limited,
   disableCalender,
+  padding_x = "px-5",
   children, // 1. Destructure children
 }: Props) {
   const { rumDistribution, setRumDistribution } = useSiteContext();
@@ -64,7 +66,7 @@ export default function PrimaryToolbar({
     <div
       ref={headerRef}
       className={`flex flex-col md:flex-row py-4 w-full items-start gap-3 md:justify-between ${
-        sticky ? "bg-white pl-3 pr-5" : "bg-transparent px-5"
+        sticky ? "bg-white pl-3 pr-5" : `bg-transparent ${padding_x}`
       }`}
       style={{
         position: isSticky && !isMobile ? "sticky" : "unset",

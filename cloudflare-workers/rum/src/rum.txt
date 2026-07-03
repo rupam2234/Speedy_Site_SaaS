@@ -1,26 +1,26 @@
 'use strict';
-var G = class {
+var K = class {
 		t;
 		o = 0;
 		i = [];
 		u(t) {
 			if (t.hadRecentInput) return;
-			let o = this.i[0],
+			let r = this.i[0],
 				n = this.i.at(-1);
-			(this.o && o && n && t.startTime - n.startTime < 1e3 && t.startTime - o.startTime < 5e3
+			(this.o && r && n && t.startTime - n.startTime < 1e3 && t.startTime - r.startTime < 5e3
 				? ((this.o += t.value), this.i.push(t))
 				: ((this.o = t.value), (this.i = [t])),
 				this.t?.(t));
 		}
 	},
-	O = () => {
+	z = () => {
 		let e = performance.getEntriesByType('navigation')[0];
 		if (e && e.responseStart > 0 && e.responseStart < performance.now()) return e;
 	},
 	J = (e) => {
 		if (document.readyState === 'loading') return 'loading';
 		{
-			let t = O();
+			let t = z();
 			if (t) {
 				if (e < t.domInteractive) return 'loading';
 				if (t.domContentLoadedEventStart === 0 || e < t.domContentLoadedEventStart) return 'dom-interactive';
@@ -29,67 +29,67 @@ var G = class {
 		}
 		return 'complete';
 	},
-	Ge = (e) => {
+	Qe = (e) => {
 		let t = e.nodeName;
 		return e.nodeType === 1 ? t.toLowerCase() : t.toUpperCase().replace(/^#/, '');
 	},
-	Te = (e) => {
+	Se = (e) => {
 		let t = '';
 		try {
 			for (; e?.nodeType !== 9; ) {
-				let o = e,
-					n = o.id ? '#' + o.id : [Ge(o), ...Array.from(o.classList).sort()].join('.');
+				let r = e,
+					n = r.id ? '#' + r.id : [Qe(r), ...Array.from(r.classList).sort()].join('.');
 				if (t.length + n.length > 99) return t || n;
-				if (((t = t ? n + '>' + t : n), o.id)) break;
-				e = o.parentNode;
+				if (((t = t ? n + '>' + t : n), r.id)) break;
+				e = r.parentNode;
 			}
 		} catch {}
 		return t;
 	},
-	fe = new WeakMap();
-function I(e, t) {
-	return (fe.get(e) || fe.set(e, new t()), fe.get(e));
+	me = new WeakMap();
+function A(e, t) {
+	return (me.get(e) || me.set(e, new t()), me.get(e));
 }
-var Ne = -1,
-	ze = () => Ne,
+var Ue = -1,
+	xe = () => Ue,
 	N = (e) => {
 		addEventListener(
 			'pageshow',
 			(t) => {
-				t.persisted && ((Ne = t.timeStamp), e(t));
+				t.persisted && ((Ue = t.timeStamp), e(t));
 			},
 			!0,
 		);
 	},
-	b = (e, t, o, n) => {
-		let r, i;
-		return (a) => {
+	b = (e, t, r, n) => {
+		let i, a;
+		return (o) => {
 			t.value >= 0 &&
-				(a || n) &&
-				((i = t.value - (r ?? 0)),
-				(i || r === void 0) &&
-					((r = t.value),
-					(t.delta = i),
-					(t.rating = ((s, c) => (s > c[1] ? 'poor' : s > c[0] ? 'needs-improvement' : 'good'))(t.value, o)),
+				(o || n) &&
+				((a = t.value - (i ?? 0)),
+				(a || i === void 0) &&
+					((i = t.value),
+					(t.delta = a),
+					(t.rating = ((s, c) => (s > c[1] ? 'poor' : s > c[0] ? 'needs-improvement' : 'good'))(t.value, r)),
 					e(t)));
 		};
 	},
-	Se = (e) => {
+	Ee = (e) => {
 		requestAnimationFrame(() => requestAnimationFrame(() => e()));
 	},
-	U = () => O()?.activationStart ?? 0,
-	E = (e, t = -1) => {
-		let o = O(),
+	x = () => z()?.activationStart ?? 0,
+	w = (e, t = -1) => {
+		let r = z(),
 			n = 'navigate';
 		return (
-			ze() >= 0
+			xe() >= 0
 				? (n = 'back-forward-cache')
-				: o &&
-					(document.prerendering || U() > 0
+				: r &&
+					(document.prerendering || x() > 0
 						? (n = 'prerender')
 						: document.wasDiscarded
 							? (n = 'restore')
-							: o.type && (n = o.type.replace(/_/g, '-'))),
+							: r.type && (n = r.type.replace(/_/g, '-'))),
 			{
 				name: e,
 				value: t,
@@ -101,15 +101,15 @@ var Ne = -1,
 			}
 		);
 	},
-	A = (e, t, o = {}) => {
+	O = (e, t, r = {}) => {
 		try {
 			if (PerformanceObserver.supportedEntryTypes.includes(e)) {
-				let n = new PerformanceObserver((r) => {
+				let n = new PerformanceObserver((i) => {
 					Promise.resolve().then(() => {
-						t(r.getEntries());
+						t(i.getEntries());
 					});
 				});
-				return (n.observe({ type: e, buffered: !0, ...o }), n);
+				return (n.observe({ type: e, buffered: !0, ...r }), n);
 			}
 		} catch {}
 	},
@@ -119,191 +119,191 @@ var Ne = -1,
 			t || (e(), (t = !0));
 		};
 	},
-	R = -1,
-	xe = new Set(),
-	Be = () => (document.visibilityState !== 'hidden' || document.prerendering ? 1 / 0 : 0),
-	he = (e) => {
+	I = -1,
+	He = new Set(),
+	Ie = () => (document.visibilityState !== 'hidden' || document.prerendering ? 1 / 0 : 0),
+	ge = (e) => {
 		if (document.visibilityState === 'hidden') {
-			if (e.type === 'visibilitychange') for (let t of xe) t();
-			isFinite(R) || ((R = e.type === 'visibilitychange' ? e.timeStamp : 0), removeEventListener('prerenderingchange', he, !0));
+			if (e.type === 'visibilitychange') for (let t of He) t();
+			isFinite(I) || ((I = e.type === 'visibilitychange' ? e.timeStamp : 0), removeEventListener('prerenderingchange', ge, !0));
 		}
 	},
-	te = () => {
-		if (R < 0) {
-			let e = U();
-			((R =
+	ne = () => {
+		if (I < 0) {
+			let e = x();
+			((I =
 				(document.prerendering
 					? void 0
-					: globalThis.performance.getEntriesByType('visibility-state').filter((o) => o.name === 'hidden' && o.startTime > e)[0]
-							?.startTime) ?? Be()),
-				addEventListener('visibilitychange', he, !0),
-				addEventListener('prerenderingchange', he, !0),
+					: globalThis.performance.getEntriesByType('visibility-state').filter((r) => r.name === 'hidden' && r.startTime > e)[0]
+							?.startTime) ?? Ie()),
+				addEventListener('visibilitychange', ge, !0),
+				addEventListener('prerenderingchange', ge, !0),
 				N(() => {
 					setTimeout(() => {
-						R = Be();
+						I = Ie();
 					});
 				}));
 		}
 		return {
 			get firstHiddenTime() {
-				return R;
+				return I;
 			},
 			onHidden(e) {
-				xe.add(e);
+				He.add(e);
 			},
 		};
 	},
-	ne = (e) => {
+	re = (e) => {
 		document.prerendering ? addEventListener('prerenderingchange', () => e(), !0) : e();
 	},
-	Me = [1800, 3e3],
-	_e = (e, t = {}) => {
-		ne(() => {
-			let o = te(),
+	Ae = [1800, 3e3],
+	qe = (e, t = {}) => {
+		re(() => {
+			let r = ne(),
 				n,
-				r = E('FCP'),
-				i = A('paint', (a) => {
-					for (let s of a)
+				i = w('FCP'),
+				a = O('paint', (o) => {
+					for (let s of o)
 						s.name === 'first-contentful-paint' &&
-							(i.disconnect(), s.startTime < o.firstHiddenTime && ((r.value = Math.max(s.startTime - U(), 0)), r.entries.push(s), n(!0)));
+							(a.disconnect(), s.startTime < r.firstHiddenTime && ((i.value = Math.max(s.startTime - x(), 0)), i.entries.push(s), n(!0)));
 				});
-			i &&
-				((n = b(e, r, Me, t.reportAllChanges)),
-				N((a) => {
-					((r = E('FCP')),
-						(n = b(e, r, Me, t.reportAllChanges)),
-						Se(() => {
-							((r.value = performance.now() - a.timeStamp), n(!0));
+			a &&
+				((n = b(e, i, Ae, t.reportAllChanges)),
+				N((o) => {
+					((i = w('FCP')),
+						(n = b(e, i, Ae, t.reportAllChanges)),
+						Ee(() => {
+							((i.value = performance.now() - o.timeStamp), n(!0));
 						}));
 				}));
 		});
 	},
-	K = [0.1, 0.25],
-	Re = (e) => e.find((t) => t.node?.nodeType === 1) || e[0],
-	Ue = (e, t = {}) => {
-		let o = I((t = Object.assign({}, t)), G),
+	Q = [0.1, 0.25],
+	Oe = (e) => e.find((t) => t.node?.nodeType === 1) || e[0],
+	je = (e, t = {}) => {
+		let r = A((t = Object.assign({}, t)), K),
 			n = new WeakMap();
-		((o.t = (r) => {
-			if (r?.sources?.length) {
-				let i = Re(r.sources),
-					a = i?.node;
-				if (a) {
-					let s = t.generateTarget?.(a) ?? Te(a);
-					n.set(i, s);
+		((r.t = (i) => {
+			if (i?.sources?.length) {
+				let a = Oe(i.sources),
+					o = a?.node;
+				if (o) {
+					let s = t.generateTarget?.(o) ?? Se(o);
+					n.set(a, s);
 				}
 			}
 		}),
-			((r, i = {}) => {
-				let a = te();
-				_e(
+			((i, a = {}) => {
+				let o = ne();
+				qe(
 					be(() => {
 						let s,
-							c = E('CLS', 0),
-							l = I(i, G),
-							p = (g) => {
-								for (let u of g) l.u(u);
-								l.o > c.value && ((c.value = l.o), (c.entries = l.i), s());
+							c = w('CLS', 0),
+							u = A(a, K),
+							f = (g) => {
+								for (let l of g) u.u(l);
+								u.o > c.value && ((c.value = u.o), (c.entries = u.i), s());
 							},
-							f = A('layout-shift', p);
-						f &&
-							((s = b(r, c, K, i.reportAllChanges)),
-							a.onHidden(() => {
-								(p(f.takeRecords()), s(!0));
+							p = O('layout-shift', f);
+						p &&
+							((s = b(i, c, Q, a.reportAllChanges)),
+							o.onHidden(() => {
+								(f(p.takeRecords()), s(!0));
 							}),
 							N(() => {
-								((l.o = 0), (c = E('CLS', 0)), (s = b(r, c, K, i.reportAllChanges)), Se(() => s()));
+								((u.o = 0), (c = w('CLS', 0)), (s = b(i, c, Q, a.reportAllChanges)), Ee(() => s()));
 							}),
 							setTimeout(s));
 					}),
 				);
-			})((r) => {
-				let i = ((a) => {
+			})((i) => {
+				let a = ((o) => {
 					let s = {};
-					if (a.entries.length) {
-						let c = a.entries.reduce((l, p) => (l.value > p.value ? l : p));
+					if (o.entries.length) {
+						let c = o.entries.reduce((u, f) => (u.value > f.value ? u : f));
 						if (c?.sources?.length) {
-							let l = Re(c.sources);
-							l &&
+							let u = Oe(c.sources);
+							u &&
 								(s = {
-									largestShiftTarget: n.get(l),
+									largestShiftTarget: n.get(u),
 									largestShiftTime: c.startTime,
 									largestShiftValue: c.value,
-									largestShiftSource: l,
+									largestShiftSource: u,
 									largestShiftEntry: c,
 									loadState: J(c.startTime),
 								});
 						}
 					}
-					return Object.assign(a, { attribution: s });
-				})(r);
-				e(i);
+					return Object.assign(o, { attribution: s });
+				})(i);
+				e(a);
 			}, t));
 	},
-	qe = (e, t = {}) => {
-		_e((o) => {
-			let n = ((r) => {
-				let i = { timeToFirstByte: 0, firstByteToFCP: r.value, loadState: J(ze()) };
-				if (r.entries.length) {
-					let a = O(),
-						s = r.entries.at(-1);
-					if (a) {
-						let c = a.activationStart || 0,
-							l = Math.max(0, a.responseStart - c);
-						i = { timeToFirstByte: l, firstByteToFCP: r.value - l, loadState: J(r.entries[0].startTime), navigationEntry: a, fcpEntry: s };
+	We = (e, t = {}) => {
+		qe((r) => {
+			let n = ((i) => {
+				let a = { timeToFirstByte: 0, firstByteToFCP: i.value, loadState: J(xe()) };
+				if (i.entries.length) {
+					let o = z(),
+						s = i.entries.at(-1);
+					if (o) {
+						let c = o.activationStart || 0,
+							u = Math.max(0, o.responseStart - c);
+						a = { timeToFirstByte: u, firstByteToFCP: i.value - u, loadState: J(i.entries[0].startTime), navigationEntry: o, fcpEntry: s };
 					}
 				}
-				return Object.assign(r, { attribution: i });
-			})(o);
+				return Object.assign(i, { attribution: a });
+			})(r);
 			e(n);
 		}, t);
 	},
-	He = 0,
-	me = 1 / 0,
-	X = 0,
-	Je = (e) => {
+	$e = 0,
+	he = 1 / 0,
+	G = 0,
+	Ye = (e) => {
 		for (let t of e)
-			t.interactionId && ((me = Math.min(me, t.interactionId)), (X = Math.max(X, t.interactionId)), (He = X ? (X - me) / 7 + 1 : 0));
+			t.interactionId && ((he = Math.min(he, t.interactionId)), (G = Math.max(G, t.interactionId)), ($e = G ? (G - he) / 7 + 1 : 0));
 	},
-	ge,
-	Ie = () => (ge ? He : (performance.interactionCount ?? 0)),
-	Ke = () => {
-		'interactionCount' in performance || ge || (ge = A('event', Je, { type: 'event', buffered: !0, durationThreshold: 0 }));
+	ye,
+	ze = () => (ye ? $e : (performance.interactionCount ?? 0)),
+	Ze = () => {
+		'interactionCount' in performance || ye || (ye = O('event', Ye, { type: 'event', buffered: !0, durationThreshold: 0 }));
 	},
-	Ae = 0,
-	Q = class {
+	Ne = 0,
+	Y = class {
 		l = [];
 		h = new Map();
 		m;
 		p;
 		v() {
-			((Ae = Ie()), (this.l.length = 0), this.h.clear());
+			((Ne = ze()), (this.l.length = 0), this.h.clear());
 		}
 		M() {
-			let t = Math.min(this.l.length - 1, Math.floor((Ie() - Ae) / 50));
+			let t = Math.min(this.l.length - 1, Math.floor((ze() - Ne) / 50));
 			return this.l[t];
 		}
 		u(t) {
 			if ((this.m?.(t), !t.interactionId && t.entryType !== 'first-input')) return;
-			let o = this.l.at(-1),
+			let r = this.l.at(-1),
 				n = this.h.get(t.interactionId);
-			if (n || this.l.length < 10 || t.duration > o.T) {
+			if (n || this.l.length < 10 || t.duration > r.T) {
 				if (
 					(n
 						? t.duration > n.T
 							? ((n.entries = [t]), (n.T = t.duration))
 							: t.duration === n.T && t.startTime === n.entries[0].startTime && n.entries.push(t)
 						: ((n = { id: t.interactionId, entries: [t], T: t.duration }), this.h.set(n.id, n), this.l.push(n)),
-					this.l.sort((r, i) => i.T - r.T),
+					this.l.sort((i, a) => a.T - i.T),
 					this.l.length > 10)
 				) {
-					let r = this.l.splice(10);
-					for (let i of r) this.h.delete(i.id);
+					let i = this.l.splice(10);
+					for (let a of i) this.h.delete(a.id);
 				}
 				this.p?.(n);
 			}
 		}
 	},
-	ye = (e) => {
+	Te = (e) => {
 		let t = globalThis.requestIdleCallback || setTimeout;
 		document.visibilityState === 'hidden'
 			? e()
@@ -313,88 +313,88 @@ var Ne = -1,
 					(e(), removeEventListener('visibilitychange', e, { capture: !0 }));
 				}));
 	},
-	Y = [200, 500],
-	je = (e, t = {}) => {
-		let o = I((t = Object.assign({}, t)), Q),
+	Z = [200, 500],
+	Ve = (e, t = {}) => {
+		let r = A((t = Object.assign({}, t)), Y),
 			n = [],
-			r = [],
-			i = 0,
-			a = new WeakMap(),
+			i = [],
+			a = 0,
+			o = new WeakMap(),
 			s = new WeakMap(),
 			c = !1,
-			l = () => {
-				c || (ye(p), (c = !0));
+			u = () => {
+				c || (Te(f), (c = !0));
 			},
-			p = () => {
-				let u = o.l.map((h) => a.get(h.entries[0])),
-					d = r.length - 50;
-				r = r.filter((h, v) => v >= d || u.includes(h));
+			f = () => {
+				let l = r.l.map((h) => o.get(h.entries[0])),
+					d = i.length - 50;
+				i = i.filter((h, T) => T >= d || l.includes(h));
 				let m = new Set();
-				for (let h of r) {
-					let v = f(h.startTime, h.processingEnd);
-					for (let C of v) m.add(C);
+				for (let h of i) {
+					let T = p(h.startTime, h.processingEnd);
+					for (let C of T) m.add(C);
 				}
 				let y = n.length - 1 - 50;
-				((n = n.filter((h, v) => (h.startTime > i && v > y) || m.has(h))), (c = !1));
+				((n = n.filter((h, T) => (h.startTime > a && T > y) || m.has(h))), (c = !1));
 			};
-		((o.m = (u) => {
-			let d = u.startTime + u.duration,
+		((r.m = (l) => {
+			let d = l.startTime + l.duration,
 				m;
-			i = Math.max(i, u.processingEnd);
-			for (let y = r.length - 1; y >= 0; y--) {
-				let h = r[y];
+			a = Math.max(a, l.processingEnd);
+			for (let y = i.length - 1; y >= 0; y--) {
+				let h = i[y];
 				if (Math.abs(d - h.renderTime) <= 8) {
 					((m = h),
-						(m.startTime = Math.min(u.startTime, m.startTime)),
-						(m.processingStart = Math.min(u.processingStart, m.processingStart)),
-						(m.processingEnd = Math.max(u.processingEnd, m.processingEnd)),
-						m.entries.push(u));
+						(m.startTime = Math.min(l.startTime, m.startTime)),
+						(m.processingStart = Math.min(l.processingStart, m.processingStart)),
+						(m.processingEnd = Math.max(l.processingEnd, m.processingEnd)),
+						m.entries.push(l));
 					break;
 				}
 			}
 			(m ||
-				((m = { startTime: u.startTime, processingStart: u.processingStart, processingEnd: u.processingEnd, renderTime: d, entries: [u] }),
-				r.push(m)),
-				(u.interactionId || u.entryType === 'first-input') && a.set(u, m),
-				l());
+				((m = { startTime: l.startTime, processingStart: l.processingStart, processingEnd: l.processingEnd, renderTime: d, entries: [l] }),
+				i.push(m)),
+				(l.interactionId || l.entryType === 'first-input') && o.set(l, m),
+				u());
 		}),
-			(o.p = (u) => {
-				if (!s.get(u)) {
-					let d = u.entries[0].target;
+			(r.p = (l) => {
+				if (!s.get(l)) {
+					let d = l.entries[0].target;
 					if (d) {
-						let m = t.generateTarget?.(d) ?? Te(d);
-						s.set(u, m);
+						let m = t.generateTarget?.(d) ?? Se(d);
+						s.set(l, m);
 					}
 				}
 			}));
-		let f = (u, d) => {
+		let p = (l, d) => {
 				let m = [];
 				for (let y of n)
-					if (!(y.startTime + y.duration < u)) {
+					if (!(y.startTime + y.duration < l)) {
 						if (y.startTime > d) break;
 						m.push(y);
 					}
 				return m;
 			},
-			g = (u) => {
-				let d = u.entries[0],
-					m = a.get(d),
+			g = (l) => {
+				let d = l.entries[0],
+					m = o.get(d),
 					y = d.processingStart,
 					h = Math.max(d.startTime + d.duration, y),
-					v = Math.min(m.processingEnd, h),
-					C = m.entries.sort((T, D) => T.processingStart - D.processingStart),
-					F = f(d.startTime, v),
-					x = o.h.get(d.interactionId),
-					k = {
-						interactionTarget: s.get(x),
+					T = Math.min(m.processingEnd, h),
+					C = m.entries.sort((v, M) => v.processingStart - M.processingStart),
+					F = p(d.startTime, T),
+					_ = r.h.get(d.interactionId),
+					L = {
+						interactionTarget: s.get(_),
 						interactionType: d.name.startsWith('key') ? 'keyboard' : 'pointer',
 						interactionTime: d.startTime,
 						nextPaintTime: h,
 						processedEventEntries: C,
 						longAnimationFrameEntries: F,
 						inputDelay: y - d.startTime,
-						processingDuration: v - y,
-						presentationDelay: h - v,
+						processingDuration: T - y,
+						presentationDelay: h - T,
 						loadState: J(d.startTime),
 						longestScript: void 0,
 						totalScriptDuration: void 0,
@@ -403,225 +403,228 @@ var Ne = -1,
 						totalUnattributedDuration: void 0,
 					};
 				return (
-					((T) => {
-						if (!T.longAnimationFrameEntries?.length) return;
-						let D = T.interactionTime,
-							ae = T.inputDelay,
-							Le = T.processingDuration,
-							se,
+					((v) => {
+						if (!v.longAnimationFrameEntries?.length) return;
+						let M = v.interactionTime,
+							se = v.inputDelay,
+							Re = v.processingDuration,
 							ce,
+							ue,
 							le = 0,
-							_ = 0,
-							ue = 0,
-							de = 0;
-						for (let $ of T.longAnimationFrameEntries) {
-							_ = _ + $.startTime + $.duration - $.styleAndLayoutStart;
-							for (let L of $.scripts) {
-								let De = L.startTime + L.duration;
-								if (De < D) continue;
-								let V = De - Math.max(D, L.startTime),
-									Fe = L.duration ? (V / L.duration) * L.forcedStyleAndLayoutDuration : 0;
-								((le += V - Fe),
-									(_ += Fe),
-									V > de &&
-										((ce =
-											L.startTime < D + ae ? 'input-delay' : L.startTime >= D + ae + Le ? 'presentation-delay' : 'processing-duration'),
-										(se = L),
-										(de = V)));
+							U = 0,
+							de = 0,
+							fe = 0;
+						for (let V of v.longAnimationFrameEntries) {
+							U = U + V.startTime + V.duration - V.styleAndLayoutStart;
+							for (let P of V.scripts) {
+								let Fe = P.startTime + P.duration;
+								if (Fe < M) continue;
+								let X = Fe - Math.max(M, P.startTime),
+									Be = P.duration ? (X / P.duration) * P.forcedStyleAndLayoutDuration : 0;
+								((le += X - Be),
+									(U += Be),
+									X > fe &&
+										((ue =
+											P.startTime < M + se ? 'input-delay' : P.startTime >= M + se + Re ? 'presentation-delay' : 'processing-duration'),
+										(ce = P),
+										(fe = X)));
 							}
 						}
-						let pe = T.longAnimationFrameEntries.at(-1),
-							Pe = pe ? pe.startTime + pe.duration : 0;
-						(Pe >= D + ae + Le && (ue = T.nextPaintTime - Pe),
-							se && ce && (T.longestScript = { entry: se, subpart: ce, intersectingDuration: de }),
-							(T.totalScriptDuration = le),
-							(T.totalStyleAndLayoutDuration = _),
-							(T.totalPaintDuration = ue),
-							(T.totalUnattributedDuration = T.nextPaintTime - D - le - _ - ue));
-					})(k),
-					Object.assign(u, { attribution: k })
+						let pe = v.longAnimationFrameEntries.at(-1),
+							Me = pe ? pe.startTime + pe.duration : 0;
+						(Me >= M + se + Re && (de = v.nextPaintTime - Me),
+							ce && ue && (v.longestScript = { entry: ce, subpart: ue, intersectingDuration: fe }),
+							(v.totalScriptDuration = le),
+							(v.totalStyleAndLayoutDuration = U),
+							(v.totalPaintDuration = de),
+							(v.totalUnattributedDuration = v.nextPaintTime - M - le - U - de));
+					})(L),
+					Object.assign(l, { attribution: L })
 				);
 			};
-		(A('long-animation-frame', (u) => {
-			((n = n.concat(u)), l());
+		(O('long-animation-frame', (l) => {
+			((n = n.concat(l)), u());
 		}),
-			((u, d = {}) => {
+			((l, d = {}) => {
 				if (!globalThis.PerformanceEventTiming || !('interactionId' in PerformanceEventTiming.prototype)) return;
-				let m = te();
-				ne(() => {
-					Ke();
+				let m = ne();
+				re(() => {
+					Ze();
 					let y,
-						h = E('INP'),
-						v = I(d, Q),
-						C = (x) => {
-							ye(() => {
-								for (let T of x) v.u(T);
-								let k = v.M();
-								k && k.T !== h.value && ((h.value = k.T), (h.entries = k.entries), y());
+						h = w('INP'),
+						T = A(d, Y),
+						C = (_) => {
+							Te(() => {
+								for (let v of _) T.u(v);
+								let L = T.M();
+								L && L.T !== h.value && ((h.value = L.T), (h.entries = L.entries), y());
 							});
 						},
-						F = A('event', C, { durationThreshold: d.durationThreshold ?? 40 });
-					((y = b(u, h, Y, d.reportAllChanges)),
+						F = O('event', C, { durationThreshold: d.durationThreshold ?? 40 });
+					((y = b(l, h, Z, d.reportAllChanges)),
 						F &&
 							(F.observe({ type: 'first-input', buffered: !0 }),
 							m.onHidden(() => {
 								(C(F.takeRecords()), y(!0));
 							}),
 							N(() => {
-								(v.v(), (h = E('INP')), (y = b(u, h, Y, d.reportAllChanges)));
+								(T.v(), (h = w('INP')), (y = b(l, h, Z, d.reportAllChanges)));
 							})));
 				});
-			})((u) => {
-				let d = g(u);
+			})((l) => {
+				let d = g(l);
 				e(d);
 			}, t));
 	},
-	Z = class {
+	ee = class {
 		m;
 		u(t) {
 			this.m?.(t);
 		}
 	},
-	ee = [2500, 4e3],
-	We = (e, t = {}) => {
-		let o = I((t = Object.assign({}, t)), Z),
+	te = [2500, 4e3],
+	Xe = (e, t = {}) => {
+		let r = A((t = Object.assign({}, t)), ee),
 			n = new WeakMap();
-		((o.m = (r) => {
-			let i = r.element;
-			if (i) {
-				let a = t.generateTarget?.(i) ?? Te(i);
-				n.set(r, a);
+		((r.m = (i) => {
+			let a = i.element;
+			if (a) {
+				let o = t.generateTarget?.(a) ?? Se(a);
+				n.set(i, o);
 			}
 		}),
-			((r, i = {}) => {
-				ne(() => {
-					let a = te(),
+			((i, a = {}) => {
+				re(() => {
+					let o = ne(),
 						s,
-						c = E('LCP'),
-						l = I(i, Z),
-						p = (g) => {
-							i.reportAllChanges || (g = g.slice(-1));
-							for (let u of g)
-								(l.u(u), u.startTime < a.firstHiddenTime && ((c.value = Math.max(u.startTime - U(), 0)), (c.entries = [u]), s()));
+						c = w('LCP'),
+						u = A(a, ee),
+						f = (g) => {
+							a.reportAllChanges || (g = g.slice(-1));
+							for (let l of g)
+								(u.u(l), l.startTime < o.firstHiddenTime && ((c.value = Math.max(l.startTime - x(), 0)), (c.entries = [l]), s()));
 						},
-						f = A('largest-contentful-paint', p);
-					if (f) {
-						s = b(r, c, ee, i.reportAllChanges);
+						p = O('largest-contentful-paint', f);
+					if (p) {
+						s = b(i, c, te, a.reportAllChanges);
 						let g = be(() => {
-								(p(f.takeRecords()), f.disconnect(), s(!0));
+								(f(p.takeRecords()), p.disconnect(), s(!0));
 							}),
-							u = (d) => {
-								d.isTrusted && (ye(g), removeEventListener(d.type, u, { capture: !0 }));
+							l = (d) => {
+								d.isTrusted && (Te(g), removeEventListener(d.type, l, { capture: !0 }));
 							};
-						for (let d of ['keydown', 'click', 'visibilitychange']) addEventListener(d, u, { capture: !0 });
+						for (let d of ['keydown', 'click', 'visibilitychange']) addEventListener(d, l, { capture: !0 });
 						N((d) => {
-							((c = E('LCP')),
-								(s = b(r, c, ee, i.reportAllChanges)),
-								Se(() => {
+							((c = w('LCP')),
+								(s = b(i, c, te, a.reportAllChanges)),
+								Ee(() => {
 									((c.value = performance.now() - d.timeStamp), s(!0));
 								}));
 						});
 					}
 				});
-			})((r) => {
-				let i = ((a) => {
-					let s = { timeToFirstByte: 0, resourceLoadDelay: 0, resourceLoadDuration: 0, elementRenderDelay: a.value };
-					if (a.entries.length) {
-						let c = O();
+			})((i) => {
+				let a = ((o) => {
+					let s = { timeToFirstByte: 0, resourceLoadDelay: 0, resourceLoadDuration: 0, elementRenderDelay: o.value };
+					if (o.entries.length) {
+						let c = z();
 						if (c) {
-							let l = c.activationStart || 0,
-								p = a.entries.at(-1),
-								f = p.url && performance.getEntriesByType('resource').filter((m) => m.name === p.url)[0],
-								g = Math.max(0, c.responseStart - l),
-								u = Math.max(g, f ? (f.requestStart || f.startTime) - l : 0),
-								d = Math.min(a.value, Math.max(u, f ? f.responseEnd - l : 0));
+							let u = c.activationStart || 0,
+								f = o.entries.at(-1),
+								p = f.url && performance.getEntriesByType('resource').filter((m) => m.name === f.url)[0],
+								g = Math.max(0, c.responseStart - u),
+								l = Math.max(g, p ? (p.requestStart || p.startTime) - u : 0),
+								d = Math.min(o.value, Math.max(l, p ? p.responseEnd - u : 0));
 							((s = {
-								target: n.get(p),
+								target: n.get(f),
 								timeToFirstByte: g,
-								resourceLoadDelay: u - g,
-								resourceLoadDuration: d - u,
-								elementRenderDelay: a.value - d,
+								resourceLoadDelay: l - g,
+								resourceLoadDuration: d - l,
+								elementRenderDelay: o.value - d,
 								navigationEntry: c,
-								lcpEntry: p,
+								lcpEntry: f,
 							}),
-								p.url && (s.url = p.url),
-								f && (s.lcpResourceEntry = f));
+								f.url && (s.url = f.url),
+								p && (s.lcpResourceEntry = p));
 						}
 					}
-					return Object.assign(a, { attribution: s });
-				})(r);
-				e(i);
+					return Object.assign(o, { attribution: s });
+				})(i);
+				e(a);
 			}, t));
 	},
-	Oe = [800, 1800],
+	_e = [800, 1800],
 	ve = (e) => {
 		document.prerendering
-			? ne(() => ve(e))
+			? re(() => ve(e))
 			: document.readyState !== 'complete'
 				? addEventListener('load', () => ve(e), !0)
 				: setTimeout(e);
 	},
-	$e = (e, t = {}) => {
-		((o, n = {}) => {
-			let r = E('TTFB'),
-				i = b(o, r, Oe, n.reportAllChanges);
+	Ge = (e, t = {}) => {
+		((r, n = {}) => {
+			let i = w('TTFB'),
+				a = b(r, i, _e, n.reportAllChanges);
 			ve(() => {
-				let a = O();
-				a &&
-					((r.value = Math.max(a.responseStart - U(), 0)),
-					(r.entries = [a]),
-					i(!0),
+				let o = z();
+				o &&
+					((i.value = Math.max(o.responseStart - x(), 0)),
+					(i.entries = [o]),
+					a(!0),
 					N(() => {
-						((r = E('TTFB', 0)), (i = b(o, r, Oe, n.reportAllChanges)), i(!0));
+						((i = w('TTFB', 0)), (a = b(r, i, _e, n.reportAllChanges)), a(!0));
 					}));
 			});
-		})((o) => {
-			let n = ((r) => {
-				let i = { waitingDuration: 0, cacheDuration: 0, dnsDuration: 0, connectionDuration: 0, requestDuration: 0 };
-				if (r.entries.length) {
-					let a = r.entries[0],
-						s = a.activationStart || 0,
-						c = Math.max((a.workerStart || a.fetchStart) - s, 0),
-						l = Math.max(a.domainLookupStart - s, 0),
-						p = Math.max(a.connectStart - s, 0),
-						f = Math.max(a.connectEnd - s, 0);
-					i = {
+		})((r) => {
+			let n = ((i) => {
+				let a = { waitingDuration: 0, cacheDuration: 0, dnsDuration: 0, connectionDuration: 0, requestDuration: 0 };
+				if (i.entries.length) {
+					let o = i.entries[0],
+						s = o.activationStart || 0,
+						c = Math.max((o.workerStart || o.fetchStart) - s, 0),
+						u = Math.max(o.domainLookupStart - s, 0),
+						f = Math.max(o.connectStart - s, 0),
+						p = Math.max(o.connectEnd - s, 0);
+					a = {
 						waitingDuration: c,
-						cacheDuration: l - c,
-						dnsDuration: p - l,
-						connectionDuration: f - p,
-						requestDuration: r.value - f,
-						navigationEntry: a,
+						cacheDuration: u - c,
+						dnsDuration: f - u,
+						connectionDuration: p - f,
+						requestDuration: i.value - p,
+						navigationEntry: o,
 					};
 				}
-				return Object.assign(r, { attribution: i });
-			})(o);
+				return Object.assign(i, { attribution: a });
+			})(r);
 			e(n);
 		}, t);
 	};
-var z = {
+var R = {
 		API_URL: 'https://buffer.speedy.site/collect',
 		COOKIE_MAX_AGE: 2592e3,
 		MAX_EVENTS_PER_SESSION: 100,
 		FCP_THRESHOLDS: [1800, 3e3],
 		TTFB_THRESHOLDS: [800, 1800],
+		MAX_RESOURCES_TRACKED: 600,
+		RESOURCE_SLOW_THRESHOLD: 100,
+		MAX_DISTINCT_ERRORS: 20,
 	},
-	Qe = z.FCP_THRESHOLDS,
-	Ye = z.TTFB_THRESHOLDS,
-	M = location.hostname,
-	Xe = document.referrer || null,
-	ke = location.pathname + location.search,
-	P = [],
+	et = R.FCP_THRESHOLDS,
+	tt = R.TTFB_THRESHOLDS,
+	D = location.hostname,
+	Je = document.referrer || null,
+	Le = location.pathname + location.search,
+	E = [],
 	S = null,
-	w = null,
+	k = null,
 	B = null,
-	q = null,
-	Ee = !1,
+	H = null,
+	we = !1,
 	ie = !1;
-function Ze() {
+function nt() {
 	let e = [],
-		t = new PerformanceObserver((o) => {
-			for (let n of o.getEntries()) (e.push({ start: n.startTime, duration: n.duration, name: n.name }), e.length > 200 && e.shift());
+		t = new PerformanceObserver((r) => {
+			for (let n of r.getEntries()) (e.push({ start: n.startTime, duration: n.duration, name: n.name }), e.length > 200 && e.shift());
 		});
 	return (
 		typeof PerformanceObserver < 'u' &&
@@ -630,103 +633,173 @@ function Ze() {
 		{ stop: () => t.disconnect(), get: () => e }
 	);
 }
-var et = Ze();
-function tt() {
+var rt = nt();
+function ot() {
 	let e = [],
-		t = new PerformanceObserver((o) => {
-			for (let n of o.getEntries()) n.hadRecentInput || (e.push(n), e.length > 200 && e.shift());
+		t = new PerformanceObserver((r) => {
+			for (let n of r.getEntries()) n.hadRecentInput || (e.push(n), e.length > 200 && e.shift());
 		});
 	return (
 		PerformanceObserver.supportedEntryTypes?.includes('layout-shift') && t.observe({ type: 'layout-shift', buffered: !0 }),
 		{ buffer: e, stop: () => t.disconnect() }
 	);
 }
-var we = tt();
-function nt(e) {
+var ke = ot();
+function it() {
+	let e = [],
+		t = new PerformanceObserver((r) => {
+			for (let n of r.getEntries()) (e.push(n), e.length > R.MAX_RESOURCES_TRACKED && e.shift());
+		});
+	return (
+		typeof PerformanceObserver < 'u' &&
+			PerformanceObserver.supportedEntryTypes?.includes('resource') &&
+			t.observe({ type: 'resource', buffered: !0 }),
+		{ stop: () => t.disconnect(), get: () => e }
+	);
+}
+var at = it(),
+	q = new Map();
+function Pe(e) {
+	let t = [e.kind, e.message || e.url || '', e.source || '', e.line || 0, e.col || 0].join('|'),
+		r = q.get(t);
+	if (r) {
+		r.count++;
+		return;
+	}
+	q.size >= R.MAX_DISTINCT_ERRORS || q.set(t, { ...e, count: 1, firstSeen: Math.round(performance.now()) });
+}
+function st(e) {
+	let t = e.target;
+	if (t && t !== window && t.tagName) {
+		let r = t.tagName.toLowerCase();
+		if (!['img', 'script', 'link', 'video', 'audio', 'source'].includes(r)) return;
+		Pe({ kind: 'resource-error', tag: r, url: De(t.src || t.href || '') });
+		return;
+	}
+	Pe({
+		kind: 'js-error',
+		message: String(e.message || 'Unknown error').slice(0, 200),
+		source: e.filename ? De(e.filename) : null,
+		line: e.lineno || 0,
+		col: e.colno || 0,
+		stack: e.error?.stack
+			? e.error.stack
+					.split(
+						`
+`,
+					)
+					.slice(0, 3)
+					.join(' | ')
+					.slice(0, 300)
+			: null,
+	});
+}
+function ct(e) {
+	let t = e.reason,
+		r = t instanceof Error ? t.message : String(t ?? 'Unknown rejection');
+	Pe({
+		kind: 'unhandled-rejection',
+		message: r.slice(0, 200),
+		stack:
+			t instanceof Error && t.stack
+				? t.stack
+						.split(
+							`
+`,
+						)
+						.slice(0, 3)
+						.join(' | ')
+						.slice(0, 300)
+				: null,
+	});
+}
+window.addEventListener('error', st, !0);
+window.addEventListener('unhandledrejection', ct);
+function ut(e) {
 	return document.cookie
 		.split('; ')
 		.find((t) => t.startsWith(e + '='))
 		?.split('=')[1];
 }
-function rt(e, t) {
-	document.cookie = `${e}=${t}; path=/; max-age=${z.COOKIE_MAX_AGE}; Secure; SameSite=Strict`;
+function lt(e, t) {
+	document.cookie = `${e}=${t}; path=/; max-age=${R.COOKIE_MAX_AGE}; Secure; SameSite=Strict`;
 }
-var re = nt('sessionId');
-re || ((re = crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`), rt('sessionId', re));
+var oe = ut('sessionId');
+oe || ((oe = crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`), lt('sessionId', oe));
 var Ce = new Map();
-function H(e) {
+function j(e) {
 	if (!e || !e.tagName) return '(unknown)';
 	let t = e.tagName + '|' + (e.id || '') + '|' + (e.className || '');
 	if (Ce.has(t)) return Ce.get(t);
-	function o(i) {
-		if (!i || !i.tagName) return !1;
-		let a = i.tagName.toLowerCase(),
-			s = !!i.id,
-			c = i.className && typeof i.className == 'string' && i.className.trim() !== '',
-			l = ['article', 'main', 'header', 'footer', 'nav', 'section', 'aside'].includes(a);
-		return s || c || l;
+	function r(a) {
+		if (!a || !a.tagName) return !1;
+		let o = a.tagName.toLowerCase(),
+			s = !!a.id,
+			c = a.className && typeof a.className == 'string' && a.className.trim() !== '',
+			u = ['article', 'main', 'header', 'footer', 'nav', 'section', 'aside'].includes(o);
+		return s || c || u;
 	}
 	let n = e;
-	for (; n && n.tagName && !o(n) && n.parentElement; ) n = n.parentElement;
+	for (; n && n.tagName && !r(n) && n.parentElement; ) n = n.parentElement;
 	if (!n || !n.tagName) return '(unknown)';
-	let r = `<${n.tagName.toLowerCase()}`;
+	let i = `<${n.tagName.toLowerCase()}`;
 	return (
-		n.id && (r += ` id="${n.id}"`),
-		n.className && typeof n.className == 'string' && (r += ` class="${n.className}"`),
-		(r += '>'),
-		Ce.set(t, r),
-		r
+		n.id && (i += ` id="${n.id}"`),
+		n.className && typeof n.className == 'string' && (i += ` class="${n.className}"`),
+		(i += '>'),
+		Ce.set(t, i),
+		i
 	);
 }
-function it() {
-	(Ue(ot, { reportAllChanges: !0 }), We(st, { reportAllChanges: !0 }), qe(ct), $e(lt), je(at, { reportAllChanges: !0 }));
+function dt() {
+	(je(ft, { reportAllChanges: !0 }), Xe(mt, { reportAllChanges: !0 }), We(ht), Ge(gt), Ve(pt, { reportAllChanges: !0 }));
 	let e = PerformanceObserver.supportedEntryTypes || [];
 	typeof PerformanceObserver < 'u' && e.includes('event')
-		? new PerformanceObserver((o) => {
-				for (let n of o.getEntries())
+		? new PerformanceObserver((r) => {
+				for (let n of r.getEntries())
 					['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'keydown', 'keyup', 'touchstart', 'touchend'].includes(n.name) &&
 						(!S || n.duration > S.duration) &&
 						(S = n);
 			}).observe({ type: 'event', buffered: !0, durationThreshold: 0 })
 		: (console.warn("PerformanceObserver or 'event' entry type not supported; INP tracking disabled."),
-			W({ type: 'error', message: "PerformanceObserver or 'event' entry type not supported", siteDomain: M }));
+			$({ type: 'error', message: "PerformanceObserver or 'event' entry type not supported", siteDomain: D }));
 }
-function Ve() {
-	it();
+function Ke() {
+	dt();
 }
-document.readyState === 'complete' || document.readyState === 'interactive' ? Ve() : document.addEventListener('DOMContentLoaded', Ve);
+document.readyState === 'complete' || document.readyState === 'interactive' ? Ke() : document.addEventListener('DOMContentLoaded', Ke);
 window.addEventListener('popstate', () => {
-	((Xe = ke), (ke = location.pathname + location.search), (S = null), (w = null));
+	((Je = Le), (Le = location.pathname + location.search), (S = null), (k = null));
 });
-function j(e, t) {
+function W(e, t) {
 	return e <= t[0] ? 'good' : e <= t[1] ? 'needs improvement' : 'poor';
 }
-function W(e) {
-	(P.length >= z.MAX_EVENTS_PER_SESSION && (console.warn('Event queue limit reached; flushing early.'), oe()), P.push(e));
+function $(e) {
+	(E.length >= R.MAX_EVENTS_PER_SESSION && (console.warn('Event queue limit reached; flushing early.'), ae()), E.push(e));
 }
-function ot(e) {
+function ft(e) {
 	let n = (e.attribution?.largestShiftEntries || [])
 		.filter((s) => s?.previousRect && s?.currentRect)
 		.map((s) => {
 			let c = s.previousRect,
-				l = s.currentRect,
-				p = s.sources?.[0]?.node || s.sources?.[0]?.element || null;
-			if (!c || !l) return null;
-			let f = l.x - c.x,
-				g = l.y - c.y,
-				u = c.width * c.height,
-				d = l.width * l.height,
+				u = s.currentRect,
+				f = s.sources?.[0]?.node || s.sources?.[0]?.element || null;
+			if (!c || !u) return null;
+			let p = u.x - c.x,
+				g = u.y - c.y,
+				l = c.width * c.height,
+				d = u.width * u.height,
 				m = window.innerWidth * window.innerHeight || 1,
-				y = Math.sqrt(f * f + g * g);
+				y = Math.sqrt(p * p + g * g);
 			return {
-				element: H(p),
+				element: j(f),
 				shift: {
-					dx: f,
+					dx: p,
 					dy: g,
-					direction: { horizontal: f > 0 ? 'right' : f < 0 ? 'left' : 'none', vertical: g > 0 ? 'down' : g < 0 ? 'up' : 'none' },
+					direction: { horizontal: p > 0 ? 'right' : p < 0 ? 'left' : 'none', vertical: g > 0 ? 'down' : g < 0 ? 'up' : 'none' },
 				},
-				rect: { previous: c, current: l },
-				impact: { areaBefore: u, distanceMoved: y, areaAfter: d, areaDelta: d - u, viewportRatio: u / m },
+				rect: { previous: c, current: u },
+				impact: { areaBefore: l, distanceMoved: y, areaAfter: d, areaDelta: d - l, viewportRatio: l / m },
 			};
 		})
 		.filter(Boolean)
@@ -738,107 +811,107 @@ function ot(e) {
 		)
 		.slice(0, 5);
 	n.length === 0 &&
-		we &&
-		(n = we.buffer
+		ke &&
+		(n = ke.buffer
 			.filter((c) => c.sources?.length > 0 || c.value > 0.001)
 			.map((c) => {
-				let l = c.sources || [],
-					p = l.map((h) => h.node || h.element).filter(Boolean),
-					f = l[0] || null,
-					g = f?.node || f?.element || null,
-					u = f?.previousRect || null,
-					d = f?.currentRect || null,
+				let u = c.sources || [],
+					f = u.map((h) => h.node || h.element).filter(Boolean),
+					p = u[0] || null,
+					g = p?.node || p?.element || null,
+					l = p?.previousRect || null,
+					d = p?.currentRect || null,
 					m = null,
 					y = { areaBefore: null, areaAfter: null, areaDelta: null, distanceMoved: null, viewportRatio: c.value };
-				if (u && d) {
-					let h = d.x - u.x,
-						v = d.y - u.y,
-						C = u.width * u.height,
+				if (l && d) {
+					let h = d.x - l.x,
+						T = d.y - l.y,
+						C = l.width * l.height,
 						F = d.width * d.height,
-						x = window.innerWidth * window.innerHeight || 1,
-						k = Math.sqrt(h * h + v * v);
+						_ = window.innerWidth * window.innerHeight || 1,
+						L = Math.sqrt(h * h + T * T);
 					((m = {
 						dx: h,
-						dy: v,
-						direction: { horizontal: h > 0 ? 'right' : h < 0 ? 'left' : 'none', vertical: v > 0 ? 'down' : v < 0 ? 'up' : 'none' },
+						dy: T,
+						direction: { horizontal: h > 0 ? 'right' : h < 0 ? 'left' : 'none', vertical: T > 0 ? 'down' : T < 0 ? 'up' : 'none' },
 					}),
-						(y = { areaDelta: F - C, distanceMoved: k, viewportRatio: C / x }));
+						(y = { areaDelta: F - C, distanceMoved: L, viewportRatio: C / _ }));
 				}
 				return {
-					element: g ? H(g) : '(unknown)',
-					elements: p.map(H),
+					element: g ? j(g) : '(unknown)',
+					elements: f.map(j),
 					shift: m,
-					rect: { previous: u, current: d },
+					rect: { previous: l, current: d },
 					impact: y,
 					value: c.value,
 					time: c.startTime,
-					sourcesCount: l.length,
+					sourcesCount: u.length,
 				};
 			})
-			.sort((c, l) => l.value - c.value)
+			.sort((c, u) => u.value - c.value)
 			.slice(0, 5));
-	let i = { totalShifts: (we?.buffer || []).length, webVitalsValue: e.value },
-		a = n[0];
-	q = {
+	let a = { totalShifts: (ke?.buffer || []).length, webVitalsValue: e.value },
+		o = n[0];
+	H = {
 		type: 'web-vital',
-		siteDomain: M,
+		siteDomain: D,
 		name: 'CLS',
 		value: e.value,
-		rating: j(e.value, K),
+		rating: W(e.value, Q),
 		attribution: {
 			largestShiftTarget: e.attribution?.largestShiftTarget,
 			largestShiftTime: e.attribution?.largestShiftTime,
 			loadState: e.attribution?.loadState,
 			shifts: n,
 		},
-		debug: i,
+		debug: a,
 	};
 }
-async function at(e) {
-	let t = (l) => {
+async function pt(e) {
+	let t = (u) => {
 			try {
-				return new URL(l).hostname === location.hostname;
+				return new URL(u).hostname === location.hostname;
 			} catch {
 				return !1;
 			}
 		},
 		n = e.startTime - 50,
-		r = e.startTime + e.value + 50,
-		s = et
+		i = e.startTime + e.value + 50,
+		s = rt
 			.get()
-			.filter((l) => {
-				let p = l.start;
-				return l.start + l.duration >= n && p <= r;
+			.filter((u) => {
+				let f = u.start;
+				return u.start + u.duration >= n && f <= i;
 			})
-			.sort((l, p) => p.duration - l.duration)
+			.sort((u, f) => f.duration - u.duration)
 			.slice(0, 10)
-			.map((l) => ({ task: 'main-thread-block', duration: l.duration, start: l.start })),
+			.map((u) => ({ task: 'main-thread-block', duration: u.duration, start: u.start })),
 		c = e.attribution?.longAnimationFrameEntries || [];
-	w = {
+	k = {
 		...e,
 		mainThreadBreakdown: s,
-		loaf: c.map((l) => ({
-			blockingDuration: l.blockingDuration,
-			duration: l.duration,
-			scripts: (l.scripts || [])
-				.map((p) => ({
-					sourceURL: p.sourceURL,
-					isFirstParty: t(p.sourceURL),
-					duration: p.duration,
-					entryType: p.entryType,
-					type: p.invokerType,
-					invoker: p.invoker,
-					sourceCharPosition: p.sourceCharPosition,
-					layoutImpact: p.forcedStyleAndLayoutDuration,
+		loaf: c.map((u) => ({
+			blockingDuration: u.blockingDuration,
+			duration: u.duration,
+			scripts: (u.scripts || [])
+				.map((f) => ({
+					sourceURL: f.sourceURL,
+					isFirstParty: t(f.sourceURL),
+					duration: f.duration,
+					entryType: f.entryType,
+					type: f.invokerType,
+					invoker: f.invoker,
+					sourceCharPosition: f.sourceCharPosition,
+					layoutImpact: f.forcedStyleAndLayoutDuration,
 				}))
-				.sort((p, f) => f.duration - p.duration)
+				.sort((f, p) => p.duration - f.duration)
 				.slice(0, 5),
 		})),
 	};
 }
-function st(e) {
-	let t = j(e.value, ee),
-		o = performance.getEntriesByType('resource'),
+function mt(e) {
+	let t = W(e.value, te),
+		r = performance.getEntriesByType('resource'),
 		n = e.attribution?.target;
 	if (typeof n == 'string')
 		try {
@@ -846,29 +919,29 @@ function st(e) {
 		} catch {
 			n = null;
 		}
-	let r = n?.tagName?.toLowerCase() === 'img' || e.attribution?.url?.match(/\.(jpe?g|png|webp|gif|avif|svg)$/i),
-		i = e.attribution?.url && o.find((p) => p.name === e.attribution.url),
-		a = !i && o.find((p) => p.name.includes(e.attribution?.url?.split('/').pop())),
-		s = i || a,
+	let i = n?.tagName?.toLowerCase() === 'img' || e.attribution?.url?.match(/\.(jpe?g|png|webp|gif|avif|svg)$/i),
+		a = e.attribution?.url && r.find((f) => f.name === e.attribution.url),
+		o = !a && r.find((f) => f.name.includes(e.attribution?.url?.split('/').pop())),
+		s = a || o,
 		c =
-			r && n instanceof HTMLImageElement ? n : (e.attribution?.url && document?.querySelector(`img[src="${e.attribution?.url}"]`)) || null,
-		l = null;
-	if (!r && n instanceof Element) {
-		let p = getComputedStyle(n),
-			f = p.fontFamily?.split(',')[0]?.replace(/["']/g, '').trim(),
+			i && n instanceof HTMLImageElement ? n : (e.attribution?.url && document?.querySelector(`img[src="${e.attribution?.url}"]`)) || null,
+		u = null;
+	if (!i && n instanceof Element) {
+		let f = getComputedStyle(n),
+			p = f.fontFamily?.split(',')[0]?.replace(/["']/g, '').trim(),
 			g = (d) => d.toLowerCase().replace(/[\s_\-\+]+/g, '-'),
-			u = performance.getEntriesByType('resource').filter((d) => g(d.name).includes(g(f)));
-		l = {
-			family: f,
-			weight: p.fontWeight,
-			size: p.fontSize,
-			fontData: u.map((d) => ({ url: d.name ?? null, transferSize: d.transferSize ?? null })),
+			l = performance.getEntriesByType('resource').filter((d) => g(d.name).includes(g(p)));
+		u = {
+			family: p,
+			weight: f.fontWeight,
+			size: f.fontSize,
+			fontData: l.map((d) => ({ url: d.name ?? null, transferSize: d.transferSize ?? null })),
 		};
 	}
 	(!B || e.value > B.value) &&
 		(B = {
 			type: 'web-vital',
-			siteDomain: M,
+			siteDomain: D,
 			name: 'LCP',
 			value: e.value,
 			rating: t,
@@ -879,46 +952,46 @@ function st(e) {
 				elementRenderDelay: e.attribution?.elementRenderDelay,
 				timeToFirstByte: e.attribution?.timeToFirstByte,
 				url: e.attribution?.url,
-				...(r && {
+				...(i && {
 					decodedBodySize: s?.decodedBodySize ?? null,
 					transferSize: s?.transferSize ?? null,
 					width: c?.width ?? null,
 					height: c?.height ?? null,
 					isLazy: c?.classList.contains('lazyloaded') || c?.classList.contains('lazyload'),
 				}),
-				...(l && { font: l }),
+				...(u && { font: u }),
 			},
 		});
 }
-function ct(e) {
-	let t = j(e.value, Qe);
-	W({ type: 'web-vital', siteDomain: M, name: 'FCP', value: e.value, rating: t, attribution: {} });
+function ht(e) {
+	let t = W(e.value, et);
+	$({ type: 'web-vital', siteDomain: D, name: 'FCP', value: e.value, rating: t, attribution: {} });
 }
-function lt(e) {
-	let t = j(e.value, Ye),
-		o = performance.getEntriesByType('navigation')[0];
-	W({
+function gt(e) {
+	let t = W(e.value, tt),
+		r = performance.getEntriesByType('navigation')[0];
+	$({
 		type: 'web-vital',
-		siteDomain: M,
+		siteDomain: D,
 		name: 'TTFB',
 		value: e.value,
 		rating: t,
 		attribution: {
-			dnsLookup: o?.domainLookupEnd - o?.domainLookupStart,
-			tcpConnection: o?.connectEnd - o?.connectStart,
-			responseStart: o?.responseStart,
-			requestStart: o?.requestStart,
+			dnsLookup: r?.domainLookupEnd - r?.domainLookupStart,
+			tcpConnection: r?.connectEnd - r?.connectStart,
+			responseStart: r?.responseStart,
+			requestStart: r?.requestStart,
 		},
 	});
 }
-function ut() {
+function yt() {
 	let e = window.innerWidth;
 	return e <= 768 ? 'mobile' : e <= 1024 ? 'tablet' : 'desktop';
 }
-function dt(e) {
-	let o = (e.serverTiming || []).find((r) => r.name.toLowerCase().includes('cache'));
-	return o?.description
-		? o.description
+function Tt(e) {
+	let r = (e.serverTiming || []).find((i) => i.name.toLowerCase().includes('cache'));
+	return r?.description
+		? r.description
 		: e.transferSize === 0 && e.encodedBodySize === 0
 			? 'memory-cache'
 			: performance.getEntriesByType('navigation')[0]?.type === 'back_forward'
@@ -927,83 +1000,141 @@ function dt(e) {
 					? 'disk-cache'
 					: 'unknown';
 }
-function pt() {
+function vt() {
 	let e = performance.getEntriesByType('navigation')[0];
 	if (!e) return null;
 	let t = e.domainLookupEnd - e.domainLookupStart,
-		o = e.connectEnd - e.connectStart,
+		r = e.connectEnd - e.connectStart,
 		n = e.secureConnectionStart > 0 ? e.connectEnd - e.secureConnectionStart : 0,
-		r = e.requestStart - e.connectEnd,
-		i = e.responseStart - e.startTime,
-		a = e.responseStart - e.requestStart,
-		s = t + o + n,
+		i = e.requestStart - e.connectEnd,
+		a = e.responseStart - e.startTime,
+		o = e.responseStart - e.requestStart,
+		s = t + r + n,
 		c = e.redirectEnd - e.redirectStart,
-		l = dt(e),
-		p = e.serverTiming || [],
-		f = 'good';
+		u = Tt(e),
+		f = e.serverTiming || [],
+		p = 'good';
 	return (
-		s > 300 ? (f = 'poor_connection') : a > 600 ? (f = 'slow_server') : i > 800 && (f = 'high_ttfb'),
+		s > 300 ? (p = 'poor_connection') : o > 600 ? (p = 'slow_server') : a > 800 && (p = 'high_ttfb'),
 		{
 			type: 'navigation-timings',
-			timeToFirstByte: i,
-			backendResponseTime: a,
+			timeToFirstByte: a,
+			backendResponseTime: o,
 			dnsLookup: t,
-			tcpConnectionTime: o,
+			tcpConnectionTime: r,
 			tlsHandshakeTime: n,
-			requestQueueTime: r,
+			requestQueueTime: i,
 			redirectDuration: c,
 			userConnectionTime: s,
-			cacheStatus: l,
-			serverTiming: p,
-			experienceCategory: f,
+			cacheStatus: u,
+			serverTiming: f,
+			experienceCategory: p,
 			transferSize: e.transferSize,
 			encodedBodySize: e.encodedBodySize,
 			decodedBodySize: e.decodedBodySize,
 		}
 	);
 }
-function ft(e) {
+function De(e, t = 120) {
+	if (!e) return '(unknown)';
+	try {
+		let r = new URL(e, location.href),
+			n = r.pathname + (r.search ? r.search.slice(0, 30) : ''),
+			i = r.hostname === location.hostname ? n : r.hostname + n;
+		return i.length > t ? i.slice(0, t) + '\u2026' : i;
+	} catch {
+		return e.length > t ? e.slice(0, t) + '\u2026' : e;
+	}
+}
+function St(e) {
+	if (e.requestStart === 0 && e.responseStart === 0) return { restricted: !0 };
+	let r = (n) => Math.max(0, Math.round(n));
+	return {
+		redirect: r(e.redirectEnd - e.redirectStart),
+		dns: r(e.domainLookupEnd - e.domainLookupStart),
+		connect: r(e.connectEnd - e.connectStart),
+		ssl: e.secureConnectionStart > 0 ? r(e.connectEnd - e.secureConnectionStart) : 0,
+		ttfb: r(e.responseStart - e.requestStart),
+		download: r(e.responseEnd - e.responseStart),
+	};
+}
+function Et(e) {
+	return {
+		url: De(e.name),
+		type: e.initiatorType,
+		start: Math.round(e.startTime),
+		duration: Math.round(e.duration),
+		transferSize: e.transferSize || 0,
+		decodedSize: e.decodedBodySize || 0,
+		cached: e.transferSize === 0 && e.decodedBodySize > 0,
+		protocol: e.nextHopProtocol || null,
+		status: e.responseStatus ?? null,
+		phases: St(e),
+	};
+}
+function bt() {
+	let e = at.get();
+	if (e.length === 0) return null;
+	let t = {},
+		r = 0;
+	for (let a of e) {
+		let o = a.initiatorType || 'other';
+		((t[o] ||= { count: 0, totalTransferSize: 0, totalDuration: 0 }),
+			t[o].count++,
+			(t[o].totalTransferSize += a.transferSize || 0),
+			(t[o].totalDuration += a.duration || 0),
+			(r += a.transferSize || 0));
+	}
+	for (let a in t) t[a].totalDuration = Math.round(t[a].totalDuration);
+	let n = 3 * 60 * 1e3,
+		i = e
+			.filter((a) => a.duration >= R.RESOURCE_SLOW_THRESHOLD && a.startTime <= n)
+			.sort((a, o) => o.duration - a.duration)
+			.map(Et);
+	return { type: 'resource-summary', siteDomain: D, totalRequests: e.length, totalTransferSize: r, byType: t, slowest: i };
+}
+function wt(e) {
 	let t = null;
 	return (
-		e.forEach((o) => {
-			o.scripts?.forEach((n) => {
+		e.forEach((r) => {
+			r.scripts?.forEach((n) => {
 				(!t || n.duration > t.duration) && (t = n);
 			});
 		}),
 		t
 	);
 }
-function mt() {
-	let t = performance.getEntriesByType('paint').find((a) => a.name === 'first-contentful-paint');
+function kt() {
+	let t = performance.getEntriesByType('paint').find((o) => o.name === 'first-contentful-paint');
 	if (!t) return;
-	let o = t.startTime,
-		i = performance
+	let r = t.startTime,
+		a = performance
 			.getEntriesByType('resource')
-			.filter((a) => {
-				if (a.renderBlockingStatus === 'blocking') return !0;
-				let s = a.responseEnd < o,
-					c = a.initiatorType === 'script' && !a.name.includes('async') && !a.name.includes('defer'),
-					l = a.initiatorType === 'link' && (a.name.includes('.css') || a.name.includes('fonts.googleapis.com'));
-				return s && (c || l);
+			.filter((o) => {
+				if (o.renderBlockingStatus === 'blocking') return !0;
+				let s = o.responseEnd < r,
+					c = o.initiatorType === 'script' && !o.name.includes('async') && !o.name.includes('defer'),
+					u = o.initiatorType === 'link' && (o.name.includes('.css') || o.name.includes('fonts.googleapis.com'));
+				return s && (c || u);
 			})
-			.map((a) => {
-				let s = o - a.responseEnd;
+			.map((o) => {
+				let s = r - o.responseEnd;
 				return {
 					type: 'render-blocking-scripts',
-					URL: a.name,
-					'Finish Time': a.responseEnd.toFixed(2) + 'ms',
+					URL: o.name,
+					'Finish Time': o.responseEnd.toFixed(2) + 'ms',
 					'FCP Delay': s > 0 ? s.toFixed(2) + 'ms' : 'Critical Path',
 				};
 			})
-			.sort((a, s) => s['Finish Time'] - a['Finish Time'])
+			.sort((o, s) => parseFloat(s['Finish Time']) - parseFloat(o['Finish Time']))
 			.slice(0, 5);
-	if (i.length > 0) return i;
+	if (a.length > 0) return a;
 	console.log('No render-blocking resources found | by Speedy Site.');
 }
 (function () {
-	W({
+	$({
 		type: 'client-info',
-		deviceType: ut(),
+		deviceType: yt(),
 		deviceMemory: navigator.deviceMemory || 'unknown',
 		hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
 		connection: navigator.connection
@@ -1013,82 +1144,84 @@ function mt() {
 		language: navigator.language,
 	});
 })();
-function ht() {
-	if (q !== null && B !== null && (w !== null || S !== null)) return !0;
+function Ct() {
+	if (H !== null && B !== null && (k !== null || S !== null)) return !0;
 }
-function oe() {
-	if (!(Ee || ie)) {
-		((Ee = !0), (ie = !0));
+function ae() {
+	if (!(we || ie)) {
+		((we = !0), (ie = !0));
 		try {
-			if (w || S) {
-				let o = {},
-					n = w ? w.value : S ? S.duration : null,
-					r = w?.attribution,
-					i = ft(w?.loaf || []);
-				if (w?.attribution)
-					o = {
-						target: r?.target ? H(r.target) : '(unknown)',
-						eventType: r.interactionType,
-						inputDelay: r.inputDelay,
-						processingDuration: r.processingDuration,
-						presentationDelay: r.presentationDelay,
-						mainThreadFunctions: w.mainThreadBreakdown,
-						loaf: i
+			if (k || S) {
+				let n = {},
+					i = k ? k.value : S ? S.duration : null,
+					a = k?.attribution,
+					o = wt(k?.loaf || []);
+				if (k?.attribution)
+					n = {
+						target: a?.target ? j(a.target) : '(unknown)',
+						eventType: a.interactionType,
+						inputDelay: a.inputDelay,
+						processingDuration: a.processingDuration,
+						presentationDelay: a.presentationDelay,
+						mainThreadFunctions: k.mainThreadBreakdown,
+						loaf: o
 							? {
-									sourceURL: i.sourceURL,
-									duration: i.duration,
-									invoker: i.invoker,
-									type: i.type,
-									sourceCharPosition: i.sourceCharPosition,
-									layoutImpact: i.layoutImpact,
-									isFirstParty: i.isFirstParty,
+									sourceURL: o.sourceURL,
+									duration: o.duration,
+									invoker: o.invoker,
+									type: o.type,
+									sourceCharPosition: o.sourceCharPosition,
+									layoutImpact: o.layoutImpact,
+									isFirstParty: o.isFirstParty,
 								}
 							: null,
 					};
 				else if (S && S.target) {
-					let a = S.processingStart - S.startTime,
-						s = S.duration - a;
-					o = {
-						target: S?.target ? H(S.target) : '(unknown)',
+					let s = S.processingStart - S.startTime,
+						c = S.duration - s;
+					n = {
+						target: S?.target ? j(S.target) : '(unknown)',
 						eventType: S.name,
-						inputDelay: a,
-						processingDuration: s,
-						loaf: i
+						inputDelay: s,
+						processingDuration: c,
+						loaf: o
 							? {
-									sourceURL: i.sourceURL,
-									duration: i.duration,
-									invoker: i.invoker,
-									type: i.type,
-									sourceCharPosition: i.sourceCharPosition,
-									layoutImpact: i.layoutImpact,
-									isFirstParty: i.isFirstParty,
+									sourceURL: o.sourceURL,
+									duration: o.duration,
+									invoker: o.invoker,
+									type: o.type,
+									sourceCharPosition: o.sourceCharPosition,
+									layoutImpact: o.layoutImpact,
+									isFirstParty: o.isFirstParty,
 								}
 							: null,
 					};
-				} else o = { target: '(unknown)', eventType: 'unknown' };
-				n !== null && W({ type: 'web-vital', siteDomain: M, name: 'INP', value: n, rating: j(n, Y), attribution: o });
+				} else n = { target: '(unknown)', eventType: 'unknown' };
+				i !== null && $({ type: 'web-vital', siteDomain: D, name: 'INP', value: i, rating: W(i, Z), attribution: n });
 			}
-			(q && P.push(q), B && P.push(B));
-			let e = pt();
-			e != null && P.push(e);
-			let t = mt();
-			if ((t && P.push(t), P.length > 0)) {
-				let o = JSON.stringify({ sessionId: re, siteDomain: M, currentPage: ke, previousPage: Xe, data: [...P] });
+			(H && E.push(H), B && E.push(B));
+			let e = vt();
+			e != null && E.push(e);
+			let t = kt();
+			t && E.push(t);
+			let r = bt();
+			if ((r && E.push(r), q.size > 0 && E.push({ type: 'errors', siteDomain: D, errors: [...q.values()] }), E.length > 0)) {
+				let n = JSON.stringify({ sessionId: oe, siteDomain: D, currentPage: Le, previousPage: Je, data: [...E] });
 				navigator.sendBeacon
-					? navigator.sendBeacon(z.API_URL, new Blob([o], { type: 'application/json' }))
-					: fetch(z.API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: o, keepalive: !0 }).catch(() => {});
+					? navigator.sendBeacon(R.API_URL, new Blob([n], { type: 'application/json' }))
+					: fetch(R.API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: n, keepalive: !0 }).catch(() => {});
 			}
 		} finally {
-			((P.length = 0), (q = null), (B = null), (Ee = !1));
+			((E.length = 0), (H = null), (B = null), (we = !1));
 		}
 	}
 }
 setTimeout(() => {
-	document.visibilityState === 'visible' && ht() && oe();
-}, 15e3);
+	document.visibilityState === 'visible' && Ct() && ae();
+}, 2e4);
 window.addEventListener('pagehide', () => {
-	ie || oe();
+	ie || ae();
 });
 document.addEventListener('visibilitychange', () => {
-	document.visibilityState === 'hidden' && !ie && oe();
+	document.visibilityState === 'hidden' && !ie && ae();
 });

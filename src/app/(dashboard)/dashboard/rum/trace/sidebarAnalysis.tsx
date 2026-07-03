@@ -1,13 +1,12 @@
 "use client";
 
-import { NetworkServerSchema } from "@/app/api";
 import { CacheHitMiss } from "@/app/api/network-and-server/cache-hit-miss/route";
 import { StarsIcon, Zap } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
 
 interface SidebarAnalysisProps {
-  networkServerData: NetworkServerSchema;
+  networkServerData: any;
   cacheHitMissData: CacheHitMiss[];
 }
 
@@ -19,6 +18,13 @@ interface AnalysisProps {
   ttfb_75: number;
 }
 
+type AnalysisData = {
+  url: string;
+  startTime: number | null;
+  duration: number | null;
+  type: string;
+};
+
 export default function SidebarAnalysis({
   cacheHitMissData,
   networkServerData,
@@ -27,6 +33,7 @@ export default function SidebarAnalysis({
 
   const [analysisResult, setAnalysisResult] = useState<string>("");
   const [analyzing, setAnalyzing] = useState<boolean>(false);
+  const [assets, setAssets] = useState<any[]>([]);
   const siteRef = useRef<string>("");
 
   useEffect(() => {
@@ -59,13 +66,13 @@ export default function SidebarAnalysis({
 
     const filteredTtfbData =
       networkServerData?.filter(
-        (x) =>
+        (x: { ttfb: null | undefined }) =>
           x.ttfb !== null && x.ttfb !== undefined && typeof x.ttfb === "number",
       ) || [];
 
     const ttfb_75 = percentile(
       75,
-      filteredTtfbData.map((x) => x.ttfb),
+      filteredTtfbData.map((x: { ttfb: any }) => x.ttfb),
     );
 
     return {
@@ -82,8 +89,58 @@ export default function SidebarAnalysis({
       ?.split("\n")
       .map((l) => l.trim())
       .filter(Boolean)
-      .map((l) => l.replace(/^•\s?/, ""));
-  }, [analysisResult]);
+      .map((l) => l.replace(/^•\s?/, ""))
+      .map((l) => {
+        let result = l;
+        assets.forEach((a) => {
+          const host = safeHostname(a.url);
+          if (
+            host &&
+            result.includes(host) &&
+            !result.includes(`\`${host}\``)
+          ) {
+            result = result.replaceAll(host, `\`${host}\``);
+          }
+        });
+        return result;
+      });
+  }, [analysisResult, assets]);
+
+  useEffect(() => {
+    if (networkServerData.length === 0) return;
+
+    const seen = new Set<string>();
+    const collected: AnalysisData[] = [];
+
+    networkServerData.forEach((x: any) => {
+      const asset = x.har_data.slowest;
+
+      for (let i = 0; i < asset.length; i++) {
+        const item = asset[i];
+
+        if (!item?.url) continue;
+
+        const hostname: string | null = safeHostname(item.url);
+
+        if (
+          hostname !== selectedSite &&
+          item?.start < 1500 &&
+          item?.duration > 500 &&
+          !seen.has(hostname !== null ? hostname : "")
+        ) {
+          seen.add(hostname !== null ? hostname : "");
+          collected.push({
+            url: item.url,
+            duration: item.duration,
+            startTime: item.start,
+            type: item.type,
+          });
+        }
+      }
+    });
+
+    setAssets(collected);
+  }, [selectedSite, networkServerData]);
 
   return (
     <>
@@ -166,17 +223,17 @@ export default function SidebarAnalysis({
             />
             {analyzing && analysisResult.length === 0
               ? "Analyzing..."
-              : "Analyze Latest Network Experience"}
+              : "Analyze Assets That Can Be Optimized"}
           </button>
 
           {parsedLines.length > 0 && (
-            <div className="space-y-2 mt-3">
+            <div className="space-y-2 mt-3 overflow-hidden">
               {parsedLines.map((line, i) => (
                 <div
                   key={i}
-                  className="p-2 rounded-sm border border-primary/10 bg-primary/5 text-sm text-primary/80"
+                  className="p-2 rounded-sm border border-primary/10 text-sm text-primary/80"
                 >
-                  {line}
+                  {renderLineWithCode(line)}
                 </div>
               ))}
             </div>
@@ -190,7 +247,7 @@ export default function SidebarAnalysis({
     networkServerData,
     analysisProps,
   }: {
-    networkServerData: NetworkServerSchema;
+    networkServerData: any;
     analysisProps: AnalysisProps;
   }) {
     const navigation_timing_data = [...networkServerData].map(
@@ -212,7 +269,7 @@ export default function SidebarAnalysis({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            data: { navigation_timing_data, analysisProps },
+            data: assets,
           }),
         });
 
@@ -287,3 +344,75 @@ const percentile = (p: number, values: number[]) => {
   const p75_index = Math.ceil((p / 100) * sorted.length) - 1; // p75 formula
   return sorted[Math.max(0, p75_index)];
 };
+
+function safeHostname(url: string): string | null {
+  if (!url) {
+    return null;
+  } else if (url.includes("rum.speedy.site/rum.js")) {
+    return null;
+  } else if (url.startsWith("//")) {
+    url = `https:${url}`;
+  } else if (url.startsWith("/")) {
+    return null;
+  }
+
+  try {
+    const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    return new URL(normalized).hostname;
+  } catch {
+    return null;
+  }
+}
+
+function renderLineWithCode(line: string) {
+  const parts = line.split(/(`[^`]+`)/g);
+
+  return parts.flatMap((part, idx) => {
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 1) {
+      return (
+        <code
+          key={`b-${idx}`}
+          className="bg-muted text-foreground px-1.5 py-0.5 rounded text-xs font-mono"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+
+    const domainRegex = /\b([a-z0-9-]+\.)+[a-z]{2,}(\/[^\s]*)?\b/gi;
+    const matches = [...part.matchAll(domainRegex)];
+
+    if (matches.length === 0) {
+      return <span key={`s-${idx}`}>{part}</span>;
+    }
+
+    const result: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    matches.forEach((m, mIdx) => {
+      const matchStart = m.index ?? 0;
+      if (matchStart > lastIndex) {
+        result.push(
+          <span key={`t-${idx}-${mIdx}`}>
+            {part.slice(lastIndex, matchStart)}
+          </span>,
+        );
+      }
+      result.push(
+        <code
+          key={`d-${idx}-${mIdx}`}
+          className="bg-muted text-foreground px-1.5 py-0.5 rounded text-xs font-mono"
+        >
+          {m[0]}
+        </code>,
+      );
+      lastIndex = matchStart + m[0].length;
+    });
+
+    if (lastIndex < part.length) {
+      result.push(<span key={`e-${idx}`}>{part.slice(lastIndex)}</span>);
+    }
+
+    return result;
+  });
+}

@@ -1,20 +1,17 @@
 "use client";
 
-import { ServerNetworkProps } from "@/app/api/network-and-server/get/route";
 import { useSiteContext } from "../../siteContext";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { cacheKeyPrefix } from "@/data-types";
+import { CachePrefix } from "@/data-types";
 import { CustomCalendar, Title } from "@/components/theme";
 import { CacheHitMiss } from "@/app/api/network-and-server/cache-hit-miss/route";
 import { LoaderCircle } from "lucide-react";
 import { Logs, OriginPerformanceChart, SidebarAnalysis } from ".";
-import { NetworkServerSchema } from "@/app/api";
 
 export default function Main() {
   const { selectedSite, startDate, endDate } = useSiteContext();
-  const [serverNetworkData, setServerNetworkData] =
-    useState<NetworkServerSchema>([]);
+  const [serverNetworkData, setServerNetworkData] = useState<any>([]);
   const [cacheHitMissData, setCacheHitMissData] = useState<CacheHitMiss[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [lastIndex] = useState<{
@@ -27,12 +24,12 @@ export default function Main() {
     if (!selectedSite) return;
 
     cleanExpiredCache({
-      prefix: cacheKeyPrefix["NETWORK-SERVER"],
+      prefix: CachePrefix["NETWORK-SERVER"],
       session_Storage: false,
     });
 
     cleanExpiredCache({
-      prefix: cacheKeyPrefix["CACHE-HIT-MISS"],
+      prefix: CachePrefix["CACHE-HIT-MISS"],
       session_Storage: false,
     });
 
@@ -44,13 +41,15 @@ export default function Main() {
 
         await getCacheHitMiss();
 
-        await getServerNetworkTimings({
-          domain: selectedSite,
-          last_created_at: lastIndex.last_created_at,
-          last_id: lastIndex.last_id,
-          p_limit: 30,
-          cacheKey: cacheKeyPrefix["NETWORK-SERVER"],
-        });
+        // await getServerNetworkTimings({
+        //   domain: selectedSite,
+        //   last_created_at: lastIndex.last_created_at,
+        //   last_id: lastIndex.last_id,
+        //   p_limit: 30,
+        //   cacheKey: CachePrefix["NETWORK-SERVER"],
+        // });
+
+        await getLatestVisits();
       } catch (error) {
         console.error(error);
       } finally {
@@ -103,7 +102,7 @@ export default function Main() {
       <div className="py-4 px-5 grid grid-cols-1 md:grid-cols-7 gap-4">
         <div className="col-span-5">
           {loading ? (
-            <div className="h-75 flex items-center justify-center mx-12.5 my-10 bg-primary/5 animate-pulse">
+            <div className="h-68 flex items-center justify-center mx-12.5 bg-primary/1 animate-pulse">
               <LoaderCircle
                 size={30}
                 className="animate-spin text-primary/20"
@@ -116,7 +115,7 @@ export default function Main() {
           )}
 
           {/* log section */}
-          <Logs logData={serverNetworkData && serverNetworkData} />
+          <Logs logData={serverNetworkData ?? []} />
         </div>
         <div className="col-span-2 sticky self-start top-20">
           <SidebarAnalysis
@@ -128,54 +127,30 @@ export default function Main() {
     </>
   );
 
-  /**
-   *
-   * @param props T & { domain: string; last_created_at?: string | null; last_id?: number | null; p_limit?: number;}
-   * @returns server network data for analysis
-   */
-  async function getServerNetworkTimings<T extends Record<string, unknown>>(
-    props: T & ServerNetworkProps,
-  ) {
-    const { domain, last_created_at, last_id, p_limit, ...extra } = props; // we can now pass extra data here
-
-    const cacheKey = (extra as any).cacheKey;
-
-    if (!domain || !p_limit || !cacheKey) return;
+  async function getLatestVisits() {
+    if (!selectedSite) return;
 
     try {
-      const { response } = await cachedData({
-        fn: async () => {
-          const res = await fetch("/api/network-and-server/get", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              domain: domain,
-              last_created_at: last_created_at,
-              last_id: last_id,
-              p_limit: p_limit,
-            } as ServerNetworkProps),
-          });
-
-          const body: any = await res.json();
-
-          if (!res.ok) {
-            setLoading(false);
-            throw new Error(body.message);
-          }
-
-          return body.x;
+      const res = await fetch("/api/network-and-server/latest-requests", {
+        headers: {
+          "Content-Type": "application/json",
+          domain: selectedSite,
+          range: "30",
         },
-        key: `${cacheKey}:${selectedSite}`,
-        session_Storage: false,
-        ttl: 5 * 60 * 1000,
       });
 
-      setServerNetworkData(response);
+      if (!res.ok) {
+        const errorMessage: any = await res.json();
+        throw new Error(errorMessage.message);
+      }
+
+      const body = await res.json();
+      setServerNetworkData(body);
     } catch (error: any) {
       setServerNetworkData([]);
-      console.error("Failed to fetch server network data: ", error);
+      console.error(
+        error.message ?? "Something went wrong fetching latest requests",
+      );
     }
   }
 
@@ -188,7 +163,7 @@ export default function Main() {
     const s = startDate.toISOString().split("T")[0];
     const e = endDate.toISOString().split("T")[0];
 
-    const key = `cacheKeyPrefix["CACHE-HIT-MISS"]:${selectedSite}-${s}-${e}`;
+    const key = `${CachePrefix["CACHE-HIT-MISS"]}:${selectedSite}-${s}-${e}`;
 
     try {
       const { response } = await cachedData({

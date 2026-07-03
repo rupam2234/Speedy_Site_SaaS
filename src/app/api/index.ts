@@ -12,5 +12,6 @@ export type {
     Rum_history,
     SpeedySiteTickets,
     Subscriptions,
-    TicketMessages
+    TicketMessages,
+    FontMetrics
 } from "./helpers/dataTypes"

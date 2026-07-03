@@ -10,30 +10,32 @@ export async function POST(req: NextRequest) {
   const prompt = `
     You are a senior WordPress website performance expert.
 
-    Explain website performance using navigation timing data.
+    We are sending some of the assets that are 3rd party and starts loading in first 1500 milliseconds and can be optimized to improve speed for core page components.
+
+
+    important: 
+    - You don't have to explain timings, just fixes... simple to follow
+    - cross check if delaying a certain script or file could impact functionality
+
 
     Rules:
     - Use only plain English.
-    - return should mention that 'based on recent request timings'
+    - return should mention that 'based on asset data'
     - Do not use markdown, bullet points, numbers, emojis, or special characters.
-    - Keep language simple and provide fixes with steps for WordPress.
+    - Keep language simple and provide fixes with steps for WordPress using WP Rocket.
     - Use paragraphs
     - Do not expose internal keys & variables, important!
     - Use abbreviations wherever possible
 
-    Sentence rules:
-    - Overall performance in simple terms (fast, normal, or slow and why). Don't mansplain.
-    - Main bottleneck if any, explained in user friendly language (for example slow server response, slow loading connection, or inefficient caching).
-    - Use your reasoning to understand whether CDN is configured based on cache hit and miss data and then suggest doable (non generic) enhancements. But careful, your suggestions should not break user's website.
-    
-    Do not add extra sentences or extra detail beyond these three.
+    Fix rules:
+    - Let user know what to do with which assets based on asset data type url: string; startTime: number | null; duration: number | null; type: string;
+    - it's best if you can recommand the optimizations using WP rocket's latest update
+    - or other WordPress plugins if recommanded feature is not available on WP rocket
+    - Also the fixes should be like : Go to WP rocket or WP cache > add xyz to your WP rocket abc settings
 
-    Navigation Timing Data:
-    ${JSON.stringify(data.navigation_timing_data)}
+    Do not add extra sentences or extra detail beyond.
 
-    Additional Context:
-    ${JSON.stringify(data.analysisProps)}
-    `;
+     Assets: ${JSON.stringify(data)}`;
 
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -57,7 +59,6 @@ export async function POST(req: NextRequest) {
     return new NextResponse(res.body, {
       headers: {
         "Content-Type": "text/event-stream",
-        // "Cache-Control": "no-cache",
         Connection: "keep-alive",
       },
     });
@@ -68,3 +69,5 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+

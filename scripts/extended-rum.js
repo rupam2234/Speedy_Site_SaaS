@@ -9,73 +9,238 @@ import {
   LCPThresholds,
 } from "web-vitals/attribution";
 
-/* =========================================================
-   1. CONFIGURATION & STATE
-   ========================================================= */
 const CONFIG = {
   API_URL: "https://buffer.speedy.site/collect",
-  COOKIE_MAX_AGE: 2592000,
+  COOKIE_MAX_AGE: 2592000, // 30 days
   MAX_EVENTS_PER_SESSION: 100,
   FCP_THRESHOLDS: [1800, 3000],
   TTFB_THRESHOLDS: [800, 1800],
+
+  // Resource waterfall + error compaction
+  MAX_RESOURCES_TRACKED: 600, // raw buffer cap, not what gets sent
+  RESOURCE_SLOW_THRESHOLD: 100, // ms — only individually report resources slower than this
+  MAX_DISTINCT_ERRORS: 20, // distinct error buckets kept per session (storms get counted, not duplicated)
 };
 
+const FCPThresholds = CONFIG.FCP_THRESHOLDS;
+const TTFBThresholds = CONFIG.TTFB_THRESHOLDS;
 const siteDomain = location.hostname;
+
 let previousPage = document.referrer || null;
 let currentPage = location.pathname + location.search;
-let sessionId = null;
 
 const batchedData = [];
-const latestMetrics = { INP: null };
-const elementSummaryCache = new WeakMap();
 
 let maxCustomEntry = null;
 let webVitalsINP = null;
+
 let worstLCP = null;
 let worstCLS = null;
+
 let isFlushing = false;
 let hasFlushed = false;
 
-// for main thread profiling (INP)
-let profiler;
-if ("Profiler" in window) {
-  try {
-    profiler = new Profiler({ sampleInterval: 10, maxBufferSize: 10000 });
-  } catch (e) {
-    console.warn("JS Profiling is disabled by Document Policy.");
+function createLongTaskTracker() {
+  const buffer = [];
+
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      buffer.push({
+        start: entry.startTime,
+        duration: entry.duration,
+        name: entry.name,
+      });
+
+      if (buffer.length > 200) buffer.shift();
+    }
+  });
+
+  if (
+    typeof PerformanceObserver !== "undefined" &&
+    PerformanceObserver.supportedEntryTypes?.includes("longtask")
+  ) {
+    observer.observe({ type: "longtask", buffered: true });
   }
+
+  return {
+    stop: () => observer.disconnect(),
+    get: () => buffer,
+    // flush: () => {
+    //   const now = performance.now();
+    //   const out = buffer.filter((t) => now - t.start < 5000);
+    //   return out;
+    // },
+  };
 }
 
-/* =========================================================
-   2. ADMIN EXCLUSION
-   ========================================================= */
-// function shouldExcludeUser() {
-//   const path = window.location.pathname;
+const longTaskTracker = createLongTaskTracker();
 
-//   // Check URL paths
-//   if (
-//     path.includes("/wp-admin/") ||
-//     path.includes("/wp-login.php") ||
-//     path.includes("/admin")
-//   )
-//     return true;
+function createCLSObserver() {
+  const buffer = [];
+  // let worst = null;
 
-//   // Check preview mode
-//   if (window.location.search.includes("preview=true")) return true;
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      if (entry.hadRecentInput) continue;
 
-//   // Check for presence of Admin Bar or body classes (WordPress specific)
-//   const isAdmin = !!(
-//     document.getElementById("wpadminbar") ||
-//     document.body?.classList.contains("wp-admin") ||
-//     document.body?.classList.contains("logged-in")
-//   );
+      buffer.push(entry);
+      if (buffer.length > 200) buffer.shift();
 
-//   return isAdmin;
+      // if (!worst || entry.value > worst.value) {
+      //   worst = entry;
+      // }
+    }
+  });
+
+  if (PerformanceObserver.supportedEntryTypes?.includes("layout-shift")) {
+    observer.observe({ type: "layout-shift", buffered: true });
+  }
+
+  return {
+    buffer,
+    // getWorst: () => worst,
+    // flush: () => {
+    //   const out = buffer.slice();
+    //   buffer.length = 0;
+    //   return out;
+    // },
+    stop: () => observer.disconnect(),
+  };
+}
+
+const clsObserver = createCLSObserver();
+
+// function computeSessionCLS(entries) {
+//   let maxCLS = 0;
+//   let sessionValue = 0;
+//   let sessionStartTime = 0;
+//   let lastEntryTime = 0;
+
+//   for (const entry of entries) {
+//     if (
+//       sessionValue === 0 ||
+//       entry.startTime - lastEntryTime > 1000 ||
+//       entry.startTime - sessionStartTime > 5000
+//     ) {
+//       sessionValue = entry.value;
+//       sessionStartTime = entry.startTime;
+//     } else {
+//       sessionValue += entry.value;
+//     }
+
+//     lastEntryTime = entry.startTime;
+//     maxCLS = Math.max(maxCLS, sessionValue);
+//   }
+
+//   return maxCLS;
 // }
 
-/* =========================================================
-   3. COOKIE & SESSION MANAGEMENT
-   ========================================================= */
+function createResourceTracker() {
+  const buffer = [];
+
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      buffer.push(entry);
+      if (buffer.length > CONFIG.MAX_RESOURCES_TRACKED) buffer.shift();
+    }
+  });
+
+  if (
+    typeof PerformanceObserver !== "undefined" &&
+    PerformanceObserver.supportedEntryTypes?.includes("resource")
+  ) {
+    observer.observe({ type: "resource", buffered: true });
+  }
+
+  return {
+    stop: () => observer.disconnect(),
+    get: () => buffer,
+  };
+}
+
+const resourceTracker = createResourceTracker();
+
+// ---- Error tracking (JS errors, unhandled rejections, failed resource loads) ----
+// Deduped into buckets so a throwing loop or a flaky CDN can't blow up the payload —
+// repeats increment `count` on the existing bucket instead of creating new entries.
+
+const errorBuckets = new Map();
+
+function addErrorBucket(payload) {
+  const key = [
+    payload.kind,
+    payload.message || payload.url || "",
+    payload.source || "",
+    payload.line || 0,
+    payload.col || 0,
+  ].join("|");
+
+  const existing = errorBuckets.get(key);
+  if (existing) {
+    existing.count++;
+    return;
+  }
+
+  if (errorBuckets.size >= CONFIG.MAX_DISTINCT_ERRORS) return;
+
+  errorBuckets.set(key, {
+    ...payload,
+    count: 1,
+    firstSeen: Math.round(performance.now()),
+  });
+}
+
+function handleGlobalError(event) {
+  const target = event.target;
+
+  // Resource load failures (img/script/link/etc.) fire 'error' too, but with
+  // event.target set to the failing element instead of window — they don't
+  // bubble, which is why this listener is registered with capture: true.
+  if (target && target !== window && target.tagName) {
+    const tag = target.tagName.toLowerCase();
+    if (!["img", "script", "link", "video", "audio", "source"].includes(tag))
+      return;
+
+    addErrorBucket({
+      kind: "resource-error",
+      tag,
+      url: truncateUrl(target.src || target.href || ""),
+    });
+    return;
+  }
+
+  addErrorBucket({
+    kind: "js-error",
+    message: String(event.message || "Unknown error").slice(0, 200),
+    source: event.filename ? truncateUrl(event.filename) : null,
+    line: event.lineno || 0,
+    col: event.colno || 0,
+    stack: event.error?.stack
+      ? event.error.stack.split("\n").slice(0, 3).join(" | ").slice(0, 300)
+      : null,
+  });
+}
+
+function handleUnhandledRejection(event) {
+  const reason = event.reason;
+  const message =
+    reason instanceof Error
+      ? reason.message
+      : String(reason ?? "Unknown rejection");
+
+  addErrorBucket({
+    kind: "unhandled-rejection",
+    message: message.slice(0, 200),
+    stack:
+      reason instanceof Error && reason.stack
+        ? reason.stack.split("\n").slice(0, 3).join(" | ").slice(0, 300)
+        : null,
+  });
+}
+
+window.addEventListener("error", handleGlobalError, true);
+window.addEventListener("unhandledrejection", handleUnhandledRejection);
+
 function getCookie(name) {
   return document.cookie
     .split("; ")
@@ -87,22 +252,26 @@ function setCookie(name, value) {
   document.cookie = `${name}=${value}; path=/; max-age=${CONFIG.COOKIE_MAX_AGE}; Secure; SameSite=Strict`;
 }
 
-function initSession() {
-  sessionId = getCookie("sessionId");
-  if (!sessionId) {
-    sessionId = crypto.randomUUID
-      ? crypto.randomUUID()
-      : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    setCookie("sessionId", sessionId);
-  }
+let sessionId = getCookie("sessionId");
+if (!sessionId) {
+  sessionId = crypto.randomUUID
+    ? crypto.randomUUID()
+    : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`; // Fallback for older browsers
+  setCookie("sessionId", sessionId);
 }
 
-/* =========================================================
-   4. DOM & ATTRIBUTION HELPERS (Logic Fully Intact)
-   ========================================================= */
+const elementSummaryCache = new Map();
+
 function summarizeElement(el) {
-  if (!el || !el.tagName) return "(unknown)";
-  if (elementSummaryCache.has(el)) return elementSummaryCache.get(el);
+  if (!el || !el.tagName) {
+    return "(unknown)";
+  }
+
+  const key = el.tagName + "|" + (el.id || "") + "|" + (el.className || "");
+
+  if (elementSummaryCache.has(key)) {
+    return elementSummaryCache.get(key);
+  }
 
   function isSignificantElement(element) {
     if (!element || !element.tagName) return false;
@@ -134,7 +303,9 @@ function summarizeElement(el) {
     currentEl = currentEl.parentElement;
   }
 
-  if (!currentEl || !currentEl.tagName) return "(unknown)";
+  if (!currentEl || !currentEl.tagName) {
+    return "(unknown)";
+  }
 
   let summary = `<${currentEl.tagName.toLowerCase()}`;
   if (currentEl.id) summary += ` id="${currentEl.id}"`;
@@ -142,145 +313,295 @@ function summarizeElement(el) {
     summary += ` class="${currentEl.className}"`;
   summary += ">";
 
-  elementSummaryCache.set(el, summary);
+  elementSummaryCache.set(key, summary);
+
   return summary;
 }
 
-function getDeviceType() {
-  const w = window.innerWidth;
-  return w <= 768 ? "mobile" : w <= 1024 ? "tablet" : "desktop";
-}
+function initializeWebVitals() {
+  onCLS(handleCLS, { reportAllChanges: true });
+  onLCP(handleLCP, { reportAllChanges: true });
+  onFCP(handleFCP);
+  onTTFB(handleTTFB);
+  onINP(handleINP, { reportAllChanges: true });
 
-function collectPerformanceMetrics() {
-  const nav = performance.getEntriesByType("navigation")[0];
+  const supported = PerformanceObserver.supportedEntryTypes || [];
 
-  if (!nav) return null;
-
-  const dnsLookup = nav.domainLookupEnd - nav.domainLookupStart;
-  const tcpConnectionTime = nav.connectEnd - nav.connectStart;
-  const requestQueueTime = nav.requestStart - nav.connectEnd;
-  const timeToFirstByte = nav.responseStart - nav.requestStart;
-
-  const userConnectionTime = dnsLookup + tcpConnectionTime;
-
-  // Estimated backend/CDN processing time
-  const serverProcessingTime = Math.max(
-    0,
-    timeToFirstByte - userConnectionTime - requestQueueTime,
-  );
-
-  // Optional cache signal
-  let cacheStatus = null;
-  const serverTiming = nav.serverTiming || [];
-  const cacheEntry = serverTiming.find((x) => x.name === "cache");
-  if (cacheEntry?.description) {
-    cacheStatus = cacheEntry.description;
-  }
-
-  // Experience classification
-  let experienceCategory = "good";
-  if (userConnectionTime > 200) {
-    experienceCategory = "poor_connection";
-  } else if (timeToFirstByte > 600) {
-    experienceCategory = "slow_server";
-  }
-
-  return {
-    type: "navigation-timings",
-    timeToFirstByte,
-    serverProcessingTime,
-    userConnectionTime,
-    dnsLookup,
-    tcpConnectionTime,
-    requestQueueTime,
-    experienceCategory,
-    cacheStatus,
-  };
-}
-
-function getTopBlockingScript(loafEntries) {
-  let maxScript = null;
-
-  loafEntries.forEach((loaf) => {
-    loaf.scripts?.forEach((script) => {
-      if (!maxScript || script.duration > maxScript.duration) {
-        maxScript = script;
+  if (
+    typeof PerformanceObserver !== "undefined" &&
+    supported.includes("event")
+  ) {
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (
+          [
+            "click",
+            "mousedown",
+            "mouseup",
+            "pointerdown",
+            "pointerup",
+            "keydown",
+            "keyup",
+            "touchstart",
+            "touchend",
+          ].includes(entry.name)
+        ) {
+          if (!maxCustomEntry || entry.duration > maxCustomEntry.duration) {
+            maxCustomEntry = entry;
+          }
+        }
       }
     });
-  });
 
-  return maxScript;
+    observer.observe({
+      type: "event",
+      buffered: true,
+      durationThreshold: 0,
+    });
+  } else {
+    console.warn(
+      "PerformanceObserver or 'event' entry type not supported; INP tracking disabled.",
+    );
+    queueEvent({
+      type: "error",
+      message: "PerformanceObserver or 'event' entry type not supported",
+      siteDomain,
+    });
+  }
 }
 
-function getNetworkScore(conn) {
-  if (!conn) return "unknown";
-  if (conn.effectiveType === "4g" && conn.downlink > 10) return "fast";
-  if (conn.effectiveType === "3g") return "moderate";
-  return "slow";
+function init() {
+  initializeWebVitals();
 }
 
-/* =========================================================
-   5. WEB VITAL HANDLERS (Logic Fully Intact)
-   ========================================================= */
+if (
+  document.readyState === "complete" ||
+  document.readyState === "interactive"
+) {
+  init();
+} else {
+  document.addEventListener("DOMContentLoaded", init);
+}
+
+// Reset INP data on SPA navigation
+window.addEventListener("popstate", () => {
+  previousPage = currentPage;
+  currentPage = location.pathname + location.search;
+
+  maxCustomEntry = null;
+  webVitalsINP = null;
+  // latestMetrics.INP = null;
+});
+
 function classifyMetric(value, thresholds) {
   if (value <= thresholds[0]) return "good";
   if (value <= thresholds[1]) return "needs improvement";
   return "poor";
 }
 
-function handleCLS(metric) {
-  if (!worstCLS || metric.value > worstCLS.value) {
-    worstCLS = {
-      type: "web-vital",
-      siteDomain,
-      name: "CLS",
-      value: metric.value,
-      rating: classifyMetric(metric.value, CLSThresholds),
-      attribution: {
-        largestShiftTarget: metric.attribution?.largestShiftTarget,
-        largestShiftTime: metric.attribution?.largestShiftTime,
-      },
-    };
+function queueEvent(event) {
+  if (batchedData.length >= CONFIG.MAX_EVENTS_PER_SESSION) {
+    console.warn("Event queue limit reached; flushing early.");
+    flushMetrics();
   }
+  batchedData.push(event);
+}
+
+function handleCLS(metric) {
+  const shifts = metric.attribution?.largestShiftEntries || [];
+
+  const validShifts = shifts.filter((e) => e?.previousRect && e?.currentRect);
+
+  let enrichedShifts = validShifts
+    .map((entry) => {
+      const prev = entry.previousRect;
+      const curr = entry.currentRect;
+      const node =
+        entry.sources?.[0]?.node || entry.sources?.[0]?.element || null;
+
+      if (!prev || !curr) return null;
+
+      const dx = curr.x - prev.x;
+      const dy = curr.y - prev.y;
+
+      const areaBefore = prev.width * prev.height;
+      const areaAfter = curr.width * curr.height;
+      const viewportArea = window.innerWidth * window.innerHeight || 1;
+      const distanceMoved = Math.sqrt(dx * dx + dy * dy);
+
+      return {
+        element: summarizeElement(node),
+        shift: {
+          dx,
+          dy,
+          direction: {
+            horizontal: dx > 0 ? "right" : dx < 0 ? "left" : "none",
+            vertical: dy > 0 ? "down" : dy < 0 ? "up" : "none",
+          },
+        },
+        rect: { previous: prev, current: curr },
+        impact: {
+          areaBefore,
+          distanceMoved,
+          areaAfter,
+          areaDelta: areaAfter - areaBefore,
+          viewportRatio: areaBefore / viewportArea,
+        },
+      };
+    })
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        b.impact.viewportRatio - a.impact.viewportRatio ||
+        b.impact.distanceMoved - a.impact.distanceMoved ||
+        b.rect.current.y - a.rect.current.y,
+    )
+    .slice(0, 5);
+
+  if (enrichedShifts.length === 0 && clsObserver) {
+    const rawShifts = clsObserver.buffer;
+
+    enrichedShifts = rawShifts
+      .filter((e) => e.sources?.length > 0 || e.value > 0.001)
+      .map((entry) => {
+        const sources = entry.sources || [];
+        const nodes = sources.map((s) => s.node || s.element).filter(Boolean);
+        const primary = sources[0] || null;
+        const node = primary?.node || primary?.element || null;
+        const prev = primary?.previousRect || null;
+        const curr = primary?.currentRect || null;
+
+        let shift = null;
+        let impact = {
+          areaBefore: null,
+          areaAfter: null,
+          areaDelta: null,
+          distanceMoved: null,
+          viewportRatio: entry.value,
+        };
+
+        if (prev && curr) {
+          const dx = curr.x - prev.x;
+          const dy = curr.y - prev.y;
+
+          const areaBefore = prev.width * prev.height;
+          const areaAfter = curr.width * curr.height;
+          const viewportArea = window.innerWidth * window.innerHeight || 1;
+          const distanceMoved = Math.sqrt(dx * dx + dy * dy);
+
+          shift = {
+            dx,
+            dy,
+            direction: {
+              horizontal: dx > 0 ? "right" : dx < 0 ? "left" : "none",
+              vertical: dy > 0 ? "down" : dy < 0 ? "up" : "none",
+            },
+          };
+
+          impact = {
+            areaDelta: areaAfter - areaBefore,
+            distanceMoved,
+            viewportRatio: areaBefore / viewportArea,
+          };
+        }
+
+        return {
+          // Primary element (most likely culprit)
+          element: node ? summarizeElement(node) : "(unknown)",
+          // All affected elements in this shift
+          elements: nodes.map(summarizeElement),
+          // Geometry shift (if available)
+          shift,
+          rect: {
+            previous: prev,
+            current: curr,
+          },
+          impact,
+          value: entry.value,
+          time: entry.startTime,
+          sourcesCount: sources.length,
+        };
+      })
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+  }
+
+  const rawBuffer = clsObserver?.buffer || [];
+
+  const debug = {
+    totalShifts: rawBuffer.length,
+    // cumulativeSessionValue: computeSessionCLS(rawBuffer),
+    webVitalsValue: metric.value,
+    // worstSingleShift: clsObserver?.getWorst()?.value || 0,
+    // recentShifts: rawBuffer.slice(-5).map((e) => ({
+    //   value: e.value,
+    //   time: e.startTime,
+    // })),
+  };
+
+  const topShift = enrichedShifts[0];
+
+  worstCLS = {
+    type: "web-vital",
+    siteDomain,
+    name: "CLS",
+    value: metric.value,
+    rating: classifyMetric(metric.value, CLSThresholds),
+    attribution: {
+      largestShiftTarget: metric.attribution?.largestShiftTarget,
+      largestShiftTime: metric.attribution?.largestShiftTime,
+      loadState: metric.attribution?.loadState,
+      shifts: enrichedShifts,
+      // summary: topShift
+      //   ? {
+      //       element: topShift.element,
+      //       // biggestShift: topShift.shift,
+      //       impact: topShift.impact,
+      //       rect: topShift.rect,
+      //     }
+      //   : null,
+    },
+    debug,
+  };
 }
 
 async function handleINP(metric) {
-  const primaryAddress = location.hostname;
+  const isFirstParty = (url) => {
+    try {
+      const u = new URL(url);
+      return u.hostname === location.hostname;
+    } catch {
+      return false;
+    }
+  };
 
-  // Stop the profiler to get the samples
-  const trace = profiler ? await profiler.stop() : null;
-  const interactionStart = metric.startTime;
-  const interactionEnd = metric.startTime + metric.value;
+  // latestMetrics.INP = metric.value;
+  // if (!webVitalsINP) {
+  //   webVitalsINP = { value: metric.value };
+  // }
 
-  let mainThreadBreakdown = [];
+  // Expand interaction window slightly
+  const BUFFER = 50;
+  const interactionStart = metric.startTime - BUFFER;
+  const interactionEnd = metric.startTime + metric.value + BUFFER;
 
-  if (trace) {
-    // Filter and Map samples
-    const filteredSamples = trace.samples.filter(
-      (s) => s.timestamp >= interactionStart && s.timestamp <= interactionEnd,
-    );
+  const longTasks = longTaskTracker.get();
 
-    // Deduplicate functions (so we don't send 1000 identical "react-dom" entries)
-    const uniqueFunctions = new Set();
-    mainThreadBreakdown = filteredSamples
-      .map((sample) => {
-        const frame = trace.frames[sample.frameId];
-        const script = trace.scripts[frame.scriptId];
-        const identifier = `${frame.name}-${script?.url}-${frame.line}`;
+  const relevantLongTasks = longTasks.filter((t) => {
+    const taskStart = t.start;
+    const taskEnd = t.start + t.duration;
 
-        if (uniqueFunctions.has(identifier)) return null;
-        uniqueFunctions.add(identifier);
+    return taskEnd >= interactionStart && taskStart <= interactionEnd;
+  });
 
-        return {
-          fn: frame.name,
-          file: script?.url || "inline/eval",
-          isFirstParty: script?.url?.includes(primaryAddress),
-          line: frame.line,
-          col: frame.column,
-        };
-      })
-      .filter(Boolean); // Remove nulls (duplicates)
-  }
+  let mainThreadBreakdown = relevantLongTasks
+    .sort((a, b) => b.duration - a.duration)
+    .slice(0, 10)
+    .map((t) => ({
+      task: "main-thread-block",
+      duration: t.duration,
+      start: t.start,
+    }));
 
   const loafs = metric.attribution?.longAnimationFrameEntries || [];
 
@@ -290,30 +611,27 @@ async function handleINP(metric) {
     loaf: loafs.map((loaf) => ({
       blockingDuration: loaf.blockingDuration,
       duration: loaf.duration,
-      scripts:
-        loaf.scripts?.map((x) => ({
+      scripts: (loaf.scripts || [])
+        .map((x) => ({
           sourceURL: x.sourceURL,
-          isFirstParty: x.sourceURL?.includes(primaryAddress),
+          isFirstParty: isFirstParty(x.sourceURL),
           duration: x.duration,
           entryType: x.entryType,
           type: x.invokerType,
           invoker: x.invoker,
           sourceCharPosition: x.sourceCharPosition,
           layoutImpact: x.forcedStyleAndLayoutDuration,
-        })) || [],
+        }))
+        .sort((a, b) => b.duration - a.duration)
+        .slice(0, 5),
     })),
   };
-
-  latestMetrics.INP = metric.value;
-
-  if ("Profiler" in window) {
-    profiler = new Profiler({ sampleInterval: 10, maxBufferSize: 10000 });
-  }
 }
 
 function handleLCP(metric) {
   const rating = classifyMetric(metric.value, LCPThresholds);
   const resourceEntries = performance.getEntriesByType("resource");
+
   let targetEl = metric.attribution?.target;
 
   if (typeof targetEl === "string") {
@@ -328,15 +646,18 @@ function handleLCP(metric) {
 
   const isImage =
     targetEl?.tagName?.toLowerCase() === "img" ||
-    metric.attribution?.url?.match(/\.(jpeg|jpg|png|webp|gif|avif|svg)$/i);
+    metric.attribution?.url?.match(/\.(jpe?g|png|webp|gif|avif|svg)$/i);
+
   const entryByExactUrl =
     metric.attribution?.url &&
     resourceEntries.find((e) => e.name === metric.attribution.url);
+
   const entryByLooseMatch =
     !entryByExactUrl &&
     resourceEntries.find((e) =>
       e.name.includes(metric.attribution?.url?.split("/").pop()),
     );
+
   const matchedEntry = entryByExactUrl || entryByLooseMatch;
 
   const findImage =
@@ -347,13 +668,17 @@ function handleLCP(metric) {
         null;
 
   let fontAttribution = null;
+
   if (!isImage && targetEl instanceof Element) {
     const styles = getComputedStyle(targetEl);
+
     const fontFamily = styles.fontFamily
       ?.split(",")[0]
       ?.replace(/["']/g, "")
       .trim();
+
     const normalize = (str) => str.toLowerCase().replace(/[\s_\-\+]+/g, "-");
+
     const fontResource = performance
       .getEntriesByType("resource")
       .filter((x) => normalize(x.name).includes(normalize(fontFamily)));
@@ -378,11 +703,13 @@ function handleLCP(metric) {
       rating,
       attribution: {
         target: metric.attribution?.target,
+
         resourceLoadDelay: metric.attribution?.resourceLoadDelay,
         resourceLoadDuration: metric.attribution?.resourceLoadDuration,
         elementRenderDelay: metric.attribution?.elementRenderDelay,
         timeToFirstByte: metric.attribution?.timeToFirstByte,
         url: metric.attribution?.url,
+
         ...(isImage && {
           decodedBodySize: matchedEntry?.decodedBodySize ?? null,
           transferSize: matchedEntry?.transferSize ?? null,
@@ -392,30 +719,36 @@ function handleLCP(metric) {
             findImage?.classList.contains("lazyloaded") ||
             findImage?.classList.contains("lazyload"),
         }),
-        ...(fontAttribution && { font: fontAttribution }),
+
+        ...(fontAttribution && {
+          font: fontAttribution,
+        }),
       },
     };
   }
 }
 
 function handleFCP(metric) {
+  const rating = classifyMetric(metric.value, FCPThresholds);
   queueEvent({
     type: "web-vital",
     siteDomain,
     name: "FCP",
     value: metric.value,
-    rating: classifyMetric(metric.value, CONFIG.FCP_THRESHOLDS),
+    rating,
+    attribution: {},
   });
 }
 
 function handleTTFB(metric) {
+  const rating = classifyMetric(metric.value, TTFBThresholds);
   const navEntry = performance.getEntriesByType("navigation")[0];
   queueEvent({
     type: "web-vital",
     siteDomain,
     name: "TTFB",
     value: metric.value,
-    rating: classifyMetric(metric.value, CONFIG.TTFB_THRESHOLDS),
+    rating,
     attribution: {
       dnsLookup: navEntry?.domainLookupEnd - navEntry?.domainLookupStart,
       tcpConnection: navEntry?.connectEnd - navEntry?.connectStart,
@@ -423,6 +756,238 @@ function handleTTFB(metric) {
       requestStart: navEntry?.requestStart,
     },
   });
+}
+
+function getDeviceType() {
+  const w = window.innerWidth;
+  return w <= 768 ? "mobile" : w <= 1024 ? "tablet" : "desktop";
+}
+
+function detectCacheStatus(nav) {
+  // 1. Server-Timing (best signal if available)
+  const serverTiming = nav.serverTiming || [];
+
+  const cacheEntry = serverTiming.find((entry) =>
+    entry.name.toLowerCase().includes("cache"),
+  );
+
+  if (cacheEntry?.description) {
+    return cacheEntry.description;
+  }
+
+  // 2. Memory cache (very strong signal)
+  if (nav.transferSize === 0 && nav.encodedBodySize === 0) {
+    return "memory-cache";
+  }
+
+  // 3. BFCache (back/forward navigation)
+  const navEntry = performance.getEntriesByType("navigation")[0];
+  if (navEntry?.type === "back_forward") {
+    return "bfcache";
+  }
+
+  // 4. Heuristic: strong cache reuse
+  if (
+    nav.transferSize > 0 &&
+    nav.encodedBodySize > 0 &&
+    nav.transferSize < nav.encodedBodySize * 0.2
+  ) {
+    return "disk-cache";
+  }
+
+  return "unknown";
+}
+
+function collectPerformanceMetrics() {
+  const nav = performance.getEntriesByType("navigation")[0];
+
+  if (!nav) return null;
+
+  // Connection timing
+  const dnsLookup = nav.domainLookupEnd - nav.domainLookupStart;
+
+  const tcpConnectionTime = nav.connectEnd - nav.connectStart;
+
+  const tlsHandshakeTime =
+    nav.secureConnectionStart > 0
+      ? nav.connectEnd - nav.secureConnectionStart
+      : 0;
+
+  const requestQueueTime = nav.requestStart - nav.connectEnd;
+
+  // REAL browser TTFB (correct CWV definition)
+  const timeToFirstByte = nav.responseStart - nav.startTime;
+
+  // Backend-only processing time
+  const backendResponseTime = nav.responseStart - nav.requestStart;
+
+  // Connection overhead
+  const userConnectionTime = dnsLookup + tcpConnectionTime + tlsHandshakeTime;
+
+  // Redirect overhead
+  const redirectDuration = nav.redirectEnd - nav.redirectStart;
+
+  // Cache detection
+  const cacheStatus = detectCacheStatus(nav);
+
+  // Server-Timing (debug visibility)
+  const serverTiming = nav.serverTiming || [];
+
+  // Experience classification
+  let experienceCategory = "good";
+
+  if (userConnectionTime > 300) {
+    experienceCategory = "poor_connection";
+  } else if (backendResponseTime > 600) {
+    experienceCategory = "slow_server";
+  } else if (timeToFirstByte > 800) {
+    experienceCategory = "high_ttfb";
+  }
+
+  return {
+    type: "navigation-timings",
+
+    // Core Web Vitals-related
+    timeToFirstByte,
+    backendResponseTime,
+
+    // Connection breakdown
+    dnsLookup,
+    tcpConnectionTime,
+    tlsHandshakeTime,
+    requestQueueTime,
+    redirectDuration,
+    userConnectionTime,
+
+    // Cache + diagnostics
+    cacheStatus,
+    serverTiming,
+
+    // Classification
+    experienceCategory,
+
+    // Useful debugging signals
+    transferSize: nav.transferSize,
+    encodedBodySize: nav.encodedBodySize,
+    decodedBodySize: nav.decodedBodySize,
+  };
+}
+
+// ---- Resource waterfall (compact HAR-like summary) ----
+// Real HAR exports are huge because they carry full headers, cookies, and
+// sometimes response bodies. None of that is available to page JS anyway —
+// PerformanceResourceTiming is the browser's own compact substitute, and the
+// functions below shrink it further: bucket-by-type for the overall shape,
+// itemize only the slow outliers, round everything to integer ms.
+
+function truncateUrl(url, maxLen = 120) {
+  if (!url) return "(unknown)";
+  try {
+    const u = new URL(url, location.href);
+    const path = u.pathname + (u.search ? u.search.slice(0, 30) : "");
+    const short = u.hostname === location.hostname ? path : u.hostname + path;
+    return short.length > maxLen ? short.slice(0, maxLen) + "…" : short;
+  } catch {
+    return url.length > maxLen ? url.slice(0, maxLen) + "…" : url;
+  }
+}
+
+function getResourcePhases(entry) {
+  // Cross-origin resources without a Timing-Allow-Origin header (and
+  // memory-cache hits) zero out everything except start/duration/responseEnd.
+  // requestStart/responseStart staying at 0 is the tell.
+  const restricted = entry.requestStart === 0 && entry.responseStart === 0;
+
+  if (restricted) {
+    return { restricted: true };
+  }
+
+  const round = (n) => Math.max(0, Math.round(n));
+
+  return {
+    redirect: round(entry.redirectEnd - entry.redirectStart),
+    dns: round(entry.domainLookupEnd - entry.domainLookupStart),
+    connect: round(entry.connectEnd - entry.connectStart),
+    ssl:
+      entry.secureConnectionStart > 0
+        ? round(entry.connectEnd - entry.secureConnectionStart)
+        : 0,
+    ttfb: round(entry.responseStart - entry.requestStart),
+    download: round(entry.responseEnd - entry.responseStart),
+  };
+}
+
+function summarizeResource(entry) {
+  return {
+    url: truncateUrl(entry.name),
+    type: entry.initiatorType,
+    start: Math.round(entry.startTime),
+    duration: Math.round(entry.duration),
+    transferSize: entry.transferSize || 0,
+    decodedSize: entry.decodedBodySize || 0,
+    cached: entry.transferSize === 0 && entry.decodedBodySize > 0,
+    protocol: entry.nextHopProtocol || null,
+    // Resource Timing L3 field — HTTP status of the request. Not yet
+    // universally supported; comes through as null where the browser lacks it.
+    status: entry.responseStatus ?? null,
+    phases: getResourcePhases(entry),
+  };
+}
+
+function buildResourceSummary() {
+  const entries = resourceTracker.get();
+  if (entries.length === 0) return null;
+
+  const byType = {};
+  let totalTransferSize = 0;
+
+  for (const e of entries) {
+    const t = e.initiatorType || "other";
+    byType[t] ||= { count: 0, totalTransferSize: 0, totalDuration: 0 };
+    byType[t].count++;
+    byType[t].totalTransferSize += e.transferSize || 0;
+    byType[t].totalDuration += e.duration || 0;
+    totalTransferSize += e.transferSize || 0;
+  }
+
+  for (const t in byType) {
+    byType[t].totalDuration = Math.round(byType[t].totalDuration);
+  }
+
+  const THREE_MINUTES = 3 * 60 * 1000;
+
+  const slowest = entries
+    .filter(
+      (e) =>
+        e.duration >= CONFIG.RESOURCE_SLOW_THRESHOLD &&
+        e.startTime <= THREE_MINUTES,
+    )
+    .sort((a, b) => b.duration - a.duration)
+    .map(summarizeResource);
+
+  return {
+    type: "resource-summary",
+    siteDomain,
+    totalRequests: entries.length,
+    totalTransferSize,
+    byType,
+    slowest,
+  };
+}
+
+// for INP
+function getTopBlockingScript(loafEntries) {
+  let maxScript = null;
+
+  loafEntries.forEach((loaf) => {
+    loaf.scripts?.forEach((script) => {
+      if (!maxScript || script.duration > maxScript.duration) {
+        maxScript = script;
+      }
+    });
+  });
+
+  return maxScript;
 }
 
 function getRenderBlockers() {
@@ -449,22 +1014,25 @@ function getRenderBlockers() {
       !res.name.includes("defer");
     const isCSS =
       res.initiatorType === "link" &&
-      (res.name.includes(".css") || res.name.includes("fonts.googleapis"));
+      (res.name.includes(".css") || res.name.includes("fonts.googleapis.com"));
 
     return isBeforeFCP && (isSyncJS || isCSS);
   });
 
-  const report = blockers.map((res) => {
-    const fcpDelayVal = fcpTime - res.responseEnd;
+  const report = blockers
+    .map((res) => {
+      const fcpDelayVal = fcpTime - res.responseEnd;
 
-    return {
-      type: "render-blocking-scripts",
-      URL: res.name,
-      "Finish Time": res.responseEnd.toFixed(2) + "ms",
-      "FCP Delay":
-        fcpDelayVal > 0 ? fcpDelayVal.toFixed(2) + "ms" : "Critical Path",
-    };
-  });
+      return {
+        type: "render-blocking-scripts",
+        URL: res.name,
+        "Finish Time": res.responseEnd.toFixed(2) + "ms",
+        "FCP Delay":
+          fcpDelayVal > 0 ? fcpDelayVal.toFixed(2) + "ms" : "Critical Path",
+      };
+    })
+    .sort((a, b) => parseFloat(b["Finish Time"]) - parseFloat(a["Finish Time"]))
+    .slice(0, 5);
 
   if (report.length > 0) {
     return report;
@@ -473,62 +1041,43 @@ function getRenderBlockers() {
   }
 }
 
-/* =========================================================
-   6. EVENT OBSERVERS
-   ========================================================= */
-function setupObservers() {
-  if ("PerformanceObserver" in window) {
-    if (PerformanceObserver.supportedEntryTypes.includes("event")) {
-      const eventObserver = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (
-            [
-              "click",
-              "mousedown",
-              "mouseup",
-              "pointerdown",
-              "pointerup",
-              "keydown",
-              "keyup",
-              "touchstart",
-              "touchend",
-            ].includes(entry.name)
-          ) {
-            if (!maxCustomEntry || entry.duration > maxCustomEntry.duration)
-              maxCustomEntry = entry;
-          }
+(function collectClientMeta() {
+  queueEvent({
+    type: "client-info",
+    deviceType: getDeviceType(),
+    deviceMemory: navigator.deviceMemory || "unknown",
+    hardwareConcurrency: navigator.hardwareConcurrency || "unknown",
+    connection: navigator.connection
+      ? {
+          effectiveType: navigator.connection.effectiveType,
+          downlink: navigator.connection.downlink,
+          rtt: navigator.connection.rtt,
         }
-      });
-      eventObserver.observe({
-        type: "event",
-        buffered: true,
-        durationThreshold: 0,
-      });
-    }
+      : null,
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+  });
+})();
+
+function checkMetricsReady() {
+  // this checks for completion of vitals data to send on page unload, tab shift or page change
+  if (
+    worstCLS !== null &&
+    worstLCP !== null &&
+    (webVitalsINP !== null || maxCustomEntry !== null)
+  ) {
+    return true;
   }
 }
 
-/* =========================================================
-   7. QUEUE & FLUSH (Safety Guards Fully Intact)
-   ========================================================= */
-function queueEvent(event) {
-  if (batchedData.length >= CONFIG.MAX_EVENTS_PER_SESSION) flushMetrics();
-  batchedData.push(event);
-}
-
-// function checkMetricsReady() {
-//   return worstCLS !== null && worstLCP !== null;
-// }
-
-function flushMetrics({ force = false } = {}) {
-  if (isFlushing) return;
-  if (hasFlushed && !force) return;
+function flushMetrics() {
+  if (isFlushing || hasFlushed) return;
 
   isFlushing = true;
   hasFlushed = true;
 
   try {
-    if (latestMetrics.INP || maxCustomEntry) {
+    if (webVitalsINP || maxCustomEntry) {
       let inpAttribution = {};
       let inpValue = webVitalsINP
         ? webVitalsINP.value
@@ -537,11 +1086,11 @@ function flushMetrics({ force = false } = {}) {
           : null;
       const attr = webVitalsINP?.attribution;
       const topScript = getTopBlockingScript(webVitalsINP?.loaf || []);
-      const inpTime = webVitalsINP?.startTime ?? maxCustomEntry?.startTime;
+      // const inpTime = webVitalsINP?.startTime ?? maxCustomEntry?.startTime;
 
       if (webVitalsINP?.attribution) {
         inpAttribution = {
-          target: summarizeElement(attr.target),
+          target: attr?.target ? summarizeElement(attr.target) : "(unknown)",
           eventType: attr.interactionType,
           inputDelay: attr.inputDelay,
           processingDuration: attr.processingDuration,
@@ -565,7 +1114,9 @@ function flushMetrics({ force = false } = {}) {
         const processingTime = maxCustomEntry.duration - inputDelay;
 
         inpAttribution = {
-          target: summarizeElement(maxCustomEntry.target),
+          target: maxCustomEntry?.target
+            ? summarizeElement(maxCustomEntry.target)
+            : "(unknown)",
           eventType: maxCustomEntry.name,
           inputDelay: inputDelay,
           processingDuration: processingTime,
@@ -597,7 +1148,10 @@ function flushMetrics({ force = false } = {}) {
       }
     }
 
+    // aggregate CLS
     if (worstCLS) batchedData.push(worstCLS);
+
+    //aggregate LCP
     if (worstLCP) batchedData.push(worstLCP);
 
     const navigationTimingInfo = collectPerformanceMetrics();
@@ -612,6 +1166,23 @@ function flushMetrics({ force = false } = {}) {
       batchedData.push(r_blockings);
     }
 
+    // compact resource waterfall (bucketed shape + top-N slow outliers)
+    const resourceSummary = buildResourceSummary();
+
+    if (resourceSummary) {
+      batchedData.push(resourceSummary);
+    }
+
+    // deduped JS / promise / resource-load errors
+    if (errorBuckets.size > 0) {
+      batchedData.push({
+        type: "errors",
+        siteDomain,
+        errors: [...errorBuckets.values()],
+      });
+    }
+
+    // then we prep the payload
     if (batchedData.length > 0) {
       const payload = JSON.stringify({
         sessionId,
@@ -620,6 +1191,7 @@ function flushMetrics({ force = false } = {}) {
         previousPage,
         data: [...batchedData],
       });
+
       if (navigator.sendBeacon) {
         navigator.sendBeacon(
           CONFIG.API_URL,
@@ -636,86 +1208,30 @@ function flushMetrics({ force = false } = {}) {
     }
   } finally {
     batchedData.length = 0;
-    // worstCLS = null;
-    // worstLCP = null;
+    worstCLS = null;
+    worstLCP = null;
     isFlushing = false;
   }
 }
 
-/* =========================================================
-   8. BOOTSTRAP & EVENT LISTENERS
-   ========================================================= */
-function boot() {
-  // if (shouldExcludeUser()) return;
+setTimeout(() => {
+  if (document.visibilityState === "visible") {
+    const isReady = checkMetricsReady();
+    if (isReady) flushMetrics();
+  }
+}, 20000); // flush after 20 seconds of page load
 
-  initSession();
-  setupObservers();
+// iOS Safari and modern browsers
+window.addEventListener("pagehide", () => {
+  if (!hasFlushed) flushMetrics();
+});
 
-  // Initialize Web Vitals
-  onCLS(handleCLS, { reportAllChanges: true });
-  onLCP(handleLCP, { reportAllChanges: true });
-  onFCP(handleFCP);
-  onTTFB(handleTTFB);
-  onINP(handleINP, { reportAllChanges: true });
+// Android/Chrome and most browsers
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && !hasFlushed) {
+    flushMetrics();
+  }
+});
 
-  // SPA Navigation handling
-  window.addEventListener("popstate", () => {
-    flushMetrics({ force: true });
-
-    previousPage = currentPage;
-    currentPage = location.pathname + location.search;
-    maxCustomEntry = null;
-    webVitalsINP = null;
-    latestMetrics.INP = null;
-    hasFlushed = false;
-    isFlushing = false;
-    worstCLS = null;
-    worstLCP = null;
-    batchedData.length = 0;
-  });
-
-  // Client Metadata
-  queueEvent({
-    type: "client-info",
-    deviceType: getDeviceType(),
-    deviceMemory: navigator.deviceMemory ?? "unknown",
-    hardwareConcurrency: navigator.hardwareConcurrency ?? "unknown",
-
-    connection: navigator.connection
-      ? {
-          effectiveType: navigator.connection.effectiveType,
-          downlink: navigator.connection.downlink,
-          rtt: navigator.connection.rtt,
-          score: getNetworkScore(navigator.connection),
-        }
-      : null,
-
-    browser: navigator.userAgentData?.brands ?? "unknown",
-    platform: navigator.userAgentData?.platform ?? "unknown",
-
-    // Fallback
-    userAgent: navigator.userAgent,
-    language: navigator.language,
-  });
-
-  // Lifecycle Flush triggers
-  // setTimeout(() => {
-  //   if (document.visibilityState === "visible" && checkMetricsReady())
-  //     flushMetrics();
-  // }, 15000);
-
-  window.addEventListener("pagehide", () => {
-    if (!hasFlushed) flushMetrics({ force: true });
-  });
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && !hasFlushed)
-      flushMetrics({ force: true });
-  });
-}
-
-// Start execution
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", boot);
-} else {
-  boot();
-}
+// fallback
+// window.addEventListener("beforeunload", flushMetrics);

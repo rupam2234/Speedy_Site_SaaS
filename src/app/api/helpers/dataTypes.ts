@@ -38,3 +38,5 @@ export type NetworkServerSchema =
   Database["public"]["Functions"]["get_network_server_keyset"]["Returns"];
 
 export type OneTimeOrders = Database["public"]["Tables"]["one_time_orders"]["Insert"];
+
+export type FontMetrics = Database["public"]["Functions"]["font_analysis"]["Returns"]

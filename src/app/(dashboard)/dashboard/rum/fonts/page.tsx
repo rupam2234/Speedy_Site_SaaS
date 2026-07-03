@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import Main from "./main";
+import { FontMain } from "./main";
 
 export const metadata: Metadata = {
   title: "Font Bottlenecks | Speedy Site",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Fonts() {
-  return <Main />;
+  return <FontMain />;
 }

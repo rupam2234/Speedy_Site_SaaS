@@ -1431,6 +1431,29 @@ export type Database = {
                     rows_inserted: number
                 }[]
             }
+            recent_requests: {
+                Args: { p_domain: string; p_limit?: number }
+                Returns: {
+                    backend_ms: number
+                    cache_status: string
+                    city: string
+                    country: string
+                    created_at: string
+                    current_page: string
+                    decoded_size: number
+                    device_type: string
+                    experience: string
+                    har_data: Json
+                    id: number
+                    inp_rating: string
+                    inp_value: number
+                    lcp_rating: string
+                    lcp_value: number
+                    session_id: string
+                    transfer_size: number
+                    ttfb: number
+                }[]
+            }
             refresh_rum_daily_distributions: {
                 Args: { p_day?: string }
                 Returns: undefined

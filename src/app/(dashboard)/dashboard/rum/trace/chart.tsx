@@ -114,7 +114,7 @@ export default function OriginPerformanceChart({ data }: Props) {
         max: 100,
         splitNumber: 5,
       },
-      grid: { top: 40, bottom: 30, left: 40, right: 30, height: "auto" },
+      grid: { top: 40, bottom: 30, left: 40, right: 30, height: "160" },
       series: [
         {
           type: "line",
@@ -217,7 +217,7 @@ export default function OriginPerformanceChart({ data }: Props) {
 
   return (
     <div ref={containerRef} className="w-full">
-      <div ref={chartRef} className="w-full h-95" />
+      <div ref={chartRef} className="w-full h-68" />
     </div>
   );
 }
