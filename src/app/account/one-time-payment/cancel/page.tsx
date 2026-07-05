@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-export default function CancelPage() {
+export default function CancelPageOneTimePayment() {
   const [displayText, setDisplayText] = useState<string>("");
   const [countdown, setCountdown] = useState(6);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDisplayText(
-        "Your subscription was not completed. You can try again anytime. Redirecting to billing page...",
+        " You haven't completed the payment. Redirecting to billing page...",
       );
     }, 0);
 
@@ -35,10 +35,12 @@ export default function CancelPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen text-primary/80 text-md -mt-5 items-center justify-center">
-      <p>
-        {displayText} {countdown > 0 && `(${countdown})`}
-      </p>
-    </div>
+    <>
+      <div className="flex min-h-screen text-primary/80 text-md -mt-5 items-center justify-center">
+        <p>
+          {displayText} {countdown > 0 && `(${countdown})`}
+        </p>
+      </div>
+    </>
   );
 }

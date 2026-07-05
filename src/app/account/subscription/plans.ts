@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 
-type PlanKey =
+export type PlanKey =
   | "Starter"
   | "Basic"
   | "Pro"

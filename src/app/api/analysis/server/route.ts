@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     important: 
     - You don't have to explain timings, just fixes... simple to follow
     - cross check if delaying a certain script or file could impact functionality
+    - Don't repeat same type of sentances, instead short them for faster guidence
 
 
     Rules:

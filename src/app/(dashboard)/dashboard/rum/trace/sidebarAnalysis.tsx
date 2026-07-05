@@ -231,7 +231,7 @@ export default function SidebarAnalysis({
               {parsedLines.map((line, i) => (
                 <div
                   key={i}
-                  className="p-2 rounded-sm border border-primary/10 text-sm text-primary/80 break-words whitespace-normal"
+                  className="p-2 rounded-sm border border-primary/10 text-sm text-primary/80 wrap-break-word whitespace-normal"
                 >
                   {renderLineWithCode(line)}
                 </div>
