@@ -14,12 +14,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 
+
   try {
     const { data, error } = await worker
       .from("email_reporting")
       .select("report_verbosity, optional_email")
-      .eq("order_id", order_id)
-      .single();
+      .eq("order_id", order_id);
+
 
     if (error) {
       throw new Error(error.message ?? "Error fetching email report config");

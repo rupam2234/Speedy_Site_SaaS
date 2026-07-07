@@ -95,7 +95,7 @@ export function PricingCardContent({
                 : props.defaultPrice.toFixed(0)}
             </span>
             <span className="text-sm font-medium ml-1">
-              {!managedWP ? "/month" : "(One time fee)"}{" "}
+              {!managedWP ? "/month" : "(One time fee / not a subscription)"}{" "}
               {!managedWP &&
                 props.billingCycle === "yearly" &&
                 "(billed yearly)"}

@@ -18,7 +18,6 @@ export default function Performancetab({
   avg_transfer_size,
   avg_decoded_body_size,
   avg_resource_load_delay,
-  avg_resource_load_duration,
   avg_element_render_delay,
   avg_time_to_first_byte,
   isLazyloaded,
@@ -27,15 +26,9 @@ export default function Performancetab({
 }: imageMetric) {
   const loadDelay = Number(avg_resource_load_delay || 0);
   const ttfb = Number(avg_time_to_first_byte || 0);
-  const duration = Number(avg_resource_load_duration || 0);
   const renderDelay = Number(avg_element_render_delay || 0);
   const transferSize = Number(avg_transfer_size || 0);
   const decodedSize = Number(avg_decoded_body_size || 0);
-
-  const downloadTime = Math.max(0, duration - ttfb);
-  const totalTime = loadDelay + ttfb + downloadTime + renderDelay;
-
-  const getW = (ms: number) => (totalTime > 0 ? (ms / totalTime) * 100 : 0);
 
   const formatFileSize = (bytes: number) => {
     if (!bytes) return "--";
@@ -53,12 +46,8 @@ export default function Performancetab({
     if (isLazyloaded && loadDelay > 400) {
       obs.push({
         msg:
-          "This image is lazy-loaded, which can delay it's arrival on users' screen." +
-          " If this is an important image (such as a hero or above-the-fold content), consider loading it eagerly (loading=" +
-          "eager" +
-          ") or set fetchpriority=" +
-          "'high'" +
-          " to improve LCP. ",
+          "Exclude this image from lazy-loading — it's delaying LCP. Most caching/optimization plugins " +
+          "(e.g. WP Rocket, Autoptimize, LiteSpeed Cache) let you exclude specific images or the first N images on a page.",
         type: "error",
       });
     }
@@ -66,8 +55,8 @@ export default function Performancetab({
     if (ttfb > 500) {
       obs.push({
         msg:
-          `Server is responding slowly, which delays the image load more than the image size itself.` +
-          " Optimize backend processing, enable caching, or use a faster hosting/CDN to improve server response time.",
+          "Server is slow to respond. Enable page caching (WP Rocket, W3 Total Cache), use a CDN for faster asset delivery and check with your host " +
+          "about upgrading PHP/server resources.",
         type: "error",
       });
     }
@@ -75,8 +64,8 @@ export default function Performancetab({
     if (transferSize > 250 * 1024) {
       const msg =
         ttfb < 200
-          ? `File Size: ${formatFileSize(transferSize)} is heavy. Use WebP/AVIF to speed up the blue 'Download' phase.`
-          : `File Size: Large image (${formatFileSize(transferSize)}) is making a slow server connection even worse.`;
+          ? `Compress and convert this image to WebP/AVIF (${formatFileSize(transferSize)} currently) using the recommended option below.`
+          : `This image (${formatFileSize(transferSize)}) is adding to an already slow load. Compress it with the recommended option below.`;
       obs.push({ msg, type: ttfb < 200 ? "warning" : "error" });
     }
 
@@ -84,8 +73,8 @@ export default function Performancetab({
       obs.push({
         msg:
           decodedSize > 1.5 * 1024 * 1024
-            ? "Render: Huge decoded size. Browser is struggling to paint. Resize the actual image dimensions."
-            : "Render: Something (likely JS) is blocking the browser from painting the image after download.",
+            ? "Resize this image to its actual display dimensions — most image plugins can auto-generate scaled sizes."
+            : "A render-blocking script may be delaying paint. Try deferring non-critical JS via your caching plugin's settings.",
         type: "warning",
       });
     }
@@ -94,7 +83,7 @@ export default function Performancetab({
       ? obs
       : [
           {
-            msg: `Image performance seems optimal, however, ${poor_lcp}% of total ${sample} samples still experienced slow loading.`,
+            msg: `Looks good — though ${poor_lcp}% of ${sample} samples still loaded slowly.`,
             type: "info",
           },
         ];
@@ -102,65 +91,32 @@ export default function Performancetab({
 
   return (
     <div className="space-y-6 bg-transparent">
-      {/* 1. Visual Waterfall */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-end">
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-            Image Loading Timeline
-          </span>
-        </div>
-
-        <div className="h-4 w-full flex overflow-hidden bg-gray-200/30 dark:bg-gray-800/50 rounded-full">
-          <div
-            style={{ width: `${getW(loadDelay)}%` }}
-            className="h-full bg-slate-400 opacity-60"
-          />
-          <div
-            style={{ width: `${getW(ttfb)}%` }}
-            className="h-full bg-amber-500"
-          />
-          <div
-            style={{ width: `${getW(downloadTime)}%` }}
-            className="h-full bg-blue-500"
-          />
-          <div
-            style={{ width: `${getW(renderDelay)}%` }}
-            className="h-full bg-emerald-500"
-          />
-        </div>
-      </div>
-
-      {/* 2. Stats Grid - NOW CLEARLY LABELED */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+      {/* 1. Stats - flat list, minimal ornamentation */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-5">
         <MetricItem
           label="Network Transfer"
           value={formatFileSize(transferSize)}
           subtext="Compressed file size"
-          markerColor="bg-blue-500"
         />
         <MetricItem
           label="Memory Usage"
           value={formatFileSize(decodedSize)}
           subtext="Unpacked in RAM"
-          markerColor="bg-emerald-500"
         />
         <MetricItem
           label="Server Wait (TTFB)"
           value={`${ttfb.toFixed(0)}ms`}
           status={ttfb > 500 ? "bad" : ttfb > 200 ? "warn" : "good"}
-          markerColor="bg-amber-500"
         />
         <MetricItem
           label="Discovery Delay"
           value={`${(loadDelay / 1000).toFixed(2)}s`}
-          subtext={isLazyloaded ? "Lazy Loaded" : "Direct Discovery"}
-          markerColor="bg-slate-400"
+          subtext={isLazyloaded ? "Lazy loaded" : "Direct discovery"}
         />
         <MetricItem
           label="Render Delay"
           value={`${(renderDelay / 1000).toFixed(2)}s`}
           status={renderDelay > 1000 ? "warn" : "good"}
-          markerColor="bg-emerald-500"
         />
         <MetricItem
           label="Loading Priority"
@@ -170,25 +126,30 @@ export default function Performancetab({
         />
       </div>
 
-      {/* 3. Suggestions */}
-      <div className="space-y-2 pt-2 border-t border-border/40">
-        <h4 className="text-[10px] uppercase font-bold text-muted-foreground">
-          Analysis & Suggestions
+      {/* 3. Suggestions - quiet list, dot indicators instead of colored blocks */}
+      <div className="space-y-3 pt-5 border-t border-border/40">
+        <h4 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+          Analysis &amp; Suggestions
         </h4>
-        {getObservations().map((obs, i) => (
-          <div
-            key={i}
-            className={`p-3 text-sm rounded-lg border-l-4 ${
-              obs.type === "error"
-                ? "bg-red-500/5 border-red-500 text-red-700 dark:text-red-400"
-                : obs.type === "warning"
-                  ? "bg-amber-500/5 border-amber-500 text-amber-700 dark:text-amber-400"
-                  : "bg-blue-500/5 border-blue-500 text-blue-700 dark:text-blue-400"
-            }`}
-          >
-            {obs.msg}
-          </div>
-        ))}
+        <div className="space-y-3">
+          {getObservations().map((obs, i) => (
+            <div
+              key={i}
+              className="flex gap-2.5 text-sm text-foreground/80 leading-relaxed"
+            >
+              <span
+                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                  obs.type === "error"
+                    ? "bg-red-500"
+                    : obs.type === "warning"
+                      ? "bg-amber-500"
+                      : "bg-blue-500"
+                }`}
+              />
+              <span>{obs.msg}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -199,40 +160,32 @@ function MetricItem({
   value,
   subtext,
   status = "neutral",
-  markerColor,
 }: {
   label: string;
   value: string;
   subtext?: string;
   status?: "good" | "warn" | "bad" | "neutral";
-  markerColor?: string;
 }) {
-  const textColors = {
-    good: "text-emerald-600 dark:text-emerald-400",
-    warn: "text-amber-600 dark:text-amber-400",
-    bad: "text-red-600 dark:text-red-400",
-    neutral: "text-foreground",
+  const dotColors = {
+    good: "bg-emerald-500",
+    warn: "bg-amber-500",
+    bad: "bg-red-500",
+    neutral: "",
   };
 
   return (
-    <div className="relative pl-4 flex flex-col gap-0.5">
-      {/* Visual Marker to link with Waterfall */}
-      {markerColor && (
-        <div
-          className={`absolute left-0 top-1 w-1 h-8 rounded-full ${markerColor}`}
-        />
-      )}
-
-      <span className="text-[10px] uppercase font-bold text-muted-foreground/80 tracking-tight">
+    <div className="flex flex-col gap-1">
+      <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide font-medium text-muted-foreground">
+        {status !== "neutral" && (
+          <span className={`h-1.5 w-1.5 rounded-full ${dotColors[status]}`} />
+        )}
         {label}
       </span>
-      <span
-        className={`text-lg font-mono font-bold leading-none ${textColors[status]}`}
-      >
+      <span className="text-lg font-mono font-medium leading-none text-foreground">
         {value}
       </span>
       {subtext && (
-        <span className="text-[10px] text-muted-foreground/60 italic leading-tight">
+        <span className="text-[11px] text-muted-foreground/70 leading-tight">
           {subtext}
         </span>
       )}

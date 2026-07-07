@@ -93,7 +93,6 @@ export default function SiteContextProvider({
   const [endDate, setEndDate] = useState<Date>();
   const [plan, setPlan] = useState<string | null>(null);
 
-  // --- Hooks & Refs ---
   const user = useSupabaseUser();
   const searchParams = useSearchParams();
   const fetchCalledRef = useRef<{
@@ -101,10 +100,6 @@ export default function SiteContextProvider({
     siteFromUrl?: string | null;
   } | null>(null);
 
-  /**
-   * Logical helper to decide which site to select once orders are loaded.
-   * Priority: 1. Existing selection, 2. URL Param, 3. First order in list.
-   */
   const handleInitialSiteSelection = useCallback(
     (orderList: OrderData[], siteFromUrl?: string) => {
       setSelectedSite((prev) => {

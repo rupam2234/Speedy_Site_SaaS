@@ -79,6 +79,13 @@ export async function POST(request: Request) {
         success_url: `${BASE_URL}/account/subscription/success`,
         cancel_url: `${BASE_URL}/account/subscription/cancel`,
       });
+
+      // update on database!!
+      await worker
+        .from("subscriptions")
+        .update({ stripe_session_id: session?.id })
+        .eq("user_id", user?.id);
+
     } else {
       session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
@@ -108,16 +115,11 @@ export async function POST(request: Request) {
             },
           },
         ],
-        success_url: `${BASE_URL}/account/subscription/success`,
+        success_url: `${BASE_URL}/account/one-time-payment/required-data`,
         cancel_url: `${BASE_URL}/account/one-time-payment/cancel`,
       });
     }
 
-    // update on database!!
-    await worker
-      .from("subscriptions")
-      .update({ stripe_session_id: session?.id })
-      .eq("user_id", user?.id);
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {

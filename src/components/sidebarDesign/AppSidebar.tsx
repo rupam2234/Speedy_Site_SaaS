@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  CircleGauge,
   CreditCard,
   FlaskConical,
   LayoutDashboardIcon,
@@ -111,13 +112,25 @@ export default function AppSidebar({
             title: "Fonts",
             url: `/dashboard/rum/fonts?site=${selectedSite}`,
           },
+          // {
+          //   title: "WP Plugin Analysis",
+          //   url: `/dashboard/wordpress-plugin-analysis?site=${selectedSite}`,
+          // },
+          // {
+          //   title: "Cloudflare Lab",
+          //   url: `/dashboard/cloudflare?site=${selectedSite}`,
+          // },
+        ],
+      },
+      {
+        title: "Managed WP Performance",
+        url: "#",
+        icon: CircleGauge,
+        isActive: true,
+        items: [
           {
-            title: "WP Plugin Analysis",
-            url: `/dashboard/wordpress-plugin-analysis?site=${selectedSite}`,
-          },
-          {
-            title: "Cloudflare Lab",
-            url: `/dashboard/cloudflare?site=${selectedSite}`,
+            title: "Status",
+            url: `/dashboard/managed-wp/status?site=${selectedSite}`,
           },
         ],
       },

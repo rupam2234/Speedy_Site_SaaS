@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   AlertCircle,
   MessageCircleQuestion,
-  ExternalLink,
   ArrowRight,
 } from "lucide-react";
 import { CustomTooltip } from "@/components/theme";
@@ -105,34 +104,17 @@ export function ImageOptimizerLite({ imageUrl }: { imageUrl: string }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm flex items-center gap-1 font-normal tracking-wider text-slate-500">
-          Try compressing it{" "}
+          Reduce file size{" "}
           <CustomTooltip
             side="top"
             content={
-              <div className="p-3 max-w-55 space-y-3">
-                <div className="space-y-1">
-                  <div className="flex items-center mb-2 gap-1.5">
-                    <div className="w-5 h-5 bg-emerald-100 dark:bg-emerald-500/20 rounded flex items-center justify-center">
-                      <Zap className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-emerald-600 dark:fill-emerald-400" />
-                    </div>
-                    <p className="text-xs font-bold text-primary-foreground/80 dark:text-primary/80">
-                      SpeedyPixel Lite
-                    </p>
-                  </div>
-                  <p className="text-[12px] leading-relaxed text-primary-foreground/80 dark:text-primary/80">
-                    This is a lite version of our image utility. Optimize assets
-                    directly in your browser to boost LCP scores.
-                  </p>
-                </div>
-
-                <Link
-                  href="/pixel"
-                  target="_blank"
-                  className="flex items-center justify-center gap-1.5 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-widest rounded-md transition-all shadow-sm shadow-emerald-200 dark:shadow-none"
-                >
-                  Try Full Version
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
+              <div className="space-y-3">
+                <p>
+                  Optimization suggestions appear when an image&apos;s file size
+                  is disproportionately large for its dimensions meaning it
+                  could likely be compressed or resized without a noticeable
+                  quality loss.
+                </p>
               </div>
             }
             trigger={

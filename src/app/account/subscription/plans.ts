@@ -10,7 +10,7 @@ export type PlanKey =
   | "Pro_yearly"
   | "Agency_yearly"
   | "ManagedWp"
-  | "ManagedWp_yearly";
+// | "ManagedWp_yearly";
 
 
 export const priceMap: Record<PlanKey, string> = {
@@ -22,7 +22,7 @@ export const priceMap: Record<PlanKey, string> = {
   Basic_yearly: "price_1SV7F9FudyIXBfXk8dez9wT1",
   Pro_yearly: "price_1SV7N3FudyIXBfXkngR9eZRh",
   Agency_yearly: "price_1SV7OMFudyIXBfXkEeO7i2TS",
-  ManagedWp_yearly: "price_1TZQBfFudyIXBfXk2hEwAKxG",
+  // ManagedWp_yearly: "price_1TZQBfFudyIXBfXk2hEwAKxG",
   ManagedWp: "price_1TZVtwFudyIXBfXk49PVzAij"
 };
 
@@ -36,7 +36,7 @@ export type PlanType =
   | "Basic (Yearly)"
   | "Pro (Yearly)"
   | "Agency (Yearly)"
-  | "Managed WordPress Performance (Yearly)"
+  // | "Managed WordPress Performance (Yearly)"
   | "Managed WordPress Performance"
   | undefined;
 
@@ -52,7 +52,7 @@ export const getPlanFromSubscription = (
     [priceMap.Pro_yearly]: "Pro (Yearly)",
     [priceMap.Agency]: "Agency",
     [priceMap.Agency_yearly]: "Agency (Yearly)",
-    [priceMap.ManagedWp_yearly]: "Managed WordPress Performance (Yearly)",
+    // [priceMap.ManagedWp_yearly]: "Managed WordPress Performance (Yearly)",
     [priceMap.ManagedWp]: "Managed WordPress Performance"
   };
 

@@ -151,11 +151,6 @@ export default function EmailReporting() {
       ) : (
         <>
           <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
-            {/* <input
-              type="checkbox"
-              checked={emailReportCheck !== null ? emailReportCheck : false}
-              onChange={(e) => setEmailReportCheck(e.target.checked)}
-            /> */}
             <p>Report to email</p>
             <input
               type="text"

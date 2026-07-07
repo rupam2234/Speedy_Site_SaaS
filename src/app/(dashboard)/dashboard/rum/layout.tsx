@@ -31,8 +31,6 @@ export default function RumLayout({ children }: RumLayoutProps) {
     return <NoSiteSelected />;
   }
 
-  // if (!selectedSite) return <NoSiteSelected />;
-
   // Selected site, free plan
   if (plan === "Free") return <UpgradeFallback />;
 

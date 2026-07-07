@@ -11,6 +11,42 @@ import { PricingCardContent } from "@/app/(home)";
 
 export const planCards: PlanCardProps[] = [
   {
+    name: "Managed WordPress Performance",
+    price: 299,
+    description:
+      "Hands free performance upgrade + weekly reports + 1 year of real-user monitoring access.",
+    features: [
+      "1 Site & WP Rocket Premium Plugin",
+      "Dedicated WordPress Optimization Service (pass web vitals and maintain performance)",
+      "Real-Time Performance Tracking",
+      "Unlimited pageviews/month for 1 year",
+      "History + Realtime data",
+      "1 year data retention",
+      "AI analysis and debugging",
+      "WP Plugin Monitoring + Audits",
+      "Image & font analysis",
+      "Weekly report and dedicated support",
+    ],
+  },
+  {
+    name: "Basic",
+    price: 19,
+    description:
+      "User experience & performance monitoring + optimization assistance",
+    features: [
+      "Up to 3 sites",
+      "Real-Time Performance Tracking",
+      "50,000 pageviews/month",
+      "History + Realtime data",
+      "1 year data retention",
+      "AI analysis & suggestions",
+      "WP Plugin Monitoring + Audits",
+      "Image & Font Analysis",
+      "Weekly Email Report",
+      "Standard Support",
+    ],
+  },
+  {
     name: "Starter",
     price: 9,
     description:
@@ -24,24 +60,6 @@ export const planCards: PlanCardProps[] = [
       "AI analysis & suggestions",
       "5 WP Plugin Audits",
       "Image & Font Flagging",
-      "Weekly Email Report",
-      "Standard Support",
-    ],
-  },
-  {
-    name: "Basic",
-    price: 19,
-    description:
-      "User experience & performance monitoring + optimization assistance",
-    features: [
-      "Up to 2 sites",
-      "Real-Time Performance Tracking",
-      "50,000 pageviews/month",
-      "History + Realtime data",
-      "1 year data retention",
-      "AI analysis & suggestions",
-      "WP Plugin Monitoring + Audits",
-      "Image & Font Analysis",
       "Weekly Email Report",
       "Standard Support",
     ],
@@ -82,24 +100,6 @@ export const planCards: PlanCardProps[] = [
   //     "Priority Support",
   //   ],
   // },
-  {
-    name: "Managed WordPress Performance",
-    price: 299,
-    description:
-      "WordPress performance optimization + weekly reports + 1 year of real-user monitoring access",
-    features: [
-      "1 Site Per Purchese",
-      "Dedicated WordPress Optimization Service (pass web vitals and maintain performance)",
-      "Real-Time Performance Tracking",
-      "Unlimited pageviews/month for 1 year",
-      "History + Realtime data",
-      "1 year data retention",
-      "AI analysis and debugging",
-      "WP Plugin Monitoring + Audits",
-      "Image & font analysis",
-      "Weekly report and dedicated support",
-    ],
-  },
 ];
 
 export default function SubscriptionManager() {
