@@ -102,7 +102,7 @@ export default function AppSidebar({
         title: "Enhancements",
         url: "#",
         icon: FlaskConical,
-        isActive: true,
+        isActive: false,
         items: [
           {
             title: "Images",
@@ -126,7 +126,7 @@ export default function AppSidebar({
         title: "Managed WP Performance",
         url: "#",
         icon: CircleGauge,
-        isActive: true,
+        isActive: false,
         items: [
           {
             title: "Status",

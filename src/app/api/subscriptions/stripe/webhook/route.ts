@@ -4,16 +4,19 @@ import { SubscriptionCreated } from "@/app/api/emails/subscriptionCreated";
 import { setupDB } from "@/lib/db";
 import { headers } from "next/headers";
 import Stripe from "stripe";
+import { UserPlan } from "../../plan/route";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
 });
+
 
 const worker = setupDB();
 
 export async function POST(req: Request) {
   const body = await req.text();
   const signature = (await headers()).get("stripe-signature");
+  const x_plan: Pick<UserPlan, "plan"> = { plan: "Managed WordPress Performance" };
 
   let event: Stripe.Event;
 
@@ -39,21 +42,17 @@ export async function POST(req: Request) {
         const userId = session.metadata?.user_id;
 
         if (session.mode === "payment") {
+
           await worker.from("one_time_orders").insert({
             user_id: userId as string,
+            customer_email: session.customer_details?.email as string,
             stripe_customer_id: session.customer as string,
-            stripe_session_id: session.id,
-            stripe_payment_intent_id: session.payment_intent as string,
             amount_total: session.amount_total as number,
-            item_type: session.metadata?.item_type as string,
             payment_status: session.payment_status as string,
             created_at: new Date().toISOString(),
             currency: session.currency as string,
-            id: session.id,
-            item_id: session.metadata?.item_id as string,
-            metadata: session.metadata as any,
             quantity: Number(session.metadata?.quantity),
-            status: session.status as string,
+            plan: x_plan.plan
           })
 
           break;

@@ -1,8 +1,9 @@
-export {default as RumWebVitalToolbar} from "../theme/toolbar"
-export {useSignOut} from "./supabase/signOutUser"
-export {default as HistrogramBar} from  "../theme/webVitalBars"
-export {setRatelimiter, getRateLimiter} from "./rateLimiter"
-export {redisCache} from "./redisCache"
-export {debounce} from "./debounce"
-export {lazyload} from "./lazyload"
-export {cachedData, cleanExpiredCache} from "./cache"
+export { default as RumWebVitalToolbar } from "../theme/toolbar";
+export { useSignOut } from "./supabase/signOutUser";
+export { default as HistrogramBar } from "../theme/webVitalBars";
+export { setRatelimiter, getRateLimiter } from "./rateLimiter";
+export { redisCache } from "./redisCache";
+export { debounce } from "./debounce";
+export { lazyload } from "./lazyload";
+export { cachedData, cleanExpiredCache } from "./cache";
+export { checkFavicon } from "./getFavicon";

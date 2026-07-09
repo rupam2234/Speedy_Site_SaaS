@@ -34,9 +34,8 @@ export type PluginAudits =
 export type EmailReporting =
   Database["public"]["Tables"]["email_reporting"]["Insert"];
 
-export type NetworkServerSchema =
-  Database["public"]["Functions"]["get_network_server_keyset"]["Returns"];
-
 export type OneTimeOrders = Database["public"]["Tables"]["one_time_orders"]["Insert"];
 
 export type FontMetrics = Database["public"]["Functions"]["font_analysis"]["Returns"]
+
+export type WordPress_cred = Database["public"]["Tables"]["wordpress_cred"]["Insert"]

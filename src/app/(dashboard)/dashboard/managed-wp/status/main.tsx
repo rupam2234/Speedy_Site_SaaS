@@ -33,7 +33,7 @@ export default function Main() {
           No Managed WordPress Optimization
         </p>
         <p className="text-sm text-primary/60">
-          This site isn't enrolled in managed WordPress performance
+          This site isn&apos;t enrolled in managed WordPress performance
           optimization. Select a different site to continue.
         </p>
       </div>

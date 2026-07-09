@@ -11,21 +11,21 @@ import { PricingCardContent } from "@/app/(home)";
 
 export const planCards: PlanCardProps[] = [
   {
-    name: "Managed WordPress Performance",
-    price: 299,
+    name: "Starter",
+    price: 9,
     description:
-      "Hands free performance upgrade + weekly reports + 1 year of real-user monitoring access.",
+      "User experience & performance monitoring + optimization assistance",
     features: [
-      "1 Site & WP Rocket Premium Plugin",
-      "Dedicated WordPress Optimization Service (pass web vitals and maintain performance)",
+      "1 site",
       "Real-Time Performance Tracking",
-      "Unlimited pageviews/month for 1 year",
+      "20,000 pageviews/month",
       "History + Realtime data",
       "1 year data retention",
-      "AI analysis and debugging",
-      "WP Plugin Monitoring + Audits",
-      "Image & font analysis",
-      "Weekly report and dedicated support",
+      "AI analysis & suggestions",
+      "5 WP Plugin Audits",
+      "Image & Font Flagging",
+      "Weekly Email Report",
+      "Standard Support",
     ],
   },
   {
@@ -47,23 +47,24 @@ export const planCards: PlanCardProps[] = [
     ],
   },
   {
-    name: "Starter",
-    price: 9,
+    name: "Managed WordPress Performance",
+    price: 299,
     description:
-      "User experience & performance monitoring + optimization assistance",
+      "Quick performance upgrade + weekly reports until 12 months combined with web vitals & user experience monitoring.",
     features: [
-      "1 site",
+      "1 Site & WP Rocket Premium Plugin",
+      "Dedicated WordPress Optimization Service (pass web vitals and maintain performance)",
       "Real-Time Performance Tracking",
-      "20,000 pageviews/month",
+      "Unlimited pageviews/month for 1 year",
       "History + Realtime data",
       "1 year data retention",
-      "AI analysis & suggestions",
-      "5 WP Plugin Audits",
-      "Image & Font Flagging",
-      "Weekly Email Report",
-      "Standard Support",
+      "AI analysis and debugging",
+      "WP Plugin Monitoring + Audits",
+      "Image & font analysis",
+      "Weekly report and dedicated support",
     ],
   },
+
   // {
   //   name: "Pro",
   //   price: 49,

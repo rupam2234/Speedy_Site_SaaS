@@ -147,51 +147,50 @@ export type Database = {
                     amount_total: number
                     created_at: string | null
                     currency: string
+                    customer_email: string | null
                     id: string
-                    item_id: string | null
-                    item_type: string
-                    metadata: Json | null
                     payment_status: string
+                    plan: string | null
                     quantity: number
                     status: string
                     stripe_customer_id: string | null
-                    stripe_payment_intent_id: string | null
-                    stripe_session_id: string | null
                     user_id: string
                 }
                 Insert: {
                     amount_total: number
                     created_at?: string | null
                     currency?: string
+                    customer_email?: string | null
                     id?: string
-                    item_id?: string | null
-                    item_type: string
-                    metadata?: Json | null
                     payment_status: string
+                    plan?: string | null
                     quantity?: number
                     status?: string
                     stripe_customer_id?: string | null
-                    stripe_payment_intent_id?: string | null
-                    stripe_session_id?: string | null
                     user_id: string
                 }
                 Update: {
                     amount_total?: number
                     created_at?: string | null
                     currency?: string
+                    customer_email?: string | null
                     id?: string
-                    item_id?: string | null
-                    item_type?: string
-                    metadata?: Json | null
                     payment_status?: string
+                    plan?: string | null
                     quantity?: number
                     status?: string
                     stripe_customer_id?: string | null
-                    stripe_payment_intent_id?: string | null
-                    stripe_session_id?: string | null
                     user_id?: string
                 }
-                Relationships: []
+                Relationships: [
+                    {
+                        foreignKeyName: "one_time_orders_plan_fkey"
+                        columns: ["plan"]
+                        isOneToOne: false
+                        referencedRelation: "plan_metadata"
+                        referencedColumns: ["plan"]
+                    },
+                ]
             }
             orders: {
                 Row: {
@@ -634,6 +633,59 @@ export type Database = {
                     url?: string
                 }
                 Relationships: []
+            }
+            wordpress_cred: {
+                Row: {
+                    cred_id: string
+                    order_id: string
+                    payment_id: string | null
+                    wp_address: string
+                    wp_login_url: string
+                }
+                Insert: {
+                    cred_id?: string
+                    order_id: string
+                    payment_id?: string | null
+                    wp_address: string
+                    wp_login_url: string
+                }
+                Update: {
+                    cred_id?: string
+                    order_id?: string
+                    payment_id?: string | null
+                    wp_address?: string
+                    wp_login_url?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "wordpress_cred_order_id_fkey"
+                        columns: ["order_id"]
+                        isOneToOne: false
+                        referencedRelation: "cloudflare_kv_tracking"
+                        referencedColumns: ["order_id"]
+                    },
+                    {
+                        foreignKeyName: "wordpress_cred_order_id_fkey"
+                        columns: ["order_id"]
+                        isOneToOne: false
+                        referencedRelation: "orders"
+                        referencedColumns: ["order_id"]
+                    },
+                    {
+                        foreignKeyName: "wordpress_cred_order_id_fkey"
+                        columns: ["order_id"]
+                        isOneToOne: false
+                        referencedRelation: "v_cf_zone_per_site"
+                        referencedColumns: ["order_id"]
+                    },
+                    {
+                        foreignKeyName: "wordpress_cred_payment_id_fkey"
+                        columns: ["payment_id"]
+                        isOneToOne: false
+                        referencedRelation: "one_time_orders"
+                        referencedColumns: ["id"]
+                    },
+                ]
             }
             wp_key: {
                 Row: {
@@ -1081,24 +1133,6 @@ export type Database = {
                     email: string
                     report_verbosity: number
                     website_name: string
-                }[]
-            }
-            get_network_server_keyset: {
-                Args: {
-                    p_domain_name: string
-                    p_last_created_at?: string
-                    p_last_id?: number
-                    p_limit?: number
-                }
-                Returns: {
-                    created_at: string
-                    current_page: string
-                    device_info: Json
-                    id: number
-                    location_info: Json
-                    navigation_timing: Json
-                    session_id: string
-                    ttfb: number
                 }[]
             }
             get_rum_history: {

@@ -90,8 +90,9 @@ export async function POST(request: Request) {
       session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "payment",
+        customer_creation: "always",
         allow_promotion_codes: true,
-        // saved_payment_method_options: { payment_method_save: "enabled" },
+        saved_payment_method_options: { payment_method_save: "enabled" },
 
         metadata: {
           user_id: user.id,

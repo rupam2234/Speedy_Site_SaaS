@@ -5,7 +5,7 @@ export default {
 		const url = new URL(request.url);
 
 		// WebSocket Endpoint for Dashboard
-		if(url.pathname === "/realtime"){
+		if (url.pathname === '/realtime') {
 			const id = env.REALTIME_HUB.idFromName('global-hub');
 			const stub = env.REALTIME_HUB.get(id);
 			return stub.fetch(request);
@@ -32,13 +32,12 @@ export default {
 };
 
 export class RealtimeHub extends DurableObject {
-	constructor(state, env){
+	constructor(state, env) {
 		super(state, env);
 		this.sessions = new Set();
 	}
 
 	async fetch(request) {
-
 		// If it's a internal "ping" from shards
 		if (request.method === 'POST') {
 			const data = await request.json();
@@ -48,13 +47,12 @@ export class RealtimeHub extends DurableObject {
 
 		// Dashboard connecting via WebSocket
 		if (request.headers.get('Upgrade') === 'websocket') {
-
 			const pair = new WebSocketPair();
 			const [client, server] = Object.values(pair);
 
 			// Connection limit protection
 			if (this.sessions.size >= 2000) {
-				server.close(1013, "Too many connections");
+				server.close(1013, 'Too many connections');
 				return new Response(null, { status: 101, webSocket: client });
 			}
 
@@ -104,13 +102,13 @@ export class MyDurableObject extends DurableObject {
 		if (request.method === 'OPTIONS') {
 			const origin = request.headers.get('Origin') || '';
 			return new Response(null, {
-			  headers: {
-				'Access-Control-Allow-Origin': origin,
-				'Access-Control-Allow-Methods': 'POST, OPTIONS',
-				'Access-Control-Allow-Headers': 'Content-Type',
-				'Access-Control-Allow-Credentials': 'true',
-				'Access-Control-Max-Age': '86400' // cached to reduce preflight requests / CORS checks
-			  },
+				headers: {
+					'Access-Control-Allow-Origin': origin,
+					'Access-Control-Allow-Methods': 'POST, OPTIONS',
+					'Access-Control-Allow-Headers': 'Content-Type',
+					'Access-Control-Allow-Credentials': 'true',
+					'Access-Control-Max-Age': '86400', // cached to reduce preflight requests / CORS checks
+				},
 			});
 		}
 
@@ -119,7 +117,6 @@ export class MyDurableObject extends DurableObject {
 		}
 
 		try {
-
 			const data = await request.json();
 			const domain = data.siteDomain;
 
@@ -146,7 +143,7 @@ export class MyDurableObject extends DurableObject {
 
 			// Only keep timestamps from the last 60 seconds
 			const oneMinuteAgo = now - 60000;
-			this.recentTimestamps = this.recentTimestamps.filter(t => t > oneMinuteAgo);
+			this.recentTimestamps = this.recentTimestamps.filter((t) => t > oneMinuteAgo);
 
 			const requestsLastMinute = this.recentTimestamps.length;
 			/* ----------------------------
@@ -161,48 +158,44 @@ export class MyDurableObject extends DurableObject {
 				city: cf.city ?? null,
 				timezone: cf.timezone ?? null,
 				continent: cf.continent ?? null,
-				org: cf.asOrganization ?? null
+				org: cf.asOrganization ?? null,
 			};
 
 			// Notify the BroadcastHub (Only send 10% of traffic to the map)
 
-			const chance = requestsLastMinute > 30 
-			? 0.05 
-			: requestsLastMinute > 15 
-				? 0.1 
-				: 1;
+			const chance = requestsLastMinute > 30 ? 0.05 : requestsLastMinute > 15 ? 0.1 : 1;
 
 			const events = data.data ?? [];
 
-			const realtimeData = {}; // we vitals data for web socket 
+			const realtimeData = {}; // we vitals data for web socket
 
 			events.forEach((event) => {
-				if (event.type === "web-vital") {
+				if (event.type === 'web-vital') {
 					switch (event.name) {
-						case "LCP":
-						realtimeData.LCP = event.value || null;
-						break;
-						case "CLS":
-						realtimeData.CLS = event.value || null;
-						break;
-						case "INP":
-						realtimeData.INP = event.value || null;
-						break;
-						case "TTFB":
-						realtimeData.TTFB = event.value || null;
-						break;
+						case 'LCP':
+							realtimeData.LCP = event.value || null;
+							break;
+						case 'CLS':
+							realtimeData.CLS = event.value || null;
+							break;
+						case 'INP':
+							realtimeData.INP = event.value || null;
+							break;
+						case 'TTFB':
+							realtimeData.TTFB = event.value || null;
+							break;
 					}
-				} else if(event.type === "client-info"){
+				} else if (event.type === 'client-info') {
 					realtimeData.device = event.deviceType || null;
 				}
 
 				// fallback device
 				if (!realtimeData.device) {
-					realtimeData.device = "unknown";
+					realtimeData.device = 'unknown';
 				}
 			});
 
-			if (Math.random() < chance) {  
+			if (Math.random() < chance) {
 				this.sendToHub({
 					type: 'visitor',
 					domain: domain,
@@ -210,40 +203,39 @@ export class MyDurableObject extends DurableObject {
 					currentPage: data.currentPage,
 					previousPage: data.previousPage,
 					// sending longitude, latitude only for realtime tracking, not storing them in db
-					...{...geo, latitude: cf.latitude ?? null,
-						longitude: cf.longitude ?? null},
+					...{ ...geo, latitude: cf.latitude ?? null, longitude: cf.longitude ?? null },
 					...realtimeData,
-					timestamp: Date.now()
+					timestamp: Date.now(),
 				});
-			 }
-			
+			}
+
 			/* ----------------------------
 			NORMALIZED PAYLOAD
 			-----------------------------*/
 
 			// add geo-info event
 			const geoEvent = {
-				type: "geo-info",
+				type: 'geo-info',
 				...geo,
 				timestamp: Date.now(),
-				siteDomain: data.siteDomain ?? null
+				siteDomain: data.siteDomain ?? null,
 			};
 
 			events.unshift(geoEvent);
 
 			// Optimize navigation timings
 			const optimizedEvents = events.map((event) => {
-				if (event.type === "navigation-timing" && event.raw) {
+				if (event.type === 'navigation-timing' && event.raw) {
 					const r = event.raw;
-					const safe = (v) => (typeof v === "number" && v >= 0 ? v : null);
+					const safe = (v) => (typeof v === 'number' && v >= 0 ? v : null);
 
 					return {
 						...event,
 						raw: {
 							ttfb: safe(r.responseStart - r.requestStart),
 							domReady: safe(r.domInteractive - r.startTime),
-							loadTime: safe(r.loadEventEnd - r.startTime)
-						}
+							loadTime: safe(r.loadEventEnd - r.startTime),
+						},
 					};
 				}
 				return event;
@@ -255,7 +247,7 @@ export class MyDurableObject extends DurableObject {
 				current_page: data.currentPage ?? null,
 				previous_page: data.previousPage ?? null,
 				events: optimizedEvents,
-				created_at: new Date().toISOString()
+				created_at: new Date().toISOString(),
 			};
 
 			/* ----------------------------
@@ -271,7 +263,6 @@ export class MyDurableObject extends DurableObject {
 			let shouldFlush = false;
 
 			await this.state.storage.transaction(async (txn) => {
-
 				buffer = await txn.get('buffer');
 
 				if (!Array.isArray(buffer)) buffer = [];
@@ -280,18 +271,15 @@ export class MyDurableObject extends DurableObject {
 
 				const approxSize = buffer.length * 2000;
 
-				shouldFlush =
-					buffer.length >= bufferThreshold ||
-					approxSize > 400000;
+				shouldFlush = buffer.length >= bufferThreshold || approxSize > 400000;
 
 				if (!shouldFlush) {
 					await txn.put('buffer', buffer);
 				}
-
 			});
 
 			if (!shouldFlush) {
-				return corsResponse('Data buffered', request, 202)
+				return corsResponse('Data buffered', request, 202);
 			}
 
 			/* ----------------------------
@@ -309,70 +297,54 @@ export class MyDurableObject extends DurableObject {
 			return corsResponse('Supabase insert failed', request, 500);
 		} catch (err) {
 			console.error('Handler error:', err);
-			return corsResponse('Invalid data', request, 400)
+			return corsResponse('Invalid data', request, 400);
 		}
 	}
 
 	// SUPABASE BATCH INSERT
 	async flushToSupabase(buffer) {
-
 		try {
-
 			// SANITIZE: Forcing every object to have the exact same keys
-			const cleanBuffer = buffer.map(item => ({
+			const cleanBuffer = buffer.map((item) => ({
 				session_id: item.session_id ?? null,
 				domain_name: item.domain_name ?? null,
 				current_page: item.current_page ?? null,
 				previous_page: item.previous_page ?? null,
 				events: item.events ?? [],
-				created_at: item.created_at ?? new Date().toISOString()
+				created_at: item.created_at ?? new Date().toISOString(),
 			}));
 
-			const res = await fetch(
-				`${this.env.SUPABASE_URL}/rest/v1/rum_metrics`,
-				{
-					method: 'POST',
-					headers: {
-						apikey: this.env.SUPABASE_SERVICE_ROLE_KEY,
-						Authorization: `Bearer ${this.env.SUPABASE_SERVICE_ROLE_KEY}`,
-						'Content-Type': 'application/json',
-						Prefer: 'return=minimal'
-					},
-					body: JSON.stringify(cleanBuffer)
-				}
-			);
+			const res = await fetch(`${this.env.SUPABASE_URL}/rest/v1/rum_metrics`, {
+				method: 'POST',
+				headers: {
+					apikey: this.env.SUPABASE_SERVICE_ROLE_KEY,
+					Authorization: `Bearer ${this.env.SUPABASE_SERVICE_ROLE_KEY}`,
+					'Content-Type': 'application/json',
+					Prefer: 'return=minimal',
+				},
+				body: JSON.stringify(cleanBuffer),
+			});
 
 			if (!res.ok) {
-
 				const errorText = await res.text();
 
-				console.error(
-					'Supabase insert failed:',
-					res.status,
-					errorText
-				);
+				console.error('Supabase insert failed:', res.status, errorText);
 
 				return { ok: false };
 			}
 
 			return { ok: true };
-
 		} catch (err) {
-
 			console.error('Supabase flush exception:', err);
 
 			return { ok: false };
 		}
 	}
 
-	// DOMAIN VALIDATION
 	async validateDomain(domain) {
+		const kvData = await this.env.SUBSCRIPTION_METADATA.get(`domain:${domain}`);
 
-		const kvData =
-			await this.env.SUBSCRIPTION_METADATA.get(`domain:${domain}`);
-
-		if (!kvData)
-			return { valid: false, reason: 'Domain not found' };
+		if (!kvData) return { valid: false, reason: 'Domain not found' };
 
 		let subscription;
 
@@ -397,10 +369,7 @@ export class MyDurableObject extends DurableObject {
 		const usage = subscription.current_usage ?? 0;
 		const limit = subscription.usage_limit ?? 0;
 
-		if (
-			subscription.degradation_policy === 'block' &&
-			usage >= limit
-		) {
+		if (subscription.degradation_policy === 'block' && usage >= limit) {
 			return { valid: false, reason: 'Usage limit exceeded' };
 		}
 
@@ -417,9 +386,9 @@ export class MyDurableObject extends DurableObject {
 				method: 'POST',
 				body: JSON.stringify({
 					...payload,
-					id: (payload.session_id || 'anon') + Date.now()
-				})
-			})
+					id: (payload.session_id || 'anon') + Date.now(),
+				}),
+			}),
 		);
 	}
 }
@@ -427,10 +396,10 @@ export class MyDurableObject extends DurableObject {
 function corsResponse(body, request, status = 200) {
 	const origin = request.headers.get('Origin') || '';
 	return new Response(body, {
-	  status,
-	  headers: {
-		'Access-Control-Allow-Origin': origin,
-		'Access-Control-Allow-Credentials': 'true',
-	  },
+		status,
+		headers: {
+			'Access-Control-Allow-Origin': origin,
+			'Access-Control-Allow-Credentials': 'true',
+		},
 	});
 }
