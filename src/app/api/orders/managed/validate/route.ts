@@ -1,43 +1,33 @@
 import { setupDB } from "@/lib/db"
-import { NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
-import { getSupabaseServerUser } from "@/app/api";
+import { NextRequest, NextResponse } from "next/server";
 
 const worker = setupDB();
 
-const getCachedOneTimeOrders = unstable_cache(
-    async (userId: string) => {
-        const { error: orderError, data } = await worker
-            .from("one_time_orders")
-            .select("*")
-            .eq("user_id", userId)
+export async function GET(req: NextRequest) {
+    const activeSite = req.headers.get("site");
+    const normalize = `https://${activeSite}`;
 
-        if (orderError) {
-            throw new Error(orderError.message || "Unable to find managed wordpress order");
-        }
-
-        return data;
-    },
-    ["one-time-orders"],
-    {
-        tags: ["one-time-orders"],
-        revalidate: 5 * 60,
+    if (!activeSite) {
+        return NextResponse.json("Bad request", { status: 401 })
     }
-);
-
-export async function GET() {
-    const { user, error } = await getSupabaseServerUser();
 
     try {
-        if (!user) {
-            throw new Error(error);
+        const { data, error } = await worker
+            .from("wordpress_cred")
+            .select("cred_id")
+            .eq("wp_address", normalize)
+            .maybeSingle();
+
+        if (error) {
+            throw error.message;
         }
 
-        const data = await getCachedOneTimeOrders(user.id);
-
-        return NextResponse.json(data, { status: 200 });
+        return NextResponse.json(data !== null, { status: 200 });
 
     } catch (error: any) {
-        return NextResponse.json(error.message || "Unexpected Error Occurred", { status: 500 });
+        return NextResponse.json(
+            { valid: false, message: error.message || "Unexpected Error Occurred" },
+            { status: 500 }
+        );
     }
 }

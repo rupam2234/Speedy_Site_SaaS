@@ -3,14 +3,34 @@
 import { LoadingAnimation } from "@/components/theme";
 import { PackageOpen } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSiteContext } from "../../siteContext";
+import { ManagedOrderDashboard } from ".";
 
 export default function Main() {
-  const [managedOrders, setManagedOrders] = useState<any>([]);
+  const [managedOrder, setManagedOrder] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const { selectedSite } = useSiteContext();
 
   useEffect(() => {
-    ValidateManagedOrders();
-  }, []);
+    if (!selectedSite) return;
+
+    const validate = async () => {
+      try {
+        const res = await fetch("/api/orders/managed/validate", {
+          headers: {
+            site: selectedSite,
+          },
+        });
+
+        const isValid: boolean = await res.json();
+        setManagedOrder(isValid);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    validate();
+  }, [selectedSite]);
 
   if (loading) {
     return (
@@ -20,7 +40,7 @@ export default function Main() {
     );
   }
 
-  if (managedOrders && managedOrders.length === 0) {
+  if (!loading && managedOrder === false) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-6 pb-32 text-center fade-in-10 duration-500">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 dark:bg-primary/80">
@@ -40,29 +60,5 @@ export default function Main() {
     );
   }
 
-  return <></>;
-
-  async function ValidateManagedOrders() {
-    try {
-      const res = await fetch("/api/orders/managed/validate", {
-        method: "GET",
-        headers: { "Conetent-Type": "application/json" },
-      });
-
-      if (!res.ok) {
-        const errorRes: any = await res.json();
-        setManagedOrders([]);
-        setLoading(false);
-        throw new Error(errorRes.message);
-      }
-
-      const body = await res.json();
-      setManagedOrders(body);
-      setLoading(false);
-    } catch (error: any) {
-      console.error(
-        error.message || "Something went wrong in managed order validation",
-      );
-    }
-  }
+  return <ManagedOrderDashboard />;
 }
