@@ -12,8 +12,11 @@ export async function POST(req: NextRequest) {
         wp_address,
         wp_login_url,
         selectedSite,
+        stripeSessionId
     }: OrderFormInput & {
         selectedSite: string;
+        stripeSessionId: string
+
     } = await req.json();
 
     if (!wp_address || !wp_login_url || !selectedSite) {
@@ -39,6 +42,15 @@ export async function POST(req: NextRequest) {
         if (existingOrderError) {
             throw new Error(existingOrderError.message);
         }
+
+
+        // we can now use stripe_session_id to find payment_id
+        const { data: paymentData, error: paymentDataError } = await worker.from("one_time_orders").select("id").eq("checkout_session_id", stripeSessionId).single();
+        if (paymentDataError) {
+            console.log("warning: payment id is null") // for debugging purpose
+        }
+        const payment_id = paymentData?.id ? paymentData.id : null
+
 
         let orderId = existingOrder?.order_id;
 
@@ -78,6 +90,7 @@ export async function POST(req: NextRequest) {
                 order_id: orderId,
                 wp_address,
                 wp_login_url,
+                payment_id
             });
 
         if (wpError) {

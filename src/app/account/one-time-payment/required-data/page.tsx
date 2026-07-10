@@ -2,6 +2,7 @@
 
 import { WordPress_cred } from "@/app/api/helpers/dataTypes";
 import { ShieldCheck, Globe, Link2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 
 export type OrderFormInput = Pick<
@@ -20,6 +21,9 @@ export default function ManagedServiceMetadata() {
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [countdown, setCountdown] = useState(5);
+
+  const searchParams = useSearchParams();
+  const stripeSessionId = searchParams.get("session_id");
 
   const handleChange =
     (field: keyof OrderFormInput) =>
@@ -52,6 +56,7 @@ export default function ManagedServiceMetadata() {
           wp_address: form.wp_address,
           wp_login_url: form.wp_login_url,
           selectedSite: selectedSite,
+          stripeSessionId: stripeSessionId ?? null,
         }),
       });
 

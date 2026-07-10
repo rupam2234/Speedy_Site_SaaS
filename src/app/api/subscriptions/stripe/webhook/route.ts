@@ -43,23 +43,28 @@ export async function POST(req: Request) {
 
         if (session.mode === "payment") {
 
-          await worker.from("one_time_orders").insert({
+          const { error: paymentError } = await worker.from("one_time_orders").insert({
             user_id: userId as string,
+            checkout_session_id: session.id,
             customer_email: session.customer_details?.email as string,
             stripe_customer_id: session.customer as string,
             amount_total: session.amount_total as number,
             payment_status: session.payment_status as string,
             created_at: new Date().toISOString(),
             currency: session.currency as string,
-            quantity: Number(session.metadata?.quantity),
+            quantity: 1,
             plan: x_plan.plan
           })
+
+          if (paymentError) {
+            throw new Error(paymentError.message)
+          }
 
           break;
         }
 
         if (session.mode === "subscription") {
-          await worker
+          const { error: subscriptionError } = await worker
             .from("subscriptions")
             .update({
               stripe_subscription_status: "session completed",
@@ -67,6 +72,10 @@ export async function POST(req: Request) {
               stripe_session_id: session.id,
             })
             .eq("user_id", userId as string);
+
+          if (subscriptionError) {
+            throw new Error(subscriptionError.message)
+          }
 
           break;
         }
@@ -297,8 +306,8 @@ export async function POST(req: Request) {
       }
     }
   } catch (error: any) {
-    return new Response(error, { status: 500 });
+    return new Response(error.message, { status: 500 });
   }
 
-  return new Response("subscription process complete", { status: 200 });
+  return new Response("Process complete", { status: 200 });
 }

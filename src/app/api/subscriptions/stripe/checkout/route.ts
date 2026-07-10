@@ -88,7 +88,7 @@ export async function POST(request: Request) {
 
     } else {
       session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
+        payment_method_types: ["card", "paypal"],
         mode: "payment",
         customer_creation: "always",
         allow_promotion_codes: true,
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
             },
           },
         ],
-        success_url: `${BASE_URL}/account/one-time-payment/required-data`,
+        success_url: `${BASE_URL}/account/one-time-payment/required-data?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${BASE_URL}/account/one-time-payment/cancel`,
       });
     }
