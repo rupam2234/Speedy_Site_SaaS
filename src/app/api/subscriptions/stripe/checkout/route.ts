@@ -88,7 +88,7 @@ export async function POST(request: Request) {
 
     } else {
       session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card", "paypal"],
+        payment_method_types: ["card"],
         mode: "payment",
         customer_creation: "always",
         allow_promotion_codes: true,
