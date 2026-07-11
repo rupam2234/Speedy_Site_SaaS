@@ -69,7 +69,7 @@ export default function OriginPerformanceChart({ data }: Props) {
         },
         formatter: function (params: any) {
           let tooltipText = `${params[0].axisValue}<br/>`;
-          params.forEach((item: any) => {
+          params?.forEach((item: any) => {
             if (item.seriesIndex === 0) {
               tooltipText += `<span style="display:inline-block;margin-right:5px;
                                border-radius:50%;width:10px;height:10px;

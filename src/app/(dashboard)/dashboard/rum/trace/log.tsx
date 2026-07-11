@@ -381,7 +381,7 @@ function HarPanel({ item }: { item: LogItem }) {
     );
   }
 
-  const maxEnd = Math.max(...har.slowest.map((s) => s.start + s.duration), 1);
+  const maxEnd = Math.max(...har?.slowest.map((s) => s.start + s.duration), 1);
 
   const sortedTypes = Object.entries(har.byType).sort(
     (a, b) => b[1].totalDuration - a[1].totalDuration,
@@ -486,7 +486,7 @@ function HarPanel({ item }: { item: LogItem }) {
         </div>
 
         <div className="space-y-1">
-          {har.slowest.map((s, i) => (
+          {har?.slowest.map((s, i) => (
             <WaterfallBar
               key={i}
               resource={s}
