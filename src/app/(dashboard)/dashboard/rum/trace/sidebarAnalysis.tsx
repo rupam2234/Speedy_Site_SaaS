@@ -4,9 +4,10 @@ import { CacheHitMiss } from "@/app/api/network-and-server/cache-hit-miss/route"
 import { StarsIcon, Zap } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSiteContext } from "../../siteContext";
+import { NetworkServerRecord } from "./types";
 
 interface SidebarAnalysisProps {
-  networkServerData: any;
+  networkServerData: NetworkServerRecord[];
   cacheHitMissData: CacheHitMiss[];
 }
 
@@ -66,7 +67,7 @@ export default function SidebarAnalysis({
 
     const filteredTtfbData =
       networkServerData?.filter(
-        (x: { ttfb: null | undefined }) =>
+        (x) =>
           x.ttfb !== null && x.ttfb !== undefined && typeof x.ttfb === "number",
       ) || [];
 
@@ -112,8 +113,12 @@ export default function SidebarAnalysis({
     const seen = new Set<string>();
     const collected: AnalysisData[] = [];
 
-    networkServerData.forEach((x: any) => {
-      const asset = x.har_data && x.har_data?.slowest;
+    networkServerData.forEach((x) => {
+      const asset = x?.har_data?.slowest;
+
+      if (!asset) {
+        return;
+      }
 
       for (let i = 0; i < asset.length; i++) {
         const item = asset[i];
@@ -121,14 +126,15 @@ export default function SidebarAnalysis({
         if (!item?.url) continue;
 
         const hostname: string | null = safeHostname(item.url);
+        const hostKey = hostname ?? "";
 
         if (
           hostname !== selectedSite &&
           item?.start < 1500 &&
           item?.duration > 500 &&
-          !seen.has(hostname !== null ? hostname : "")
+          !seen.has(hostKey)
         ) {
-          seen.add(hostname !== null ? hostname : "");
+          seen.add(hostKey);
           collected.push({
             url: item.url,
             duration: item.duration,
