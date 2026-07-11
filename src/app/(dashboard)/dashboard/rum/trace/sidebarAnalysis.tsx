@@ -113,7 +113,7 @@ export default function SidebarAnalysis({
     const collected: AnalysisData[] = [];
 
     networkServerData.forEach((x: any) => {
-      const asset = x.har_data.slowest;
+      const asset = x.har_data && x.har_data?.slowest;
 
       for (let i = 0; i < asset.length; i++) {
         const item = asset[i];
