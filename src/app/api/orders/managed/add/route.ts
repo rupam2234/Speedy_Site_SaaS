@@ -1,4 +1,5 @@
 import { OrderFormInput } from "@/app/account/one-time-payment/required-data/page";
+import { emailConfirmationForManagedService } from "@/app/api/emails/newManagedOrder";
 import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
 import { checkFavicon } from "@/components/utils";
 import { setupDB } from "@/lib/db";
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
 
 
         // we can now use stripe_session_id to find payment_id
-        const { data: paymentData, error: paymentDataError } = await worker.from("one_time_orders").select("id").eq("checkout_session_id", stripeSessionId).single();
+        const { data: paymentData, error: paymentDataError } = await worker.from("one_time_orders").select("id, customer_email").eq("checkout_session_id", stripeSessionId).single();
         if (paymentDataError) {
             console.log("warning: payment id is null") // for debugging purpose
         }
@@ -84,24 +85,36 @@ export async function POST(req: NextRequest) {
         }
 
         // Save WordPress credentials
-        const { error: wpError } = await worker
+        const { data: wpdata, error: wpError } = await worker
             .from("wordpress_cred")
             .insert({
                 order_id: orderId,
                 wp_address,
                 wp_login_url,
                 payment_id
-            });
+            }).select().single();
 
         if (wpError) {
             throw new Error(
                 "Unexpacted error occured.");
         }
 
+        // send confirmation email
+        const email = paymentData?.customer_email || user.email;
+        if (!email) {
+            throw new Error("Missing customer email");
+        }
+
+        await emailConfirmationForManagedService({
+            domain: wpdata?.wp_address,
+            email,
+        });
+
         return NextResponse.json(
             { message: "Details saved successfully." },
             { status: 200 }
         );
+
     } catch (error: any) {
         return NextResponse.json(
             { message: error.message || "Unexpacted error occured." },
