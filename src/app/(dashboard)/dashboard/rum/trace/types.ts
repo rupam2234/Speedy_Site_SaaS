@@ -44,7 +44,7 @@ interface HarData {
     totalTransferSize: number;
 }
 
-interface PageSpeedRecord {
+export interface NetworkServerRecord {
     id: number;
     session_id: string;
     current_page: string;
