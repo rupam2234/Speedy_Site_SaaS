@@ -174,7 +174,7 @@ export default function SubscriptionManager() {
     <div className="p-5 relative">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div className="py-2 px-5 bg-primary/5 dark:bg-secondary-background text-primary font-medium rounded">
-          <h3 className="text-[16px] text-primary/80">Manage your plan</h3>
+          <h3 className="text-[16px] text-primary/80">Manage your plans</h3>
         </div>
 
         <div className="flex items-center gap-6">
@@ -246,6 +246,11 @@ export default function SubscriptionManager() {
           />
         ))}
       </div>
+
+      <p className="my-4 text-primary/60 text-xs">
+        <strong>Note:</strong> The Managed Performance Plan can be purchased
+        multiple times and is independent of your active subscription.
+      </p>
 
       {/* FOLDABLE SIDEBAR (DRAWER) */}
       <div
