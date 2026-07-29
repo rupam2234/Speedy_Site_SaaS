@@ -5,6 +5,7 @@ import { PackageOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSiteContext } from "../../siteContext";
 import { ManagedOrderDashboard } from ".";
+import Link from "next/link";
 
 export default function Main() {
   const [managedOrder, setManagedOrder] = useState<boolean>(false);
@@ -52,9 +53,20 @@ export default function Main() {
         <p className="text-sm font-medium text-primary">
           No Managed WordPress Optimization
         </p>
-        <p className="text-sm text-primary/60">
+        <p className="text-sm text-primary/70">
           This site isn&apos;t enrolled in managed WordPress performance
-          optimization. Select a different site to continue.
+          optimization. Please select a different site to continue.
+        </p>
+        <p className="text-xs text-primary/60">
+          <strong>Hint:</strong>{" "}
+          <span>
+            If you haven&apos;t assigned a managed performance order before it
+            can be placed{" "}
+            <Link className="text-blue-500/80" href={"/account/subscription"}>
+              at the billing page
+            </Link>
+            .
+          </span>
         </p>
       </div>
     );
