@@ -36,8 +36,8 @@ export default function SiteFooter() {
             </h4>
             <ul className="flex flex-col gap-[0.55rem]">
               {[
-                { label: "Blog", href: "https://blog.speedy.site/blog/" },
-                { label: "Account", href: "https://my.speedy.site/" },
+                { label: "Blog", href: "https://blog.speedy.site" },
+                { label: "Account", href: "https://speedy.site/dashboard" },
               ].map(({ label, href }) => (
                 <li key={label}>
                   <a
