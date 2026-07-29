@@ -64,6 +64,7 @@
   },
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
+  "prettier.tabWidth": 2,
   "workbench.editor.tabSizing": "fit",
   "editor.insertSpaces": true,
   "files.eol": "\n",
