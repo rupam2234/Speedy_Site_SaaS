@@ -2,7 +2,7 @@
 
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, Rocket } from "lucide-react";
+import { ArrowRight, ChevronDown, Rocket, Zap } from "lucide-react";
 import { useIsMobile } from "@/components/theme/use-mobile";
 import { SpeedySiteLogo } from "@/components/theme";
 import { useEffect, useState } from "react";
@@ -27,12 +27,12 @@ export default function SiteHeader({ enableNav }: { enableNav: boolean }) {
   }, [user, delayedUser]);
 
   const services = [
-    // {
-    //   title: "WP Optimization",
-    //   desc: "Standalone WordPress speed optimization service.",
-    //   icon: <Zap size={18} className="text-amber-500" />,
-    //   href: "/wordpress-optimization",
-    // },
+    {
+      title: "WP Optimization",
+      desc: "Managed WordPress speed optimization powered by real user data.",
+      icon: <Zap size={18} className="text-amber-500" />,
+      href: "/wordpress-optimization",
+    },
     {
       title: "Speedy Pixel",
       desc: "Convert and optimize images instantly to improve site speed",
@@ -104,7 +104,8 @@ export default function SiteHeader({ enableNav }: { enableNav: boolean }) {
 
                     <div className="col-span-2 mt-2 p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/50 text-center">
                       <p className="text-[11px] text-indigo-700 font-semibold">
-                        New: Real-time Core Web Vitals monitoring is now live!
+                        New: Connect your site once, zero code, and real user
+                        data starts flowing!
                       </p>
                     </div>
                   </div>
@@ -131,7 +132,7 @@ export default function SiteHeader({ enableNav }: { enableNav: boolean }) {
                 href="#speedy"
                 className="px-4 py-2 rounded-full hover:bg-slate-50 hover:text-indigo-600 transition-colors"
               >
-                Our Journey
+                Our Approach
               </Link>
               <Link
                 href="#pricing"

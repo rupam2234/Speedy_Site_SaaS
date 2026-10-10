@@ -50,7 +50,7 @@ export const planCards: PlanCardProps[] = [
     name: "Managed WordPress Performance",
     price: 299,
     description:
-      "Quick performance upgrade + weekly reports until 12 months combined with web vitals & user experience monitoring.",
+      "Pay once: full WordPress optimization service + 12 months of real user monitoring, weekly reports, and baked-reason issue diagnosis.",
     features: [
       "1 Site & WP Rocket Premium Plugin",
       "Dedicated WordPress Optimization Service (pass web vitals and maintain performance)",
@@ -58,7 +58,7 @@ export const planCards: PlanCardProps[] = [
       "Unlimited pageviews/month for 1 year",
       "History + Realtime data",
       "1 year data retention",
-      "AI analysis and debugging",
+      "Optimization progress & impact reports",
       "WP Plugin Monitoring + Audits",
       "Image & font analysis",
       "Weekly report and dedicated support",

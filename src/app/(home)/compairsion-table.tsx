@@ -35,7 +35,7 @@ export default function ComparisonTable() {
       GSC: { status: false },
       SpeedySite: true,
     },
-    { itemName: "LLM Analytics", GSC: { status: false }, SpeedySite: true },
+    { itemName: "Optimization Impact Tracking", GSC: { status: false }, SpeedySite: true },
   ];
 
   return (
