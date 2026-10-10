@@ -3,39 +3,50 @@ import { Database } from "@/lib/db";
 export type OrderData = Database["public"]["Tables"]["orders"]["Insert"];
 
 export type Subscriptions =
-  Database["public"]["Tables"]["subscriptions"]["Insert"];
+    Database["public"]["Tables"]["subscriptions"]["Insert"];
 
 export type PlanMetadata =
-  Database["public"]["Tables"]["plan_metadata"]["Insert"];
+    Database["public"]["Tables"]["plan_metadata"]["Insert"];
 
 export type Rum_history =
-  Database["public"]["Tables"]["rum_history_new"]["Insert"];
+    Database["public"]["Tables"]["rum_history_new"]["Insert"];
 
 export type CloudflareConfig =
-  Database["public"]["Tables"]["cloudflare_auth"]["Insert"];
+    Database["public"]["Tables"]["cloudflare_auth"]["Insert"];
 
 export type SpeedySiteTickets =
-  Database["public"]["Tables"]["tickets"]["Insert"];
+    Database["public"]["Tables"]["tickets"]["Insert"];
 
 export type TicketMessages =
-  Database["public"]["Tables"]["ticket_messages"]["Insert"];
+    Database["public"]["Tables"]["ticket_messages"]["Insert"];
 
 export type CacheEfficiency =
-  Database["public"]["Tables"]["rum_origin_hits_agg"]["Insert"];
+    Database["public"]["Tables"]["rum_origin_hits_agg"]["Insert"];
 
 export type WordPress_key = Database["public"]["Tables"]["wp_key"]["Insert"];
 
 export type Notifications =
-  Database["public"]["Tables"]["notifications"]["Insert"];
+    Database["public"]["Tables"]["notifications"]["Insert"];
 
 export type PluginAudits =
-  Database["public"]["Views"]["wp_plugin_scans"]["Row"];
+    Database["public"]["Views"]["wp_plugin_scans"]["Row"];
 
 export type EmailReporting =
-  Database["public"]["Tables"]["email_reporting"]["Insert"];
+    Database["public"]["Tables"]["email_reporting"]["Insert"];
 
-export type OneTimeOrders = Database["public"]["Tables"]["one_time_orders"]["Insert"];
+export type EmailReportingEntry = Required<
+    Pick<EmailReporting, "optional_email" | "report_verbosity">
+>;
+export type EmailReportingUpdate = {
+    order_id: string;
+    entries: EmailReportingEntry[];
+};
 
-export type FontMetrics = Database["public"]["Functions"]["font_analysis"]["Returns"]
+export type OneTimeOrders =
+    Database["public"]["Tables"]["one_time_orders"]["Insert"];
 
-export type WordPress_cred = Database["public"]["Tables"]["wordpress_cred"]["Insert"]
+export type FontMetrics =
+    Database["public"]["Functions"]["font_analysis"]["Returns"];
+
+export type WordPress_cred =
+    Database["public"]["Tables"]["wordpress_cred"]["Insert"];

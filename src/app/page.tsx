@@ -10,17 +10,19 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://speedy.site"),
 
   title: {
-    default: "Speedy Site – Website Performance & UX Monitoring",
+    default:
+      "Speedy Site – WordPress Performance Optimization Powered by Real User Data",
     template: "%s",
   },
   description:
-    "Monitor and optimize your website's speed, performance, and user experience. Track key metrics, identify bottlenecks, and improve site performance effortlessly.",
+    "Speedy Site is a managed WordPress performance optimization service. Connect your site once: we validate it, collect real user data, and our experts fix the performance issues that actually matter.",
 
   keywords: [
-    "website performance",
-    "site speed optimization",
-    "user experience monitoring",
-    "web performance tools",
+    "wordpress performance optimization",
+    "wordpress speed optimization",
+    "real user monitoring",
+    "core web vitals",
+    "managed wordpress performance service",
     "Speedy Site",
   ],
   authors: [{ name: "Speedy Site Team" }],
@@ -35,9 +37,10 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: "Speedy Site – Website Performance & UX Monitoring",
+    title:
+      "Speedy Site – WordPress Performance Optimization Powered by Real User Data",
     description:
-      "Get actionable insights to fix bottlenecks and improve site speed.",
+      "Connect your site once: we validate it and collect real user data. Our experts fix the WordPress performance issues that actually matter.",
     type: "website",
     url: "/",
     siteName: "Speedy Site",
@@ -54,9 +57,10 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Speedy Site – Website Performance & UX Monitoring",
+    title:
+      "Speedy Site – WordPress Performance Optimization Powered by Real User Data",
     description:
-      "Optimize your website's speed and user experience with Speedy Site.",
+      "Connect once. Real user data. Real WordPress performance fixes.",
     images: ["/images/social/speedy-site-banner.png"],
     site: "@SpeedySite",
     creator: "@SpeedySite",

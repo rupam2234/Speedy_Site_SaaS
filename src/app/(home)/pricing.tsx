@@ -53,7 +53,7 @@ export function PricingCardContent({
 
   return (
     <div
-      className={`p-6 border rounded ${
+      className={`p-6 border rounded-md shadow-2xl ${
         managedWP ? "col-span-1 md:col-span-2" : ""
       } flex flex-col transition ${
         props.highlight
@@ -61,7 +61,7 @@ export function PricingCardContent({
           : "bg-white dark:bg-secondary-background border-primary/15"
       }`}
     >
-      <div>
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex gap-2 items-center">
             <h3 className="text-lg font-semibold text-primary/80">
