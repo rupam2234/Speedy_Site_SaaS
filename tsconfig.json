@@ -28,16 +28,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "next-env.d.ts",
-    "src/lib/hooks/ParticleBackground.tsx",
-    "C:/projectbuild/speedy-next-cache/types/**/*.ts",
-    "src/app/(dashboard)/dashboard/rum/page.tsx.bak",
-    "src/app/(dashboard)/dashboard/rum/helpers/ExperienceBar.tsx.bak",
-    "scripts/journey.js",
-    ".next/dev/types/**/*.ts",
-    "src/app/(dashboard)/dashboard/rum/web-vitals/helpers/charts/index.js",
-    "src/app/account/subscription/index.ts",
-    "src/app/(auth)/auth/callback/page_backup.tsx"
+    "next-env.d.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "cloudflare-workers"]
 }
