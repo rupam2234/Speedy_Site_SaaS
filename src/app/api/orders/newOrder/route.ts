@@ -1,6 +1,6 @@
 import { setupDB } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { OrderData } from "../..";
+import { OrderData } from "@/app/api";
 
 const worker = setupDB();
 
@@ -23,29 +23,32 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fetch subscription details
-    const { data, error } = await worker
-      .from("subscription_with_limit")
-      .select("plan, current_usage, usage_limit, status")
-      .eq("user_id", user_id);
+    // Check if user has an active managed_wp service
+    const { data: service, error: serviceError } = await worker
+      .from("user_services")
+      .select("id, status, metadata")
+      .eq("user_id", user_id)
+      .eq("service_type", "managed_wp")
+      .eq("status", "active")
+      .maybeSingle();
 
-    if (error || !data || data.length === 0) {
+    if (serviceError) {
       return NextResponse.json(
-        {
-          error: "Error fetching subscription details or no subscription found",
-        },
+        { error: "Error checking service status" },
         { status: 500 },
       );
     }
 
-    const subscription = data[0];
-    // const isBlocked = subscription.degradation_policy === "block";
-    const isOverUsage =
-      subscription.current_usage !== null &&
-      subscription.usage_limit !== null &&
-      subscription.current_usage >= subscription.usage_limit;
+    if (!service) {
+      return NextResponse.json(
+        {
+          error: "No active WordPress Performance Optimization service found. Please purchase a service first.",
+        },
+        { status: 403 },
+      );
+    }
 
-    // Check if website already exists
+    // Check if website already exists for this user
     const { data: existingSite, error: siteError } = await worker
       .from("orders")
       .select("*")
@@ -67,18 +70,6 @@ export async function POST(req: Request) {
       );
     }
 
-    if (isOverUsage) {
-      return NextResponse.json(
-        {
-          message: "Usage limit reached. Please upgrade your plan to continue.",
-          usageLimit: subscription.usage_limit,
-          currentUsage: subscription.current_usage,
-          plan: subscription.plan,
-        },
-        { status: 403 },
-      );
-    }
-
     // If all checks pass, insert new order
     const {
       data: insertedOrder,
@@ -92,6 +83,7 @@ export async function POST(req: Request) {
         favicon_file: orderData.favicon_file,
         order_status: orderData.order_status,
         user_id,
+        product_type: "managed_wp",
       })
       .select("*")
       .single();
@@ -106,11 +98,16 @@ export async function POST(req: Request) {
       );
     }
 
+    // Link the order to the user_service
+    await worker
+      .from("user_services")
+      .update({ order_id: insertedOrder.order_id, updated_at: new Date().toISOString() })
+      .eq("id", service.id);
+
     return NextResponse.json(
       {
         message: "Order data inserted successfully",
         order: insertedOrder ? insertedOrder : null,
-        plan: subscription.plan,
       },
       { status: 200 },
     );

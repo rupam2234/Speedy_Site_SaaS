@@ -46,9 +46,15 @@ export async function POST(req: NextRequest) {
 
 
         // we can now use stripe_session_id to find payment_id
-        const { data: paymentData, error: paymentDataError } = await worker.from("one_time_orders").select("id, customer_email").eq("checkout_session_id", stripeSessionId).single();
+        const { data: paymentData, error: paymentDataError } = await worker
+            .from("user_services")
+            .select("id, metadata")
+            .eq("service_type", "managed_wp")
+            .eq("metadata->>stripe_session_id", stripeSessionId)
+            .maybeSingle();
+        
         if (paymentDataError) {
-            console.log("warning: payment id is null") // for debugging purpose
+            console.log("warning: payment data not found")
         }
         const payment_id = paymentData?.id ? paymentData.id : null
 
@@ -100,7 +106,7 @@ export async function POST(req: NextRequest) {
         }
 
         // send confirmation email
-        const email = paymentData?.customer_email || user.email;
+        const email = user.email;
         if (!email) {
             throw new Error("Missing customer email");
         }

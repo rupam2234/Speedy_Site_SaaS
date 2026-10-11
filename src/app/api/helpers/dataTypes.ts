@@ -2,12 +2,6 @@ import { Database } from "@/lib/db";
 
 export type OrderData = Database["public"]["Tables"]["orders"]["Insert"];
 
-export type Subscriptions =
-    Database["public"]["Tables"]["subscriptions"]["Insert"];
-
-export type PlanMetadata =
-    Database["public"]["Tables"]["plan_metadata"]["Insert"];
-
 export type Rum_history =
     Database["public"]["Tables"]["rum_history_new"]["Insert"];
 
@@ -27,9 +21,6 @@ export type WordPress_key = Database["public"]["Tables"]["wp_key"]["Insert"];
 
 export type Notifications =
     Database["public"]["Tables"]["notifications"]["Insert"];
-
-export type PluginAudits =
-    Database["public"]["Views"]["wp_plugin_scans"]["Row"];
 
 export type EmailReporting =
     Database["public"]["Tables"]["email_reporting"]["Insert"];

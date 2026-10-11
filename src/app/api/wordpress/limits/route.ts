@@ -16,62 +16,94 @@ export async function POST(req: NextRequest) {
 
   const { pluginAudit }: Props = await req.json();
 
-  // backup audit limits
-  const limits = {
-    pro: 20,
-    basic: 5,
-    agency: 100,
-  };
-
   try {
     if (!pluginAudit) {
-      // Return current quota
-      const { error, data } = await worker
-        .from("wp_plugin_scans")
-        .select("audit_completed, audit_limit")
+      // Return current quota - check user_services for managed_wp service
+      const { data: service, error: serviceError } = await worker
+        .from("user_services")
+        .select("id, metadata")
         .eq("user_id", user.id)
-        .single();
+        .eq("service_type", "managed_wp")
+        .eq("status", "active")
+        .maybeSingle();
 
-      if (error)
-        throw new Error(error.message ?? "Unable to fetch audit quota");
+      if (serviceError) {
+        throw new Error(serviceError?.message ?? "Unable to fetch user service");
+      }
 
-      return NextResponse.json({ data }, { status: 200 });
+      if (!service) {
+        // No active managed_wp service
+        return NextResponse.json(
+          { data: { audit_completed: 0, audit_limit: 0 } },
+          { status: 200 }
+        );
+      }
+
+      // Get scan count from metadata
+      const scansCompleted = (service.metadata as Record<string, any>)?.scans_completed ?? 0;
+      const auditLimit = (service.metadata as Record<string, any>)?.scan_limit ?? 3; // Default 3 scans included
+
+      return NextResponse.json(
+        { data: { audit_completed: scansCompleted, audit_limit: auditLimit } },
+        { status: 200 }
+      );
     }
 
-    // Fetch current value
-    const { data: subscriptionData, error: fetchError } = await worker
-      .from("subscriptions")
-      .select("wp_plugin_audits")
+    // Plugin audit requested - check if user has active managed_wp service
+    const { data: service, error: serviceError } = await worker
+      .from("user_services")
+      .select("id, metadata")
       .eq("user_id", user.id)
-      .single();
+      .eq("service_type", "managed_wp")
+      .eq("status", "active")
+      .maybeSingle();
 
-    if (fetchError)
-      throw new Error(fetchError.message ?? "Unable to fetch audit count");
+    if (serviceError || !service) {
+      return NextResponse.json(
+        { message: "No active WordPress Performance Optimization service found" },
+        { status: 403 }
+      );
+    }
 
-    const currentAudits = subscriptionData?.wp_plugin_audits || 0;
+    // Check scan limit
+    const scansCompleted = (service.metadata as Record<string, any>)?.scans_completed ?? 0;
+    const auditLimit = (service.metadata as Record<string, any>)?.scan_limit ?? 3;
 
-    // Increment by 1
-    const { error: updateError, data: newSubData } = await worker
-      .from("subscriptions")
-      .update({ wp_plugin_audits: currentAudits + 1 })
-      .eq("user_id", user.id)
-      .select("wp_plugin_audits, plan")
-      .single();
+    if (scansCompleted >= auditLimit) {
+      return NextResponse.json(
+        { message: "Plugin audit quota exceeded. Contact support for additional scans." },
+        { status: 403 }
+      );
+    }
 
-    if (updateError)
-      throw new Error(updateError.message ?? "Failed to update audit count");
+    // Increment scan count
+    const newScansCompleted = scansCompleted + 1;
+    const { error: updateError } = await worker
+      .from("user_services")
+      .update({
+        metadata: {
+          ...(service.metadata as Record<string, any>),
+          scans_completed: newScansCompleted,
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", service.id);
+
+    if (updateError) {
+      throw new Error(updateError.message ?? "Failed to update scan count");
+    }
 
     return NextResponse.json(
       {
-        used: newSubData.wp_plugin_audits,
-        limit: limits[newSubData.plan.toLowerCase() as keyof typeof limits],
+        used: newScansCompleted,
+        limit: auditLimit,
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error: any) {
     return NextResponse.json(
       { message: error.message ?? "Unexpected error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

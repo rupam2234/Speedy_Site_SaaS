@@ -4,13 +4,9 @@ export type {
     CloudflareConfig,
     EmailReporting,
     Notifications,
-    OneTimeOrders,
     OrderData,
-    PlanMetadata,
-    PluginAudits,
     Rum_history,
     SpeedySiteTickets,
-    Subscriptions,
     TicketMessages,
     FontMetrics
 } from "./helpers/dataTypes"

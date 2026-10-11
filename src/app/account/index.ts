@@ -1,1 +1,0 @@
-export type { planCards } from "./subscription/main"
