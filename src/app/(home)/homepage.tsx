@@ -4,12 +4,46 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ReactNode, useEffect, useState } from "react";
 import SiteHeader from "./header";
 import Link from "next/link";
-import { ComparisonTable, PricingCardContent, Testimonials } from "./index";
+import {
+  ComparisonTable,
+  PricingCardContent,
+  Testimonials,
+  TrustpilotWidget,
+} from "./index";
 import { SiteFooter } from "@/components/theme";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import AutomatedImageSlider from "./automatedSlider";
-import { planCards } from "../account/subscription/main";
+
+// Single one-time service product (subscription plans were removed)
+interface PlanCard {
+  name: string;
+  price: number;
+  description: string;
+  features: string[];
+  current: boolean;
+}
+
+const planCards: PlanCard[] = [
+  {
+    name: "Managed WordPress Performance",
+    price: 299,
+    description:
+      "Complete WordPress performance optimization with 12 months RUM monitoring included",
+    features: [
+      "1 Site",
+      "Dedicated WordPress Optimization Service",
+      "Performance Tracking",
+      "1 year data retention",
+      "AI analysis and debugging",
+      "WP Plugin Monitoring + Audits",
+      "Image & font analysis",
+      "Monthly / Weekly reports",
+      "WP Rocket Premium Plugin",
+    ],
+    current: false,
+  },
+];
 
 export interface FeatureCore {
   title: string;
@@ -19,101 +53,56 @@ export interface FeatureCore {
 
 const extraFeatures: FeatureCore[] = [
   {
-    title: "Centralized LCP Grouping",
+    title: "Real User Performance",
     desc: (
       <>
         <p>
-          Groups major LCP issues accross all pages of your site and assets that
-          are responsible for it. Analyze asset load timings from real user
-          experience and get dedicated suggestions to reduce debugging time.
+          Core Web Vitals from actual visitors: live and by page, device,
+          browser, network, and region. See the speed your users actually
+          experience.
         </p>
       </>
     ),
   },
   {
-    title: "Page Groups by Web Vitals",
+    title: "Issues With Baked Reasons",
     desc: (
       <>
         <p>
-          Page Groups by Web Vitals not only surface your worst-performing pages
-          automatically but also reveal the specific components and assets
-          contributing to poor performance, making it easier to diagnose and fix
-          issues.
+          When something slows your site down, the reason comes attached: the
+          responsible page, asset, or WordPress plugin, with the data behind it.
+          No guesswork, no noise.
         </p>
       </>
     ),
   },
   {
-    title: "WordPress Plugin Analysis",
+    title: "Optimization Impact",
     desc: (
       <>
         <p>
-          Analyze the performance impact of every WordPress plugin on your
-          website. Uncover plugins that increase load times, consume excessive
-          resources. It helps massively in understanding plugin weight and
-          pressure.
+          Every fix we make appears in your dashboard with its before and after
+          impact. Watch improvements land as they happen instead of reading
+          about them months later.
         </p>
       </>
     ),
   },
-  // {
-  //   title: "Image Assistance",
-  //   desc: (
-  //     <>
-  //       <p>
-  //         Images are pivotal in page performance and maintaining web vitals as
-  //         they are highly linked to LCPs. Speedy Site automatically captures
-  //         slow loading images across your website and provide you with utilities
-  //         to optimize them.
-  //       </p>
-  //     </>
-  //   ),
-  // },
-  // {
-  //   title: "Weekly Performance Analysis",
-  //   desc: (
-  //     <>
-  //       <p>
-  //         We deliver weekly performance insights and recommendations directly to
-  //         your email or Slack, so you don&apos;t have to constantly monitor your
-  //         site. If we detect recurring bottlenecks or performance issues,
-  //         you&apos;ll receive proactive alerts along with actionable suggestions
-  //         to resolve them.
-  //       </p>
-  //     </>
-  //   ),
-  // },
-  // {
-  //   title: "WordPress Plugin Audit",
-  //   desc: (
-  //     <>
-  //       <p>
-  //         WordPress plugins are exceptional in extending custom features unless
-  //         they silently drains your site resources and performance. Our WP
-  //         Plugin Audit helps you catch plugin footprints on both backend &
-  //         frontend to avoid using slow plugins.
-  //       </p>
-  //     </>
-  //   ),
-  // },
 ];
 
 const headlines: { head: string; tail: string }[] = [
   {
-    head: "Managed WordPress Performance",
-    tail: "Optimization Service",
+    head: "WordPress Optimization Service",
+    tail: "Powered by Real User Data",
   },
   {
-    head: "Find bottlenecks With",
-    tail: "Real User Monitoring & Analysis",
+    head: "From Bottlenecks To",
+    tail: "Green Core Web Vitals",
   },
 ];
 
 export default function Home() {
   const [index, setIndex] = useState<number>(0); // index of headline
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
-    "monthly",
-  );
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -156,16 +145,14 @@ export default function Home() {
           </AnimatePresence>
 
           <p className="mt-8 max-w-3xl mx-auto text-lg md:text-xl text-slate-600 leading-relaxed font-normal">
-            Speedy Site is a managed WordPress performance optimization service
-            focused on improving site speed, core web vitals, and real user
-            experience through data-driven optimization. It comes with a
+            Speedy Site is a managed WordPress performance optimization service.
+            Connect your site once: we validate it and{" "}
             <span className="px-2 bg-orange-500/70 inline-block -skew-x-5 mx-1.5 text-primary-foreground">
-              <span className="skew-x-5">
-                integrated Real User Monitoring platform
-              </span>
-            </span>
-            to analyzes performance across devices, browsers, networks,
-            geographic regions, and real-world user conditions.
+              <span className="skew-x-5">real user performance data</span>
+            </span>{" "}
+            starts flowing right away. Our experts pair those real insights with
+            WordPress backend tests to find and fix the issues that actually
+            slow your site down.
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
@@ -199,8 +186,8 @@ export default function Home() {
               className="text-lg text-primary-foreground tracking-tight leading-tight"
               style={{ fontFamily: "math" }}
             >
-              The workflow — how we collect user experience data & use it to
-              optimize your site your site
+              The workflow: how real user data turns into real WordPress
+              performance fix
             </p>
           </div>
 
@@ -217,37 +204,25 @@ export default function Home() {
                 <div className="flex-1 grid md:grid-cols-2 gap-12 items-center">
                   <div className="space-y-4">
                     <h3 className="text-3xl font-bold text-primary/90">
-                      Site Integration
+                      Connect Your Site In Minutes
                     </h3>
                     <p className="text-slate-600 text-lg leading-relaxed">
-                      Getting started is as simple as adding a snippet into your
-                      site {"<" + "head" + ">"}. No infrastructure overhead, no
-                      complex configurations.
+                      Getting started is requires adding speedy site integration
+                      plugin into your site. It&apos;s a lightweight plugin that
+                      establishes the bridge for RUM configuration and on demand
+                      testing.
                     </p>
-                    <div className="flex flex-wrap gap-3 pt-2">
-                      {[
-                        "Configure script",
-                        "Instant Validation",
-                        "Collect UX & Web Vitals data",
-                      ].map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-3 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
                   </div>
-                  <div className="bg-slate-900 p-6 rounded-2xl font-mono text-sm shadow-xl">
-                    <div className="text-indigo-300">
-                      &lt;script <span className="text-emerald-400">defer</span>
-                      &gt;
+                  <div className="bg-slate-900 p-6 rounded-2xl font-mono text-sm shadow-xl space-y-2">
+                    <div className="text-emerald-400">
+                      ✓ Connect your site using a plugin
                     </div>
-                    <div className="pl-4 text-slate-300">
-                      src=&quot;https://rum.speedy.site/rum.js&quot;
+                    <div className="text-emerald-400">
+                      ✓ Automatic RUM confguration & debugging setup
                     </div>
-                    <div className="text-indigo-300">&lt;/script&gt;</div>
+                    <div className="text-emerald-400">
+                      ✓ Flags bottlenecks for accurate solution
+                    </div>
                   </div>
                 </div>
               </div>
@@ -261,19 +236,19 @@ export default function Home() {
                 <div className="flex-1 grid md:grid-cols-2 gap-12 items-start">
                   <div className="space-y-6">
                     <h3 className="text-3xl font-bold text-primary/90">
-                      Monitor User Experience
+                      Collect Real User Data
                     </h3>
                     <p className="text-slate-600 text-lg">
-                      The system collects privacy-first performance and user
-                      experience data {"->"} breaks it down by device, browser,
-                      network, pages and geographic locations to find issues
-                      faster.
+                      Once validated, Speedy Site collects privacy-first
+                      performance data from real visitors: Core Web Vitals,
+                      devices, browsers, networks, pages, and geographic
+                      locations. Issues surface exactly as users experience
+                      them.
                     </p>
                     <p className="text-slate-600 text-lg">
-                      This generates weekly performance insights on key user
-                      experience metrics to interpret performance bottlenecks
-                      that we / you can identify and fix before they start to
-                      appear on your Google Search Console.
+                      Weekly performance insights highlight the bottlenecks we
+                      identify and fix before they start to appear on your
+                      Google Search Console.
                     </p>
                   </div>
                   <Image
@@ -295,12 +270,12 @@ export default function Home() {
                 <div className="flex-1 grid md:grid-cols-2 gap-12 items-start">
                   <div className="space-y-6">
                     <h3 className="text-3xl font-bold text-primary/90">
-                      Identification & Analysis
+                      Diagnose With Baked Reasons
                     </h3>
                     <p className="text-slate-600 text-lg leading-relaxed">
-                      Automatically identifies responsible elements, plugins,
-                      scripts related to UX issues and performance bottlenecks
-                      accross all pages.
+                      Real user data combined with WordPress backend tests
+                      identifies the responsible elements, plugins, and scripts
+                      behind each issue on every page, with the reason baked in.
                     </p>
                     <p className="text-slate-600 text-lg leading-relaxed"></p>
                     <ul className="space-y-3">
@@ -356,10 +331,11 @@ export default function Home() {
                       ))}
                     </ul>
                     <p className="text-slate-600 text-lg leading-relaxed">
-                      Most performance audits drown you in noise. Ours
-                      don&apos;t. RUM data zeroes in on what&apos;s actually
-                      hurting real visitors and your web vitals, so the work
-                      that gets done is work that matters. You can do the same.
+                      Most performance audits drown you in noise. Ours do not.
+                      RUM data zeroes in on what is actually hurting real
+                      visitors and your web vitals, so the work that gets done
+                      is work that matters. You follow every step and its impact
+                      in your dashboard.
                     </p>
                   </div>
                   <AutomatedImageSlider />
@@ -377,14 +353,13 @@ export default function Home() {
       >
         <div className="max-w-6xl mx-auto px-6 text-center relative z-10">
           <span className="inline-block px-4 py-1.5 mb-6 text-[12px] font-bold tracking-[0.2em] uppercase bg-primary/10 border border-primary/10 text-primary rounded-full">
-            Finding the bottleneck is step one.
+            Built for transparency
           </span>
 
           <p className=" text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-            Once the bottleneck is found, the fix follows. Smarter cache rules,
-            adaptive WordPress optimizations, better asset delivery — and if
-            you&apos;d rather take the wheel, Speedy Site provides the tools and
-            AI-driven analysis as assistance.
+            The optimization work is ours; the visibility is yours. Watch your
+            real visitor performance, see the issues we find, and follow the
+            impact of every fix as it lands.
           </p>
 
           {/* Cards Container */}
@@ -437,93 +412,40 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-6 relative z-10">
           <div className="flex flex-col items-center text-center">
             {/* EVOLUTION BADGE */}
-            <div className="flex items-center gap-3 mb-8 px-4 py-1.5 rounded-full bg-amber-50 border border-amber-100 shadow-sm shadow-amber-100/50">
+            <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-amber-50 border border-amber-500 shadow-sm shadow-amber-100/50">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
               </span>
               <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
-                Our Evolution
+                What's New
               </span>
             </div>
 
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 tracking-tight leading-tight max-w-4xl">
-              From{" "}
+            {/* <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight leading-tight max-w-4xl">
               <span className="relative inline-block">
                 <span className="relative z-10 italic font-serif text-primary">
-                  WordPress Optimization
+                  WordPress Performance Optimization
                 </span>
                 <span className="absolute bottom-1 left-0 w-full h-3 bg-blue-600/50 -rotate-1" />
               </span>
               <span className="mx-3 text-slate-300 font-light">→</span>
-              To Smart Performance Assistance
-            </h2>
+            </h2> */}
 
             {/* THE STORY CONTENT */}
-            <div className="mt-12 space-y-8">
+            <div className="mt-5 space-y-8">
               <p className="text-xl text-slate-600 max-w-3xl mx-auto font-light leading-relaxed">
                 Our journey began with a dedicated solution for WordPress
                 optimization. Rooted in the mission to improve site speed and
                 user experience, we helped many websites enhance their Core Web
                 Vitals.
               </p>
-
-              <div className="p-8 rounded-3xl bg-slate-50 border-2 border-primary/10 relative group">
-                <p className="text-slate-600 leading-relaxed italic">
-                  &quot;Building on the same DNA, Speedy Site goes beyond
-                  optimization to actively manage your website&apos;s
-                  performance. With powerful tools, actionable insights, and
-                  continuous monitoring, you can deliver a seamless user
-                  experience while focusing on growing your business.&quot;
-                </p>
-                {/* Subtle DNA-style icon decoration */}
-                <div className="absolute -right-4 -top-4 opacity-10 group-hover:rotate-12 transition-transform duration-700">
-                  <svg
-                    width="80"
-                    height="80"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-primary"
-                  >
-                    <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-                    <path d="M2 3c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-                    <line x1="8" y1="20" x2="8" y2="4" />
-                    <line x1="16" y1="20" x2="16" y2="4" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* LEGACY LINKS - Styled as professional chips */}
-            {/* <div className="pt-10 border-t border-slate-100 w-full">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">
-                Looking for legacy services?
+              <p className="text-xl text-slate-600 max-w-3xl mx-auto font-light leading-relaxed">
+                And now we are putting the pieces together: actual users, faster
+                WordPress diagnosis, and fixes with measured impact. Same
+                mission, smarter assistance.
               </p>
-              <div className="flex items-center justify-center gap-4">
-                <div className="flex flex-wrap justify-center gap-4">
-                  <a
-                    href="/wordpress-optimization"
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:border-primary hover:text-primary hover:shadow-lg hover:shadow-primary/5 transition-all"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    WordPress Speed Optimization
-                  </a>
-                </div>
-                <div className="flex flex-wrap justify-center gap-4">
-                  <a
-                    href="/pixel"
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:border-primary hover:text-primary hover:shadow-lg hover:shadow-primary/5 transition-all"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Speedy Image Optimization
-                  </a>
-                </div>
-              </div>
-            </div> */}
+            </div>
           </div>
         </div>
       </section>
@@ -565,6 +487,8 @@ export default function Home() {
             </p>
           </div>
 
+          <TrustpilotWidget />
+
           {/* THE TESTIMONIALS COMPONENT */}
           <div className="relative">
             {/* Decorative large quote mark watermark */}
@@ -578,16 +502,6 @@ export default function Home() {
               ”
             </span>
           </div>
-
-          {/* FOOTER CALL-OUT (Optional, adds "Standout" feel) */}
-          {/* <div className="mt-20 text-center">
-            <div className="inline-flex items-center gap-8 py-4 px-8 rounded-2xl bg-white border border-slate-200/60 shadow-sm shadow-slate-200/20 grayscale opacity-60">
-              <span className="font-bold text-slate-400">Elementor</span>
-              <span className="font-bold text-slate-400">WooCommerce</span>
-              <span className="font-bold text-slate-400">WP Engine</span>
-              <span className="font-bold text-slate-400">Cloudflare</span>
-            </div>
-          </div> */}
         </div>
       </section>
 
@@ -605,7 +519,7 @@ export default function Home() {
           className="absolute inset-0 pointer-events-none opacity-40 z-10"
           style={{
             backgroundImage: `
-              radial-gradient(circle, white 1.5px, transparent 1.5px), 
+              radial-gradient(circle, white 1.5px, transparent 1.5px),
               radial-gradient(circle, white 1.5px, transparent 1.5px),
               radial-gradient(circle, white 1px, transparent 1px)
             `,
@@ -628,17 +542,15 @@ export default function Home() {
                 <div className="h-full w-1/2 bg-white animate-shimmer" />
               </div>
               <p className="mt-6 mx-auto max-w-3xl text-indigo-100 text-lg font-light leading-relaxed">
-                Our goal is to nerrow down the performance bottlenecks based on
-                real-user performance data and help you maintain a site fast and
-                friendly UX based on the Core Web Vitals standard.
+                Our goal is to monitor your WordPress site performance with real
+                user data, keep it fast and UX-friendly by the Core Web Vitals
+                standard, and show you the impact of every optimization along
+                the way.
               </p>
               <p className="mt-6 mx-auto max-w-3xl text-indigo-100 text-lg font-light leading-relaxed">
-                Speedy Site provides comprehensive visibility into your
-                site&apos;s Web Vitals across all pages in near real time.
-                Whether you prefer to let our experts handle performance
-                optimization or make data-driven improvements yourself,
-                you&apos;ll have the insights needed to deliver exceptional user
-                experiences.
+                Search Console gives you sampled, delayed reports. Speedy Site
+                gives you the full picture as it happens, page by page, so you
+                can act before your traffic feels it.
               </p>
             </div>
 
@@ -660,62 +572,24 @@ export default function Home() {
         id="pricing"
         className="relative overflow-hidden bg-[#f5f6f0] py-14 lg:py-15 text-slate-900"
       >
-        <div className="flex items-center justify-center my-5 gap-2 text-sm">
-          <span
-            className={
-              billingCycle === "monthly"
-                ? "font-medium text-primary/70"
-                : "text-primary/70 font-medium"
-            }
-          >
-            Monthly
-          </span>
-          <label className="inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only"
-              checked={billingCycle === "yearly"}
-              onChange={() =>
-                setBillingCycle((p) => (p === "monthly" ? "yearly" : "monthly"))
-              }
-            />
-            <span
-              className={`relative inline-block w-10 h-5 rounded-full transition ${billingCycle === "yearly" ? "bg-blue-600" : "bg-gray-300"}`}
-            >
-              <span
-                className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white shadow transition transform ${billingCycle === "yearly" ? "translate-x-5" : ""}`}
+        <div className="max-w-md mx-auto px-6 relative z-10">
+          {planCards.map((X) => {
+            return (
+              <PricingCardContent
+                key={X.name}
+                props={{
+                  name: X.name,
+                  price: X.price,
+                  current: X.current || false,
+                  defaultPrice: X.price,
+                  description: X.description,
+                  displayPrice: X.price,
+                  features: X.features,
+                  highlight: false,
+                }}
               />
-            </span>
-          </label>
-          <span className="font-medium text-primary/80">
-            Yearly{" "}
-            <span className="ml-1 text-green-600 font-semibold">
-              (Save 10%)
-            </span>
-          </span>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-11 relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {planCards.map((X) => {
-              return (
-                <PricingCardContent
-                  key={X.name}
-                  props={{
-                    name: X.name,
-                    price: X.price,
-                    billingCycle: billingCycle,
-                    current: X.current || false,
-                    defaultPrice: X.price,
-                    description: X.description,
-                    displayPrice: X.price,
-                    features: X.features,
-                    highlight: false,
-                  }}
-                />
-              );
-            })}
-          </div>
+            );
+          })}
         </div>
 
         <div className="flex flex-col py-10 space-y-3 items-center">
@@ -726,8 +600,9 @@ export default function Home() {
             Sign Up Free
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
-          <p className="mt-4 text-xs font-bold text-primary/60 uppercase tracking-[0.2em]">
-            Upgrade later in your account when ready
+          <p className="mt-4 max-w-2xl mx-auto text-center text-xs font-bold text-primary/60 uppercase tracking-[0.2em]">
+            Try connecting your WordPress site and get Web Vitals reports for
+            free. Upgrade only when your site needs optimization.
           </p>
           {/* <p className="text-xs text-primary/60 italic">
             No credit card needed.

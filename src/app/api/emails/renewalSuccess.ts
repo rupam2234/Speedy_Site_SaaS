@@ -14,20 +14,22 @@ const current_time = new Date()
   .replace(",", "");
 
 export async function sendRenewalSuccessEmail({ stripeCustomerId }: Props) {
-  const { data: customer, error } = await worker
-    .from("subscriptions")
-    .select("user_id")
-    .eq("stripe_customer_id", stripeCustomerId)
+  // Find the RUM renewal service for this customer
+  const { data: service, error } = await worker
+    .from("user_services")
+    .select("user_id, website_name")
+    .eq("service_type", "rum_renewal")
+    .eq("metadata->>original_stripe_customer_id", stripeCustomerId)
     .single();
 
-  if (error || !customer.user_id) {
-    console.log(`Unable to fetch customer ID`);
+  if (error || !service?.user_id) {
+    console.log(`Unable to find RUM renewal service for customer ${stripeCustomerId}`);
     return;
   }
 
-  // now retrive user email, name
+  // now retrieve user email, name
   const { data: userData, error: userDataError } =
-    await worker.auth.admin.getUserById(customer.user_id);
+    await worker.auth.admin.getUserById(service.user_id);
 
   if (userDataError) {
     console.log(`Unable to fetch user details`);
@@ -35,14 +37,14 @@ export async function sendRenewalSuccessEmail({ stripeCustomerId }: Props) {
   }
 
   const user = userData?.user;
-  const name = user?.user_metadata.name.split(" ")[0];
+  const name = user?.user_metadata?.name?.split(" ")[0];
 
   // send the email
   await resend.emails.send({
     from: "Billing <contact@speedy.site>",
     to: [user?.email ? user.email : ""],
     cc: ["thespeedysite@gmail.com"],
-    subject: "Your speedy.site subscription has been renewed",
+    subject: "Your Speedy Site RUM monitoring has been renewed",
     html: `<table width="100%" cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; background-color: transparent; padding: 20px;">
       <tr>
         <td align="center">
@@ -53,30 +55,30 @@ export async function sendRenewalSuccessEmail({ stripeCustomerId }: Props) {
                 <h2 style="margin-top: 0; font-size: 22px">Hi ${name || "there"},</h2>
     
                 <p style="font-size: 16px; line-height: 1.6;">
-                  We’re happy to let you know that your subscription was successfully renewed on ${current_time}.
+                  We're happy to let you know that your RUM monitoring for <strong>${service.website_name}</strong> was successfully renewed on ${current_time}.
                 </p>
     
                 <p style="font-size: 16px; line-height: 1.6;">
-                  Your plan remains active, so you can continue using Speedy Site without any interruption.
+                  Your Real User Monitoring remains active, so you can continue monitoring website experience without any interruption.
                 </p>
     
                 <p style="font-size: 16px; line-height: 1.6;">
                   Review your
                   <a
-                    href="${baseAddress}/account/subscription"
+                    href="${baseAddress}/account/billing"
                     target="_blank"
                     style="color: #CC6CE7; text-decoration: underline;"
                   >
-                    plan details</a>&nbsp;and monitor website experience on your <a
+                    billing details</a>&nbsp;and monitor website experience on your <a
                         href="${baseAddress}/dashboard"
                         target="_blank"
                         style="color: #CC6CE7; text-decoration: underline;"
                       >
-                    dashboard</a>.
+                      dashboard</a>.
                 </p>
     
                 <p style="font-size: 16px; line-height: 1.6;">
-                  Thanks for being part of Speedy Site. We’re glad to have you with us :D
+                  Thanks for being part of Speedy Site. We're glad to have you with us :D
                 </p>
               </td>
             </tr>

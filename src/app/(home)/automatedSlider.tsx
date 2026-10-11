@@ -44,7 +44,6 @@ const AutomatedImageSlider = () => {
                 alt={img.alt}
                 width={650}
                 height={350}
-                layout="responsive"
                 priority={idx === 0}
                 className="object"
               />
