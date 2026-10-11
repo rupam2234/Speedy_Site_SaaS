@@ -2,13 +2,10 @@
 
 import {
   ArrowRight,
-  BarChart3,
   CheckCircle,
   Crown,
-  Database,
   Shield,
   Users,
-  Zap,
 } from "lucide-react";
 import { CustomTooltip } from "@/components/theme";
 

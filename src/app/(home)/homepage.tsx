@@ -418,7 +418,7 @@ export default function Home() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
               </span>
               <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
-                What's New
+                What’s New
               </span>
             </div>
 
