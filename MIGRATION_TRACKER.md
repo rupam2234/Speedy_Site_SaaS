@@ -187,8 +187,8 @@ curl /api/subscriptions/plan
 | 1 | TypeScript build | ✅ **Complete** | — | All type errors fixed, build passes |
 | 2 | sub-kv-metadata worker | ⬜ Pending | — | |
 | 2 | event-buffer validation | ⬜ Pending | — | |
-| 3 | New checkout API | ✅ **Complete** | — | `/api/checkout` created for managed_wp + rum_renewal |
-| 3 | New webhook | ✅ **Complete** | — | `/api/subscriptions/stripe/webhook` rewritten for service model |
+| 3 | New checkout API | ✅ **Complete** | — | `/api/checkout` live — Stripe Checkout (payment mode), managed_wp $299 one-time |
+| 3 | New webhook | ✅ **Complete** | — | `/api/webhook/stripe` — idempotent provisioning of managed_wp on checkout.session.completed |
 | 3 | Old subscription APIs | ✅ **Complete** | — | All subscription APIs deleted/rewritten |
 | 3 | WordPress limits API | ✅ **Complete** | — | Rewritten for user_services model |
 | 4 | Email templates | ✅ **Complete** | — | subscriptionCreated deleted, renewalSuccess updated |
@@ -196,7 +196,7 @@ curl /api/subscriptions/plan
 | 5 | Delete subscription UI | ✅ **Complete** | — | account/subscription deleted |
 | 6 | Dashboard data layer | ⬜ Pending | — | |
 | 7 | Types cleanup | ✅ **Complete** | — | dataTypes.ts, api/index.ts updated |
-| 8 | GitHub Actions | ⬜ Pending | — | |
+| 8 | GitHub Actions | 🟨 Partial | — | usage_update.yml retired (endpoint gone); usage metering returns with Phase 2 |
 
 ---
 
