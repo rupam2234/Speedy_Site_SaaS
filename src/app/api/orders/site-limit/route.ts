@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 
 const worker = setupDB();
 
+const FREE_SITE_LIMIT = 1;
+
 export async function GET() {
   const { user, error } = await getSupabaseServerUser();
   const user_id = user?.id ? user?.id : null;
@@ -13,43 +15,57 @@ export async function GET() {
   }
 
   try {
-    // Check if user has an active managed_wp service
-    const { data: service, error: serviceError } = await worker
+    // Fetch all of the user's services once and derive the governing limit
+    const { data: services, error: serviceError } = await worker
       .from("user_services")
-      .select("id, metadata")
-      .eq("user_id", user_id)
-      .eq("service_type", "managed_wp")
-      .eq("status", "active")
-      .maybeSingle();
+      .select("id, service_type, status, metadata")
+      .eq("user_id", user_id);
 
     if (serviceError) {
-      throw new Error(serviceError?.message ?? "Couldn't fetch user service");
+      throw new Error(serviceError?.message ?? "Couldn't fetch user services");
     }
 
-    if (!service) {
-      // No active service - limit is 0 (or free tier limit)
-      return NextResponse.json({ reachedLimit: true, limit: 0 }, { status: 200 });
+    const activeManaged = services?.find(
+      (s) => s.service_type === "managed_wp" && s.status === "active"
+    );
+
+    if (activeManaged) {
+      // Paid tier: site limit comes from the managed_wp service metadata
+      const siteLimit =
+        (activeManaged.metadata as Record<string, any>)?.site_limit ?? 1;
+
+      const { error: siteError, count } = await worker
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user_id)
+        .eq("product_type", "managed_wp");
+
+      if (siteError) {
+        throw new Error(siteError?.message ?? "failed to fetch site count");
+      }
+
+      const reached = count !== null && count >= siteLimit;
+      return NextResponse.json(
+        { reachedLimit: reached, limit: siteLimit, current: count },
+        { status: 200 }
+      );
     }
 
-    // Get site limit from service metadata (default to 1 for managed_wp)
-    const siteLimit = (service.metadata as Record<string, any>)?.site_limit ?? 1;
-
-    // Now check the active sites for the user
+    // Free tier: one connected site with CrUX web vitals
     const { error: siteError, count } = await worker
       .from("orders")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user_id)
-      .eq("product_type", "managed_wp");
+      .eq("user_id", user_id);
 
     if (siteError) {
       throw new Error(siteError?.message ?? "failed to fetch site count");
     }
 
-    if (count !== null && count < siteLimit) {
-      return NextResponse.json({ reachedLimit: false, limit: siteLimit, current: count }, { status: 200 });
-    }
-
-    return NextResponse.json({ reachedLimit: true, limit: siteLimit, current: count }, { status: 200 });
+    const reached = count !== null && count >= FREE_SITE_LIMIT;
+    return NextResponse.json(
+      { reachedLimit: reached, limit: FREE_SITE_LIMIT, current: count },
+      { status: 200 }
+    );
   } catch (error: any) {
     return NextResponse.json({ message: error.message ?? "Server error" }, { status: 500 });
   }
