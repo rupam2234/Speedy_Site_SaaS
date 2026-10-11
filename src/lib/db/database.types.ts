@@ -637,6 +637,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_services: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          order_id: string | null
+          service_type: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+          website_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          service_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          website_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          service_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          website_name?: string | null
+        }
+        Relationships: []
+      }
       wordpress_cred: {
         Row: {
           cred_id: string
