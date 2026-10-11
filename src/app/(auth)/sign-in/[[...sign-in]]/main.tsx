@@ -56,6 +56,18 @@ function SignInForm() {
 
   const router = useRouter();
 
+  // Surface redirects like /sign-in?error=session-expired (idle timeout)
+  useEffect(() => {
+    const error = new URLSearchParams(window.location.search).get("error");
+    if (error === "session-expired") {
+      setMessage(
+        "Your session expired after 2 hours of inactivity. Please sign in again."
+      );
+    } else if (error) {
+      setMessage(`Sign-in problem: ${decodeURIComponent(error)}`);
+    }
+  }, []);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
