@@ -1,4 +1,5 @@
 import { cachedData, cleanExpiredCache } from "../cache";
+import { browserClient } from "@/lib/db";
 
 export async function validatePlan(userId: string) {
   const cacheKey = `user-plan:${userId}`;
@@ -13,19 +14,20 @@ export async function validatePlan(userId: string) {
   });
 
   async function fetchPlan() {
-    const res = await fetch("/api/subscriptions/plan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId }),
-    });
+    // Plan is derived from the service model (user_services). The old
+    // /api/subscriptions/plan route no longer exists; RLS lets the user
+    // read their own services directly, so no API hop is needed.
+    const { data, error } = await browserClient
+      .from("user_services")
+      .select("service_type")
+      .eq("user_id", userId);
 
-    const body: any = await res.json();
-
-    if (!res.ok) {
-      throw new Error(body.message ?? "error fetching plan");
+    if (error) {
+      throw new Error(error.message);
     }
 
-    return body.data;
+    const hasManagedWp = data?.some((s) => s.service_type === "managed_wp");
+    return [{ plan: hasManagedWp ? "Managed WP" : "Free" }];
   }
 
   return response;

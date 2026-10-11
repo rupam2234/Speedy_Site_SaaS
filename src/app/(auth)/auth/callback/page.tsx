@@ -43,15 +43,9 @@ export default function AuthCallbackClient() {
 
     window.history.replaceState({}, document.title, "/auth/callback"); // cleans the URL after exchange {code?= is not needed}
 
-    const access_token = session.access_token;
-
-    const response = await fetch("/api/account/auth", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        // "Content-Type": "application/json",
-      },
-    });
+    // Session cookies were just set by exchangeCodeForSession — the API
+    // route authenticates from cookies, no Bearer header needed.
+    const response = await fetch("/api/account/auth", { method: "GET" });
 
     const result: any = await response.json();
 
@@ -61,9 +55,6 @@ export default function AuthCallbackClient() {
       );
       return;
     }
-
-    // Cache subscription info for this session
-    sessionStorage.setItem("subscriptionData", JSON.stringify(result));
 
     router.replace("/dashboard");
   }
