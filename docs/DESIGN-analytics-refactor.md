@@ -94,6 +94,11 @@ the Supabase RPCs re-scan `rum_metrics` (which grows unbounded) each run.
    stop passing the secret from the client bundle
 3. Replace the N+1 loop with one `env.DB.batch()` of
    `INSERT ... ON CONFLICT DO UPDATE` statements (1 round trip, no existence
+   checks)
+4. Verify indexes exist on the lookup keys
+   (`date_collected, domain_name, device_type` /
+   `day, domain, device_type, referral_domain`)
+5. Drop cron frequency to every 4 to 6 hours (the data is daily aggregates)
 
 ### B: Supabase-direct reads (recommended refactor)
 
@@ -132,18 +137,59 @@ do B now, fold the views into C as the engine lands.
 
 ### Phase 1: stop the bleed (do regardless of A/B/C)
 
-- [ ] Remove unauthenticated `/`, `/test`, `/run-job` triggers from both
-      workers
-- [ ] Gate all read endpoints behind a secret header; move the secret server
-      side (Next.js API route proxy), never the client bundle
-- [ ] Replace N+1 upsert loops with `env.DB.batch()` +
-      `INSERT ... ON CONFLICT DO UPDATE`
-- [ ] Verify/add indexes on the lookup keys
-- [ ] Rotate the committed `SUPABASE_SERVICE_ROLE_KEY` (shared with the
-      site-metadata worker task) and move it to a wrangler secret
-- [ ] Reduce cron frequency to every 4 to 6 hours
+- [x] Remove unauthenticated `/`, `/test`, `/run-job` triggers from both
+      workers (code 2026-10-13: all endpoints behind `Authorization: Bearer
+      API_SECRET`; public `/health` added; authenticated `/run-job` kept for
+      debugging)
+- [x] Gate all read endpoints behind a secret header; move the secret server
+      side (code 2026-10-13: new proxy routes
+      `src/app/api/rum/analytics/{overview,country-breakdown,traffic-source}`
+      via shared `src/lib/analytics/workers.ts`; `calls.ts` repointed to our
+      routes; the client-bundle secret and the dead buggy old
+      traffic-source route removed)
+- [x] Replace N+1 upsert loops with one keys-read + one `env.DB.batch()`
+      (3N queries per run down to 2; explicit `ON CONFLICT` upsert deferred
+      until the D1 unique constraints are verified)
+- [x] Verify/add indexes on the lookup keys (2026-10-13: D1 had zero indexes,
+      not even unique constraints, so every UPDATE was a full table scan;
+      created `idx_web_metrics_key` and `idx_traffic_source_key` via
+      `wrangler d1 execute`; unique-index upgrade deferred with the ON
+      CONFLICT switch until duplicates are checked)
+- [x] Rotate the committed `SUPABASE_SERVICE_ROLE_KEY` into a wrangler secret
+      (2026-10-13: removed from both wrangler.jsonc, uploaded as secret to
+      both workers; Supabase-side key rotation still pending, user action)
+- [x] Reduce cron frequency to every 4 hours (`0 */4 * * *`, both wrangler.jsonc)
+- [x] Deploy: both workers deployed 2026-10-13 (versions 3289aeda, fdc774f4);
+      verified live: `/health` 200 public, no-auth reads 401, authed reads
+      200, `/run-job` executes the batched pipeline successfully;
+      `ANALYTICS_API_SECRET` set in Vercel (production, preview, development)
 - [ ] Acceptance: worker request volume drops to cron-only + proxied reads;
-      public triggers return 401/404; no client-bundle secrets
+      public triggers return 401/404; no client-bundle secrets (verify after
+      the Next.js branch deploys to production)
+
+Deploy steps for the changed workers (user actions):
+
+```
+cd cloudflare-workers/analytics/analytics-cron
+npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY   # rotated key
+npx wrangler secret put API_SECRET                  # same value as ANALYTICS_API_SECRET in Vercel
+npx wrangler deploy
+
+cd ../traffic-source-cron
+npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY   # rotated key
+npx wrangler secret put API_SECRET                  # same value as above
+npx wrangler deploy
+```
+
+Also set `ANALYTICS_API_SECRET` in Vercel (same value as the workers'
+`API_SECRET`), and verify the D1 indexes once:
+
+```
+npx wrangler d1 execute speedy_site_rum --remote --command "SELECT name, tbl_name, sql FROM sqlite_master WHERE type='index'"
+# If missing, create:
+#   CREATE INDEX IF NOT EXISTS idx_web_metrics_key ON web_metrics (date_collected, domain_name, device_type);
+#   CREATE INDEX IF NOT EXISTS idx_traffic_source_key ON traffic_source (day, domain, device_type, referral_domain);
+```
 
 ### Phase 2: read path refactor (option B)
 
@@ -180,9 +226,3 @@ do B now, fold the views into C as the engine lands.
 4. LLM traffic: which crawler user-agents count (GPTBot, ClaudeBot,
    PerplexityBot, Google-Extended), and is detection RUM-side (referrer) or
    server-side (user-agent via backend tests)?
-
-   checks)
-4. Verify indexes exist on the lookup keys
-   (`date_collected, domain_name, device_type` /
-   `day, domain, device_type, referral_domain`)
-5. Drop cron frequency to every 4 to 6 hours (the data is daily aggregates)
