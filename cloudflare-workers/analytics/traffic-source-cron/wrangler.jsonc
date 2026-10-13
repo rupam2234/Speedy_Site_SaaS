@@ -8,9 +8,7 @@
 	},
 
 	"vars": {
-		"SUPABASE_URL": "https://tmpvygehhshrgsqxzaty.supabase.co",
-		"SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcHZ5Z2VoaHNocmdzcXh6YXR5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNTg5MzA0NSwiZXhwIjoyMDUxNDY5MDQ1fQ.JhZfXtfo1Q1KhPDz-I4cbkAJo8ElHYEceb5stZLxfh8",
-		"API_SECRET": "secret_for_speedy_site"
+		"SUPABASE_URL": "https://tmpvygehhshrgsqxzaty.supabase.co"
 	},
 
 	"d1_databases": [
@@ -24,6 +22,6 @@
 	"placement": { "mode": "smart" },
 
 	"triggers": {
-		"crons": ["0 * * * *"]
+		"crons": ["0 */4 * * *"]
 	}
 }

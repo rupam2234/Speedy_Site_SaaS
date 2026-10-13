@@ -199,7 +199,6 @@ export default function Main() {
       startDate: startDate.toISOString().split("T")[0],
       endDate: endDate.toISOString().split("T")[0],
       domain: selectedSite,
-      key: "secret_for_speedy_site",
     });
 
     return data;
