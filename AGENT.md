@@ -73,6 +73,13 @@ Everything we build must serve this loop. Before implementing anything, read
 - Rewrite with a comma, colon, semicolon, parentheses, or split the sentence.
 - Arrows (→) in diagrams and "·" separators are fine; the em-dash is not.
 
+### 8. Record major impactful changes in docs/IMPACT-LOG.md
+
+- After any major impactful change (cost, security, performance, reliability,
+  product), add a short entry to `docs/IMPACT-LOG.md`: problem, changes,
+  before/after impact, where to verify, and a one-line interview summary.
+- Only major, measurable changes; link to the design doc or files for detail.
+
 ---
 
 ## Stack quick reference
