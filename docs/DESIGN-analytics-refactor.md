@@ -164,8 +164,10 @@ do B now, fold the views into C as the engine lands.
       200, `/run-job` executes the batched pipeline successfully;
       `ANALYTICS_API_SECRET` set in Vercel (production, preview, development)
 - [ ] Acceptance: worker request volume drops to cron-only + proxied reads;
-      public triggers return 401/404; no client-bundle secrets (verify after
-      the Next.js branch deploys to production)
+      public triggers return 401/404; no client-bundle secrets
+      (partially verified 2026-10-13: production deployed with the new proxy
+      routes; live smoke test passed, all three routes return 200 through the
+      authenticated worker chain; 48h quota watch pending)
 
 Deploy steps for the changed workers (user actions):
 

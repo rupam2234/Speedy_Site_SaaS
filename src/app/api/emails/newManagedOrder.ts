@@ -5,7 +5,7 @@ type Props = {
     domain: string;
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY ?? "build-placeholder"); // build-safe
 
 export async function emailConfirmationForManagedService({ domain, email }: Props) {
     const baseAddress = process.env?.NEXT_PUBLIC_PROD_BASE_URL;

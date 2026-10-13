@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY ?? "build-placeholder"); // build-safe
 
 /* -----------------------------
    1. Manual Validation Logic

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "build-placeholder"); // build-safe
 
 // Product catalog — $299 one-time per site, never recurring (docs/GOALS.md)
 const PRICE_MAP: Record<string, { price: string; productType: "managed_wp" }> = {
