@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 interface Env {
 	SUPABASE_URL: string;
 	SUPABASE_SERVICE_ROLE_KEY: string;
+	API_SECRET: string;
 	DB: D1Database;
 }
 
@@ -23,6 +24,8 @@ export async function fetchAnalyticsFromSupabase(env: Env, targetDate?: string) 
 	return data;
 }
 
+// One read for existing keys, then all writes in a single batch: the old
+// per-row SELECT + UPDATE/INSERT loop ran 3 queries per record every cron run
 async function updateMetricsToD1(env: Env, metrics: any[]) {
 	const updateSQL = `
     UPDATE web_metrics SET
@@ -39,21 +42,27 @@ async function updateMetricsToD1(env: Env, metrics: any[]) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
   `;
 
-	for (const record of metrics) {
-		// Check if record exists
-		const existsResult = await env.DB.prepare(`SELECT 1 FROM web_metrics WHERE date_collected = ? AND domain_name = ? AND device_type = ?`)
-			.bind(record.date_collected, record.domain_name, record.device_type)
+	if (metrics.length === 0) return;
+
+	const existing = new Set<string>();
+	const dates = [...new Set(metrics.map((record: any) => record.date_collected))];
+	for (const date of dates) {
+		const rows = await env.DB
+			.prepare(`SELECT domain_name, device_type FROM web_metrics WHERE date_collected = ?`)
+			.bind(date)
 			.all();
-
-		if (!existsResult.success) {
-			console.error('Error checking if record exists:', existsResult.error);
-			continue;
+		if (!rows.success) {
+			console.error('Error loading existing keys:', rows.error);
+			return;
 		}
+		for (const row of rows.results) {
+			existing.add(`${row.domain_name}|${row.device_type}`);
+		}
+	}
 
-		if (existsResult.results.length > 0) {
-			// UPDATE
-			const updateResult = await env.DB.prepare(updateSQL)
-				.bind(
+	const statements = metrics.map((record: any) =>
+		existing.has(`${record.domain_name}|${record.device_type}`)
+			? env.DB.prepare(updateSQL).bind(
 					record.total_pageviews,
 					record.total_sessions,
 					record.avg_pages_per_session,
@@ -65,15 +74,7 @@ async function updateMetricsToD1(env: Env, metrics: any[]) {
 					record.domain_name,
 					record.device_type
 				)
-				.run();
-
-			if (!updateResult.success) {
-				console.error('Failed to update record:', updateResult.error);
-			}
-		} else {
-			// INSERT
-			const insertResult = await env.DB.prepare(insertSQL)
-				.bind(
+			: env.DB.prepare(insertSQL).bind(
 					record.date_collected,
 					record.domain_name,
 					record.device_type,
@@ -85,13 +86,14 @@ async function updateMetricsToD1(env: Env, metrics: any[]) {
 					record.llm_traffic_percentage,
 					JSON.stringify(record.country_distribution)
 				)
-				.run();
+	);
 
-			if (!insertResult.success) {
-				console.error('Failed to insert record:', insertResult.error);
-			}
+	const results = await env.DB.batch(statements);
+	results.forEach((result, i) => {
+		if (!result.success) {
+			console.error(`Failed to upsert record ${i}:`, result.error);
 		}
-	}
+	});
 }
 
 async function getTrafficByCountries(
@@ -190,6 +192,27 @@ export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
 		const url = new URL(request.url);
 
+		if (url.pathname === '/health') {
+			return new Response('OK', { status: 200 });
+		}
+
+		// All data and trigger endpoints require the shared secret header
+		if ((request.headers.get('Authorization') || '') !== `Bearer ${env.API_SECRET}`) {
+			return new Response('Unauthorized', { status: 401 });
+		}
+
+		// Manual trigger (authenticated)
+		if (url.pathname === '/run-job') {
+			try {
+				const insertedCount = await runCronJob(env);
+				return new Response(JSON.stringify({ inserted: insertedCount }, null, 2), {
+					headers: { 'Content-Type': 'application/json' },
+				});
+			} catch (err: any) {
+				return new Response('Error: ' + err.message, { status: 500 });
+			}
+		}
+
 		// gets overview data
 		if (url.pathname === '/metrics') {
 			const startDate = url.searchParams.get('startDate') as string;
@@ -230,18 +253,6 @@ export default {
 				});
 			} catch (error: any) {
 				return new Response('Error fetching country based pageviews: ' + error.maxage, { status: 500 });
-			}
-		}
-
-		// Test path
-		if (url.pathname === '/test' || url.pathname === '/') {
-			try {
-				const insertedCount = await runCronJob(env);
-				return new Response(JSON.stringify({ inserted: insertedCount }, null, 2), {
-					headers: { 'Content-Type': 'application/json' },
-				});
-			} catch (err: any) {
-				return new Response('Error: ' + err.message, { status: 500 });
 			}
 		}
 
