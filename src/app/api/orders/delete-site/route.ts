@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   try {
 
     // validate the domain for user
-    const { data: verifiedDomain, error: validationError } = await worker.from("orders").select("website_name").eq("website_name", domain).eq("user_id", user.id).maybeSingle();
+    const { data: verifiedDomain, error: validationError } = await worker.from("orders").select("website_name, order_id").eq("website_name", domain).eq("user_id", user.id).maybeSingle();
 
     if (validationError || verifiedDomain?.website_name !== domain) {
       throw new Error(validationError?.message || "Unauthorised")
@@ -47,6 +47,21 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       throw new Error(error.message);
+    }
+
+    // Detach any user_service linked to the deleted site: frees the free-tier
+    // slot and removes the dangling managed_wp reference
+    if (verifiedDomain.order_id) {
+      await worker
+        .from("user_services")
+        .update({ order_id: null, updated_at: new Date().toISOString() })
+        .eq("order_id", verifiedDomain.order_id);
+
+      await worker
+        .from("user_services")
+        .update({ website_name: null, updated_at: new Date().toISOString() })
+        .eq("order_id", verifiedDomain.order_id)
+        .eq("service_type", "free");
     }
 
     return NextResponse.json({ message: "website deleted" }, { status: 200 });

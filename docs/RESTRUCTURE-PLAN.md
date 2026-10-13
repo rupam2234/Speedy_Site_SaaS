@@ -195,5 +195,9 @@ Still open:
 3. Separate repo for `wp-plugin/`, or keep it in this monorepo as a top-level path?
 4. Refund policy for the one-time fee (e.g. 30-day guarantee)? And how exactly
    do we grandfather or migrate existing subscribers?
+5. Analytics stack fate: the analytics workers are bleeding free-tier quota
+   (audit + refactor plan in `docs/DESIGN-analytics-refactor.md`). Quick wins
+   are planned regardless; the open call is Supabase-direct reads (option B)
+   vs retiring analytics into the issue detection engine (option C).
 
 

@@ -9,12 +9,12 @@ export default function CancelPageOneTimePayment() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDisplayText(
-        " You haven't completed the payment. Redirecting to billing page...",
+        " You haven't completed the payment. Redirecting to dashboard...",
       );
     }, 0);
 
     const redirectTimer = setTimeout(() => {
-      location.replace("/account/subscription");
+      location.replace("/dashboard");
     }, 6000);
 
     const interval = setInterval(() => {

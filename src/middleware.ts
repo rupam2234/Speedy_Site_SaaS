@@ -7,18 +7,17 @@ export async function middleware(req: NextRequest) {
 
   const isDashboard = pathname.startsWith("/dashboard");
   const isSignIn = pathname.startsWith("/sign-in");
-  const isAuthCallback = pathname.startsWith("/sign-in/auth/callback");
 
   const supabase = createRouteSupabaseClient(req, res);
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && isDashboard && !isAuthCallback) {
+  if (!user && isDashboard) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
 
-  if (user && isSignIn && !isAuthCallback) {
+  if (user && isSignIn) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 

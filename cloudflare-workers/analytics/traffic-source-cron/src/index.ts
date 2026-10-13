@@ -28,6 +28,8 @@ export async function fetchTrafficSource(env: Env) {
  * - If a record for (day, domain, device_type, referral_domain) exists → update it.
  * - Otherwise → insert new record.
  */
+// One read for existing keys, then all writes in a single batch: the old
+// per-row SELECT + UPDATE/INSERT loop ran 3 queries per record every cron run
 async function updateDataOnD1(env: Env, metrics: any[]) {
 	const updateSQL = `
     UPDATE traffic_source 
@@ -41,38 +43,48 @@ async function updateDataOnD1(env: Env, metrics: any[]) {
     ) VALUES (?, ?, ?, ?, ?);
   `;
 
-	for (const record of metrics) {
-		const check = await env.DB.prepare(
-			`SELECT 1 FROM traffic_source WHERE day = ? AND domain = ? AND device_type = ? AND referral_domain = ?`
-		)
-			.bind(record.day, record.domain, record.device_type, record.referral_domain)
+	if (metrics.length === 0) return;
+
+	const existing = new Set<string>();
+	const days = [...new Set(metrics.map((record: any) => record.day))];
+	for (const day of days) {
+		const rows = await env.DB
+			.prepare(`SELECT domain, device_type, referral_domain FROM traffic_source WHERE day = ?`)
+			.bind(day)
 			.all();
-
-		if (!check.success) {
-			console.error('Error checking if record exists:', check.error);
-			continue;
+		if (!rows.success) {
+			console.error('Error loading existing keys:', rows.error);
+			return;
 		}
-
-		if (check.results.length > 0) {
-			// ✅ Update existing
-			const update = await env.DB.prepare(updateSQL)
-				.bind(record.count, record.day, record.domain, record.device_type, record.referral_domain)
-				.run();
-
-			if (!update.success) {
-				console.error('Failed to update record:', update.error);
-			}
-		} else {
-			// ✅ Insert new
-			const insert = await env.DB.prepare(insertSQL)
-				.bind(record.day, record.referral_domain, record.domain, record.device_type, record.count)
-				.run();
-
-			if (!insert.success) {
-				console.error('Failed to insert record:', insert.error);
-			}
+		for (const row of rows.results) {
+			existing.add(`${row.domain}|${row.device_type}|${row.referral_domain}`);
 		}
 	}
+
+	const statements = metrics.map((record: any) =>
+		existing.has(`${record.domain}|${record.device_type}|${record.referral_domain}`)
+			? env.DB.prepare(updateSQL).bind(
+					record.count,
+					record.day,
+					record.domain,
+					record.device_type,
+					record.referral_domain
+				)
+			: env.DB.prepare(insertSQL).bind(
+					record.day,
+					record.referral_domain,
+					record.domain,
+					record.device_type,
+					record.count
+				)
+	);
+
+	const results = await env.DB.batch(statements);
+	results.forEach((result, i) => {
+		if (!result.success) {
+			console.error(`Failed to upsert record ${i}:`, result.error);
+		}
+	});
 }
 
 /**
@@ -127,6 +139,15 @@ export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		const url = new URL(request.url);
 
+		if (url.pathname === '/health') {
+			return new Response('OK', { status: 200 });
+		}
+
+		// All data and trigger endpoints require the shared secret header
+		if ((request.headers.get('Authorization') || '') !== `Bearer ${env.API_SECRET}`) {
+			return new Response('Unauthorized', { status: 401 });
+		}
+
 		// Manual trigger
 		if (url.pathname === '/run-job') {
 			try {
@@ -143,11 +164,6 @@ export default {
 			const startDate = url.searchParams.get('startDate') as string;
 			const endDate = url.searchParams.get("endDate") as string;
 			const domain = url.searchParams.get('domain') || undefined;
-			const access_key = url.searchParams.get('key') || undefined;
-
-			if (access_key !== env.API_SECRET) {
-				return new Response('Unauthorized request', { status: 403 });
-			}
 
 			try {
 				const metrics = await get_traffic_source(env, startDate, endDate, domain);
