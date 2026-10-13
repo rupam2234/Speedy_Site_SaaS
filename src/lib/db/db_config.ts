@@ -10,9 +10,11 @@ class DB {
    */
   public static setupDB(): SupabaseClient<Database> {
     if (!DB.SERVICE_INSTANCE) {
+      // Build-time page-data collection imports this module without env; the
+      // placeholder client is never invoked during a build
       DB.SERVICE_INSTANCE = createClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!, // Full access (RLS bypass)
+        process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://build-placeholder.supabase.co",
+        process.env.SUPABASE_SERVICE_ROLE_KEY ?? "build-placeholder", // Full access (RLS bypass)
       );
     }
     return DB.SERVICE_INSTANCE;
@@ -24,8 +26,8 @@ class DB {
   public static setupAnonDB(): SupabaseClient<Database> {
     if (!DB.ANON_INSTANCE) {
       DB.ANON_INSTANCE = createClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, // Limited access
+        process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://build-placeholder.supabase.co",
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "build-placeholder", // Limited access
       );
     }
     return DB.ANON_INSTANCE;

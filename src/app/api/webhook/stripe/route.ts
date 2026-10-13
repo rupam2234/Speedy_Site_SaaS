@@ -4,7 +4,7 @@ import { setupDB } from "@/lib/db";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "build-placeholder"); // build-safe
 const db = setupDB();
 
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;

@@ -11,7 +11,11 @@ interface CacheResult<T> {
     isCached: boolean;
   }
 
-const redis = Redis.fromEnv();
+// Build-safe: fromEnv throws without Upstash env, which breaks CI builds
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL ?? "https://build-placeholder.upstash.io",
+  token: process.env.UPSTASH_REDIS_REST_TOKEN ?? "build-placeholder",
+});
 
 export async function redisCache<T>({
   key,

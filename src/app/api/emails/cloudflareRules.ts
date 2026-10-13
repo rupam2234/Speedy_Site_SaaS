@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY ?? "build-placeholder"); // build-safe
 const baseAddress = process.env?.NEXT_PUBLIC_PROD_BASE_URL;
 const current_time = new Date()
   .toLocaleString("en-GB", { hour12: false })
