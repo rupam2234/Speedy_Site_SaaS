@@ -1,8 +1,10 @@
 -- ============================================================================
 -- Free service tier (Part 2: backfill existing users)
--- Runs in its own transaction so the 'free' enum value added in the previous
--- migration is usable here.
+-- Runs in its own transaction AFTER the enum value from part 1 has committed,
+-- so 'free' is usable here. Idempotent.
 -- ============================================================================
+
+
 
 -- STEP 1: Profiles for any legacy user missing one
 -- (previously only email-confirmation signups created a profile;
