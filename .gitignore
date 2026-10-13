@@ -35,6 +35,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# tracks the example
+!.env.example
 
 # vercel
 .vercel
@@ -46,8 +48,4 @@ next-env.d.ts
 # clerk configuration (can include secrets)
 /.clerk/
 
-.vercel
-.env*.local
 
-
-.env*.local

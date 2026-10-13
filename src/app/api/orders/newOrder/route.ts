@@ -1,36 +1,47 @@
 import { setupDB } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { OrderData } from "@/app/api";
+import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
 
 const worker = setupDB();
 
+const FREE_SITE_LIMIT = 1;
+
 export async function POST(req: Request) {
   try {
-    const { orderData, user_id }: { orderData: OrderData; user_id: any } =
-      await req.json();
+    const {
+      orderData,
+      user_id: bodyUserId,
+    }: { orderData: OrderData; user_id?: string } = await req.json();
 
-    if (!user_id) {
+    // SECURITY: identity always comes from the session, never the body.
+    // (the body user_id was previously trusted — IDOR)
+    const { user, error: authError } = await getSupabaseServerUser();
+    const user_id = user?.id;
+
+    if (authError || !user_id) {
       return NextResponse.json(
         { error: "Missing user authentication" },
         { status: 401 },
       );
     }
 
-    if (!orderData) {
+    if (bodyUserId && bodyUserId !== user_id) {
+      return NextResponse.json({ error: "User mismatch" }, { status: 403 });
+    }
+
+    if (!orderData || !orderData.website_name || !orderData.website_address) {
       return NextResponse.json(
         { error: "Invalid or missing order data" },
         { status: 400 },
       );
     }
 
-    // Check if user has an active managed_wp service
-    const { data: service, error: serviceError } = await worker
+    // Fetch the user's services once and derive the entitlement
+    const { data: services, error: serviceError } = await worker
       .from("user_services")
-      .select("id, status, metadata")
-      .eq("user_id", user_id)
-      .eq("service_type", "managed_wp")
-      .eq("status", "active")
-      .maybeSingle();
+      .select("id, service_type, status, metadata")
+      .eq("user_id", user_id);
 
     if (serviceError) {
       return NextResponse.json(
@@ -39,14 +50,12 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!service) {
-      return NextResponse.json(
-        {
-          error: "No active WordPress Performance Optimization service found. Please purchase a service first.",
-        },
-        { status: 403 },
-      );
-    }
+    const activeManaged = services?.find(
+      (s) => s.service_type === "managed_wp" && s.status === "active"
+    );
+    const activeFree = services?.find(
+      (s) => s.service_type === "free" && s.status === "active"
+    );
 
     // Check if website already exists for this user
     const { data: existingSite, error: siteError } = await worker
@@ -70,46 +79,150 @@ export async function POST(req: Request) {
       );
     }
 
-    // If all checks pass, insert new order
-    const {
-      data: insertedOrder,
-      error: insertError,
-      status: insertStatus,
-    } = await worker
-      .from("orders")
-      .insert({
-        website_name: orderData.website_name,
-        website_address: orderData.website_address,
-        favicon_file: orderData.favicon_file,
-        order_status: orderData.order_status,
-        user_id,
-        product_type: "managed_wp",
-      })
-      .select("*")
-      .single();
+    if (activeManaged) {
+      // Paid tier: enforce the metadata site limit server-side
+      const siteLimit =
+        (activeManaged.metadata as Record<string, any>)?.site_limit ?? 1;
 
-    if (insertError) {
+      const { count, error: countError } = await worker
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user_id)
+        .eq("product_type", "managed_wp");
+
+      if (countError) {
+        return NextResponse.json(
+          { error: "Error checking site limit" },
+          { status: 500 },
+        );
+      }
+
+      if (count !== null && count >= siteLimit) {
+        return NextResponse.json(
+          { error: `Site limit reached (${siteLimit}).` },
+          { status: 403 },
+        );
+      }
+
+      const {
+        data: insertedOrder,
+        error: insertError,
+        status: insertStatus,
+      } = await worker
+        .from("orders")
+        .insert({
+          website_name: orderData.website_name,
+          website_address: orderData.website_address,
+          favicon_file: orderData.favicon_file,
+          order_status: orderData.order_status,
+          user_id,
+          product_type: "managed_wp",
+        })
+        .select("*")
+        .single();
+
+      if (insertError) {
+        return NextResponse.json(
+          {
+            error: "Failed to insert order data",
+            details: insertError.message,
+          },
+          { status: insertStatus },
+        );
+      }
+
+      // Link the order to the managed_wp service
+      await worker
+        .from("user_services")
+        .update({ order_id: insertedOrder.order_id, updated_at: new Date().toISOString() })
+        .eq("id", activeManaged.id);
+
       return NextResponse.json(
         {
-          error: "Failed to insert order data",
-          details: insertError.message,
+          message: "Order data inserted successfully",
+          order: insertedOrder ? insertedOrder : null,
         },
-        { status: insertStatus },
+        { status: 200 },
       );
     }
 
-    // Link the order to the user_service
-    await worker
-      .from("user_services")
-      .update({ order_id: insertedOrder.order_id, updated_at: new Date().toISOString() })
-      .eq("id", service.id);
+    if (activeFree) {
+      // Free tier: exactly one connected site (CrUX web vitals)
+      const { count, error: countError } = await worker
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user_id);
+
+      if (countError) {
+        return NextResponse.json(
+          { error: "Error checking site limit" },
+          { status: 500 },
+        );
+      }
+
+      if (count !== null && count >= FREE_SITE_LIMIT) {
+        return NextResponse.json(
+          {
+            error:
+              "Free plan allows one connected site. Upgrade to WordPress Performance Optimization to add more.",
+          },
+          { status: 403 },
+        );
+      }
+
+      const {
+        data: insertedOrder,
+        error: insertError,
+        status: insertStatus,
+      } = await worker
+        .from("orders")
+        .insert({
+          website_name: orderData.website_name,
+          website_address: orderData.website_address,
+          favicon_file: orderData.favicon_file,
+          order_status: orderData.order_status,
+          user_id,
+          product_type: "free",
+        })
+        .select("*")
+        .single();
+
+      if (insertError) {
+        // uniq_orders_free_per_user makes double-submissions fail safely here
+        return NextResponse.json(
+          {
+            error: "Failed to insert order data",
+            details: insertError.message,
+          },
+          { status: insertStatus },
+        );
+      }
+
+      // Bind the free entitlement to the connected site
+      await worker
+        .from("user_services")
+        .update({
+          order_id: insertedOrder.order_id,
+          website_name: insertedOrder.website_name,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", activeFree.id);
+
+      return NextResponse.json(
+        {
+          message: "Order data inserted successfully",
+          order: insertedOrder ? insertedOrder : null,
+        },
+        { status: 200 },
+      );
+    }
 
     return NextResponse.json(
       {
-        message: "Order data inserted successfully",
-        order: insertedOrder ? insertedOrder : null,
+        error:
+          "No active service found. Connect your free site or purchase a WordPress Performance Optimization service first.",
       },
-      { status: 200 },
+      { status: 403 },
     );
   } catch (error) {
     return NextResponse.json(

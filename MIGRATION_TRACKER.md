@@ -8,22 +8,25 @@ Track every step in this file. Check off as completed.
 - [x] 1.1 Create migration SQL file
 - [x] 1.2 Run migration on **staging** Supabase
 - [x] 1.3 Verify data integrity (counts, relationships) — 11 services migrated, 6 subscriptions → 11 user_services
-- [x] 1.4 Regenerate types: `supabase gen types typescript --project-id <staging> > src/lib/db/database.types.ts`
+- [x] 1.4 Types updated: `src/lib/db/database.types.ts` hand-patched (user_services added); ⚠️ full `supabase gen types` regen still pending — file still lists dropped tables (see Dashboard row 7)
 - [x] 1.5 Run TypeScript build — fix all type errors ✅ **BUILD PASSED**
 - [ ] 1.6 Run existing tests on staging
 - [x] 1.7 **Snapshot**: Tag `git tag migration-db-v1`
 - [ ] 1.8 Deploy migration to **production** Supabase
 - [ ] 1.9 Regenerate types for production
 - [ ] 1.10 **Snapshot**: Tag `git tag migration-db-prod-v1`
+- [x] 1.11 Free-tier migrations (`20261011000001–4`) applied to **staging** (2026-10-11) — see "Free Tier + Auth + Billing" section below
+- [ ] 1.12 Apply the same migrations to **production** (together with 1.8)
+- [ ] 1.13 `supabase migration repair --status applied` for all 7 timestamps once the CLI is linked (`supabase login` + `config.toml`)
 
 ### Phase 2: Cloudflare Workers (Week 1-2)
-- [ ] 2.1 Delete `sub-kv-metadata` worker
+- [ ] 2.1 Delete `sub-kv-metadata` worker (code deleted in repo; CF-side retirement pending)
   - [ ] Remove from `wrangler.toml` / deploy config
   - [ ] Remove `SUBSCRIPTION_METADATA` KV namespace binding
   - [ ] Deploy to staging
   - [ ] Verify `event-buffer` still works (no KV dependency)
   - [ ] **Snapshot**: Tag `git tag migration-workers-subkv-deleted`
-- [ ] 2.2 Refactor `event-buffer` validation
+- [ ] 2.2 Refactor `event-buffer` validation (code complete in repo, see docs/DESIGN-site-metadata-worker.md)
   - [ ] Replace `validateDomain()` logic (remove subscription checks)
   - [ ] Add `user_services` check via KV (new `site-metadata` worker)
   - [ ] Deploy to staging
@@ -31,24 +34,18 @@ Track every step in this file. Check off as completed.
   - [ ] **Snapshot**: Tag `git tag migration-event-buffer-refactored`
 
 ### Phase 3: API Routes (Week 2)
-- [ ] 3.1 Create new unified checkout API
-  - [ ] `POST /api/checkout` — handles `managed_wp` + `rum_renewal`
+- [x] 3.1 Create new unified checkout API
+  - [x] `POST /api/checkout` — payment mode only: managed_wp $299 one-time (rum_renewal renewal flow still pending)
   - [ ] Deploy to staging
-  - [ ] Test Stripe checkout for both service types
+  - [ ] Test Stripe checkout with test keys
   - [ ] **Snapshot**: Tag `git tag migration-checkout-new`
-- [ ] 3.2 Create new webhook handler
-  - [ ] `POST /api/webhook/stripe` — handles one-time + recurring
-  - [ ] Update Stripe Dashboard webhook URL
+- [x] 3.2 Create new webhook handler
+  - [x] `POST /api/webhook/stripe` — signature-verified, idempotent managed_wp provisioning (1yr, site_limit 1)
+  - [ ] Update Stripe Dashboard webhook URL + set `STRIPE_WEBHOOK_SECRET`
   - [ ] Test with Stripe CLI: `stripe trigger checkout.session.completed`
   - [ ] **Snapshot**: Tag `git tag migration-webhook-new`
-- [ ] 3.3 **Delete old subscription APIs** (one at a time, verify after each)
-  - [ ] Delete `/api/subscriptions/plan/route.ts`
-  - [ ] Delete `/api/subscriptions/stripe/checkout/route.ts`
-  - [ ] Delete `/api/subscriptions/stripe/webhook/route.ts`
-  - [ ] Delete `/api/subscriptions/stripe/billing-history/route.ts`
-  - [ ] Delete `/api/subscriptions/usage/route.ts`
-  - [ ] Delete `/api/notifications/subscription-notify/route.ts`
-  - [ ] **Snapshot**: Tag `git tag migration-old-apis-deleted`
+- [x] 3.3 **Delete old subscription APIs** — all deleted/rewritten earlier; callers repointed
+  - **Snapshot**: Tag `git tag migration-old-apis-deleted` (pending)
 ---
 
 ## 🔄 Safe De-integration Pattern (Per Component)
@@ -185,18 +182,49 @@ curl /api/subscriptions/plan
 |-------|-----------|--------|-----|-------|
 | 1 | Database migration | ✅ **Complete** | `migration-db-v1` | 11 services migrated, old tables dropped |
 | 1 | TypeScript build | ✅ **Complete** | — | All type errors fixed, build passes |
-| 2 | sub-kv-metadata worker | ⬜ Pending | — | |
-| 2 | event-buffer validation | ⬜ Pending | — | |
-| 3 | New checkout API | ✅ **Complete** | — | `/api/checkout` created for managed_wp + rum_renewal |
-| 3 | New webhook | ✅ **Complete** | — | `/api/subscriptions/stripe/webhook` rewritten for service model |
+| 2 | sub-kv-metadata worker | 🟨 Code complete | — | deleted in repo (PR 1); CF-side removal + deploy pending |
+| 2 | event-buffer validation | 🟨 Code complete | — | SITE_METADATA gate (Origin/Referer), SHARD_COUNT, alarm flush, upsert RPC; deploy + verify pending |
+| 3 | New checkout API | ✅ **Complete** | — | `/api/checkout` live — Stripe Checkout (payment mode), managed_wp $299 one-time |
+| 3 | New webhook | ✅ **Complete** | — | `/api/webhook/stripe` — idempotent provisioning of managed_wp on checkout.session.completed |
 | 3 | Old subscription APIs | ✅ **Complete** | — | All subscription APIs deleted/rewritten |
 | 3 | WordPress limits API | ✅ **Complete** | — | Rewritten for user_services model |
 | 4 | Email templates | ✅ **Complete** | — | subscriptionCreated deleted, renewalSuccess updated |
-| 5 | New billing UI | ⬜ Pending | — | |
+| 5 | New billing UI | ⬜ Pending | — | plan display works via `validatePlan`; full billing page pending |
 | 5 | Delete subscription UI | ✅ **Complete** | — | account/subscription deleted |
 | 6 | Dashboard data layer | ⬜ Pending | — | |
-| 7 | Types cleanup | ✅ **Complete** | — | dataTypes.ts, api/index.ts updated |
-| 8 | GitHub Actions | ⬜ Pending | — | |
+| 7 | Types cleanup | 🟨 Partial | — | dataTypes/api updated; ⚠️ `database.types.ts` hand-patched, still lists dropped tables; root `db.types.ts` dead — regen + delete pending |
+| 8 | GitHub Actions | 🟨 Partial | — | usage_update.yml retired (endpoint gone); usage metering returns with Phase 2 |
+| FT | Auth gate (user_services) | ✅ **Complete** | — | `/api/account/auth` cookie-based; jose removed |
+| FT | Free tier provisioning | ✅ **Complete** | — | trigger + backfill live: 5 free services, 11/11 profiles on staging |
+| FT | Free 1-site limit | ✅ **Complete** | — | site-limit + newOrder entitlement-aware; IDOR fixed; DB unique-index caps |
+| FT | Session timeout | 🟨 Partial | — | 2h inactivity (client) live; Supabase dashboard "Inactivity timeout: 2h" pending for server-side |
+| DB | Free-tier migrations on **staging** | ✅ **Complete** | — | 20261011000001–4 applied 2026-10-11 via `scripts/apply-pending-migrations.js` |
+
+---
+
+## 🆕 Free Tier + Auth + Billing (2026-10-11)
+
+Shipped on branch `work/api-cleanup` (PR to main pending). See commits `7cc8629` (auth gate + free tier), `7f09677` (1-site enforcement + security fixes), `6f308ef` (checkout + webhook + cron retirement), `42c2401` (session timeout).
+
+- **Auth gate**: `/api/account/auth` rewritten — cookie-based `getUser()` (jose dependency removed), reads `user_services`; the gate against the dropped `subscriptions` table eliminated
+- **Free tier**: `service_type_enum` value `free` added; `handle_new_user()` trigger auto-provisions profile + free service at signup (covers password sign-ins too); backfill covered existing accounts (5 free services, 11/11 profiles)
+- **1-site free limit**: `/api/orders/site-limit` + `/api/orders/newOrder` entitlement-aware; IDOR (body-trusted `user_id`) fixed; DB-level caps via partial unique indexes
+- **Billing**: `/api/checkout` (Stripe, payment mode, $299 one-time) + `/api/webhook/stripe` (signature-verified, idempotent `checkout.session.completed` provisioning, 1-yr managed_wp)
+- **Session timeout**: 2h inactivity (client-side, cross-tab, reload-safe); Supabase dashboard "Inactivity timeout: 2h" still to be set for server-side enforcement
+- **Cron**: `usage_update.yml` retired (endpoint deleted); usage metering rebuilds with Phase 2
+
+### Migrations applied to **staging** on 2026-10-11 (via `scripts/apply-pending-migrations.js`)
+
+| File | Contents |
+|---|---|
+| `20261011000001_free_service_tier_schema.sql` | enum `free`, `user_services.website_name` nullable |
+| `20261011000002_free_service_tier_backfill.sql` | profiles backfill + free services for service-less accounts |
+| `20261011000003_free_service_tier_constraints.sql` | unique free-service index, `handle_new_user()` trigger |
+| `20261011000004_free_site_hard_limit.sql` | partial unique index on `orders` (1 free site per user) |
+
+⚠️ **Not recorded in `supabase_migrations`** (applied via direct SQL). Once the CLI is linked (`supabase login` + `config.toml`), run `supabase migration repair --status applied` for all 7 timestamps (20250101000000–2, 20261011000001–4) so `migration up` / `db push` skips them.
+
+⚠️ The same migrations must go to **production** together with items 1.8–1.10.
 
 ---
 
@@ -228,5 +256,5 @@ vercel rollback <deployment-url> --token $VERCEL_TOKEN
 
 ---
 
-*Last updated: 2025*
+*Last updated: 2026-10-11*
 *Use this file as single source of truth for migration progress*

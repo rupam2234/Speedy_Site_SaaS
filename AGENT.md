@@ -27,27 +27,29 @@ Everything we build must serve this loop. Before implementing anything, read
 
 ## Code Rules
 
-### 1. Comments: key functions only, 3 lines max
+### 1. Only read the .env.example for keys
+
+### 2. Comments: key functions only, 3 lines max
 
 - Comment only **key functions**, and only what the code cannot express (the *why*).
 - A comment must never exceed **3 lines**.
 - Never keep commented-out code or stale TODO-only comments; delete dead code instead.
 
-### 2. Clean code and reuse
+### 3. Clean code and reuse
 
 - Reuse existing components, hooks, helpers, and patterns before creating new ones.
 - No duplication: shared logic goes into `src/lib` or shared components.
 - Follow existing naming and file conventions (e.g. route handlers in `src/app/api/**/route.ts`).
 - Keep diffs minimal and focused: do not refactor unrelated code in the same change.
 
-### 3. Scalable code
+### 4. Scalable code
 
 - Design for growth: batched DB queries (no N+1), pagination on list endpoints,
   stateless API routes, small single-responsibility modules.
 - New tables must follow existing Supabase patterns (types in `db.types.ts`, RLS policies).
 - Prefer configuration over hardcoding; assume every constant will change.
 
-### 4. Always read the goals and docs before implementing
+### 5. Always read the goals and docs before implementing
 
 - Read `docs/GOALS.md` before writing any feature.
 - Check `docs/` for an existing design doc (`DESIGN-*.md`, `RESTRUCTURE-PLAN.md`) for
@@ -55,7 +57,7 @@ Everything we build must serve this loop. Before implementing anything, read
 - If the docs and the code disagree, stop and flag it. Do not silently code around it.
 - If no doc exists for a significant feature, write a short one in `docs/` first.
 
-### 5. Performance is our priority: always pick the optimal solution
+### 6. Performance is our priority: always pick the optimal solution
 
 - We sell performance; our own code must demonstrate it.
 - Frontend: prefer server components, lazy-load heavy charts/animations, keep client
@@ -65,7 +67,7 @@ Everything we build must serve this loop. Before implementing anything, read
 - RUM pipeline: the collector must stay tiny and non-blocking; ingestion must batch.
 - Always measure before claiming a win.
 
-### 6. Writing style: no em-dashes
+### 7. Writing style: no em-dashes
 
 - Never use the em-dash character "—" in code, comments, docs, or UI copy.
 - Rewrite with a comma, colon, semicolon, parentheses, or split the sentence.

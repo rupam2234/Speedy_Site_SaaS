@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "../components/theme/ThemeProvider";
 import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
+import { SessionTimeoutProvider } from "@/components/utils/supabase/SessionTimeoutProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,7 +33,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <ThemeProvider defaultTheme="light">{children}</ThemeProvider>
+          <SessionTimeoutProvider>
+            <ThemeProvider defaultTheme="light">{children}</ThemeProvider>
+          </SessionTimeoutProvider>
         </AuthProvider>
       </body>
     </html>
