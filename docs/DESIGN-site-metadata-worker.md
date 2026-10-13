@@ -118,7 +118,7 @@ Two changes worth making:
   needed)
 - Delete the commented-out backup block in `cloudflare-workers/rum/src/index.js`
   (AGENT.md rule 1)
-- Move the committed service key to a wrangler secret, then rotate it in Supabase
+- Move the committed service key to a wrangler secret, then rotate it in Supabase ✅ (2026-10-13: rotated in Supabase, synced to all 4 workers, RUM ingestion verified)
 - Remove dead code and the commented temp line in `event-buffer/src/index.js`
   (AGENT.md rule 1); tighten CORS (echo origin without credentials)
 - Verify the `DB` (D1) binding in event-buffer is actually used; remove if dead
