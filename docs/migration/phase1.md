@@ -13,7 +13,9 @@
 10. **Snapshot for production** – tag `migration-db-prod-v1` created on commit `727cf6f` (production migration reconciliation + regenerated types) and pushed to origin (2026-10-17)
 
 ### Pending Tasks
-- (Optional) Run existing tests on staging against the migrated schema
+- ~~(Optional) Run existing tests on staging against the migrated schema~~ **Done (2026-10-17)** — see Notes below.
 
 ### Notes
 - Types are now fully generated from the production database; dropped tables (`subscriptions`, `plan_metadata`, `one_time_orders`) no longer appear in the type definitions.
+- **Staging schema verification (2026-10-17)**: REST probe against staging (`tmpvygehhshrgsqxzaty`) confirmed `user_services` returns 16 rows, views `cloudflare_kv_tracking` (2 rows) and `v_cf_zone_per_site` exist, and RPC `get_daily_web_metrics` returns live data. No migration regressions found.
+- **Existing worker tests**: both Cloudflare worker suites (`analytics-cron`, `traffic-source-cron`) fail 2 snapshot tests each — stale `wrangler init` "Hello World!" scaffold tests that predate the workers' API-secret auth (workers now correctly return `Unauthorized`). Pre-existing, unrelated to the migration; the Next.js app itself has no test suite. Fixing these scaffold tests is out of Phase 1 scope.
