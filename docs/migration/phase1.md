@@ -10,9 +10,9 @@
 7. **Free‑tier migrations** (`20261011000001–4`) applied to staging (2026‑10‑11)
 8. **Production deployment** (2026‑10‑17) – all 8 migrations verified as already applied to production (data inspection confirmed: `user_services` present with 16 rows, enum `free` added, constraints/triggers/views in place); migration history reconciled via `supabase migration repair --status applied`
 9. **Regenerate types** – `database.types.ts` regenerated from production via `supabase gen types`; `OneTimeOrders` type removed from `src/app/api/helpers/dataTypes.ts`; `next build` passes
+10. **Snapshot for production** – tag `migration-db-prod-v1` created on commit `727cf6f` (production migration reconciliation + regenerated types) and pushed to origin (2026-10-17)
 
 ### Pending Tasks
-- Snapshot for production – tag `migration-db-prod-v1`
 - (Optional) Run existing tests on staging against the migrated schema
 
 ### Notes
