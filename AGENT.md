@@ -80,6 +80,12 @@ Everything we build must serve this loop. Before implementing anything, read
   before/after impact, where to verify, and a one-line interview summary.
 - Only major, measurable changes; link to the design doc or files for detail.
 
+### 9. Never commit directly on any branch
+
+- All changes must go through a PR; no direct commits to `main`, `dev`, or any branch.
+- Use `git commit --amend` / `git rebase` to clean history before opening a PR.
+- CI must pass (typecheck, lint, build) before merge.
+
 ---
 
 ## Stack quick reference
