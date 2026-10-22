@@ -6,7 +6,22 @@
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
-> **Last updated:** 2026-10-22
+> **Last updated:** 2026-10-23
+
+---
+
+## 2026-10-23 · Expert auto-assign outage fixed at the database
+
+**Problem:** migration `20261022000001` was pushed to the operational database before a bug in it was caught: `pick_next_expert()` read `experts_pool.active_load`, a column that only exists on the `experts_pool_live` view. Every auto-assignment call failed at runtime with `42703 column e.active_load does not exist` — expert routing was down from the moment the migration landed.
+
+**Changes:**
+- Follow-up migration `20261023000001_fix_pick_next_expert.sql` replaces the function: the load count is computed inline from `order_assignments` via `CROSS JOIN LATERAL`, and `FOR UPDATE OF e SKIP LOCKED` stays on the base table so the capacity check remains atomic (an applied migration is never edited in place — the fix ships as a new version)
+- Applied to the live database with `supabase db push`; types regenerated (`database.types.ts` now includes the expert tables) and the dead root `db.types.ts` deleted
+
+**Impact (before → after):**
+- Auto-assignment path: every call errored (42703) → functional (verified with a throwaway expert: pick returned the expert and advanced `rr_position` 0→1→2; the test expert was cascade-deleted afterwards, leaving no residue)
+
+**Where to verify:** `POST /rest/v1/rpc/pick_next_expert` returns `null` while the pool is empty; migration `20261023000001` is recorded in `supabase_migrations.schema_migrations`; `supabase migration list --linked` shows it on both sides.
 
 ---
 

@@ -47,7 +47,7 @@ Everything we build must serve this loop. Before implementing anything, read
 
 - Design for growth: batched DB queries (no N+1), pagination on list endpoints,
   stateless API routes, small single-responsibility modules.
-- New tables must follow existing Supabase patterns (types in `db.types.ts`, RLS policies).
+- New tables must follow existing Supabase patterns (types in `src/lib/db/database.types.ts`, RLS policies).
 - Prefer configuration over hardcoding; assume every constant will change.
 
 ### 5. Always read the goals and docs before implementing
@@ -94,7 +94,7 @@ Everything we build must serve this loop. Before implementing anything, read
 | Layer | Technology |
 |---|---|
 | App | Next.js 15 (App Router) + TypeScript + Tailwind CSS 4 |
-| DB / Auth | Supabase (Postgres + Auth); generated types in `db.types.ts` |
+| DB / Auth | Supabase (Postgres + Auth); generated types in `src/lib/db/database.types.ts` |
 | Edge | Cloudflare Workers (`cloudflare-workers/`: RUM ingestion, event buffer, analytics cron) |
 | Billing | Stripe |
 | Email | Resend |

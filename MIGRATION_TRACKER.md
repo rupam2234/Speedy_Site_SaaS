@@ -8,7 +8,7 @@ Track every step in this file. Check off as completed.
 - [x] 1.1 Create migration SQL file
 - [x] 1.2 Run migration on **staging** Supabase
 - [x] 1.3 Verify data integrity (counts, relationships) — 11 services migrated, 6 subscriptions → 11 user_services
-- [x] 1.4 Types updated: `src/lib/db/database.types.ts` hand-patched (user_services added); ⚠️ full `supabase gen types` regen still pending — file still lists dropped tables (see Dashboard row 7)
+- [x] 1.4 Types updated: `src/lib/db/database.types.ts` hand-patched, then fully regenerated (2026-10-23, `supabase gen types` — includes `experts_pool`/`order_assignments`); dead root `db.types.ts` deleted
 - [x] 1.5 Run TypeScript build — fix all type errors ✅ **BUILD PASSED**
 - [x] 1.6 Run existing tests on staging (2026-10-17, results in docs/migration/phase1.md)
 - [x] 1.7 **Snapshot**: Tag `git tag migration-db-v1`
@@ -197,7 +197,7 @@ curl /api/subscriptions/plan
 | 5 | New billing UI | ⬜ Pending | — | plan display works via `validatePlan`; full billing page pending |
 | 5 | Delete subscription UI | ✅ **Complete** | — | account/subscription deleted |
 | 6 | Dashboard data layer | ⬜ Pending | — | |
-| 7 | Types cleanup | 🟨 Partial | — | dataTypes/api updated; ⚠️ `database.types.ts` hand-patched, still lists dropped tables; root `db.types.ts` dead — regen + delete pending |
+| 7 | Types cleanup | ✅ **Complete** | — | `database.types.ts` regenerated from the live DB (2026-10-23, includes expert tables); root `db.types.ts` deleted |
 | 8 | GitHub Actions | 🟨 Partial | — | usage_update.yml retired (endpoint gone); usage metering returns with Phase 2 |
 | FT | Auth gate (user_services) | ✅ **Complete** | — | `/api/account/auth` cookie-based; jose removed |
 | FT | Free tier provisioning | ✅ **Complete** | — | trigger + backfill live: 5 free services, 11/11 profiles on staging |
@@ -235,9 +235,9 @@ Shipped on branch `work/api-cleanup` (PR to main pending). See commits `7cc8629`
 
 ## 🆕 Admin Console & Expert Management (2026-10-22, Phase 1 groundwork)
 
-- Migration `supabase/migrations/20261022000001_admin_expert_management.sql` added: role `expert`, `experts_pool`, `order_assignments`, RLS policies, capacity-aware round-robin `pick_next_expert()`. **Not applied to any environment yet.**
-- Bug fixed in that migration before first deploy: `pick_next_expert()` originally read `active_load` from `experts_pool`, where that column does not exist (it is computed on the `experts_pool_live` view), so auto-assignment would have errored at runtime. The count is now computed inline with a `LATERAL` join and the row lock stays on the base table (`FOR UPDATE OF e SKIP LOCKED`).
-- API routes exist under `src/app/api/admin/**` (invite, experts, orders, assign, reassign, skip, queue) and admin nav is wired in the sidebar. Next step: apply the migration to staging, record where it was applied, then enable auto-assign in the managed-WP add flow.
+- Migration `supabase/migrations/20261022000001_admin_expert_management.sql` added: role `expert`, `experts_pool`, `order_assignments`, RLS policies, capacity-aware round-robin `pick_next_expert()`.
+- **Applied 2026-10-22** to the operational project `tmpvygehhshrgsqxzaty` (via `supabase db push`, recorded in `supabase_migrations`) — but with the pre-fix function, so live `pick_next_expert()` returned `42703 column e.active_load does not exist` on every call. **Repaired 2026-10-23** with follow-up migration `20261023000001_fix_pick_next_expert.sql` (never edit an applied migration in place; the fix ships as a new version). Functional verification: empty pool → `null`; with an available expert the pick returns the expert and advances `rr_position` (0→1→2), then the throwaway expert was cascade-deleted (pool/assignments back to 0).
+- API routes exist under `src/app/api/admin/**` (invite, experts, orders, assign, reassign, skip, queue) and admin nav is wired in the sidebar. Next step: enable auto-assign in the managed-WP add flow and build the admin queue UI.
 - Design doc: `docs/DESIGN-admin-expert-management.md`.
 
 ---
