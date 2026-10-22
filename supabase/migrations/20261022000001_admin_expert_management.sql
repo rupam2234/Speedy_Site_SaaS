@@ -89,10 +89,17 @@ DECLARE
 BEGIN
     SELECT e.expert_id INTO chosen
     FROM public.experts_pool e
+    CROSS JOIN LATERAL (
+        SELECT count(*)::bigint AS active_load
+        FROM public.order_assignments a
+        WHERE a.expert_id = e.expert_id
+          AND a.is_active
+          AND a.status IN ('pending','accepted','in_progress')
+    ) load
     WHERE e.is_available
-      AND e.active_load < e.capacity
+      AND load.active_load < e.capacity
     ORDER BY e.rr_position ASC, e.last_assigned_at ASC NULLS FIRST
-    FOR UPDATE SKIP LOCKED
+    FOR UPDATE OF e SKIP LOCKED
     LIMIT 1;
 
     IF chosen IS NOT NULL THEN
