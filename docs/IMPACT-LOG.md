@@ -32,14 +32,16 @@ site's metrics.
 
 **Impact (before → after):**
 - Ingestion for a domain provisioned after the DB migration: 403 → 200
-  (deploy verification pending)
+  (verified 2026-10-22: `/collect` returned 202 for a seeded domain and 403
+  for an unknown one; the alarm flush landed a row in `rum_metrics`)
 - Domain source of truth: client payload → edge Origin/Referer
 - Workers feeding the ingestion KV: one dead worker → one live sync; daily KV
   writes stay in the low double digits on the free plan (compare-before-write)
 
-**Verify:** KV `domain:{website_name}` after one sync; an entitled domain returns
-200 and an unknown domain returns 403 on `event-buffer`; `rum.speedy.site/rum.js`
-still serves the plugin script.
+**Verified 2026-10-22:** KV `domain:{website_name}` written for all 9 entitled
+domains after one sync; `event-buffer` `/collect` returned 202 for an entitled
+domain and 403 for an unknown one; `rum.speedy.site/rum.js` serving is untouched
+(separate `rum` worker).
 
 ## 2026-10-13 · Analytics pipeline: ~95% free-tier quota bleed eliminated
 
