@@ -13,6 +13,8 @@ export async function middleware(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // if the user is a service expert then we display dashboard with expert centric UI
+
   if (!user && isDashboard) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
@@ -23,7 +25,6 @@ export async function middleware(req: NextRequest) {
 
   return res;
 }
-
 
 export const config = {
   matcher: ["/dashboard/:path*", "/sign-in/:path*"],

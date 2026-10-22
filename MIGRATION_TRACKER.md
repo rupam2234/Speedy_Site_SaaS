@@ -21,14 +21,17 @@ Track every step in this file. Check off as completed.
 
 ### Phase 2: Cloudflare Workers (Week 1-2)
 - [ ] 2.1 Delete `sub-kv-metadata` worker (code deleted in repo; CF-side retirement pending)
-  - [ ] Remove from `wrangler.toml` / deploy config
-  - [ ] Remove `SUBSCRIPTION_METADATA` KV namespace binding
-  - [ ] Deploy to staging
+  - [x] Remove from `wrangler.toml` / deploy config
+  - [x] Remove `SUBSCRIPTION_METADATA` KV namespace binding
+  - [x] Add the replacement `cloudflare-workers/site-metadata/` and `event-buffer/wrangler.toml` to git (the root `.gitignore` had been blanket-ignoring `/cloudflare-workers`, so the new worker could never be committed or deployed from CI)
+  - [ ] Deploy `site-metadata` to Cloudflare, run one sync, confirm KV contents
+  - [ ] Deploy `event-buffer` reading `SITE_METADATA` (KV must be seeded first)
+  - [ ] Delete the live `sub-kv-metadata` worker + its KV namespace
   - [ ] Verify `event-buffer` still works (no KV dependency)
   - [ ] **Snapshot**: Tag `git tag migration-workers-subkv-deleted`
 - [ ] 2.2 Refactor `event-buffer` validation (code complete in repo, see docs/DESIGN-site-metadata-worker.md)
-  - [ ] Replace `validateDomain()` logic (remove subscription checks)
-  - [ ] Add `user_services` check via KV (new `site-metadata` worker)
+  - [x] Replace `validateDomain()` logic (remove subscription checks)
+  - [x] Add `user_services` check via KV (new `site-metadata` worker)
   - [ ] Deploy to staging
   - [ ] Test RUM script injection on test domain
   - [ ] **Snapshot**: Tag `git tag migration-event-buffer-refactored`
@@ -182,7 +185,7 @@ curl /api/subscriptions/plan
 |-------|-----------|--------|-----|-------|
 | 1 | Database migration | ✅ **Complete** | `migration-db-v1` | 11 services migrated, old tables dropped |
 | 1 | TypeScript build | ✅ **Complete** | — | All type errors fixed, build passes |
-| 2 | sub-kv-metadata worker | 🟨 Code complete | — | deleted in repo (PR 1); CF-side removal + deploy pending |
+| 2 | sub-kv-metadata worker | 🟨 Code complete | — | deleted in repo + gitignore fixed so the replacement is tracked; CF-side removal needs `site-metadata`/`event-buffer` deploy first |
 | 2 | event-buffer validation | 🟨 Code complete | — | SITE_METADATA gate (Origin/Referer), SHARD_COUNT, alarm flush, upsert RPC; deploy + verify pending |
 | 3 | New checkout API | ✅ **Complete** | — | `/api/checkout` live — Stripe Checkout (payment mode), managed_wp $299 one-time |
 | 3 | New webhook | ✅ **Complete** | — | `/api/webhook/stripe` — idempotent provisioning of managed_wp on checkout.session.completed |

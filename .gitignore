@@ -21,7 +21,12 @@
 
 # production
 /build
-/cloudflare-workers
+
+# cloudflare workers: source and wrangler config are tracked, only local
+# wrangler state and dependencies stay ignored (each worker .gitignore repeats these)
+cloudflare-workers/**/.wrangler/
+cloudflare-workers/**/node_modules/
+cloudflare-workers/**/.dev.vars
 
 # misc
 .DS_Store

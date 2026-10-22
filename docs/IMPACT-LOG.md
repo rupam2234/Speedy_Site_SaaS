@@ -6,9 +6,40 @@
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
-> **Last updated:** 2026-10-13
+> **Last updated:** 2026-10-22
 
 ---
+
+## 2026-10-22 · RUM ingestion: "403 for every new customer" fixed at the edge
+
+**Problem:** the `event-buffer` ingestion gate read entitlement from a KV that
+`sub-kv-metadata` had stopped feeding: that worker watched the `subscriptions`
+table, which the user_services model migration dropped. Every domain provisioned
+after that migration got a 403 on every beacon (the script still loads, no data
+collected). Secondarily, the gate trusted the payload's own
+`data.siteDomain`, so a copied `<script>` tag plus curl could write into another
+site's metrics.
+
+**Changes (details: `docs/DESIGN-site-metadata-worker.md`):**
+- New `site-metadata` worker syncs entitlement from `services_with_domains` into KV
+  `SITE_METADATA` (`domain:{website_name}` → `{serviceId, status, expiresAt, pageviewLimit}`)
+- `event-buffer` derives the domain from Origin/Referer at the edge instead of the
+  payload, rejects unknown/oversized bodies (403/413), and reuses the same KV
+  namespace so the sync deletes the stale keys
+- `sub-kv-metadata` deleted; root `.gitignore` scoped from a blanket
+  `/cloudflare-workers` down to `.wrangler/`, `node_modules/` and `.dev.vars`, so
+  the replacement workers can be committed and deployed from CI
+
+**Impact (before → after):**
+- Ingestion for a domain provisioned after the DB migration: 403 → 200
+  (deploy verification pending)
+- Domain source of truth: client payload → edge Origin/Referer
+- Workers feeding the ingestion KV: one dead worker → one live sync; daily KV
+  writes stay in the low double digits on the free plan (compare-before-write)
+
+**Verify:** KV `domain:{website_name}` after one sync; an entitled domain returns
+200 and an unknown domain returns 403 on `event-buffer`; `rum.speedy.site/rum.js`
+still serves the plugin script.
 
 ## 2026-10-13 · Analytics pipeline: ~95% free-tier quota bleed eliminated
 
