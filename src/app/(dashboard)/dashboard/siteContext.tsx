@@ -38,6 +38,9 @@ type SiteContextType = {
   setEndDate: (d?: Date) => void;
   plan: string | null;
   setPlan: (plan: string | null) => void;
+  // user role cached client‑side
+  role: "user" | "admin" | "expert" | null;
+  roleLoading: boolean;
 };
 
 export const SiteContext = createContext<SiteContextType>({
@@ -63,6 +66,8 @@ export const SiteContext = createContext<SiteContextType>({
   setEndDate: () => {},
   plan: "",
   setPlan: () => {},
+  role: null,
+  roleLoading: true,
 });
 
 export default function SiteContextProvider({
@@ -92,6 +97,64 @@ export default function SiteContextProvider({
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [plan, setPlan] = useState<string | null>(null);
+
+  // --- role caching ---
+  const [role, setRole] = useState<"user" | "admin" | "expert" | null>(null);
+  const [roleLoading, setRoleLoading] = useState<boolean>(true);
+
+  const ROLE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+  const ROLE_CACHE_KEY = "supabase-user-role";
+
+  function readRoleCache(): { role: "user" | "admin" | "expert" | null; ts: number } | null {
+    try {
+      const raw = sessionStorage.getItem(ROLE_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.ts < ROLE_TTL_MS) {
+        return { role: parsed.role as "user" | "admin" | "expert" | null, ts: parsed.ts };
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  function writeRoleCache(roleVal: "user" | "admin" | "expert" | null) {
+    try {
+      sessionStorage.setItem(ROLE_CACHE_KEY, JSON.stringify({ role: roleVal, ts: Date.now() }));
+    } catch {
+      // ignore
+    }
+  }
+
+  // fetch role once
+  useEffect(() => {
+    const cached = readRoleCache();
+    if (cached) {
+      setRole(cached.role);
+      setRoleLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setRoleLoading(true);
+    fetch("/api/user/role")
+      .then((res) => res.json())
+      .then((json) => {
+        if (!cancelled) {
+          const fetchedRole = (json.role as "user" | "admin" | "expert" | null) ?? null;
+          setRole(fetchedRole);
+          writeRoleCache(fetchedRole);
+          setRoleLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRole(null);
+          setRoleLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const user = useSupabaseUser();
   const searchParams = useSearchParams();
@@ -240,6 +303,8 @@ export default function SiteContextProvider({
         setEndDate,
         plan,
         setPlan,
+        role,
+        roleLoading,
       }}
     >
       {children}

@@ -38,6 +38,7 @@ Everything we build must serve this loop. Before implementing anything, read
 ### 3. Clean code and reuse
 
 - Reuse existing components, hooks, helpers, and patterns before creating new ones.
+- While adding comments only use // comments and max of 2 lines of crucial functions. Otherwise avoid commenting with fency lines and unnecesserily
 - No duplication: shared logic goes into `src/lib` or shared components.
 - Follow existing naming and file conventions (e.g. route handlers in `src/app/api/**/route.ts`).
 - Keep diffs minimal and focused: do not refactor unrelated code in the same change.
