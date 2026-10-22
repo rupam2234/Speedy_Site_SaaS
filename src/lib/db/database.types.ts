@@ -112,6 +112,30 @@ export type Database = {
           },
         ]
       }
+      experts_pool: {
+        Row: {
+          capacity: number
+          expert_id: string
+          is_available: boolean
+          last_assigned_at: string | null
+          rr_position: number
+        }
+        Insert: {
+          capacity?: number
+          expert_id: string
+          is_available?: boolean
+          last_assigned_at?: string | null
+          rr_position?: number
+        }
+        Update: {
+          capacity?: number
+          expert_id?: string
+          is_available?: boolean
+          last_assigned_at?: string | null
+          rr_position?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -196,6 +220,67 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_services"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_assignments: {
+        Row: {
+          accepted_at: string | null
+          assigned_at: string
+          assigned_by: string | null
+          completed_at: string | null
+          expert_id: string
+          id: string
+          is_active: boolean
+          order_id: string
+          skip_reason: string | null
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          assigned_at?: string
+          assigned_by?: string | null
+          completed_at?: string | null
+          expert_id: string
+          id?: string
+          is_active?: boolean
+          order_id: string
+          skip_reason?: string | null
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          assigned_at?: string
+          assigned_by?: string | null
+          completed_at?: string | null
+          expert_id?: string
+          id?: string
+          is_active?: boolean
+          order_id?: string
+          skip_reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_assignments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_assignments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_assignments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_cf_zone_per_site"
+            referencedColumns: ["order_id"]
           },
         ]
       }
@@ -756,6 +841,33 @@ export type Database = {
           website_address: string | null
           website_name: string | null
           weekly_report: boolean | null
+        }
+        Relationships: []
+      }
+      experts_pool_live: {
+        Row: {
+          active_load: number | null
+          capacity: number | null
+          expert_id: string | null
+          is_available: boolean | null
+          last_assigned_at: string | null
+          rr_position: number | null
+        }
+        Insert: {
+          active_load?: never
+          capacity?: number | null
+          expert_id?: string | null
+          is_available?: boolean | null
+          last_assigned_at?: string | null
+          rr_position?: number | null
+        }
+        Update: {
+          active_load?: never
+          capacity?: number | null
+          expert_id?: string | null
+          is_available?: boolean | null
+          last_assigned_at?: string | null
+          rr_position?: number | null
         }
         Relationships: []
       }
@@ -1397,6 +1509,7 @@ export type Database = {
           visit_count: number
         }[]
       }
+      pick_next_expert: { Args: never; Returns: string }
       process_web_vitals_date_range: {
         Args: { end_date?: string; start_date: string }
         Returns: {
