@@ -10,12 +10,40 @@
 
 ---
 
+## 2026-10-23 · Admin Operations Mission Control, Order Dispatch, SLA Queue, Support Hub, and Clean Middleware Routing
+
+**Problem:** The managed WP optimization service lacked an operational control center for admins to triage customer tickets, track SLA-breaching unassigned orders, dispatch/reassign orders to developer pools with capacity limits, and review live performance metrics. Additionally, URL paths leaked internal directory names (`/admin`), the tickets discussion view suffered from flexbox height clipping and container scroll occlusion, and navigating to `/account` broke the sidebar layout due to missing context providers.
+
+**Changes (details: `docs/DESIGN-admin-expert-management.md`):**
+- **Operations Mission Control (`/dashboard`):** Executive overview with 4 KPI metrics (queue depth, active optimizations, developer utilization, open tickets), critical SLA warning banner for orders waiting > 12h, operational dispatch shortcuts, and live feed.
+- **Managed WP Orders (`/dashboard/orders`):** Search by domain, customer email, or order ID; status filter pills; pagination; sliding detail drawer linking directly to live RUM Core Web Vitals evidence; and dispatch actions (Assign, Reassign, Skip with reason, Mark Completed) with assignment audit trail.
+- **SLA-Aware Unassigned Queue (`/dashboard/queue`):** Real-time wait duration badges (`<1h`, `4–12h`, `>12h critical`), inline dispatch modal (auto round-robin or manual selection), and batch auto-assign.
+- **Customer Support Hub (`/dashboard/tickets`):** Two-column split-pane inbox allowing admins to triage customer inquiries, reply to messages, and update resolution status (`open`, `pending`, `closed`). Fixed layout occlusion by adding `min-h-0` flexbox constraints, replacing `scrollIntoView` with targeted internal scroll, and removing column gaps for clean border alignment.
+- **Developer Pool Management (`/dashboard/experts`):** Email invitations, capacity controls, and availability toggle for round-robin dispatch.
+- **Clean Middleware Routing:** Next.js middleware inspects `profiles.role` via Supabase service client and internally rewrites requests, keeping browser URLs clean (`/dashboard`, `/dashboard/orders`, `/dashboard/queue`, `/dashboard/tickets`, `/dashboard/experts`) while maintaining source code isolation in `src/app/(dashboard)/dashboard/admin/*` and `expert/*`.
+- **Account Sidebar Fix (`/account`):** Wrapped `AccountLayout` with `AuthProvider` and `SiteContextProvider` in `src/app/account/layout.tsx`, resolving the permanent `roleLoading: true` skeleton state.
+
+**Impact (before → after):**
+- Order triage & assignment: manual DB inspection → 1-click dispatch modal with automated round-robin and developer capacity protection.
+- SLA visibility: zero queue metrics → real-time wait duration tracking with >12h critical alerting.
+- URL architecture: exposed `/admin/*` paths → unified clean `/dashboard/*` URLs with transparent role rewriting.
+- Tickets chat layout: container scrolled off-screen by 488px on thread load → zero container scroll, perfectly aligned inside rounded container with internal message scrolling.
+- Account sidebar: stuck in pulsing skeleton state forever → fully rendered navigation links and user profile dropdown.
+
+**Where to verify:**
+- `http://localhost:3000/dashboard`, `/dashboard/orders`, `/dashboard/queue`, `/dashboard/tickets`, `/dashboard/experts`, `/dashboard/account`.
+- Pull Request #16 on GitHub (`feature/admin-allocations` → `dev`).
+
+**Interview one-liner:** "Built the operational mission control for our managed WordPress optimization service, complete with SLA queue alerting, round-robin developer dispatching, and live RUM evidence links, while keeping URL architectures clean and role-segregated via edge middleware rewriting."
+
+---
+
 ## 2026-10-23 · Expert auto-assign outage fixed at the database
 
-**Problem:** migration `20261022000001` was pushed to the operational database before a bug in it was caught: `pick_next_expert()` read `experts_pool.active_load`, a column that only exists on the `experts_pool_live` view. Every auto-assignment call failed at runtime with `42703 column e.active_load does not exist` — expert routing was down from the moment the migration landed.
+**Problem:** migration `20261022000001` was pushed to the operational database before a bug in it was caught: `pick_next_expert()` read `experts_pool.active_load`, a column that only exists on the `experts_pool_live` view. Every auto-assignment call failed at runtime with `42703 column e.active_load does not exist`: expert routing was down from the moment the migration landed.
 
 **Changes:**
-- Follow-up migration `20261023000001_fix_pick_next_expert.sql` replaces the function: the load count is computed inline from `order_assignments` via `CROSS JOIN LATERAL`, and `FOR UPDATE OF e SKIP LOCKED` stays on the base table so the capacity check remains atomic (an applied migration is never edited in place — the fix ships as a new version)
+- Follow-up migration `20261023000001_fix_pick_next_expert.sql` replaces the function: the load count is computed inline from `order_assignments` via `CROSS JOIN LATERAL`, and `FOR UPDATE OF e SKIP LOCKED` stays on the base table so the capacity check remains atomic (an applied migration is never edited in place; the fix ships as a new version)
 - Applied to the live database with `supabase db push`; types regenerated (`database.types.ts` now includes the expert tables) and the dead root `db.types.ts` deleted
 
 **Impact (before → after):**
