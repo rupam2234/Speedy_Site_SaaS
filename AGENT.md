@@ -27,18 +27,22 @@ Everything we build must serve this loop. Before implementing anything, read
 
 ## Code Rules
 
-### 1. Only read the .env.example for keys
+### 1. Environment variables and secrets
+
+- Never hardcode secrets or credentials; always read from environment variables.
+- Use `.env.example` as the single reference for required keys.
+- Never commit `.env` files; only `.env.example` (with placeholder values) is tracked.
 
 ### 2. Comments: key functions only, 3 lines max
 
 - Comment only **key functions**, and only what the code cannot express (the *why*).
-- A comment must never exceed **3 lines**.
+- Use only `//` comments; a comment must never exceed **3 lines**.
+- No decorative comment borders or banners.
 - Never keep commented-out code or stale TODO-only comments; delete dead code instead.
 
 ### 3. Clean code and reuse
 
 - Reuse existing components, hooks, helpers, and patterns before creating new ones.
-- While adding comments only use // comments and max of 2 lines of crucial functions. Otherwise avoid commenting with fency lines and unnecesserily
 - No duplication: shared logic goes into `src/lib` or shared components.
 - Follow existing naming and file conventions (e.g. route handlers in `src/app/api/**/route.ts`).
 - Keep diffs minimal and focused: do not refactor unrelated code in the same change.
@@ -55,6 +59,9 @@ Everything we build must serve this loop. Before implementing anything, read
 - Read `docs/GOALS.md` before writing any feature.
 - Check `docs/` for an existing design doc (`DESIGN-*.md`, `RESTRUCTURE-PLAN.md`) for
   the area you touch and follow it.
+- **Migration & Service Model**: When touching billing, auth gates, telemetry workers, or database
+  schemas, review `docs/migration/README.md`. Follow the Safe De-integration Pattern and update the
+  relevant phase doc upon completing changes.
 - If the docs and the code disagree, stop and flag it. Do not silently code around it.
 - If no doc exists for a significant feature, write a short one in `docs/` first.
 
@@ -81,11 +88,22 @@ Everything we build must serve this loop. Before implementing anything, read
   before/after impact, where to verify, and a one-line interview summary.
 - Only major, measurable changes; link to the design doc or files for detail.
 
-### 9. Never commit directly on any branch
+### 9. Never push directly to protected branches
 
-- All changes must go through a PR; no direct commits to `main`, `dev`, or any branch.
+- Never push directly to `main` or `dev`; all changes must go through a PR from a feature branch.
 - Use `git commit --amend` / `git rebase` to clean history before opening a PR.
 - CI must pass (typecheck, lint, build) before merge.
+
+### 10. Error handling and logging
+
+- Never silently swallow errors; always log or propagate them.
+- Use structured error responses in API routes (consistent shape with `error` and `message` fields).
+- In Cloudflare Workers, keep error paths lightweight; log enough context to debug without leaking secrets.
+
+### 11. Testing
+
+- New API routes and critical business logic should include tests.
+- CI must pass all tests before merge; do not merge with known test failures.
 
 ---
 

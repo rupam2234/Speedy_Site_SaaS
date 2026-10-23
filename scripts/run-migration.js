@@ -82,7 +82,7 @@ async function main() {
         console.log('\n✅ All migrations completed successfully!');
         console.log('\nNext steps:');
         console.log('1. Run: npx supabase gen types typescript --project-id <project> > src/lib/db/database.types.ts');
-        console.log('2. Update MIGRATION_TRACKER.md checkboxes');
+        console.log('2. Update docs/migration/README.md checkboxes');
         console.log('3. Tag: git tag migration-db-v1');
     } finally {
         await client.end();
