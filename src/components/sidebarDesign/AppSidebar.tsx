@@ -5,9 +5,12 @@ import {
   CircleGauge,
   CreditCard,
   FlaskConical,
-  LayoutDashboardIcon,
   Settings2,
   User2Icon,
+  Wrench,
+  ClipboardList,
+  UserCog,
+  ListTodo,
 } from "lucide-react";
 import {
   Sidebar,
@@ -21,8 +24,8 @@ import FooterNav from "./Footer-Nav";
 import { SelectSite } from "../utils/siteSelector";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { usePathname } from "next/navigation";
-import { useSupabaseUser } from "../utils/supabase/AuthProvider";
 import { useTheme } from "../theme/ThemeProvider";
+import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
 import { SpeedySiteLogo } from "@/components/theme/logo";
 import { useIsMobile } from "@/components/theme/use-mobile";
 
@@ -30,12 +33,51 @@ export default function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const { state } = useSidebar();
-  const { selectedSite } = useSiteContext();
+  const { selectedSite, role, roleLoading } = useSiteContext();
   const pathname = usePathname();
   const isMobile = useIsMobile();
   const user = useSupabaseUser();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  // Show skeleton while role is loading to avoid flash of default nav
+  if (roleLoading) {
+    return (
+      <Sidebar
+        collapsible="icon"
+        {...props}
+        className="dark:border-muted z-100 bg-muted-foreground"
+      >
+        <SidebarHeader className="mb-5 mt-2">
+          <div className="flex gap-4 items-center">
+            <div className="px-2">
+              <SpeedySiteLogo isDark={isDark} />
+            </div>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <div className="space-y-2 p-2 mt-5">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="h-8 w-full bg-muted animate-pulse rounded"
+              />
+            ))}
+          </div>
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="space-y-2 p-2">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-8 w-1/2 bg-muted animate-pulse rounded"
+              />
+            ))}
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+    );
+  }
 
   const sidebarOpen =
     state === "expanded" ? false : state === "collapsed" ? true : null;
@@ -43,6 +85,72 @@ export default function AppSidebar({
   const selectSiteCollapsed = isMobile ? false : (sidebarOpen ?? false);
   const selectSiteDisabled = pathname.includes("/account");
 
+  const isAdmin = role === "admin";
+  const isExpert = role === "expert";
+
+  // ─── ADMIN-ONLY NAV (clean, no site selector, no other sections) ───
+  if (isAdmin) {
+    const adminNav = [
+      { title: "Orders", url: "/dashboard/admin/orders", icon: ClipboardList, isActive: false },
+      { title: "Experts", url: "/dashboard/admin/experts", icon: UserCog, isActive: false },
+      { title: "Unassigned Queue", url: "/dashboard/admin/queue", icon: ListTodo, isActive: false },
+    ];
+
+    const adminUser = {
+      name: user?.user_metadata.name
+        ? (user?.user_metadata.name as string)
+        : "",
+      email: user?.email ?? "",
+      avatar: "",
+      items: [
+        { title: "Account", url: "/account", icon: User2Icon },
+      ],
+    };
+
+    return (
+      <Sidebar
+        collapsible="icon"
+        {...props}
+        className="dark:border-muted z-100 bg-muted-foreground"
+      >
+        <SidebarHeader className="mb-5 mt-2">
+          <div className="flex gap-4 items-center">
+            <div className="px-2">
+              <SpeedySiteLogo isDark={isDark} />
+            </div>
+          </div>
+        </SidebarHeader>
+
+        <SidebarContent>
+          <MainNav
+            DashboardItems={adminNav[0] as { title: string; url: string; icon: typeof ClipboardList; isActive: false }}
+            NavItems={adminNav.slice(1)}
+          />
+        </SidebarContent>
+
+        <SidebarFooter>
+          <FooterNav items={adminUser} />
+        </SidebarFooter>
+      </Sidebar>
+    );
+  }
+
+  // ─── EXPERT NAV (only My Orders) ───
+  const expertNav = isExpert
+    ? [
+        {
+          title: "My Orders",
+          url: "#",
+          icon: Wrench,
+          isActive: true,
+          items: [
+            { title: "Assigned Orders", url: "/dashboard/expert/orders" },
+          ],
+        },
+      ]
+    : [];
+
+  // ─── REGULAR USER NAV (existing full dashboard) ───
   const data = {
     user: {
       name: user?.user_metadata.name
@@ -51,24 +159,17 @@ export default function AppSidebar({
       email: user?.email ?? "",
       avatar: "",
       items: [
-        {
-          title: "Account",
-          url: "/account",
-          icon: User2Icon,
-        },
-        {
-          title: "Billing",
-          url: "/account/subscription",
-          icon: CreditCard,
-        },
-        // {
-        //   title: "Tickets",
-        //   url: "/account/tickets",
-        //   icon: Tickets,
-        // },
+        { title: "Account", url: "/account", icon: User2Icon },
+        { title: "Billing", url: "/account/subscription", icon: CreditCard },
       ],
     },
     navMain: [
+      {
+        title: "CrUX Data",
+        url: `/dashboard?site=${selectedSite}`,
+        icon: Activity,
+        isActive: false,
+      },
       {
         title: "Real User Monitoring",
         url: "#",
@@ -83,15 +184,8 @@ export default function AppSidebar({
             title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
-          {
-            title: "Trace",
-            url: `/dashboard/rum/trace?site=${selectedSite}`,
-          },
-          {
-            title: "Global UX",
-            url: `/dashboard/rum/ux?site=${selectedSite}`,
-          },
-
+          { title: "Trace", url: `/dashboard/rum/trace?site=${selectedSite}` },
+          { title: "Global UX", url: `/dashboard/rum/ux?site=${selectedSite}` },
           {
             title: "Analytics",
             url: `/dashboard/rum/analytics?site=${selectedSite}`,
@@ -108,18 +202,7 @@ export default function AppSidebar({
             title: "Images",
             url: `/dashboard/rum/lcp-images?site=${selectedSite}`,
           },
-          {
-            title: "Fonts",
-            url: `/dashboard/rum/fonts?site=${selectedSite}`,
-          },
-          // {
-          //   title: "WP Plugin Analysis",
-          //   url: `/dashboard/wordpress-plugin-analysis?site=${selectedSite}`,
-          // },
-          // {
-          //   title: "Cloudflare Lab",
-          //   url: `/dashboard/cloudflare?site=${selectedSite}`,
-          // },
+          { title: "Fonts", url: `/dashboard/rum/fonts?site=${selectedSite}` },
         ],
       },
       {
@@ -134,6 +217,7 @@ export default function AppSidebar({
           },
         ],
       },
+      ...expertNav,
     ],
   };
 
@@ -159,19 +243,21 @@ export default function AppSidebar({
 
       <SidebarContent>
         <MainNav
-          DashboardItems={{
-            title: "CrUX Data",
-            url: `/dashboard?site=${selectedSite}`,
-            icon: LayoutDashboardIcon,
-            isActive: false,
-          }}
+          DashboardItems={
+            data.navMain[0] as {
+              title: string;
+              url: string;
+              icon: typeof Activity;
+              isActive: false;
+            }
+          }
           Settings={{
             title: "Settings",
             url: `/dashboard/settings?site=${selectedSite}`,
             icon: Settings2,
             isActive: false,
           }}
-          NavItems={data.navMain}
+          NavItems={data.navMain.slice(1)}
         />
       </SidebarContent>
 

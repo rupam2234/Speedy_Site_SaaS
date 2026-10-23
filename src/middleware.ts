@@ -7,6 +7,7 @@ export async function middleware(req: NextRequest) {
 
   const isDashboard = pathname.startsWith("/dashboard");
   const isSignIn = pathname.startsWith("/sign-in");
+  const isAdmin = pathname.startsWith("/dashboard/admin");
 
   const supabase = createRouteSupabaseClient(req, res);
   const {
@@ -21,10 +22,18 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
+  // experts never reach the admin console; admins only
+  if (user && isAdmin) {
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    if (profile?.role !== "admin") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+  }
+
   return res;
 }
-
 
 export const config = {
   matcher: ["/dashboard/:path*", "/sign-in/:path*"],
 };
+

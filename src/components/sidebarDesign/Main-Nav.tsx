@@ -21,7 +21,6 @@ import { LayoutDashboardIcon } from "lucide-react";
 export default function MainNav({
   NavItems,
   DashboardItems,
-  // WebVitals,
   Settings,
 }: {
   NavItems: {
@@ -29,10 +28,7 @@ export default function MainNav({
     url: string;
     icon?: LucideIcon;
     isActive: boolean;
-    items?: {
-      title: string;
-      url: string;
-    }[];
+    items?: { title: string; url: string }[];
   }[];
 
   DashboardItems: {
@@ -42,8 +38,8 @@ export default function MainNav({
     isActive: false;
   };
 
-  Settings: {
-    title: "Settings";
+  Settings?: {
+    title: string;
     url: string;
     icon: typeof Settings2;
     isActive: false;
@@ -69,51 +65,64 @@ export default function MainNav({
 
       <SidebarMenu>
         {NavItems.map((items) => (
-          <Collapsible
-            key={items.title}
-            asChild
-            defaultOpen={items.isActive}
-            className="group/collapsible"
-            title={items.title}
-          >
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={items.title}>
+          items.items && items.items.length > 0 ? (
+            <Collapsible
+              key={items.title}
+              asChild
+              defaultOpen={items.isActive}
+              className="group/collapsible"
+              title={items.title}
+            >
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton tooltip={items.title}>
+                    {items.icon && <items.icon />}
+                    <span>{items.title}</span>
+                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    {items.items?.map((subItems) => (
+                      <SidebarMenuSubItem key={subItems.title}>
+                        <SidebarMenuSubButton asChild>
+                          <a href={subItems.url}>{subItems.title}</a>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+          ) : (
+            <SidebarMenuItem key={items.title}>
+              <SidebarMenuButton asChild tooltip={items.title}>
+                <a href={items.url}>
                   {items.icon && <items.icon />}
                   <span>{items.title}</span>
-                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarMenuSub>
-                  {items.items?.map((subItems) => (
-                    <SidebarMenuSubItem key={subItems.title}>
-                      <SidebarMenuSubButton asChild>
-                        <a href={subItems.url}>{subItems.title}</a>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
+                </a>
+              </SidebarMenuButton>
             </SidebarMenuItem>
-          </Collapsible>
+          )
         ))}
       </SidebarMenu>
 
-      <SidebarMenu>
-        <Collapsible className="mb-2">
-          <SidebarMenuItem>
-            <CollapsibleTrigger asChild>
-              <a href={Settings.url} title={Settings.title}>
-                <SidebarMenuButton tooltip={Settings.title}>
-                  {Settings.icon && <Settings.icon />}
-                  {Settings.title}
-                </SidebarMenuButton>
-              </a>
-            </CollapsibleTrigger>
-          </SidebarMenuItem>
-        </Collapsible>
-      </SidebarMenu>
+      {Settings && Settings.title && (
+        <SidebarMenu>
+          <Collapsible className="mb-2">
+            <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                <a href={Settings.url} title={Settings.title}>
+                  <SidebarMenuButton tooltip={Settings.title}>
+                    {Settings.icon && <Settings.icon />}
+                    {Settings.title}
+                  </SidebarMenuButton>
+                </a>
+              </CollapsibleTrigger>
+            </SidebarMenuItem>
+          </Collapsible>
+        </SidebarMenu>
+      )}
     </SidebarGroup>
   );
 }
