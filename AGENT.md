@@ -38,6 +38,7 @@ Everything we build must serve this loop. Before implementing anything, read
 ### 3. Clean code and reuse
 
 - Reuse existing components, hooks, helpers, and patterns before creating new ones.
+- While adding comments only use // comments and max of 2 lines of crucial functions. Otherwise avoid commenting with fency lines and unnecesserily
 - No duplication: shared logic goes into `src/lib` or shared components.
 - Follow existing naming and file conventions (e.g. route handlers in `src/app/api/**/route.ts`).
 - Keep diffs minimal and focused: do not refactor unrelated code in the same change.
@@ -46,7 +47,7 @@ Everything we build must serve this loop. Before implementing anything, read
 
 - Design for growth: batched DB queries (no N+1), pagination on list endpoints,
   stateless API routes, small single-responsibility modules.
-- New tables must follow existing Supabase patterns (types in `db.types.ts`, RLS policies).
+- New tables must follow existing Supabase patterns (types in `src/lib/db/database.types.ts`, RLS policies).
 - Prefer configuration over hardcoding; assume every constant will change.
 
 ### 5. Always read the goals and docs before implementing
@@ -73,6 +74,19 @@ Everything we build must serve this loop. Before implementing anything, read
 - Rewrite with a comma, colon, semicolon, parentheses, or split the sentence.
 - Arrows (→) in diagrams and "·" separators are fine; the em-dash is not.
 
+### 8. Record major impactful changes in docs/IMPACT-LOG.md
+
+- After any major impactful change (cost, security, performance, reliability,
+  product), add a short entry to `docs/IMPACT-LOG.md`: problem, changes,
+  before/after impact, where to verify, and a one-line interview summary.
+- Only major, measurable changes; link to the design doc or files for detail.
+
+### 9. Never commit directly on any branch
+
+- All changes must go through a PR; no direct commits to `main`, `dev`, or any branch.
+- Use `git commit --amend` / `git rebase` to clean history before opening a PR.
+- CI must pass (typecheck, lint, build) before merge.
+
 ---
 
 ## Stack quick reference
@@ -80,7 +94,7 @@ Everything we build must serve this loop. Before implementing anything, read
 | Layer | Technology |
 |---|---|
 | App | Next.js 15 (App Router) + TypeScript + Tailwind CSS 4 |
-| DB / Auth | Supabase (Postgres + Auth); generated types in `db.types.ts` |
+| DB / Auth | Supabase (Postgres + Auth); generated types in `src/lib/db/database.types.ts` |
 | Edge | Cloudflare Workers (`cloudflare-workers/`: RUM ingestion, event buffer, analytics cron) |
 | Billing | Stripe |
 | Email | Resend |
