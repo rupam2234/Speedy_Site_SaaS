@@ -77,7 +77,6 @@ export default function Main() {
 
     const authRedirect = `${window.location.origin}/auth/callback`;
 
-    // we have to configure user role for "General users" and "Service experts" here
     const { error } = await browserClient.auth.signUp({
       email,
       password,
@@ -160,9 +159,9 @@ function SignUpForm({
         </div>
 
         <form onSubmit={handleSignUp} className="space-y-5">
-          {/*
-             HONEYPOT FIELD
-             Hidden from humans via CSS and accessibility attributes.
+          {/* 
+             HONEYPOT FIELD 
+             Hidden from humans via CSS and accessibility attributes. 
              Bots will see 'verify_account_hidden' and try to fill it.
           */}
           <div

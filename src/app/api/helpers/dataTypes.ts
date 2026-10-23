@@ -33,6 +33,9 @@ export type EmailReportingUpdate = {
     entries: EmailReportingEntry[];
 };
 
+export type OneTimeOrders =
+    Database["public"]["Tables"]["one_time_orders"]["Insert"];
+
 export type FontMetrics =
     Database["public"]["Functions"]["font_analysis"]["Returns"];
 
