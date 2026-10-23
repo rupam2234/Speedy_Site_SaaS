@@ -99,13 +99,13 @@ Everything we build must serve this loop. Before implementing anything, read
 | Billing | Stripe |
 | Email | Resend |
 | Cache | Upstash Redis |
-| RUM script | `scripts/extended-rum.js` → built to `public/rum.js` (`npm run build:extended-vitals`) |
+| RUM script | `scripts/extended-rum.js` → built to `public/rum.js` (`pnpm run build:extended-vitals`) |
 
 ## Commands
 
 ```bash
-npm run dev                     # local dev server
-npm run build                   # production build
-npm run lint                    # eslint
-npm run build:extended-vitals   # build the RUM collector script
+pnpm dev                     # local dev server
+pnpm build                   # production build
+pnpm lint                    # eslint
+pnpm run build:extended-vitals   # build the RUM collector script
 ```
