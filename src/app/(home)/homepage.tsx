@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { ReactNode, useEffect, useState } from "react";
 import SiteHeader from "./header";
 import Link from "next/link";

@@ -5,7 +5,7 @@ echo "VERCEL_GIT_COMMIT_REF: $VERCEL_GIT_COMMIT_REF"
 
 # 1. Branch filter
 case "$VERCEL_GIT_COMMIT_REF" in
-  preview|main|master)
+  preview|main|master|dev)
     ;;
   *)
     echo "No need to build for branch $VERCEL_GIT_COMMIT_REF"

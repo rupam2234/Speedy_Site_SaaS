@@ -34,6 +34,7 @@ export function ComparisonSlider({
     >
       {/* After Image (Optimized) */}
       <div className="absolute inset-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={after} alt="After" className="w-full h-full object-contain" />
         <div className="absolute bottom-4 right-4 px-2 py-1 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold rounded uppercase tracking-widest">
           {afterLabel}
@@ -45,6 +46,7 @@ export function ComparisonSlider({
         className="absolute inset-0"
         style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={before}
           alt="Before"

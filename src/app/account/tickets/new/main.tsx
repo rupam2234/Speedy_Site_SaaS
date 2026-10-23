@@ -1,7 +1,7 @@
 "use client";
 
 import { OrderData } from "@/app/api";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Main() {
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -18,10 +18,6 @@ export default function Main() {
   const hasFetched = useRef(false);
 
   const ticketTypes = ["General", "Technical Support", "Billing"];
-
-  const handleSubmitTicket = useCallback(() => {
-    submitTicket();
-  }, []);
 
   useEffect(() => {
     if (!hasFetched.current) {
@@ -213,7 +209,7 @@ export default function Main() {
                 </ul>
 
                 <button
-                  onClick={handleSubmitTicket}
+                  onClick={submitTicket}
                   disabled={loading}
                   className="w-full mt-8 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold py-3 rounded-xl shadow-lg shadow-blue-500/20 transition-all transform active:scale-[0.98]"
                 >

@@ -150,7 +150,7 @@ git. Deleting the file is not remediation: rotation plus secret managers is."
 service, but old tables were dropped while APIs still gated on them; new
 signups needed automatic provisioning.
 
-**Changes (details: `MIGRATION_TRACKER.md`):** database migrated to
+**Changes (details: `docs/migration/README.md`):** database migrated to
 `user_services` (11 services migrated, old tables dropped on staging);
 `/api/account/auth` rewritten cookie-based against `user_services` (jose
 removed); free tier auto-provisioned by a `handle_new_user()` trigger plus

@@ -148,7 +148,7 @@ Rotate the key in Supabase first: it was committed in the old wrangler configs.
 5. Verify: plugin-installed script loads from `rum.speedy.site/rum.js`; events
    for an entitled domain return 200; an unknown domain returns 403
 
-Steps 2-5 need Cloudflare access and are tracked in `MIGRATION_TRACKER.md`
+Steps 2-5 need Cloudflare access and are tracked in `docs/migration/README.md`
 2.1/2.2. The prerequisite that used to block them was tracking, not code: the
 root `.gitignore` ignored the whole `/cloudflare-workers` directory, so
 `site-metadata/` and `event-buffer/wrangler.toml` existed on disk but could never

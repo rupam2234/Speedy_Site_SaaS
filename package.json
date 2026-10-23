@@ -2,9 +2,10 @@
   "name": "speedysite",
   "version": "1.5.0",
   "private": true,
+  "packageManager": "pnpm@11.3.0",
   "scripts": {
     "clean": "powershell -Command \"Remove-Item -Recurse -Force .next\"",
-    "cleandev": "npm run clean && next dev",
+    "cleandev": "pnpm run clean && next dev",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",

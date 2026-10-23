@@ -191,6 +191,12 @@ export function FontMain() {
       (item) => item.device.toLowerCase() === selectedDevice.toLowerCase(),
     );
 
+    if (filterText.trim()) {
+      filtered = filtered.filter((item) =>
+        item.font_family.toLowerCase().includes(filterText.toLowerCase()),
+      );
+    }
+
     return filtered.sort((a, b) => {
       if (sortBy === "avg_lcp") {
         return b.avg_lcp - a.avg_lcp;

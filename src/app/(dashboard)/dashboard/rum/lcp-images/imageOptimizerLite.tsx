@@ -51,9 +51,10 @@ export function ImageOptimizerLite({ imageUrl }: { imageUrl: string }) {
       const blob = await response.blob();
       setOriginalSize(blob.size); // Track original size
 
-      setFilename(imageUrl.split("/").pop() || "image");
+      const derivedFileName = imageUrl.split("/").pop() || "image";
+      setFilename(derivedFileName);
 
-      const file = new File([blob], fileName, { type: blob.type });
+      const file = new File([blob], derivedFileName, { type: blob.type });
 
       const formats = ["webp", "jpeg", "png"];
       const newResults: Result[] = [];
