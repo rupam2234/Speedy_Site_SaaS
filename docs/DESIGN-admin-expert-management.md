@@ -1,7 +1,7 @@
 # DESIGN: Admin Console & Service Expert Management
 
-> **Status:** Draft v1 · **Owner:** Speedy Site · **Last updated:** 2026-10-22
-> **Scope:** Admin-side console at `/admin` for inviting and managing service experts; experts authenticate via existing login flow with `userRole: expert`. Read with `docs/GOALS.md`, `docs/RESTRUCTURE-PLAN.md`, and `docs/DESIGN-managed-wp-order-assignment.md`.
+> **Status:** Implemented v1 · **Owner:** Speedy Site · **Last updated:** 2026-10-23
+> **Scope:** Clean admin workspace under unified `/dashboard/*` URLs for inviting and managing service experts, triaging customer tickets, and dispatching managed WP orders. Experts authenticate via existing login flow with `userRole: expert`. Read with `docs/GOALS.md`, `docs/RESTRUCTURE-PLAN.md`, and `docs/DESIGN-managed-wp-order-assignment.md`.
 
 ---
 
@@ -39,9 +39,9 @@ role ∈ { "user" | "admin" | "expert" }
 
 | Role | Capabilities |
 |---|---|
-| `admin` | Full `/admin` console: all orders, expert pool CRUD, unassigned queue, reassign/force-assign/skip/close |
-| `expert` | Sees **only** orders assigned to them (`expert_id = auth.uid()`); can accept/start/complete/reassign-request |
-| `user` | Unchanged — customer dashboard only |
+| `admin` | Full Operations Mission Control: overview, all orders with detail drawer, expert pool CRUD, unassigned queue, support tickets, reassign/force-assign/skip/close |
+| `expert` | Sees only orders assigned to them (`expert_id = auth.uid()`); can accept/start/complete/reassign-request, plus support tickets |
+| `user` | Unchanged: customer dashboard only |
 
 **Enforcement**
 - Server-side: every `/api/admin/*` route fetches `profiles.role` for the session user and rejects non-admins (same as `/api/tickets/*`).
@@ -49,12 +49,12 @@ role ∈ { "user" | "admin" | "expert" }
 - Add `CHECK (role IN ('user','admin','expert'))` on `profiles.role`.
 
 **Expert onboarding flow (admin action)**
-1. Admin enters email in `/admin/experts` → `POST /api/admin/experts/invite`
+1. Admin enters email in `/dashboard/experts` → `POST /api/admin/experts/invite`
 2. Server calls `supabase.auth.admin.createUser({ email, email_confirm: true })`
 3. Trigger inserts `profiles` row with `role = 'expert'`
 4. Server inserts `experts_pool` row (default capacity 10, `is_available = true`, `rr_position = 0`)
 5. Expert receives magic-link / password-set email from Supabase; signs in at `/sign-in`
-6. Middleware (existing) reads `profiles.role` → expert lands on `/dashboard/expert/orders` (new route)
+6. Middleware reads `profiles.role` → expert lands on `/dashboard/orders` (internally rewritten to `dashboard/expert/orders`)
 
 ---
 
@@ -87,17 +87,23 @@ last_assigned_at timestamptz NULL
 
 ---
 
-## Admin Console Routes (under `/(dashboard)/dashboard/`)
+## Clean URL Architecture & Middleware Routing
 
-| Route | Purpose |
-|---|---|
-| `/admin/orders` | Table of all managed-WP orders: site, customer, plan, assigned expert, status, age. Filters: unassigned / overdue / by expert. |
-| `/admin/orders/:id` (drawer) | Assignment history timeline + actions: **Reassign**, **Force assign**, **Skip**, **Close**. |
-| `/admin/experts` | Expert pool: availability toggle, capacity, active-load bars, reset RR cursor. **Invite expert** button → modal with email input. |
-| `/admin/queue` | Unassigned orders needing attention. Poll or Supabase Realtime. |
-| `/expert/orders` | Expert view: same table filtered to `expert_id = me` (mirrors tickets admin/user pattern). |
+Browser URLs remain unified under `/dashboard/*` without exposing `/admin` or `/expert` prefixes. Next.js edge middleware (`src/middleware.ts`) inspects the user role via the Supabase service client and dynamically rewrites paths using `NextResponse.rewrite`:
 
-All routes guarded by middleware → server-side role check → 403 if mismatch.
+| Browser URL | Role | Source File (internal rewrite) | Purpose |
+|---|---|---|---|
+| `/dashboard` | `admin` | `src/app/(dashboard)/dashboard/admin/page.tsx` | Operations Mission Control: 4 KPI cards, SLA breach alerts, activity feed |
+| `/dashboard` | `expert` | `src/app/(dashboard)/dashboard/expert/orders/page.tsx` | Expert dashboard (defaults to assigned orders) |
+| `/dashboard` | `user` | `src/app/(dashboard)/dashboard/page.tsx` | Customer performance & CrUX overview |
+| `/dashboard/orders` | `admin` | `src/app/(dashboard)/dashboard/admin/orders/page.tsx` | Table of all managed-WP orders with search, status filters, and detail drawer |
+| `/dashboard/orders` | `expert` | `src/app/(dashboard)/dashboard/expert/orders/page.tsx` | Orders assigned to current expert |
+| `/dashboard/queue` | `admin` | `src/app/(dashboard)/dashboard/admin/queue/page.tsx` | SLA-aware unassigned orders queue with batch auto-assign |
+| `/dashboard/tickets` | `admin` | `src/app/(dashboard)/dashboard/admin/tickets/page.tsx` | Support Tickets Hub: split-pane triage, status switch, and chat discussion |
+| `/dashboard/experts` | `admin` | `src/app/(dashboard)/dashboard/admin/experts/page.tsx` | Developer Pool Management: invite modal, capacity, and availability toggle |
+| `/account` | all | `src/app/account/page.tsx` | Account settings, with full role-aware sidebar via AuthProvider + SiteContextProvider |
+
+All API routes verify `profiles.role` server-side and reject mismatches with 401/403.
 
 ---
 
@@ -182,6 +188,6 @@ No new worker secrets; all admin/expert logic runs in Next.js API routes.
 
 ## Related Docs
 
-- `docs/DESIGN-managed-wp-order-assignment.md` — assignment data model, RR algorithm, Phase 1 SQL
-- `docs/GOALS.md` — product loop, principles
-- `docs/RESTRUCTURE-PLAN.md` — Phase 5 service channel integration
+- `docs/DESIGN-managed-wp-order-assignment.md`: assignment data model, RR algorithm, Phase 1 SQL
+- `docs/GOALS.md`: product loop, principles
+- `docs/RESTRUCTURE-PLAN.md`: Phase 5 service channel integration
