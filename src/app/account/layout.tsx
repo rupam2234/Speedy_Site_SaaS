@@ -6,8 +6,10 @@ import { ReactNode, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import SidebarInsetHeader from "@/components/sidebarDesign/Inset-Header";
+import { AuthProvider } from "@/components/utils/supabase/AuthProvider";
+import SiteContextProvider from "@/app/(dashboard)/dashboard/siteContext";
 
-interface DashboardLayoutProps {
+interface AccountLayoutProps {
   children: ReactNode;
 }
 
@@ -26,12 +28,16 @@ function AccountLayout({ children }: { children: ReactNode }) {
   );
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout({ children }: AccountLayoutProps) {
   return (
-    <SidebarProvider>
-      <Suspense fallback={<LoadingAnimation />}>
-        <AccountLayout>{children}</AccountLayout>
-      </Suspense>
-    </SidebarProvider>
+    <Suspense fallback={<LoadingAnimation />}>
+      <AuthProvider>
+        <SidebarProvider>
+          <SiteContextProvider>
+            <AccountLayout>{children}</AccountLayout>
+          </SiteContextProvider>
+        </SidebarProvider>
+      </AuthProvider>
+    </Suspense>
   );
 }

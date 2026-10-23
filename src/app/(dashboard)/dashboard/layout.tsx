@@ -19,32 +19,32 @@ interface DashboardLayoutProps {
 }
 
 function LayoutContent({ children }: { children: ReactNode }) {
-  const { selectedSite, plan, setPlan } = useSiteContext();
+  const { selectedSite, role, plan, setPlan } = useSiteContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const user = useSupabaseUser();
 
   useEffect(() => {
-    if (!selectedSite) return;
+    if (!selectedSite || role === "admin" || role === "expert") return;
     const params = new URLSearchParams(searchParams.toString());
     params.set("site", selectedSite);
     const currentUrl = `${pathname}?${params.toString()}`;
     if (currentUrl !== window.location.pathname + window.location.search) {
       router.replace(currentUrl);
     }
-  }, [selectedSite, pathname, searchParams, router]);
+  }, [selectedSite, role, pathname, searchParams, router]);
 
-  // Redirect back to dashboard if no site is selected
+  // Redirect back to dashboard if no site is selected (customers only)
   useEffect(() => {
-    if (selectedSite) return;
+    if (selectedSite || role === "admin" || role === "expert") return;
 
     const timeout = setTimeout(() => {
       router.push("/dashboard");
     }, 7000);
 
     return () => clearTimeout(timeout);
-  }, [selectedSite, router]);
+  }, [selectedSite, role, router]);
 
   // set active plan
   useEffect(() => {
