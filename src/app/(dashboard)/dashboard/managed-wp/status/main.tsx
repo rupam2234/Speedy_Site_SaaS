@@ -62,8 +62,8 @@ export default function Main() {
           <span>
             If you haven&apos;t assigned a managed performance order before it
             can be placed{" "}
-            <Link className="text-blue-500/80" href={"/account/subscription"}>
-              at the billing page
+            <Link className="text-blue-500/80" href={"/pricing"}>
+              at the pricing page
             </Link>
             .
           </span>

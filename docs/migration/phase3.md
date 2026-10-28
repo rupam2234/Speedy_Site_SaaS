@@ -10,11 +10,14 @@ Retire recurring subscription API routes. Implement unified one-time checkout an
 1. **Unified Checkout API (`POST /api/checkout`)**
    - Implemented Stripe Checkout in payment mode (one-time $299 charge for `managed_wp` service).
    - Embedded customer metadata and site domain directly in the checkout session.
+   - Tested Stripe checkout with test keys (2026-10-23, local dev: webhook verified end-to-end via Stripe CLI).
    - Pending extension: `rum_renewal` renewal flow for existing services.
 
 2. **Idempotent Stripe Webhook (`POST /api/webhook/stripe`)**
    - Configured signature verification via `STRIPE_WEBHOOK_SECRET`.
    - Idempotently provisions active `managed_wp` records in `user_services` (1-year license validity, default `site_limit = 1`) upon `checkout.session.completed`.
+   - Local webhook test via Stripe CLI forwarder (2026-10-23): `stripe trigger checkout.session.completed` + `client_reference_id` override → managed_wp entitlement created (active, 1yr expiry, stripe_session_id stored).
+   - Update Stripe Dashboard webhook URL + set `STRIPE_WEBHOOK_SECRET` (live keys, when deploying to production).
    - Triggers `newManagedOrder` transactional notification to customer.
 
 3. **Retire Old Subscription APIs**

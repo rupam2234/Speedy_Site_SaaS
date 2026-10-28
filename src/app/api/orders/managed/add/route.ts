@@ -105,6 +105,20 @@ export async function POST(req: NextRequest) {
                 "Unexpacted error occured.");
         }
 
+        // Bind the order's site to the managed entitlement so the RUM gate
+        // (site-metadata -> event-buffer) and the injector can resolve this domain.
+        if (payment_id) {
+            await worker
+                .from("user_services")
+                .update({
+                    order_id: orderId,
+                    website_name: selectedSite,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("id", payment_id)
+                .eq("service_type", "managed_wp");
+        }
+
         // send confirmation email
         const email = user.email;
         if (!email) {
@@ -115,6 +129,8 @@ export async function POST(req: NextRequest) {
             domain: wpdata?.wp_address,
             email,
         });
+
+        await autoAssignOrder(orderId);
 
         return NextResponse.json(
             { message: "Details saved successfully." },
@@ -207,5 +223,31 @@ async function validateSiteUrl(input: string): Promise<string> {
         return url.toString();
     } catch {
         throw new Error("Website is unreachable");
+    }
+}
+
+// Auto-assign the order to the next available expert (round-robin).
+// No eligible expert, or any failure, leaves the order unassigned (queue) and
+// never blocks order creation.
+async function autoAssignOrder(orderId: string) {
+    try {
+        const { data: active } = await (worker as any)
+            .from("order_assignments")
+            .select("id")
+            .eq("order_id", orderId)
+            .eq("is_active", true)
+            .maybeSingle();
+        if (active) return;
+
+        const { data: picked, error: pickError } = await (worker as any).rpc("pick_next_expert");
+        if (pickError) throw new Error(pickError.message);
+        if (!picked) return;
+
+        const { error: assignError } = await (worker as any)
+            .from("order_assignments")
+            .insert({ order_id: orderId, expert_id: picked, status: "pending" });
+        if (assignError) throw new Error(assignError.message);
+    } catch (error: any) {
+        console.log("auto-assign skipped:", error?.message);
     }
 }

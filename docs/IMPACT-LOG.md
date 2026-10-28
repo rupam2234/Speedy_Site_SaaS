@@ -6,7 +6,268 @@
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
-> **Last updated:** 2026-10-23
+> **Last updated:** 2026-10-24
+
+---
+
+## 2026-10-24 · Pricing page redesigned to a minimalist single-panel layout
+
+**Problem:** The previous `/dashboard/pricing` used a dropdown selector (pointless with one
+product), a giant 2xl/extrabold price block, 6 per-benefit icon tiles, 4 unlock
+pills, and a boxed `CurrentPlanBadge` — all adding visual weight but no signal.
+
+**Changes:**
+- `src/app/(dashboard)/dashboard/pricing/page.tsx` (rewritten, ~429 → ~350
+  lines): one `ServicePanel` per `UPGRADE_SERVICES` entry; with today's single
+  `managed_wp` product the page is a single bordered card, no selector.
+- Removed per-benefit `icon` field (all 6 icons → one shared `Check` glyph at
+  40% opacity).
+- Price inline with service name; unlocks collapsed to one muted line.
+- Numbered setup steps: outlined number tiles instead of filled circles.
+- `CurrentPlanBadge` → quiet text pill (green when paid, muted when free).
+- Still uses the same `validatePlan` guard, `/api/checkout` POST, and
+  `w-full space-y-6 p-6` full-width wrapper.
+
+**Impact:** fewer DOM nodes, less color noise, faster scan-to-CTA. Adding a
+second product still requires only a `PRICE_MAP` entry + one `UPGRADE_SERVICES`
+object — no UI change.
+
+**Where to verify:** `npx tsc --noEmit --skipLibCheck`, `npx eslint`, `npm run
+build` all exit 0; `/dashboard/pricing` emits at 5.58 kB (was 4.82 kB). A page
+reload clears any cached plan value.
+
+---
+## 2026-10-24 · Plan now honours `status` / `expires_at` — cancelled and expired services no longer show as Managed WP
+
+**Problem:** `/dashboard/pricing` rendered "Current plan: Managed WP" for
+accounts that no longer hold a live entitlement. Verified against production
+data — two accounts were affected:
+
+| account | service row | shown | should be |
+|---|---|---|---|
+| mindyloub@gmail.com | `managed_wp` / **cancelled** / 2027-04-21 | Managed WP | Free |
+| pinchofbitemarina@gmail.com | `managed_wp` / **expired** / 2027-06-09 | Managed WP | Free |
+
+**Root cause:** `src/components/utils/planValidation/activePlan.ts` derived the
+plan from `service_type` alone — `data.some(s => s.service_type === "managed_wp")`
+— never checking `status` or `expires_at`, so a cancelled or expired row still
+counted as paid. Every other entitlement gate in the repo already applies the
+full predicate: `src/lib/wordpress/injection.ts` (`.eq("service_type", "managed_wp").eq("status", "active")` plus an `expires_at` future-or-null
+check) and the `site-metadata` worker (`docs/DESIGN-site-metadata-worker.md`:
+paid = managed_wp + active + expires_at null-or-future). `activePlan.ts` was the
+only consumer that skipped it — and it is the one that drives the UI.
+
+**Changes:**
+- `activePlan.ts`: `fetchPlan` now selects `service_type, status, expires_at`
+  and resolves through a new `isLiveManagedWp()` helper implementing the
+  documented predicate. Cache key bumped to `user-plan:${userId}:v2` so answers
+  written before the fix are not reused; the key still sits under the
+  `user-plan` prefix so `cleanExpiredCache` keeps sweeping it.
+- `src/app/(dashboard)/dashboard/pricing/page.tsx`: full-width page
+  (`w-full space-y-6 p-6` — the wrapper the sibling dashboard pages use)
+  instead of the centred `max-w-5xl` marketing column.
+
+**Impact:** cancelled and expired accounts fall back to Free, so they see the
+checkout CTA again instead of "Active on your account".
+
+**Where to verify:** `node scripts/diag-plan-check.js` reproduced both
+mismatches before the change (script deleted afterwards, it printed user
+emails); `npx tsc --noEmit --skipLibCheck`, `npx eslint`, and `npm run build`
+all exit 0. A page reload is required to clear a wrong value already held in
+React state — the layout effect only fetches while `plan === null`, and the
+`:v2` key only helps on a fresh load.
+
+**Known, not fixed:** `src/app/api/orders/newOrder/route.ts:53` checks
+`service_type === "managed_wp" && status === "active"` but ignores `expires_at`,
+so an expired service still passes the paid site-limit branch. `free` accounts
+are unaffected — they get no `managed_wp` row at all.
+
+---
+
+
+## 2026-10-24 · Dashboard pricing redesigned into a service selector
+
+**Problem:** `/dashboard/pricing` rendered the marketing plan-card layout — Free
+vs Managed side by side, gradient hero styling. Inside the dashboard that read
+wrong: the user is already signed in, already on a plan, and wants to upgrade,
+not compare tiers.
+
+**Changes:**
+- `src/app/(dashboard)/dashboard/pricing/page.tsx` (rewritten, 392 → 429 lines):
+  the two-card comparison is now a **selector-driven upgrade panel**:
+  - A dropdown (`@/components/ui/select` — the Radix Select already used by the
+    RUM pages and toolbar) lists the available services to upgrade, each with
+    price and terms.
+  - Picking a service reveals **Benefits** plus **"How to configure it"** — a
+    numbered setup path: one-time payment → confirm site details → connect your
+    site → verification → first data. Steps 3 and 4 link out to
+    `/dashboard/wordpress-plugin-analysis` and `/dashboard/managed-wp/status`.
+  - A `Current plan` badge reads `plan` from `useSiteContext()`. Free users get
+    the checkout CTA (`POST /api/checkout`, `priceKey`); paid users get an
+    "Active on your account" notice plus a service-status link.
+  - `PricingCardContent` and `planCards` removed from this page, which also
+    removes the `(home)/pricing.tsx` duplication flagged in the entry below.
+    The homepage still owns `PricingCardContent`; nothing imported it here.
+  - `handleSubscribe` no longer sends `mode` — the model is one-time payment
+    only, and `/api/checkout` already ignored it.
+  - `if (plan === null) return null;` guards the layout's plan resolution, so
+    paid users never see a "Free" flash while `validatePlan` runs.
+- Services live in one `UPGRADE_SERVICES` array (`priceKey`, benefits, unlocks,
+  setup steps). There is one purchasable service today — `managed_wp`, the only
+  key in `PRICE_MAP` — so a second product is a `PRICE_MAP` entry plus one array
+  object, with no UI change.
+
+**Copy note:** setup step 3 follows `docs/GOALS.md` principle 2 — "connect your
+site", never "install a plugin".
+
+**Where to verify:** `tsc --noEmit --skipLibCheck` and `eslint` clean (exit 0);
+`npm run build` succeeds and emits `/dashboard/pricing` (4.82 kB);
+`GET /dashboard/pricing` signed out returns 307 → `/sign-in` so the route
+resolves. Still unverified: signed-in rendering of both plan states and the
+checkout button.
+
+---
+
+## 2026-10-24 · Pricing page moved to dashboard + sidebar fix
+
+**Problem:** There was never a `/pricing` route: `src/app/(home)/pricing.tsx` is a component file (exports `PricingCardContent`, no default export), so the sidebar's `/pricing` link 404'd for authenticated users, and the earlier `/account/subscription` link was also dead.
+
+**Changes:**
+- `src/app/(dashboard)/dashboard/pricing/page.tsx` (new): dashboard-scoped pricing page. Reuses the `PricingCardContent` card (same Free / Managed WordPress Performance plan data as the homepage) plus a "what you unlock" panel.
+- Reads the active plan from `useSiteContext()` (already resolved by the dashboard layout via `validatePlan`), so no extra request: paid users see "Current Plan", free users get the checkout CTA (`POST /api/checkout`, `priceKey: "managed_wp"`).
+- `src/components/sidebarDesign/AppSidebar.tsx`: "Pricing & Upgrade" link updated from `/pricing` → `/dashboard/pricing`.
+- `/account/subscription` references removed (already done in previous commits).
+
+**Impact:** Authenticated users now see "Pricing & Upgrade" in sidebar → `/dashboard/pricing` → Free vs Managed WP comparison → Stripe checkout. Unauthenticated visits to `/dashboard/pricing` redirect to `/sign-in` instead of crashing or 404ing.
+
+**Where to verify:** `tsc --noEmit --skipLibCheck` + `eslint` pass on the page and sidebar. Runtime: `GET /dashboard/pricing` while signed out returns 307 → `/sign-in` (route resolves, no "default export is not a React Component" error); signed in it renders the cards.
+
+**Note:** `PricingCardContent` is duplicated between `(home)/pricing.tsx` and the new page rather than shared. Intentional for now: the public homepage needs a logged-out variant, the dashboard needs plan-awareness. Consolidate behind one shared component if the two start to drift.
+
+---
+## 2026-10-24 · Creative free-tier upsell at add-site success and upgrade modal
+
+**Problem:** The add-site flow and upgrade modal had minimal copy ("Upgrade Required", "One payment, one year") with no value demonstration. Free-tier users saw only CrUX data with no context for why to upgrade.
+
+**Changes:**
+- `src/components/theme/addSite.tsx`:
+  - Added `showUpgrade` state for upgrade modal
+  - Enhanced success state with creative upsell card showing 5 concrete benefits:
+    - Real-user Core Web Vitals (not 28-day averages)
+    - Per-page, per-device, per-browser breakdown
+    - Auto-injected RUM script via plugin (zero copy-paste)
+    - Issue detection + expert fix service
+    - Core Web Vitals Pass Guarantee
+  - Added "Upgrade Now -- $299 / year" button opening modal
+  - Full-screen upgrade modal with same benefit-driven copy + checkout integration
+
+- `src/components/theme/planFallback.tsx`:
+  - Added rocket emoji header
+  - Expanded benefit list (same 5 points)
+  - Updated button text to "Upgrade Now -- $299 / year"
+  - Kept "One payment, one year, no auto-renewal" disclaimer
+
+**Impact (before → after):**
+- Free-tier add-site success: bare "script copied" message → value-driven upsell with 5 specific benefits
+- Upgrade modal: generic "Upgrade Required" → benefit-led pitch with concrete outcomes
+- Checkout flow: unchanged (still hits `/api/checkout` with `priceKey: "managed_wp"`)
+
+**Where to verify:** `npm run typecheck` + `eslint` on both files. Manual test: add a site as free user → see upsell card → click "Upgrade Now" → modal opens → "Upgrade Now" redirects to Stripe checkout.
+
+---
+## 2026-10-24 · Database index cleanup -- dropped 10 redundant indexes
+
+**Problem:** `supabase inspect db index-stats` showed 10+ indexes with 0% usage and 0 scans, wasting space and slowing writes.
+
+**Changes:**
+- `supabase/migrations/20261024000002_drop_redundant_indexes.sql` (new):
+  - `uniq_user_services_free_per_user` -- old free-tier unique index (replaced by trigger)
+  - `idx_orders_user_id` -- duplicate FK index (covered by `idx_orders_user_id_website_name` with 10K+ scans)
+  - `idx_user_services_order_id`, `idx_user_services_status`, `idx_user_services_service_type` -- never used
+  - `website_metadata_url_key` -- unique constraint on empty table
+  - `idx_wp_scans_status`, `idx_wp_scans_scan_type` -- indexes on empty table
+  - `idx_optimization_tasks_category`, `idx_optimization_tasks_status` -- indexes on empty table
+
+**Retained (could not drop):**
+- `orders_website_name_key` / `orders_website_address_key` -- unique constraints referenced by FKs from RUM tables
+- PK constraints on empty tables (`email_reporting`, `wp_scans`, `website_metadata`) -- required for table structure
+
+**Impact:** ~160 KB index space freed, write paths slightly faster. No functional change.
+
+**Where to verify:** `npx supabase inspect db index-stats` -- the 10 dropped indexes no longer appear.
+
+---
+## 2026-10-24 · Free tier site limit increased from 1 to 3
+
+**Change:** Free tier users can now connect up to 3 sites (was 1) without upgrading to a paid plan.
+
+**Files changed:**
+- `src/app/api/orders/site-limit/route.ts`: `FREE_SITE_LIMIT` constant `1 → 3`
+- `src/app/api/orders/newOrder/route.ts`: error message updated, limit check uses new constant
+- `supabase/migrations/20261011000002_free_service_tier_backfill.sql`: metadata `"max_sites": 1 → 3`
+- `supabase/migrations/20261011000003_free_service_tier_constraints.sql`: trigger metadata `"max_sites": 1 → 3`
+- `supabase/migrations/20261024000001_free_site_limit_3.sql` (new): replaces unique index `uniq_orders_free_per_user` (max 1) with BEFORE INSERT trigger `enforce_free_site_limit` that allows up to 3 free orders per user
+
+**Rationale:** CrUX data is free from Google (no ingestion cost); 3 sites gives users more value while still preserving the upgrade incentive for RUM (real-user monitoring) and expert services.
+
+**Where to verify:** `npm run typecheck` + `eslint` on touched routes. DB: apply migration `20261024000001` → free users can create up to 3 orders with `product_type='free'`; 4th attempt returns 403/DB exception.
+
+---
+## 2026-10-24 · RUM injector module baked into the downloadable WordPress plugin
+
+**Problem:** the server-side injection API and entitlement fix existed, but the customer's WordPress site had no code to call the API and enqueue `rum.js`. The existing "Plugin Auditor" plugin only exposed a REST endpoint for analysis; it did not inject the collector.
+
+**Changes:**
+- `src/app/(dashboard)/dashboard/wordpress-plugin-analysis/companionPlugin.tsx`:
+  - Bumped plugin version to 1.3; description updated to mention auto-inject RUM.
+  - Baked `SPEEDY_SITE_API_ORIGIN` (dashboard origin at zip time) into the generated PHP.
+  - Added `wp_enqueue_scripts` hook (`rum-injector` module) that:
+    - Reads the site's host via `home_url()`, normalizes it (trim/lowercase/strip one leading `www.`) to match the API's `normalizeDomain`.
+    - Uses the pre-shared `SPEEDY_SITE_AUTH_KEY` as the per-domain secret.
+    - Calls `POST {apiOrigin}/api/wordpress/injection` with `{ domain, key }`.
+    - Transient-caches the response for 5 minutes (`speedy_site_rum_injection_<md5(domain)>`).
+    - On `{ "inject": true, "scriptUrl": "..." }`, enqueues the collector via `wp_enqueue_script` (in footer).
+    - Fail-closed on network errors, non-200, or malformed responses.
+  - The download button continues to produce `speedy-site-plugin-auditor.zip` with the updated PHP.
+
+**Impact (before → after):**
+- Paid Managed WP sites: manual snippet required → plugin auto-injects `rum.js` once the hourly `site-metadata` sync has populated the entitlement KV (or immediately if sync already ran). Free sites get `{ inject: false }` and no script.
+- No schema change; the generated zip is the new artifact. Existing installations will auto-update if re-downloaded.
+
+**Where to verify:** `npm run typecheck` and `npx eslint` on the touched file. Manual test: download the plugin zip, upload to a WordPress site with a paid managed_wp entitlement, confirm `rum.speedy.site/rum.js` appears in the page source (footer) and the transient `speedy_site_rum_injection_<hash>` is populated in `wp_options`.
+
+---
+## 2026-10-23 · Paid Managed WP sites finally get a RUM-entitled domain and an injector API
+
+**Problem:** the RUM ingestion gate (`site-metadata` → `event-buffer`) decides eligibility from `user_services.website_name` on a `managed_wp` row, but neither paid path ever wrote that column. The Stripe webhook creates the entitlement with no site, `POST /api/orders/managed/add` only stored `payment_id` on `wordpress_cred`, and the dashboard `newOrder` paid branch set `order_id` only. Net effect: every paying Managed WP customer had `user_services.website_name = null`, so the sync skipped the domain, the KV never listed it, and `event-buffer` returned 403 on every beacon (the script loads, no data collected). There was also no documented, self-contained API for the plugin to ask whether to inject the collector. Detail: `docs/DESIGN-rum-injector-plugin.md`.
+
+**Changes:**
+- `src/app/api/orders/newOrder/route.ts`: the paid (`activeManaged`) branch now sets `website_name: insertedOrder.website_name` on the `user_services` link, mirroring the free branch.
+- `src/app/api/orders/managed/add/route.ts`: after the order and WP creds succeed, the managed entitlement row is linked with `order_id` and `website_name: selectedSite` (matched by the resolved `payment_id`), the same value stored in `orders.website_name`. The expert `autoAssignOrder` hook is untouched.
+- `src/lib/wordpress/domain.ts`: `normalizeDomain` (trim, lowercase, strip one leading `www.`), identical to the `site-metadata` worker so the injector and the edge resolve the same label.
+- `src/lib/wordpress/injection.ts`: `resolveInjection({ domain, key })` verifies the per-site `wp_key` secret (constant-time compare) and checks the paid entitlement; exports `RUM_SCRIPT_URL`.
+- `src/app/api/wordpress/injection/route.ts`: `POST` answers `{ inject, scriptUrl }`, fail-closed, with an in-memory per-domain limiter (pattern reused from `api/emails/contact`).
+
+**Impact (before → after):**
+- Paid Managed WP RUM: domain absent from the KV gate, 403 on every beacon → entitled domain present on order creation; beacons are accepted once the hourly site-metadata sync runs, and the plugin gets a single, self-contained `inject` answer instead of a hand-pasted script.
+- No schema or OpenAPI change; the injection endpoint is additive. Free sites are unaffected (still `managed_wp`-gated, CrUX only).
+
+**Where to verify:** `npm run typecheck` and `npx eslint` on the touched files. DB check: after `managed/add` or a paid `newOrder`, the `managed_wp` `user_services` row has `website_name` set (matches `orders.website_name`). API check: `POST /api/wordpress/injection` with a paid domain + valid key returns `{ "inject": true, "scriptUrl": ... }`; free/unknown returns `{ "inject": false }`. End-to-end data needs the hourly site-metadata sync (or a manual `POST` to that worker with the cron secret).
+
+---
+
+## 2026-10-23 · Auto-assign hook wired into the managed-WP order flow
+
+**Problem:** Phase 1 of the expert-management design shipped the SQL (`pick_next_expert()`, `order_assignments`, `experts_pool`) plus the admin assign API, but the customer-facing order path never called it. Every paid Managed WP order landed with no expert attached, so nothing routed the order to the expert queue and the service loop (order → expert) could not start.
+
+**Changes:**
+- `src/app/api/orders/managed/add/route.ts`: after the order, WP creds, and customer email succeed, a new `autoAssignOrder(orderId)` runs `pick_next_expert()` and inserts a `pending` `order_assignments` row. It skips if the order already has an active assignment (route retries) and no-ops when the pool is empty, so an order without a free expert still succeeds and enters the unassigned queue.
+- The hook is isolated: any assignment failure is logged and swallowed, so it can never fail the customer's order creation. `assigned_by` is left null to mark it as system/auto (the admin route records the acting admin instead).
+
+**Impact (before → after):**
+- Paid Managed WP order: created but never assigned → auto-assigned to the next available expert (round-robin, capacity-aware) the moment experts populate the pool. Design detail: `docs/DESIGN-admin-expert-management.md` (Phase 1) and `docs/DESIGN-managed-wp-order-assignment.md` (P2).
+
+**Where to verify:** `tsc --noEmit` and `eslint` pass on the route; `POST /rest/v1/rpc/pick_next_expert` returns `null` while the pool is empty (so orders currently go to the unassigned queue). End-to-end proof needs one available expert in `experts_pool`: submit `POST /api/orders/managed/add` and confirm an active `order_assignments` row (`status='pending'`, one per order) is created.
 
 ---
 
