@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const worker = setupDB();
 
-const FREE_SITE_LIMIT = 1;
+const FREE_SITE_LIMIT = 3;
 
 export async function GET() {
   const { user, error } = await getSupabaseServerUser();

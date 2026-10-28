@@ -33,51 +33,12 @@ export default function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const { state } = useSidebar();
-  const { selectedSite, role, roleLoading } = useSiteContext();
+  const { selectedSite, role } = useSiteContext(); // roleLoading removed - we render instantly from cache
   const pathname = usePathname();
   const isMobile = useIsMobile();
   const user = useSupabaseUser();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-
-  // Show skeleton while role is loading to avoid flash of default nav
-  if (roleLoading) {
-    return (
-      <Sidebar
-        collapsible="icon"
-        {...props}
-        className="dark:border-muted z-100 bg-muted-foreground"
-      >
-        <SidebarHeader className="mb-5 mt-2">
-          <div className="flex gap-4 items-center">
-            <div className="px-2">
-              <SpeedySiteLogo isDark={isDark} />
-            </div>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <div className="space-y-2 p-2 mt-5">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="h-8 w-full bg-muted animate-pulse rounded"
-              />
-            ))}
-          </div>
-        </SidebarContent>
-        <SidebarFooter>
-          <div className="space-y-2 p-2">
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-8 w-1/2 bg-muted animate-pulse rounded"
-              />
-            ))}
-          </div>
-        </SidebarFooter>
-      </Sidebar>
-    );
-  }
 
   const sidebarOpen =
     state === "expanded" ? false : state === "collapsed" ? true : null;
@@ -91,9 +52,9 @@ export default function AppSidebar({
   // ─── ADMIN-ONLY NAV (clean, no site selector, no other sections) ───
   if (isAdmin) {
     const adminNav = [
-      { title: "Orders", url: "/dashboard/admin/orders", icon: ClipboardList, isActive: false },
-      { title: "Experts", url: "/dashboard/admin/experts", icon: UserCog, isActive: false },
-      { title: "Unassigned Queue", url: "/dashboard/admin/queue", icon: ListTodo, isActive: false },
+      { title: "Orders", url: "/dashboard/admin/orders", icon: ClipboardList, isActive: false as const },
+      { title: "Experts", url: "/dashboard/admin/experts", icon: UserCog, isActive: false as const },
+      { title: "Unassigned Queue", url: "/dashboard/admin/queue", icon: ListTodo, isActive: false as const },
     ];
 
     const adminUser = {
@@ -120,14 +81,13 @@ export default function AppSidebar({
             </div>
           </div>
         </SidebarHeader>
-
         <SidebarContent>
           <MainNav
-            DashboardItems={adminNav[0] as { title: string; url: string; icon: typeof ClipboardList; isActive: false }}
+            DashboardItems={adminNav[0]}
+            Settings={{ title: "Admin", url: "#", icon: Settings2, isActive: false }}
             NavItems={adminNav.slice(1)}
           />
         </SidebarContent>
-
         <SidebarFooter>
           <FooterNav items={adminUser} />
         </SidebarFooter>
@@ -135,11 +95,11 @@ export default function AppSidebar({
     );
   }
 
-  // ─── EXPERT NAV (only My Orders) ───
+  // ─── EXPERT NAV ───
   const expertNav = isExpert
     ? [
         {
-          title: "My Orders",
+          title: "Expert Tools",
           url: "#",
           icon: Wrench,
           isActive: true,
@@ -159,8 +119,7 @@ export default function AppSidebar({
       email: user?.email ?? "",
       avatar: "",
       items: [
-        { title: "Account", url: "/account", icon: User2Icon },
-        { title: "Billing", url: "/account/subscription", icon: CreditCard },
+        { title: "Pricing & Upgrade", url: "/dashboard/pricing", icon: CreditCard },
       ],
     },
     navMain: [

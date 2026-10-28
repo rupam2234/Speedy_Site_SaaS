@@ -32,14 +32,14 @@ export async function emailConfirmationForManagedService({ domain, email }: Prop
                         This is a confirmation that your purchase of the WordPress managed performance optimization and monitoring service at Speedy.site was successful.
                     </p>
                     <p style="font-size: 16px; line-height: 1.6;">
-                        You can check your order status and <a href="${baseAddress}/account/subscription" target="_blank"
+                        You can check your order status and <a href="${baseAddress}/pricing" target="_blank"
                             style="color: #CC6CE7; text-decoration: underline;">
-                            chat with your manager here
+                            view pricing & upgrade options
                         </a> or explore your site's performance and Web Vitals trajectory across various sections at Speedy.site.
                     </p>
 
                     <p style="font-size: 16px; line-height: 1.6;">
-                        Thank you for choosing Speedy Site — we’re thrilled to have you on board! 🎉
+                        Thank you for choosing Speedy Site -- we're thrilled to have you on board! 🎉
                     </p>
         
                   </td>

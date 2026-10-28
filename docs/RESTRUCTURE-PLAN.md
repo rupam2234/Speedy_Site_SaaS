@@ -69,9 +69,13 @@ New top-level `wp-plugin/` (own build; published to the WordPress.org plugin dir
 |---|---|
 | `activate` | Site claim: signs a challenge with the site secret (evolves `wp-secret` API), verifies ownership, registers the site |
 | `validator` | Environment checks: WP version, PHP version, theme, hosting, plugin inventory, cache layers |
-| `rum-injector` | Auto-injects the RUM script (`rum.speedy.site/rum.js`) with the site key, replacing manual snippets |
+| `rum-injector` | **Free tier: no-op** (CrUX only). **Paid tier (managed_wp entitlement)**: auto-injects the RUM script (`rum.speedy.site/rum.js`) with the site key, replacing manual snippets |
 | `backend-tests` | Scheduled probes: cache efficiency, slow admin-ajax, autoloaded options size, plugin load impact, image delivery, origin TTFB |
 | `relay` | Pushes test results + WP facts to Speedy Site ingestion |
+
+**Free tier vs Paid tier (entitlement gating):**
+- **Free (every signup)**: 1 site, CrUX dashboard charts only. Plugin validates site, shows baseline Core Web Vitals. **No RUM script injected.**
+- **Paid ($299 / site / year, `managed_wp`)**: RUM script auto-injected for that site → real user data collection → issue detection → expert service channel.
 
 ### 2.2 Issue detection engine (new)
 

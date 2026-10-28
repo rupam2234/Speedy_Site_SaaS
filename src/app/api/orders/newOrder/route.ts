@@ -134,7 +134,7 @@ export async function POST(req: Request) {
       // Link the order to the managed_wp service
       await worker
         .from("user_services")
-        .update({ order_id: insertedOrder.order_id, updated_at: new Date().toISOString() })
+        .update({ order_id: insertedOrder.order_id, website_name: insertedOrder.website_name, updated_at: new Date().toISOString() })
         .eq("id", activeManaged.id);
 
       return NextResponse.json(
@@ -164,7 +164,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "Free plan allows one connected site. Upgrade to WordPress Performance Optimization to add more.",
+              "Free plan allows up to three connected sites. Upgrade to WordPress Performance Optimization to add more.",
           },
           { status: 403 },
         );

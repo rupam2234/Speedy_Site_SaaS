@@ -20,13 +20,32 @@ fixing WordPress performance issues) is the product.
 ## The product loop (memorize this)
 
 ```
+Free tier (every signup)
+──────────────────────────────────────────────────────────────────
 Single WordPress plugin
         │
         v
 Site validation (ownership, environment, compatibility)
         │
         v
-RUM script auto-installed → real user data collection
+CrUX data only (public Chrome UX Report) → dashboard charts
+        │
+        v
+Customer sees real Core Web Vitals baseline, no RUM script
+        │
+        v
+Upgrade prompt: $299 / site / year → unlock RUM + expert service
+──────────────────────────────────────────────────────────────────
+
+Paid tier (managed_wp purchase)
+──────────────────────────────────────────────────────────────────
+WordPress plugin (same plugin, upgraded entitlement)
+        │
+        v
+RUM script auto-installed for the purchased site
+        │
+        v
+Real user data collection
 (Core Web Vitals, UX, device / browser / network / geo, per-page, per-element)
         │
         v
@@ -39,6 +58,7 @@ Service channel: issues arrive with "baked reasons"
         │
         v
 Experts fix real issues faster → measurable Core Web Vitals / speed wins
+──────────────────────────────────────────────────────────────────
 ```
 
 ## Principles

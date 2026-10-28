@@ -39,6 +39,7 @@ export function AddNewWebsite({ setDisplay }: Props) {
 
   const [siteId, setSiteId] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const id = siteId?.split?.("-")?.[0] ?? "missing-id";
 
@@ -129,10 +130,62 @@ export function AddNewWebsite({ setDisplay }: Props) {
           )}
 
           {success !== null && (
-            <div className="mt-2 space-y-3">
+            <div className="mt-2 space-y-4">
               {/* Success Message */}
               <div className="flex items-center gap-2 text-emerald-600 font-medium capitalize text-sm">
                 {success}
+              </div>
+
+              {/* Creative Upsell Card - Free Tier Benefits */}
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-xl">🚀</span>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <h4 className="font-semibold text-primary text-sm">You&apos;re on the Free tier -- CrUX data only</h4>
+                    <p className="text-xs text-primary/80">
+                      You&apos;re seeing 28-day aggregate Chrome UX Report data. Upgrade to unlock real-user monitoring.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-primary/10 pt-3 space-y-2">
+                  <p className="font-medium text-xs text-primary/90">Upgrade to <span className="font-bold">WordPress Performance Optimization</span> ($299/yr) and get:</p>
+                  <ul className="space-y-1.5 pl-4">
+                    <li className="flex items-center gap-2 text-xs text-primary/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
+                      <strong>Real-user Core Web Vitals</strong> -- not 28-day averages, actual visitor data
+                    </li>
+                    <li className="flex items-center gap-2 text-xs text-primary/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
+                      <strong>Per-page, per-device, per-browser breakdown</strong> -- know exactly where users struggle
+                    </li>
+                    <li className="flex items-center gap-2 text-xs text-primary/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
+                      <strong>Auto-injected RUM script via plugin</strong> -- no copy-paste, zero maintenance
+                    </li>
+                    <li className="flex items-center gap-2 text-xs text-primary/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
+                      <strong>Issue detection + expert fix service</strong> -- we find and fix bottlenecks for you
+                    </li>
+                    <li className="flex items-center gap-2 text-xs text-primary/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
+                      <strong>Core Web Vitals Pass Guarantee</strong> -- or we keep optimizing until you pass
+                    </li>
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => setShowUpgrade(true)}
+                  className="w-full mt-2 cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                >
+                  Upgrade Now -- $299 / year
+                </button>
+
+                <p className="text-[10px] text-primary/50 text-center">
+                  One payment, one year, no auto-renewal. Cancel anytime.
+                </p>
               </div>
 
               <div className="text-xs text-primary/80">
@@ -210,6 +263,79 @@ export function AddNewWebsite({ setDisplay }: Props) {
             Close
           </button>
         </div>
+      {showUpgrade && (
+        <div className="fixed inset-0 z-110 flex items-center justify-center p-4 bg-[#141414]/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white dark:bg-secondary-background border border-[#141414] w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-[16px_16px_0px_0px_rgba(20,20,20,1)]">
+            <div className="p-6 border-b border-[#141414] bg-[#141414] text-[#E4E3E0]">
+              <h3 className="font-bold uppercase tracking-widest text-sm">Upgrade to Performance Optimization</h3>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-4">
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-3xl">🚀</span>
+                </div>
+                <h4 className="text-lg font-semibold text-primary">Unlock Real-User Monitoring</h4>
+                <p className="text-sm text-primary/80">
+                  Move beyond 28-day CrUX averages. See what your actual visitors experience.
+                </p>
+              </div>
+
+              <div className="border-t border-primary/10 pt-4 space-y-3">
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-3 text-sm text-primary/90">
+                    <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center text-white text-xs">✓</span>
+                    <span><strong>Real-user Core Web Vitals</strong> -- actual visitor data, not aggregates</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm text-primary/90">
+                    <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center text-white text-xs">✓</span>
+                    <span><strong>Per-page, per-device, per-browser</strong> -- granular breakdowns</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm text-primary/90">
+                    <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center text-white text-xs">✓</span>
+                    <span><strong>Auto-injected via plugin</strong> -- zero copy-paste, zero maintenance</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm text-primary/90">
+                    <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center text-white text-xs">✓</span>
+                    <span><strong>Issue detection + expert fixes</strong> -- we find & fix bottlenecks</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm text-primary/90">
+                    <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center text-white text-xs">✓</span>
+                    <span><strong>Core Web Vitals Pass Guarantee</strong> -- or we keep optimizing</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="border-t border-primary/10 pt-4">
+                <p className="text-xs text-primary/60 text-center mb-4">
+                  One payment, one year, no auto-renewal. Cancel anytime.
+                </p>
+                <button
+                  onClick={async () => {
+                    setShowUpgrade(false);
+                    const res = await fetch("/api/checkout", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ priceKey: "managed_wp" }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                  }}
+                  className="w-full cursor-pointer rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                >
+                  Upgrade Now -- $299 / year
+                </button>
+                <button
+                  onClick={() => setShowUpgrade(false)}
+                  className="w-full mt-2 cursor-pointer rounded-lg border border-primary/20 bg-transparent px-4 py-2 text-sm font-medium text-primary/80 transition hover:bg-primary/5"
+                >
+                  Maybe Later
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       </div>
     </div>
   );

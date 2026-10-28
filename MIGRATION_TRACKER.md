@@ -42,12 +42,13 @@ Track every step in this file. Check off as completed.
 - [x] 3.1 Create new unified checkout API
   - [x] `POST /api/checkout` — payment mode only: managed_wp $299 one-time (rum_renewal renewal flow still pending)
   - [ ] Deploy to staging
-  - [ ] Test Stripe checkout with test keys
+  - [x] Test Stripe checkout with test keys (2026-10-23, local dev: webhook verified end-to-end via Stripe CLI)
   - [ ] **Snapshot**: Tag `git tag migration-checkout-new`
 - [x] 3.2 Create new webhook handler
   - [x] `POST /api/webhook/stripe` — signature-verified, idempotent managed_wp provisioning (1yr, site_limit 1)
-  - [ ] Update Stripe Dashboard webhook URL + set `STRIPE_WEBHOOK_SECRET`
-  - [ ] Test with Stripe CLI: `stripe trigger checkout.session.completed`
+  - [x] Local webhook test via Stripe CLI forwarder (2026-10-23): `stripe trigger checkout.session.completed` + `client_reference_id` override → managed_wp entitlement created (active, 1yr expiry, stripe_session_id stored)
+  - [ ] Update Stripe Dashboard webhook URL + set `STRIPE_WEBHOOK_SECRET` (live keys, when deploying to production)
+  - [x] Test with Stripe CLI: `stripe trigger checkout.session.completed` (local)
   - [ ] **Snapshot**: Tag `git tag migration-webhook-new`
 - [x] 3.3 **Delete old subscription APIs** — all deleted/rewritten earlier; callers repointed
   - **Snapshot**: Tag `git tag migration-old-apis-deleted` (pending)
@@ -237,7 +238,7 @@ Shipped on branch `work/api-cleanup` (PR to main pending). See commits `7cc8629`
 
 - Migration `supabase/migrations/20261022000001_admin_expert_management.sql` added: role `expert`, `experts_pool`, `order_assignments`, RLS policies, capacity-aware round-robin `pick_next_expert()`.
 - **Applied 2026-10-22** to the operational project `tmpvygehhshrgsqxzaty` (via `supabase db push`, recorded in `supabase_migrations`) — but with the pre-fix function, so live `pick_next_expert()` returned `42703 column e.active_load does not exist` on every call. **Repaired 2026-10-23** with follow-up migration `20261023000001_fix_pick_next_expert.sql` (never edit an applied migration in place; the fix ships as a new version). Functional verification: empty pool → `null`; with an available expert the pick returns the expert and advances `rr_position` (0→1→2), then the throwaway expert was cascade-deleted (pool/assignments back to 0).
-- API routes exist under `src/app/api/admin/**` (invite, experts, orders, assign, reassign, skip, queue) and admin nav is wired in the sidebar. Next step: enable auto-assign in the managed-WP add flow and build the admin queue UI.
+- API routes exist under `src/app/api/admin/**` (invite, experts, orders, assign, reassign, skip, queue) and admin nav is wired in the sidebar. Auto-assign hook is wired into the managed-WP add flow (2026-10-23: `autoAssignOrder()` calls `pick_next_expert()` and inserts the assignment; empty pool no-ops to the unassigned queue; failures never block order creation). Next step: build the admin queue UI (Phase 2).
 - Design doc: `docs/DESIGN-admin-expert-management.md`.
 
 ---

@@ -51,13 +51,16 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
   const phpCode = `<?php
   /**
    * Plugin Name: Speedy Site Plugin Auditor
-   * Description: Connects your site to the Speedy Site plugin performance auditor.
-   * Version: 1.2
+   * Description: Connects your site to the Speedy Site plugin performance auditor and auto-injects RUM collector for paid plans.
+   * Version: 1.3
    * Author: Speedy Site
    */
 
   // Pre-authenticated key for this specific installation
   define('SPEEDY_SITE_AUTH_KEY', '${secretKey}');
+
+  // Dashboard origin for API calls (baked at zip generation time)
+  define('SPEEDY_SITE_API_ORIGIN', '${typeof window !== "undefined" ? window.location.origin : ""}');
 
   // Add settings page (Optional, for manual overrides)
   add_action('admin_menu', function() {
@@ -107,6 +110,71 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
           'callback' => 'speedy_site_perf_auditor_get_plugins',
           'permission_callback' => 'speedy_site_perf_auditor_check_key'
       ));
+  });
+
+  // RUM Injector module -- auto-injects collector for paid managed_wp sites
+  add_action('wp_enqueue_scripts', function () {
+      // Only run on frontend, not admin
+      if (is_admin()) return;
+
+      // Compute the host this site serves on (mirrors the API's normalizeDomain)
+      $host = wp_parse_url(home_url(), PHP_URL_HOST);
+      if (!$host) return;
+      $domain = strtolower(trim($host));
+      $domain = preg_replace('/^www\./', '', $domain);
+
+      // Use the pre-authenticated key baked into this installation
+      $key = defined('SPEEDY_SITE_AUTH_KEY') ? SPEEDY_SITE_AUTH_KEY : '';
+      if (!$key) return;
+
+      // API origin baked at zip generation time
+      $apiOrigin = defined('SPEEDY_SITE_API_ORIGIN') ? rtrim(SPEEDY_SITE_API_ORIGIN, '/') : '';
+      if (!$apiOrigin) return;
+
+      // Transient cache key per domain (5 minute TTL)
+      $transientKey = 'speedy_site_rum_injection_' . md5($domain);
+      $cached = get_transient($transientKey);
+
+      if ($cached !== false) {
+          // Cache hit
+          if (!empty($cached['inject']) && !empty($cached['scriptUrl'])) {
+              wp_enqueue_script('speedy-site-rum', $cached['scriptUrl'], array(), null, true);
+          }
+          return;
+      }
+
+      // Cache miss: call the injection API
+      $url = $apiOrigin . '/api/wordpress/injection';
+      $response = wp_remote_post($url, array(
+          'timeout' => 3,
+          'blocking' => true,
+          'headers' => array('Content-Type' => 'application/json'),
+          'body' => wp_json_encode(array('domain' => $domain, 'key' => $key)),
+      ));
+
+      if (is_wp_error($response)) {
+          // Network error: fail closed, no script
+          return;
+      }
+
+      $code = wp_remote_retrieve_response_code($response);
+      if ($code !== 200) {
+          // Non-200: fail closed
+          return;
+      }
+
+      $body = wp_remote_retrieve_body($response);
+      $data = json_decode($body, true);
+
+      if (!is_array($data)) return;
+
+      // Cache the decision for 5 minutes
+      set_transient($transientKey, $data, 5 * MINUTE_IN_SECONDS);
+
+      // If entitled, enqueue the collector
+      if (!empty($data['inject']) && !empty($data['scriptUrl'])) {
+          wp_enqueue_script('speedy-site-rum', $data['scriptUrl'], array(), null, true);
+      }
   });
 
   function speedy_site_perf_auditor_check_key(WP_REST_Request $request) {
