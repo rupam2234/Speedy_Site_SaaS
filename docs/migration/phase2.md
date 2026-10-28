@@ -1,30 +1,57 @@
 ## Migration Phase 2: Cloudflare Workers (Week 1‑2)
 
-### ✅ Done (code, in repo)
+### 📋 Overview & Objectives
+Retire legacy subscription-based KV synchronization workers. Replace `sub-kv-metadata` with `site-metadata`, update `event-buffer` domain validation to verify active entitlements via KV against `user_services`, and reuse the existing KV namespace without downtime.
 
-- **Delete `sub‑kv‑metadata` worker** – code removed; CF‑side retirement still pending
-  * Removed from `wrangler.toml` / deployment config
-  * `SUBSCRIPTION_METADATA` KV namespace binding removed
-  * `cloudflare-workers/sub-kv-metadata/` deleted
-  * Root `.gitignore` no longer blanket‑ignores `/cloudflare-workers`, so the
-    replacement `cloudflare-workers/site-metadata/` and
-    `cloudflare-workers/event-buffer/wrangler.toml` are actually tracked
-  * Commented‑out backup block deleted from `rum/src/index.js`
-  * Dead D1 `DB` binding + commented temp line removed from `event-buffer`
+---
 
-- **Refactor `event‑buffer` validation** – see `docs/DESIGN-site-metadata-worker.md`
-  * `validateDomain()` no longer checks subscriptions
-  * Entitlement read from KV `SITE_METADATA`, domain derived from Origin/Referer
-  * New `site‑metadata` worker reads `user_services` through `services_with_domains`
+### ✅ Completed Tasks & Execution Logs
 
-### ✅ Deployed and verified on production (2026-10-22)
+1. **Retire `sub-kv-metadata` Worker**
+   - Removed worker code from `cloudflare-workers/sub-kv-metadata/`.
+   - Removed legacy `SUBSCRIPTION_METADATA` binding from `wrangler.toml`.
+   - Scoped the root `.gitignore` to allow tracking `cloudflare-workers/site-metadata/` and `cloudflare-workers/event-buffer/wrangler.toml` (which had previously been blanket-ignored).
+   - Removed dead D1 database bindings and commented-out legacy code blocks from `event-buffer`.
 
-- Deployed `site‑metadata` (worker + `CRON_SECRET` / `SUPABASE_SERVICE_ROLE_KEY` secrets were already prepared); one manual sync seeded KV `SITE_METADATA` with 9 keys, equal to the 9 active `managed_wp` services in the database
-- Deleted the live `sub‑kv‑metadata` worker first: its code and source table were gone (see IMPACT-LOG 2026-10-22) and it was the only other writer of the shared KV namespace, so it had to go before anything was seeded. Its KV namespace (titled `subscription-data`, id `deb4358e164a44fe93dc81a4ef4033b1`) was **not** deleted: it is now the `SITE_METADATA` namespace both workers bind to
-- Deployed `event‑buffer`; verified live: `/collect` returned 202 "Data buffered" for a seeded domain (jasper-lab.com), 403 "Domain not found" for an unknown domain, and the alarm flush landed a row in `rum_metrics`
-- Deleted the stale `site‑metadata‑staging` / `event‑buffer‑staging` workers (dev leftovers from 2026-10-20): their `[env.staging]` config had nothing unique (same `SUPABASE_URL`, same KV id, same bindings), so staging can be re-created with `npx wrangler deploy --env staging`
-- **Snapshot tags**: `migration-workers-subkv-deleted`, `migration-event-buffer-refactored` (both pushed to origin)
+2. **KV Namespace Reuse & Seeding**
+   - The original KV namespace titled `subscription-data` (id: `deb4358e164a44fe93dc81a4ef4033b1`) was preserved and rebound as `SITE_METADATA`.
+   - The live `sub-kv-metadata` worker was deleted from Cloudflare before seeding to eliminate conflicting writers.
+   - Deployed `site-metadata` worker with `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY`.
+   - Executed initial manual sync: successfully seeded KV `SITE_METADATA` with 9 keys corresponding to active `managed_wp` services in Supabase.
 
-### Notes
-* The worker cleanup is part of the de‑integration pattern – replace first, deploy, test, switch, verify, delete.
-* No API route changes in this phase.
+3. **Refactor & Deploy `event-buffer` Validation**
+   - Rewrote `validateDomain()` logic to drop subscription checks and validate active entitlements directly from KV `SITE_METADATA`.
+   - Derived ingest domain dynamically from HTTP `Origin` and `Referer` headers.
+   - Cleaned up stale staging workers (`site-metadata-staging` and `event-buffer-staging`) deployed during testing.
+
+4. **Production Verification (2026-10-22)**
+   - Ingestion gate test passed end-to-end:
+     - Seeded entitled domain (`jasper-lab.com`): `POST /collect` returned HTTP `202 Accepted` ("Data buffered").
+     - Unknown / non-entitled domain: returned HTTP `403 Forbidden` ("Domain not found").
+     - Background alarm flush verified: telemetry row successfully written to `rum_metrics` table.
+
+---
+
+### 🔍 Live Verification Commands
+
+```bash
+# 1. Test ingestion for an entitled site (returns 202)
+curl -s -o /dev/null -w "%{http_code}\n" -X POST \
+  -H "Origin: https://jasper-lab.com" \
+  -H "Content-Type: application/json" \
+  -d '{"event":"pageview"}' \
+  https://event-buffer.workers.dev/collect
+
+# 2. Test ingestion for an unknown site (returns 403)
+curl -s -o /dev/null -w "%{http_code}\n" -X POST \
+  -H "Origin: https://unknown-unregistered-site.com" \
+  -H "Content-Type: application/json" \
+  -d '{"event":"pageview"}' \
+  https://event-buffer.workers.dev/collect
+```
+
+---
+
+### 🏷️ Snapshot Tags
+* `migration-workers-subkv-deleted`: Tagged after removing legacy sub-kv-metadata worker and reconciling git tracking.
+* `migration-event-buffer-refactored`: Tagged following live production deployment and verification of the new ingestion gate.

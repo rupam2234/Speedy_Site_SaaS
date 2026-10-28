@@ -11,6 +11,8 @@ import {
   ClipboardList,
   UserCog,
   ListTodo,
+  LayoutDashboardIcon,
+  LifeBuoy,
 } from "lucide-react";
 import {
   Sidebar,
@@ -52,9 +54,11 @@ export default function AppSidebar({
   // ─── ADMIN-ONLY NAV (clean, no site selector, no other sections) ───
   if (isAdmin) {
     const adminNav = [
-      { title: "Orders", url: "/dashboard/admin/orders", icon: ClipboardList, isActive: false as const },
-      { title: "Experts", url: "/dashboard/admin/experts", icon: UserCog, isActive: false as const },
-      { title: "Unassigned Queue", url: "/dashboard/admin/queue", icon: ListTodo, isActive: false as const },
+      { title: "Overview", url: "/dashboard", icon: LayoutDashboardIcon, isActive: pathname === "/dashboard" },
+      { title: "Orders", url: "/dashboard/orders", icon: ClipboardList, isActive: pathname === "/dashboard/orders" },
+      { title: "Unassigned Queue", url: "/dashboard/queue", icon: ListTodo, isActive: pathname === "/dashboard/queue" },
+      { title: "Support Tickets", url: "/dashboard/tickets", icon: LifeBuoy, isActive: pathname === "/dashboard/tickets" },
+      { title: "Developers", url: "/dashboard/experts", icon: UserCog, isActive: pathname === "/dashboard/experts" },
     ];
 
     const adminUser = {
@@ -83,8 +87,7 @@ export default function AppSidebar({
         </SidebarHeader>
         <SidebarContent>
           <MainNav
-            DashboardItems={adminNav[0]}
-            Settings={{ title: "Admin", url: "#", icon: Settings2, isActive: false }}
+            DashboardItems={adminNav[0] as { title: string; url: string; icon: typeof LayoutDashboardIcon; isActive: false }}
             NavItems={adminNav.slice(1)}
           />
         </SidebarContent>
@@ -95,20 +98,51 @@ export default function AppSidebar({
     );
   }
 
-  // ─── EXPERT NAV ───
-  const expertNav = isExpert
-    ? [
-        {
-          title: "Expert Tools",
-          url: "#",
-          icon: Wrench,
-          isActive: true,
-          items: [
-            { title: "Assigned Orders", url: "/dashboard/expert/orders" },
-          ],
-        },
-      ]
-    : [];
+  // ─── EXPERT NAV (clean workspace) ───
+  if (isExpert) {
+    const expertNav = [
+      { title: "My Orders", url: "/dashboard/orders", icon: Wrench, isActive: pathname === "/dashboard/orders" || pathname === "/dashboard" },
+      { title: "Support Tickets", url: "/dashboard/tickets", icon: LifeBuoy, isActive: pathname === "/dashboard/tickets" },
+    ];
+
+    const expertUser = {
+      name: user?.user_metadata.name
+        ? (user?.user_metadata.name as string)
+        : "",
+      email: user?.email ?? "",
+      avatar: "",
+      items: [
+        { title: "Account", url: "/account", icon: User2Icon },
+      ],
+    };
+
+    return (
+      <Sidebar
+        collapsible="icon"
+        {...props}
+        className="dark:border-muted z-100 bg-muted-foreground"
+      >
+        <SidebarHeader className="mb-5 mt-2">
+          <div className="flex gap-4 items-center">
+            <div className="px-2">
+              <SpeedySiteLogo isDark={isDark} />
+            </div>
+          </div>
+        </SidebarHeader>
+
+        <SidebarContent>
+          <MainNav
+            DashboardItems={expertNav[0] as { title: string; url: string; icon: typeof Wrench; isActive: false }}
+            NavItems={expertNav.slice(1)}
+          />
+        </SidebarContent>
+
+        <SidebarFooter>
+          <FooterNav items={expertUser} />
+        </SidebarFooter>
+      </Sidebar>
+    );
+  }
 
   // ─── REGULAR USER NAV (existing full dashboard) ───
   const data = {
@@ -176,7 +210,12 @@ export default function AppSidebar({
           },
         ],
       },
-      ...expertNav,
+      {
+        title: "Support Tickets",
+        url: "/dashboard/tickets",
+        icon: LifeBuoy,
+        isActive: false,
+      },
     ],
   };
 

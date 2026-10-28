@@ -12,9 +12,20 @@ export async function GET() {
   try {
     const { data, error } = await (worker as any)
       .from("experts_pool")
-      .select("expert_id, capacity, is_available, rr_position, last_assigned_at, profiles:profiles!experts_pool_expert_id_fkey(email)");
+      .select("expert_id, capacity, is_available, rr_position, last_assigned_at");
 
     if (error) throw new Error(error.message);
+
+    const expertIds = (data ?? []).map((row: any) => row.expert_id).filter(Boolean);
+    const { data: profiles } = await (worker as any)
+      .from("profiles")
+      .select("id, email")
+      .in("id", expertIds);
+
+    const emailById: Record<string, string> = {};
+    for (const p of profiles ?? []) {
+      if (p.id) emailById[p.id] = p.email ?? "";
+    }
 
     const { data: loads, error: loadError } = await (worker as any)
       .from("order_assignments")
@@ -29,7 +40,7 @@ export async function GET() {
 
     const experts = (data ?? []).map((row: any) => ({
       expertId: row.expert_id,
-      email: row.profiles?.email ?? null,
+      email: emailById[row.expert_id] || null,
       capacity: row.capacity,
       isAvailable: row.is_available,
       rrPosition: row.rr_position,

@@ -18,7 +18,7 @@ interface DashboardLayoutProps {
 }
 
 function LayoutContent({ children }: { children: ReactNode }) {
-  const { selectedSite, plan, setPlan, setPlanExpiresAt } = useSiteContext();
+  const { selectedSite, role, plan, setPlan, setPlanExpiresAt } = useSiteContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -26,8 +26,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const lastNavigatedUrl = useRef("");
 
   useEffect(() => {
-    if (!selectedSite) return;
-
+    if (!selectedSite || role === "admin" || role === "expert") return;
     const params = new URLSearchParams(searchParams.toString());
     params.set("site", selectedSite);
     const currentUrl = `${pathname}?${params.toString()}`;
@@ -39,18 +38,18 @@ function LayoutContent({ children }: { children: ReactNode }) {
       lastNavigatedUrl.current = currentUrl;
       router.replace(currentUrl, { scroll: false });
     }
-  }, [selectedSite, pathname, searchParams, router]);
+  }, [selectedSite, role, pathname, searchParams, router]);
 
-  // Redirect back to dashboard if no site is selected
+  // Redirect back to dashboard if no site is selected (customers only)
   useEffect(() => {
-    if (selectedSite) return;
+    if (selectedSite || role === "admin" || role === "expert") return;
 
     const timeout = setTimeout(() => {
       router.push("/dashboard");
     }, 7000);
 
     return () => clearTimeout(timeout);
-  }, [selectedSite, router]);
+  }, [selectedSite, role, router]);
 
   // set active plan
   useEffect(() => {

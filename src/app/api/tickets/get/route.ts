@@ -26,43 +26,51 @@ export async function GET() {
     if (error) throw new Error(error.message);
 
     if (data?.role === "user") {
+      let tickets: any;
+      try {
+        tickets = await redisCache({
+          key: `tickets:user:${user.id}`,
+          ttl: 60, // 1 minute
+          fn: async () => {
+            const { data, error } = await worker
+              .from("tickets")
+              .select("id, subject, status, created_at, updated_at, related_order")
+              .eq("user_id", user.id);
 
-      // uses redis cache
-      const tickets = await redisCache({
-        key: `tickets:user:${user.id}`,
-        ttl: 60, // 1 minute
-        fn: async () => {
-          const { data, error } = await worker
-            .from("tickets")
-            .select("id, subject, status, created_at, updated_at, related_order")
-            .eq("user_id", user.id);
-
-          if (error) {
-            throw new Error(error.message);
-          }
-
-          return data ?? [];
-        },
-      });
+            if (error) throw new Error(error.message);
+            return data ?? [];
+          },
+        });
+      } catch {
+        const { data: fallbackData } = await worker
+          .from("tickets")
+          .select("id, subject, status, created_at, updated_at, related_order")
+          .eq("user_id", user.id);
+        tickets = { response: fallbackData ?? [], isCached: false };
+      }
 
       return NextResponse.json({ tickets, isCached: tickets.isCached, role: data?.role }, { status: 200 });
     } else if (data?.role === "admin") {
-      // uses redis cache
-      const tickets = await redisCache({
-        key: `tickets:admin:${user.id}`,
-        ttl: 60, // 1 min
-        fn: async () => {
-          const { data, error } = await worker
-            .from("tickets")
-            .select("id, subject, status, created_at, updated_at, related_order");
+      let tickets: any;
+      try {
+        tickets = await redisCache({
+          key: `tickets:admin:${user.id}`,
+          ttl: 60, // 1 min
+          fn: async () => {
+            const { data, error } = await worker
+              .from("tickets")
+              .select("id, subject, status, created_at, updated_at, related_order");
 
-          if (error) {
-            throw new Error(error.message);
-          }
-
-          return data ?? [];
-        },
-      });
+            if (error) throw new Error(error.message);
+            return data ?? [];
+          },
+        });
+      } catch {
+        const { data: fallbackData } = await worker
+          .from("tickets")
+          .select("id, subject, status, created_at, updated_at, related_order");
+        tickets = { response: fallbackData ?? [], isCached: false };
+      }
 
       return NextResponse.json({ tickets, isCached: tickets.isCached, role: data?.role }, { status: 200 });
     }

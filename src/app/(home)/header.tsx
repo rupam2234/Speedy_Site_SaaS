@@ -7,7 +7,7 @@ import { useIsMobile } from "@/components/theme/use-mobile";
 import { SpeedySiteLogo } from "@/components/theme";
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 
 export default function SiteHeader({ enableNav }: { enableNav: boolean }) {
   const user = useSupabaseUser();
