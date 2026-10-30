@@ -69,11 +69,31 @@ jobs:
             PROD_FLAG="--prod"
           fi
 
-          # Deploy with --yes and --no-wait to prevent prompts and CLI hanging
-          vercel deploy --prebuilt $PROD_FLAG --yes --no-wait --token=${{ secrets.VERCEL_TOKEN }} > deploy_output.txt 2>&1 || cat deploy_output.txt
+          # Detach .git temporarily so Vercel CLI does not attach commit author metadata
+          # which triggers Vercel Hobby's "author is not a member" restriction.
+          if [ -d .git ]; then
+            mv .git .git_backup
+          fi
+
+          vercel deploy --prebuilt $PROD_FLAG --yes --no-wait --token=${{ secrets.VERCEL_TOKEN }} > deploy_output.txt 2>&1
+          DEPLOY_EXIT=$?
+
+          if [ -d .git_backup ]; then
+            mv .git_backup .git
+          fi
 
           cat deploy_output.txt
+
+          if [ $DEPLOY_EXIT -ne 0 ]; then
+            echo "::error::Vercel deployment failed with exit code $DEPLOY_EXIT"
+            exit $DEPLOY_EXIT
+          fi
+
           DEPLOY_URL=$(grep -Eo 'https://[^ ]+\.vercel\.app' deploy_output.txt | tail -n 1)
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "::error::Could not extract deployment URL from output"
+            exit 1
+          fi
           echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
 
       - name: Publish Deployment Summary
