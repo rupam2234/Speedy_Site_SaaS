@@ -74,8 +74,8 @@ jobs:
             PROD_FLAG="--prod"
           fi
 
-          # Deploy with --yes to prevent prompts. Extract deployment URL directly.
-          vercel deploy --prebuilt $PROD_FLAG --yes --token=${{ secrets.VERCEL_TOKEN }} > deploy_output.txt 2>&1 || cat deploy_output.txt
+          # Deploy with --yes to prevent prompts and --no-wait to avoid CI hanging on remote build polling.
+          vercel deploy --prebuilt $PROD_FLAG --yes --no-wait --token=${{ secrets.VERCEL_TOKEN }} > deploy_output.txt 2>&1 || cat deploy_output.txt
 
           cat deploy_output.txt
           DEPLOY_URL=$(grep -Eo 'https://[^ ]+\.vercel\.app' deploy_output.txt | tail -n 1)
