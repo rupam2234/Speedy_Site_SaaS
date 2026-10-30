@@ -3,12 +3,10 @@ name: Vercel Deploy
 on:
   push:
     branches:
-      - main
       - dev
       - preview
   pull_request:
     branches:
-      - main
       - dev
       - preview
 
@@ -71,11 +69,16 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
+          PROD_FLAG=""
           if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ github.event_name }}" = "push" ]; then
-            DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
-          else
-            DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+            PROD_FLAG="--prod"
           fi
+
+          # Deploy with --yes to prevent prompts. Extract deployment URL directly.
+          vercel deploy --prebuilt $PROD_FLAG --yes --token=${{ secrets.VERCEL_TOKEN }} > deploy_output.txt 2>&1 || cat deploy_output.txt
+
+          cat deploy_output.txt
+          DEPLOY_URL=$(grep -Eo 'https://[^ ]+\.vercel\.app' deploy_output.txt | tail -n 1)
           echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
 
       - name: Publish Deployment Summary
@@ -95,14 +98,14 @@ jobs:
             try {
               const deployUrl = '${{ steps.vercel_deploy.outputs.url }}';
               const body = `### 🚀 Vercel Preview Deployment\n\n- **Preview URL:** ${deployUrl}\n- **Commit:** \`${context.sha}\``;
-              
+
               const comments = await github.rest.issues.listComments({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
               });
-              
-              const botComment = comments.data.find(comment => 
+
+              const botComment = comments.data.find(comment =>
                 comment.user.type === 'Bot' && comment.body.includes('Vercel Preview Deployment')
               );
 
