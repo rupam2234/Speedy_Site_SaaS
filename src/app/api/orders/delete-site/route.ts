@@ -54,14 +54,12 @@ export async function POST(req: NextRequest) {
     if (verifiedDomain.order_id) {
       await worker
         .from("user_services")
-        .update({ order_id: null, updated_at: new Date().toISOString() })
+        .update({
+          order_id: null,
+          website_name: null,
+          updated_at: new Date().toISOString(),
+        })
         .eq("order_id", verifiedDomain.order_id);
-
-      await worker
-        .from("user_services")
-        .update({ website_name: null, updated_at: new Date().toISOString() })
-        .eq("order_id", verifiedDomain.order_id)
-        .eq("service_type", "free");
     }
 
     return NextResponse.json({ message: "website deleted" }, { status: 200 });

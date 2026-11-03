@@ -30,8 +30,8 @@ async function test() {
 
   const userId = user.user.id;
 
-  // Insert 3 free orders - should succeed
-  for (let i = 1; i <= 3; i++) {
+  // Insert 10 free orders - should succeed
+  for (let i = 1; i <= 10; i++) {
     const { data, error } = await supabase
       .from('orders')
       .insert({
@@ -51,13 +51,13 @@ async function test() {
     }
   }
 
-  // Insert 4th free order - should FAIL
+  // Insert 11th free order - should FAIL
   const { data, error } = await supabase
     .from('orders')
     .insert({
       user_id: userId,
-      website_name: 'test4.example.com',
-      website_address: 'https://test4.example.com',
+      website_name: 'test11.example.com',
+      website_address: 'https://test11.example.com',
       order_status: true,
       product_type: 'free'
     })
@@ -65,9 +65,9 @@ async function test() {
     .single();
   
   if (error) {
-    console.log(`  Order 4: BLOCKED as expected - ${error.message}`);
+    console.log(`  Order 11: BLOCKED as expected - ${error.message}`);
   } else {
-    console.log(`  Order 4: UNEXPECTED SUCCESS - ${data.order_id}`);
+    console.log(`  Order 11: UNEXPECTED SUCCESS - ${data.order_id}`);
   }
 
   // Cleanup

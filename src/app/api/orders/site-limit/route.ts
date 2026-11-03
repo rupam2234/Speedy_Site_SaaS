@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const worker = setupDB();
 
-const FREE_SITE_LIMIT = 3;
+const FREE_SITE_LIMIT = 10;
 
 export async function GET() {
   const { user, error } = await getSupabaseServerUser();
@@ -51,7 +51,7 @@ export async function GET() {
       );
     }
 
-    // Free tier: one connected site with CrUX web vitals
+    // Free tier: up to 10 connected sites with CrUX web vitals
     const { error: siteError, count } = await worker
       .from("orders")
       .select("*", { count: "exact", head: true })
