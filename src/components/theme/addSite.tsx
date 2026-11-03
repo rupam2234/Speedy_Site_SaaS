@@ -3,7 +3,6 @@
 import { OrderData } from "@/app/api";
 import { useState } from "react";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
-import { cachedData } from "../utils";
 import {
   Check,
   ChevronDown,
@@ -397,6 +396,7 @@ export function AddNewWebsite({ setDisplay }: Props) {
     if (res.status === 409) {
       setError(
         res.body.message ||
+          res.body.error ||
           "Site already exists. Please check your site list or contact support",
       );
       appendLog("error");
@@ -406,7 +406,7 @@ export function AddNewWebsite({ setDisplay }: Props) {
 
     // Handle other errors
     if (res.status !== 200) {
-      setError(res.body.message || "Failed to create site.");
+      setError(res.body.error || res.body.message || "Failed to create site.");
       appendLog("error");
       setProcessing(false);
       return;
@@ -432,27 +432,16 @@ export function AddNewWebsite({ setDisplay }: Props) {
       favicon_file: uploadedFavicon,
     };
 
-    const key = `orders`;
-
     try {
-      const { response } = await cachedData({
-        fn: async () => {
-          const res = await fetch("/api/orders/newOrder", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderData, user_id: user?.id }),
-          });
-
-          const body = await res.json();
-
-          return { status: res.status, body };
-        },
-        session_Storage: true,
-        ttl: 5 * 60 * 1000,
-        key,
+      const res = await fetch("/api/orders/newOrder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderData, user_id: user?.id }),
       });
 
-      return response;
+      const body = await res.json();
+
+      return { status: res.status, body };
     } catch (error: any) {
       return { status: 500, body: { message: error.message } };
     }

@@ -6,7 +6,37 @@
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
-> **Last updated:** 2026-10-24
+> **Last updated:** 2026-11-03
+
+---
+
+## 2026-11-03 · Free tier site limit increased to 10 + add-site reliability fix
+
+**Problem:** Users on free accounts encountered issues when adding sites:
+1. `src/app/api/orders/newOrder/route.ts` was still hardcoded to `FREE_SITE_LIMIT = 1`, blocking additions at the API level even after `site-limit` returned capacity.
+2. In `addSite.tsx`, the `POST /api/orders/newOrder` mutation was wrapped in client-side `cachedData` with a static key `orders`, caching failed attempts in `sessionStorage` and blocking retries.
+3. In `addSite.tsx`, error responses from `newOrder` returning `{ error: "..." }` were ignored in favor of `res.body.message`, causing the UI to show a generic "Failed to create site." instead of the real reason.
+4. Accounts missing a `user_services` row (e.g. if signup trigger was skipped) had no auto-provisioning fallback, permanently returning 403 "No active service found".
+5. In `delete-site/route.ts`, sequential updates clearing `order_id` then trying to match on `order_id` prevented `website_name` from being cleared on deleted free services.
+
+**Changes:**
+- `src/app/api/orders/newOrder/route.ts`:
+  - `FREE_SITE_LIMIT` updated to 10.
+  - Auto-provisions active free service entitlement if the account has no active services.
+  - Only updates `order_id`/`website_name` on `user_services` when unbound (`!activeFree.order_id`), supporting multi-site free accounts.
+- `src/app/api/orders/site-limit/route.ts`: `FREE_SITE_LIMIT` set to 10.
+- `src/components/theme/addSite.tsx`:
+  - Removed `cachedData` wrapper from `addOrder` mutation.
+  - Improved error display to check `res.body.error || res.body.message`.
+- `src/app/api/orders/delete-site/route.ts`: Combined clearing of `order_id` and `website_name` in a single atomic update.
+- `supabase/migrations/20261103000001_free_site_limit_10.sql`:
+  - Updated `enforce_free_site_limit()` trigger function on `orders` to allow up to 10 free orders.
+  - Updated `handle_new_user()` trigger to initialize `max_sites: 10`.
+- `scripts/test-free-limit.js`: Updated automated test loop to test 10 free orders succeeding and the 11th being blocked.
+
+**Impact:** Free users can connect up to 10 sites. The site addition flow is reliable, unblocks failed retries immediately, and surfaces accurate server errors.
+
+**Where to verify:** `pnpm build` / `tsc --noEmit`; migration test script `scripts/test-free-limit.js`.
 
 ---
 

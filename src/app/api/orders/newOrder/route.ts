@@ -5,7 +5,7 @@ import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
 
 const worker = setupDB();
 
-const FREE_SITE_LIMIT = 1;
+const FREE_SITE_LIMIT = 10;
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     // Fetch the user's services once and derive the entitlement
     const { data: services, error: serviceError } = await worker
       .from("user_services")
-      .select("id, service_type, status, metadata")
+      .select("id, service_type, status, metadata, order_id")
       .eq("user_id", user_id);
 
     if (serviceError) {
@@ -53,9 +53,27 @@ export async function POST(req: Request) {
     const activeManaged = services?.find(
       (s) => s.service_type === "managed_wp" && s.status === "active"
     );
-    const activeFree = services?.find(
+    let activeFree = services?.find(
       (s) => s.service_type === "free" && s.status === "active"
     );
+
+    // Auto-provision free tier entitlement if account has no active services
+    if (!activeManaged && !activeFree) {
+      const { data: newFreeService, error: provError } = await worker
+        .from("user_services")
+        .insert({
+          user_id,
+          service_type: "free",
+          status: "active",
+          metadata: { plan: "Free", max_sites: FREE_SITE_LIMIT, features: ["crux"] },
+        })
+        .select("id, service_type, status, metadata, order_id")
+        .single();
+
+      if (!provError && newFreeService) {
+        activeFree = newFreeService;
+      }
+    }
 
     // Check if website already exists for this user
     const { data: existingSite, error: siteError } = await worker
@@ -147,7 +165,7 @@ export async function POST(req: Request) {
     }
 
     if (activeFree) {
-      // Free tier: exactly one connected site (CrUX web vitals)
+      // Free tier: up to FREE_SITE_LIMIT connected sites (CrUX web vitals)
       const { count, error: countError } = await worker
         .from("orders")
         .select("*", { count: "exact", head: true })
@@ -164,7 +182,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "Free plan allows up to three connected sites. Upgrade to WordPress Performance Optimization to add more.",
+              `Free plan allows up to ${FREE_SITE_LIMIT} connected sites. Upgrade to WordPress Performance Optimization to add more.`,
           },
           { status: 403 },
         );
@@ -188,7 +206,7 @@ export async function POST(req: Request) {
         .single();
 
       if (insertError) {
-        // uniq_orders_free_per_user makes double-submissions fail safely here
+        // DB-level trigger enforces hard cap under concurrency
         return NextResponse.json(
           {
             error: "Failed to insert order data",
@@ -198,15 +216,17 @@ export async function POST(req: Request) {
         );
       }
 
-      // Bind the free entitlement to the connected site
-      await worker
-        .from("user_services")
-        .update({
-          order_id: insertedOrder.order_id,
-          website_name: insertedOrder.website_name,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", activeFree.id);
+      // Bind the free entitlement to the connected site if not yet bound
+      if (activeFree && !activeFree.order_id) {
+        await worker
+          .from("user_services")
+          .update({
+            order_id: insertedOrder.order_id,
+            website_name: insertedOrder.website_name,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", activeFree.id);
+      }
 
       return NextResponse.json(
         {
