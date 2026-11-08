@@ -4,9 +4,10 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { SpeedySiteLogo } from "@/components/theme/logo";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { SidebarBrand } from "./SidebarBrand";
 
 /**
  * Minimal sidebar for non-authenticated users.
@@ -18,6 +19,7 @@ export default function PublicSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const { theme } = useTheme();
+  const { state } = useSidebar();
   const isDark = theme === "dark";
 
   return (
@@ -27,10 +29,8 @@ export default function PublicSidebar({
       className="dark:border-muted z-100 bg-muted-foreground"
     >
       <SidebarHeader className="mb-5 mt-2">
-        <div className="flex gap-4 items-center">
-          <div className="px-2">
-            <SpeedySiteLogo isDark={isDark} />
-          </div>
+        <div className="flex items-center">
+          <SidebarBrand isDark={isDark} collapsed={state === "collapsed"} />
         </div>
       </SidebarHeader>
       <SidebarContent>

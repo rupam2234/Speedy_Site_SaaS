@@ -1,0 +1,15 @@
+project_id = "tmpvygehhshrgsqxzaty"
+
+[db]
+  major_version = 15
+  port = 54322
+  # seed = "supabase/seed.sql"  # uncomment to load starter data on `supabase db reset`
+
+[api]
+  port = 54321
+
+[studio]
+  port = 54323
+
+[inbucket]
+  port = 54324

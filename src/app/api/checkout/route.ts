@@ -5,9 +5,15 @@ import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "build-placeholder"); // build-safe
 
 // Product catalog — $299 one-time per site, never recurring (docs/GOALS.md)
+// `STRIPE_PRICE` is the name used in existing environments; the product-specific
+// `STRIPE_PRICE_MANAGED_WP` is preferred when both are present, so a rename can
+// roll out without breaking checkout anywhere.
+const MANAGED_WP_PRICE =
+  process.env.STRIPE_PRICE_MANAGED_WP ?? process.env.STRIPE_PRICE;
+
 const PRICE_MAP: Record<string, { price: string; productType: "managed_wp" }> = {
   managed_wp: {
-    price: process.env.STRIPE_PRICE_MANAGED_WP!,
+    price: MANAGED_WP_PRICE ?? "",
     productType: "managed_wp",
   },
 };
@@ -28,7 +34,10 @@ export async function POST(req: Request) {
 
     if (!product?.price) {
       return NextResponse.json(
-        { error: "Unknown product or missing Stripe price configuration" },
+        {
+          error:
+            "Unknown product or missing Stripe price configuration: set STRIPE_PRICE_MANAGED_WP (or STRIPE_PRICE) to the $299 managed_wp price id",
+        },
         { status: 400 },
       );
     }
@@ -48,8 +57,10 @@ export async function POST(req: Request) {
         user_id: user.id,
         product_type: product.productType,
       },
-      // required-data page consumes ?session_id= and calls /api/orders/managed/add
-      success_url: `${BASE_URL}/account/one-time-payment/required-data?session_id={CHECKOUT_SESSION_ID}`,
+      // Payment done -> back to the setup gateway, which reconciles the
+      // entitlement itself. Site credentials are collected later, from the
+      // expert workspace.
+      success_url: `${BASE_URL}/dashboard/onboarding`,
       cancel_url: `${BASE_URL}/account/one-time-payment/cancel`,
     });
 

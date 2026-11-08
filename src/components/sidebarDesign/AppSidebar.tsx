@@ -13,30 +13,35 @@ import {
   ListTodo,
   LayoutDashboardIcon,
   LifeBuoy,
+  Lock,
 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   useSidebar,
 } from "../ui/sidebar";
 import MainNav from "./Main-Nav";
 import FooterNav from "./Footer-Nav";
 import { SelectSite } from "../utils/siteSelector";
+import { CustomTooltip } from "../theme";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useTheme } from "../theme/ThemeProvider";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
-import { SpeedySiteLogo } from "@/components/theme/logo";
 import { useIsMobile } from "@/components/theme/use-mobile";
+import { SidebarBrand } from "./SidebarBrand";
 
 export default function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const { state } = useSidebar();
-  const { selectedSite, role } = useSiteContext(); // roleLoading removed - we render instantly from cache
+  const { selectedSite, orders, role } = useSiteContext(); // roleLoading removed - we render instantly from cache
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   const user = useSupabaseUser();
   const { theme } = useTheme();
@@ -47,6 +52,10 @@ export default function AppSidebar({
 
   const selectSiteCollapsed = isMobile ? false : (sidebarOpen ?? false);
   const selectSiteDisabled = pathname.includes("/account");
+
+  const selectedFavicon = orders?.find(
+    (o) => o.website_name === selectedSite,
+  )?.favicon_file;
 
   const isAdmin = role === "admin";
   const isExpert = role === "expert";
@@ -79,10 +88,8 @@ export default function AppSidebar({
         className="dark:border-muted z-100 bg-muted-foreground"
       >
         <SidebarHeader className="mb-5 mt-2">
-          <div className="flex gap-4 items-center">
-            <div className="px-2">
-              <SpeedySiteLogo isDark={isDark} />
-            </div>
+          <div className="flex items-center">
+            <SidebarBrand isDark={isDark} collapsed={selectSiteCollapsed} />
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -123,10 +130,8 @@ export default function AppSidebar({
         className="dark:border-muted z-100 bg-muted-foreground"
       >
         <SidebarHeader className="mb-5 mt-2">
-          <div className="flex gap-4 items-center">
-            <div className="px-2">
-              <SpeedySiteLogo isDark={isDark} />
-            </div>
+          <div className="flex items-center">
+            <SidebarBrand isDark={isDark} collapsed={selectSiteCollapsed} />
           </div>
         </SidebarHeader>
 
@@ -144,6 +149,102 @@ export default function AppSidebar({
     );
   }
 
+  // ─── CONFIGURATION ISOLATION (service setup) ───
+  // While a site is being configured on /dashboard/onboarding the surrounding
+  // chrome drops the site switcher and every site-scoped nav link. Setup is
+  // per-site, so letting the user switch sites (or open another site's data)
+  // here is what made the tour's progress and the page's status disagree. The
+  // flow stays pointed at exactly one site until it is finished.
+  const isConfigRoute = pathname?.startsWith("/dashboard/onboarding");
+  if (isConfigRoute) {
+    const isAddingNewSite = searchParams.get("intent") === "new-site";
+    const configuredSite = searchParams.get("site") ?? selectedSite;
+    // A brand new site has no stored favicon yet, so the mark takes over.
+    const setupSite = isAddingNewSite ? undefined : configuredSite;
+
+    const setupLabel = isAddingNewSite
+      ? "Adding a new site"
+      : configuredSite
+        ? `Configuring ${configuredSite}`
+        : "Service setup";
+
+    return (
+      <Sidebar
+        collapsible="icon"
+        {...props}
+        className="dark:border-muted z-100 bg-muted-foreground"
+      >
+        <SidebarHeader className="mb-5 mt-2">
+          <div className="flex items-center">
+            <SidebarBrand
+              isDark={isDark}
+              collapsed={selectSiteCollapsed}
+              favicon={setupSite ? selectedFavicon : undefined}
+              site={setupSite || undefined}
+            />
+          </div>
+        </SidebarHeader>
+
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Service setup</SidebarGroupLabel>
+            <div className="flex flex-col gap-3 px-2 py-2">
+              {/* Locked site chip: context for the flow, but not switchable. */}
+              {selectSiteCollapsed ? (
+                <div className="flex justify-center">
+                  <CustomTooltip
+                    content={setupLabel}
+                    side="right"
+                    trigger={
+                      <div className="flex size-8 items-center justify-center rounded-sm border border-primary/20 bg-primary/5">
+                        <Lock className="size-3.5 shrink-0 text-primary/60" />
+                      </div>
+                    }
+                  />
+                </div>
+              ) : (
+                <div
+                  className="flex items-center gap-2 rounded-sm border border-primary/20 bg-primary/5 px-2.5 py-2"
+                  title="Site switching is paused during setup"
+                >
+                  <Lock className="size-3.5 shrink-0 text-primary/60" />
+                  <span className="truncate text-xs font-medium text-primary/80">
+                    {setupLabel}
+                  </span>
+                </div>
+              )}
+              {!selectSiteCollapsed && (
+                <p className="text-[11px] leading-relaxed text-primary/60">
+                  Finish connecting this site to unlock the rest of the
+                  dashboard. Site switching is paused while you configure.
+                </p>
+              )}
+            </div>
+          </SidebarGroup>
+        </SidebarContent>
+
+        <SidebarFooter>
+          <FooterNav
+            items={{
+              name: user?.user_metadata.name
+                ? (user?.user_metadata.name as string)
+                : "",
+              email: user?.email ?? "",
+              avatar: "",
+              items: [
+                {
+                  title: "Support Tickets",
+                  url: "/dashboard/tickets",
+                  icon: LifeBuoy,
+                },
+              ],
+            }}
+          />
+        </SidebarFooter>
+      </Sidebar>
+    );
+  }
+
   // ─── REGULAR USER NAV (existing full dashboard) ───
   const data = {
     user: {
@@ -153,6 +254,12 @@ export default function AppSidebar({
       email: user?.email ?? "",
       avatar: "",
       items: [
+        {
+          title: "Settings",
+          url: `/dashboard/settings?site=${selectedSite}`,
+          icon: Settings2,
+        },
+        { title: "Support Tickets", url: "/dashboard/tickets", icon: LifeBuoy },
         { title: "Pricing & Upgrade", url: "/dashboard/pricing", icon: CreditCard },
       ],
     },
@@ -210,12 +317,6 @@ export default function AppSidebar({
           },
         ],
       },
-      {
-        title: "Support Tickets",
-        url: "/dashboard/tickets",
-        icon: LifeBuoy,
-        isActive: false,
-      },
     ],
   };
 
@@ -229,9 +330,12 @@ export default function AppSidebar({
         <div className="flex gap-4 items-center">
           <div className="flex-1">
             {selectSiteDisabled === true ? (
-              <div className="px-2">
-                <SpeedySiteLogo isDark={isDark} />
-              </div>
+              <SidebarBrand
+                isDark={isDark}
+                collapsed={selectSiteCollapsed}
+                favicon={selectedFavicon}
+                site={selectedSite}
+              />
             ) : (
               <SelectSite collapsed={selectSiteCollapsed} />
             )}
@@ -249,12 +353,7 @@ export default function AppSidebar({
               isActive: false;
             }
           }
-          Settings={{
-            title: "Settings",
-            url: `/dashboard/settings?site=${selectedSite}`,
-            icon: Settings2,
-            isActive: false,
-          }}
+
           NavItems={data.navMain.slice(1)}
         />
       </SidebarContent>

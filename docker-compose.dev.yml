@@ -1,0 +1,54 @@
+# Development Override Configuration (Frontend Only)
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+  # ==========================================
+  # Local Supabase Lifecycle Service
+  # ==========================================
+  supabase:
+    image: speedy-site-supabase-dev
+    container_name: speedy-site-supabase-dev
+    build:
+      context: ./supabase
+      dockerfile: Dockerfile.dev
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:${PWD}
+    working_dir: ${PWD}
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    healthcheck:
+      test: ["CMD-SHELL", "npx --yes supabase status >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  # ==========================================
+  # Frontend Web Service (Dev Override)
+  # ==========================================
+  frontend:
+    image: speedy-site-frontend-dev
+    container_name: speedy-site-frontend-dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+      - ./logs:/app/logs
+    ports:
+      - "${FRONTEND_PORT:-3000}:${FRONTEND_PORT:-3000}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - VITE_LOG_LEVEL=${VITE_LOG_LEVEL:-DEBUG}
+      - VITE_LOG_MAX_ENTRIES=${VITE_LOG_MAX_ENTRIES:-5000}
+      - VITE_SUPABASE_URL=${DEV_VITE_SUPABASE_URL:-http://localhost:54321}
+      - VITE_SUPABASE_PUBLISHABLE_KEY=${DEV_VITE_SUPABASE_PUBLISHABLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}
+    depends_on:
+      supabase:
+        condition: service_healthy
