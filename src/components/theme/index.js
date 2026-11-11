@@ -7,7 +7,7 @@ export { SpeedySiteLogo } from "./logo";
 export { useTheme } from "./ThemeProvider";
 export { PlanUpgradeFallback as UpgradeFallback } from "./planFallback";
 export { default as NoSiteSelected } from "./noSite";
-export { AddNewWebsite } from "./addSite";
+export { useAddSite } from "./addSite";
 export { default as SegmentedBar } from "./webVitalBars";
 export { default as SiteFooter } from "./footer";
 export { DeviceController } from "./deviceController";

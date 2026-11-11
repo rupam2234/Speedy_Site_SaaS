@@ -1,372 +1,56 @@
 "use client";
 
-import { OrderData } from "@/app/api";
 import { useState } from "react";
+import { OrderData } from "@/app/api";
 import { useSupabaseUser } from "../utils/supabase/AuthProvider";
-import {
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Code2,
-  Copy,
-  LoaderCircle,
-} from "lucide-react";
 
-interface Props {
-  setDisplay: ({ display }: { display: boolean }) => void;
-}
+export type AddSite = {
+  input: string;
+  setInput: (value: string) => void;
+  isProcessing: boolean;
+  error: string | null;
+  success: string | null;
+  /** Progress lines, oldest first. */
+  log: string[];
+  /** Connects the typed domain and returns it, or null when it failed. */
+  handleAddWebsite: () => Promise<string | null>;
+};
 
-type Steps =
-  | "idle"
-  | "validating"
-  | "fetching favicon"
-  | "upload failed"
-  | "creating order"
-  | "error"
-  | "done"
-  | "Site limit reached";
-
-export function AddNewWebsite({ setDisplay }: Props) {
+/**
+ * Domain -> favicon -> order: the "add a site" half of the setup flow.
+ *
+ * Extracted from the old AddNewWebsite modal (deleted with it) so the
+ * onboarding page can run the same flow inline. The free tier no longer caps
+ * how many sites an account connects, so there is no limit check here.
+ */
+export function useAddSite(): AddSite {
+  const user = useSupabaseUser();
+  const [input, setInput] = useState<string>("");
   const [isProcessing, setProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [input, setInput] = useState<string>("");
-  const user = useSupabaseUser();
+  const [log, setLog] = useState<string[]>([]);
 
-  // for optional RUM script configuration
-  const [showConfig, setShowConfig] = useState(false);
+  function appendLog(stage: string) {
+    setLog((prev) => [...prev, `${new Date().toLocaleTimeString()} - ${stage}`]);
+  }
 
-  const [siteId, setSiteId] = useState<string>("");
-  const [copied, setCopied] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
-
-  const id = siteId?.split?.("-")?.[0] ?? "missing-id";
-
-  const trackingScript =
-    success && siteId
-      ? `<script src="https://rum.speedy.site/rum.js?v=0.0.1&id=${id}" defer></script>`
-      : "";
-
-  const handleCopy = () => {
-    if (!trackingScript) return;
-    navigator.clipboard.writeText(trackingScript);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-[#141414]/80 backdrop-blur-sm">
-      <div className="bg-white dark:bg-secondary-background border border-[#141414] w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-[16px_16px_0px_0px_rgba(20,20,20,1)]">
-        <div className="p-6 border-b border-[#141414] flex justify-between items-center bg-[#141414] text-[#E4E3E0]">
-          <h3 className="font-bold uppercase tracking-widest text-sm">
-            Add New Website
-          </h3>
-
-          <button
-            onClick={() => setDisplay({ display: false })}
-            className="opacity-50 hover:opacity-100 transition-opacity"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="p-8 overflow-y-auto flex-1">
-          <p className="text-sm text-primary/60 mb-6">
-            Enter the primary domain you want to track to enable UX, performance
-            and experience monitoring.
-          </p>
-
-          <form
-            className="flex gap-3 items-center mb-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleAddWebsite();
-            }}
-          >
-            <input
-              type="text"
-              required
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="www.speedy.site"
-              disabled={isProcessing}
-              className="border border-[#141414]/30 rounded-sm px-3 py-2 text-sm w-full max-w-xs outline-none focus:border-[#141414]"
-            />
-
-            <button
-              disabled={isProcessing}
-              onClick={() => {
-                return (document.getElementById("log")!.textContent = "");
-              }}
-              className="bg-green-300 border border-[#141414] px-4 py-2 text-xs font-bold uppercase tracking-wide hover:bg-green-500 transition-all"
-            >
-              {isProcessing ? (
-                <LoaderCircle
-                  size={16}
-                  className="text-primary/20 min-w-14 animate-spin transition-all delay-300"
-                />
-              ) : (
-                "Add Site"
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6">
-            <h4 className="font-bold uppercase text-xs mb-2 text-primary/80">
-              Progress
-            </h4>
-
-            <pre
-              id="log"
-              className="text-black dark:text-amber-300 bg-gray-50 p-4 border border-[#141414]/20 rounded-sm text-xs font-mono h-40 overflow-y-auto"
-            />
-          </div>
-
-          {error && (
-            <p className="mt-2 text-red-500 font-medium text-xs mb-4">
-              {error}
-            </p>
-          )}
-
-          {success !== null && (
-            <div className="mt-2 space-y-4">
-              {/* Success Message */}
-              <div className="flex items-center gap-2 text-emerald-600 font-medium capitalize text-sm">
-                {success}
-              </div>
-
-              {/* Creative Upsell Card - Free Tier Benefits */}
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-xl">🚀</span>
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <h4 className="font-semibold text-primary text-sm">You&apos;re on the Free tier -- CrUX data only</h4>
-                    <p className="text-xs text-primary/80">
-                      You&apos;re seeing 28-day aggregate Chrome UX Report data. Upgrade to unlock real-user monitoring.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="border-t border-primary/10 pt-3 space-y-2">
-                  <p className="font-medium text-xs text-primary/90">Upgrade to <span className="font-bold">WordPress Performance Optimization</span> ($299/yr) and get:</p>
-                  <ul className="space-y-1.5 pl-4">
-                    <li className="flex items-center gap-2 text-xs text-primary/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
-                      <strong>Real-user Core Web Vitals</strong> -- not 28-day averages, actual visitor data
-                    </li>
-                    <li className="flex items-center gap-2 text-xs text-primary/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
-                      <strong>Per-page, per-device, per-browser breakdown</strong> -- know exactly where users struggle
-                    </li>
-                    <li className="flex items-center gap-2 text-xs text-primary/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
-                      <strong>Auto-injected RUM script via plugin</strong> -- no copy-paste, zero maintenance
-                    </li>
-                    <li className="flex items-center gap-2 text-xs text-primary/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
-                      <strong>Issue detection + expert fix service</strong> -- we find and fix bottlenecks for you
-                    </li>
-                    <li className="flex items-center gap-2 text-xs text-primary/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
-                      <strong>Core Web Vitals Pass Guarantee</strong> -- or we keep optimizing until you pass
-                    </li>
-                  </ul>
-                </div>
-
-                <button
-                  onClick={() => setShowUpgrade(true)}
-                  className="w-full mt-2 cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
-                >
-                  Upgrade Now -- $299 / year
-                </button>
-
-                <p className="text-[10px] text-primary/50 text-center">
-                  One payment, one year, no auto-renewal. Cancel anytime.
-                </p>
-              </div>
-
-              <div className="text-xs text-primary/80">
-                (Optional) you may set up the user experience monitoring script
-                now, or reload this page to skip. You can configure it later
-                from the site Settings.
-              </div>
-
-              {/* Optional Action Dropdown */}
-              <div className="border border-primary/20 rounded-sm overflow-hidden transition-all bg-card/50">
-                <button
-                  onClick={() => setShowConfig(!showConfig)}
-                  className="w-full flex items-center justify-between p-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Code2 className="w-4 h-4 text-primary" />
-                    <span>Quick RUM Configuration</span>
-                  </div>
-                  {showConfig ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </button>
-
-                {showConfig && (
-                  <div className="p-4 pt-2 space-y-3 animate-in fade-in slide-in-from-top-1">
-                    <p className="text-xs text-muted-foreground">
-                      Paste this snippet into your site&apos;s{" "}
-                      <code className="text-primary font-bold">
-                        &lt;head&gt;
-                      </code>{" "}
-                      tag to start tracking users on your site.
-                    </p>
-
-                    <div className="relative group">
-                      <pre className="p-3 rounded-sm text-[11px] font-mono overflow-x-auto border border-white/10 bg-primary/80 text-primary-foreground break-all whitespace-pre-wrap leading-relaxed">
-                        {trackingScript}
-                      </pre>
-
-                      <button
-                        onClick={handleCopy}
-                        className="absolute right-2 top-2 p-2 rounded-md bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-sm border border-white/10"
-                        title="Copy to clipboard"
-                      >
-                        {copied ? (
-                          <Check className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                      </button>
-                    </div>
-
-                    <div className="text-[10px] text-muted-foreground/60"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="p-6 border-t border-[#141414] flex gap-3 justify-end">
-          {success !== null && (
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-3 border border-[#141414] uppercase font-bold text-xs tracking-widest hover:bg-[#141414] hover:text-[#E4E3E0] transition-all"
-            >
-              Refresh Page
-            </button>
-          )}
-          <button
-            onClick={() => setDisplay({ display: false })}
-            className="px-6 py-3 border border-[#141414] uppercase font-bold text-xs tracking-widest hover:bg-[#141414] hover:text-[#E4E3E0] transition-all"
-          >
-            Close
-          </button>
-        </div>
-      {showUpgrade && (
-        <div className="fixed inset-0 z-110 flex items-center justify-center p-4 bg-[#141414]/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white dark:bg-secondary-background border border-[#141414] w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-[16px_16px_0px_0px_rgba(20,20,20,1)]">
-            <div className="p-6 border-b border-[#141414] bg-[#141414] text-[#E4E3E0]">
-              <h3 className="font-bold uppercase tracking-widest text-sm">Upgrade to Performance Optimization</h3>
-            </div>
-            <div className="p-6 overflow-y-auto space-y-4">
-              <div className="text-center space-y-2">
-                <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-3xl">🚀</span>
-                </div>
-                <h4 className="text-lg font-semibold text-primary">Unlock Real-User Monitoring</h4>
-                <p className="text-sm text-primary/80">
-                  Move beyond 28-day CrUX averages. See what your actual visitors experience.
-                </p>
-              </div>
-
-              <div className="border-t border-primary/10 pt-4 space-y-3">
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-3 text-sm text-primary/90">
-                    <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center text-white text-xs">✓</span>
-                    <span><strong>Real-user Core Web Vitals</strong> -- actual visitor data, not aggregates</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-sm text-primary/90">
-                    <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center text-white text-xs">✓</span>
-                    <span><strong>Per-page, per-device, per-browser</strong> -- granular breakdowns</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-sm text-primary/90">
-                    <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center text-white text-xs">✓</span>
-                    <span><strong>Auto-injected via plugin</strong> -- zero copy-paste, zero maintenance</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-sm text-primary/90">
-                    <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center text-white text-xs">✓</span>
-                    <span><strong>Issue detection + expert fixes</strong> -- we find & fix bottlenecks</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-sm text-primary/90">
-                    <span className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center text-white text-xs">✓</span>
-                    <span><strong>Core Web Vitals Pass Guarantee</strong> -- or we keep optimizing</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="border-t border-primary/10 pt-4">
-                <p className="text-xs text-primary/60 text-center mb-4">
-                  One payment, one year, no auto-renewal. Cancel anytime.
-                </p>
-                <button
-                  onClick={async () => {
-                    setShowUpgrade(false);
-                    const res = await fetch("/api/checkout", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ priceKey: "managed_wp" }),
-                    });
-                    const data = await res.json();
-                    if (data.url) window.location.href = data.url;
-                  }}
-                  className="w-full cursor-pointer rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
-                >
-                  Upgrade Now -- $299 / year
-                </button>
-                <button
-                  onClick={() => setShowUpgrade(false)}
-                  className="w-full mt-2 cursor-pointer rounded-lg border border-primary/20 bg-transparent px-4 py-2 text-sm font-medium text-primary/80 transition hover:bg-primary/5"
-                >
-                  Maybe Later
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      </div>
-    </div>
-  );
-
-  async function handleAddWebsite() {
+  async function handleAddWebsite(): Promise<string | null> {
     setProcessing(true);
     setError(null);
     setSuccess(null);
-
-    // checks website limit
-    const limit = await checkSiteLimit();
-
-    if (limit?.reachedLimit) {
-      appendLog("Site limit reached");
-      setError(
-        "You have reached site limit. Either upgrade your plan or delete a site",
-      );
-      setProcessing(false);
-      return;
-    }
 
     appendLog("validating");
     const cleanDomain = extractRootDomain(input?.trim());
 
     if (!cleanDomain) {
-      setError("Please enter a valid domain (e.g., example.com)");
+      setError("Please enter a valid domain (e.g. example.com)");
       appendLog("error");
       setProcessing(false);
-      return;
+      return null;
     }
 
-    let favicon_file = null;
+    let favicon_file: string | null = null;
     const favicon = await getFavicon(cleanDomain);
 
     appendLog("fetching favicon");
@@ -376,21 +60,20 @@ export function AddNewWebsite({ setDisplay }: Props) {
 
         if (!favicon_file) {
           appendLog("upload failed");
-          throw new Error("favicon upload failed! skipping...");
         }
-      } catch (error) {
-        console.error(error);
+      } catch (err) {
+        console.error(err);
       }
     }
 
     appendLog("creating order");
-    const res = await addOrder(favicon_file, cleanDomain);
+    const res = await addOrder(favicon_file, cleanDomain, user?.id);
 
     if (!res) {
       setError("Unexpected error occurred.");
       appendLog("error");
       setProcessing(false);
-      return;
+      return null;
     }
 
     if (res.status === 409) {
@@ -401,7 +84,7 @@ export function AddNewWebsite({ setDisplay }: Props) {
       );
       appendLog("error");
       setProcessing(false);
-      return;
+      return null;
     }
 
     // Handle other errors
@@ -409,19 +92,19 @@ export function AddNewWebsite({ setDisplay }: Props) {
       setError(res.body.error || res.body.message || "Failed to create site.");
       appendLog("error");
       setProcessing(false);
-      return;
+      return null;
     }
 
-    // set order id
-    setSiteId(res?.body?.order?.order_id ?? "");
     appendLog("done");
-    setSuccess("Website configured.");
+    setSuccess(`${cleanDomain} is connected.`);
     setProcessing(false);
+    return cleanDomain;
   }
 
   async function addOrder(
     uploadedFavicon: string | null,
     domain: string,
+    userId?: string,
   ): Promise<{ status: number; body: any } | null> {
     if (!domain) return null;
 
@@ -436,7 +119,7 @@ export function AddNewWebsite({ setDisplay }: Props) {
       const res = await fetch("/api/orders/newOrder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderData, user_id: user?.id }),
+        body: JSON.stringify({ orderData, user_id: userId }),
       });
 
       const body = await res.json();
@@ -446,6 +129,16 @@ export function AddNewWebsite({ setDisplay }: Props) {
       return { status: 500, body: { message: error.message } };
     }
   }
+
+  return {
+    input,
+    setInput,
+    isProcessing,
+    error,
+    success,
+    log,
+    handleAddWebsite,
+  };
 }
 
 function extractRootDomain(value: string): string | null {
@@ -481,9 +174,7 @@ async function getFavicon(domain: string): Promise<string | null> {
   try {
     const res = await fetch("/api/favicons/fetch_single", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ website: domain }),
     });
 
@@ -506,15 +197,6 @@ async function getFavicon(domain: string): Promise<string | null> {
   }
 }
 
-function appendLog(stage: Steps) {
-  const logs = document.getElementById("log");
-
-  const log = `${new Date().toLocaleTimeString()}: ${stage}\n`;
-  if (logs) {
-    logs.textContent = logs?.textContent + log;
-  }
-}
-
 async function uploadFavicon(
   faviconFile: string,
   domain: string,
@@ -524,9 +206,7 @@ async function uploadFavicon(
   try {
     const res = await fetch("/api/favicons/upload_favicon", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ imageUrl: faviconFile, domain: domain }),
     });
 
@@ -546,22 +226,4 @@ async function uploadFavicon(
     console.error("Error during favicon upload:", err);
     return null;
   }
-}
-
-async function checkSiteLimit() {
-  const res = await fetch("/api/orders/site-limit", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-
-  const body: any = await res.json();
-
-  if (!res.ok) {
-    console.error(body.message);
-    return;
-  }
-
-  return { reachedLimit: body.reachedLimit };
 }

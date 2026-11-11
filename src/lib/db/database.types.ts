@@ -298,6 +298,9 @@ export type Database = {
           website_address: string
           website_name: string
           weekly_report: boolean | null
+          setup_completed_at: string | null
+          setup_step: number
+          tour: Json
         }
         Insert: {
           favicon_file?: string | null
@@ -312,6 +315,9 @@ export type Database = {
           website_address: string
           website_name: string
           weekly_report?: boolean | null
+          setup_completed_at?: string | null
+          setup_step?: number
+          tour?: Json
         }
         Update: {
           favicon_file?: string | null
@@ -326,6 +332,9 @@ export type Database = {
           website_address?: string
           website_name?: string
           weekly_report?: boolean | null
+          setup_completed_at?: string | null
+          setup_step?: number
+          tour?: Json
         }
         Relationships: []
       }

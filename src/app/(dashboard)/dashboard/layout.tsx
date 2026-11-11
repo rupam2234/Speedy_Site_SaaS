@@ -27,6 +27,19 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!selectedSite || role === "admin" || role === "expert") return;
+
+    // While the setup flow is being used to connect another site it has no
+    // active site on purpose; forcing ?site= in would contradict the intent
+    // (and re-point the flow at the previous site).
+    // Never rewrite ?site= while the user is in the setup flow. The tour and the
+    // URL are the single source of truth for which site is being configured, and
+    // the context selection is intentionally cleared/ignored there (adding a new
+    // site has no active site on purpose), so forcing it here would re-point the
+    // flow at the previous site.
+    if (pathname?.startsWith("/dashboard/onboarding")) {
+      return;
+    }
+
     const params = new URLSearchParams(searchParams.toString());
     params.set("site", selectedSite);
     const currentUrl = `${pathname}?${params.toString()}`;
@@ -44,12 +57,16 @@ function LayoutContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (selectedSite || role === "admin" || role === "expert") return;
 
+    // The setup page is the gateway: a user with no site yet belongs there (its
+    // first step connects one), so never bounce them away.
+    if (pathname?.startsWith("/dashboard/onboarding")) return;
+
     const timeout = setTimeout(() => {
       router.push("/dashboard");
     }, 7000);
 
     return () => clearTimeout(timeout);
-  }, [selectedSite, role, router]);
+  }, [selectedSite, role, pathname, router]);
 
   // set active plan
   useEffect(() => {
