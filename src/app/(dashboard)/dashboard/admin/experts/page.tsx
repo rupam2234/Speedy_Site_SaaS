@@ -18,20 +18,49 @@ export default function AdminExperts() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteCapacity, setInviteCapacity] = useState(10);
   const [inviting, setInviting] = useState(false);
+  const [autoAssignEnabled, setAutoAssignEnabled] = useState(true);
+  const [autoAssignLoading, setAutoAssignLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/experts");
+      const [res, settingRes] = await Promise.all([
+        fetch("/api/admin/experts"),
+        fetch("/api/admin/settings/auto-assignment"),
+      ]);
       const json = await res.json();
       if (!res.ok) throw new Error(json.message);
       setExperts(json.experts ?? []);
+
+      if (settingRes.ok) {
+        const settingJson = await settingRes.json();
+        setAutoAssignEnabled(Boolean(settingJson.enabled));
+      }
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setLoading(false);
+      setAutoAssignLoading(false);
     }
   }, []);
+
+  const handleToggleAutoAssign = async () => {
+    const nextVal = !autoAssignEnabled;
+    setAutoAssignEnabled(nextVal);
+    try {
+      const res = await fetch("/api/admin/settings/auto-assignment", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextVal }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message);
+      toast.success(nextVal ? "Auto-assignment enabled" : "Auto-assignment paused");
+    } catch (err: any) {
+      setAutoAssignEnabled(!nextVal);
+      toast.error(err.message || "Failed to update auto-assignment setting");
+    }
+  };
 
   useEffect(() => {
     load();
@@ -90,9 +119,37 @@ export default function AdminExperts() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Service Experts</h1>
-        <p className="text-sm text-muted-foreground">Invite experts by email and manage the round-robin pool.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Service Experts</h1>
+          <p className="text-sm text-muted-foreground">Invite experts by email and manage the round-robin pool.</p>
+        </div>
+
+        {/* Auto-Assignment Toggle */}
+        <div className="flex items-center gap-2.5 bg-card border rounded-lg px-3.5 py-2 shadow-sm">
+          <div className="flex flex-col text-left">
+            <span className="text-xs font-semibold leading-tight">Auto-Assignment</span>
+            <span className="text-[10px] text-muted-foreground leading-tight">
+              {autoAssignLoading ? "Loading..." : autoAssignEnabled ? "Active" : "Paused"}
+            </span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autoAssignEnabled}
+            disabled={autoAssignLoading}
+            onClick={handleToggleAutoAssign}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              autoAssignEnabled ? "bg-emerald-600" : "bg-muted-foreground/30"
+            } ${autoAssignLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                autoAssignEnabled ? "translate-x-4" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-end gap-3 border rounded-lg p-4">

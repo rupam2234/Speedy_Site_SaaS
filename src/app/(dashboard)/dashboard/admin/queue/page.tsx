@@ -35,6 +35,8 @@ export default function AdminQueue() {
   const [experts, setExperts] = useState<ExpertPoolMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [batchAssigning, setBatchAssigning] = useState(false);
+  const [autoAssignEnabled, setAutoAssignEnabled] = useState(true);
+  const [autoAssignLoading, setAutoAssignLoading] = useState(true);
 
   // Quick Assign Modal state
   const [assignFor, setAssignFor] = useState<QueueOrder | null>(null);
@@ -42,9 +44,10 @@ export default function AdminQueue() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [queueRes, expertsRes] = await Promise.all([
+      const [queueRes, expertsRes, settingRes] = await Promise.all([
         fetch("/api/admin/queue"),
         fetch("/api/admin/experts"),
+        fetch("/api/admin/settings/auto-assignment"),
       ]);
 
       const queueJson = await queueRes.json();
@@ -55,10 +58,16 @@ export default function AdminQueue() {
 
       setQueue(queueJson.queue ?? []);
       setExperts(expertsJson.experts ?? []);
+
+      if (settingRes.ok) {
+        const settingJson = await settingRes.json();
+        setAutoAssignEnabled(Boolean(settingJson.enabled));
+      }
     } catch (e: any) {
       toast.error(e.message || "Failed to load queue");
     } finally {
       setLoading(false);
+      setAutoAssignLoading(false);
     }
   }, []);
 
@@ -66,9 +75,28 @@ export default function AdminQueue() {
     loadData();
   }, [loadData]);
 
+  const handleToggleAutoAssign = async () => {
+    const nextVal = !autoAssignEnabled;
+    setAutoAssignEnabled(nextVal);
+    try {
+      const res = await fetch("/api/admin/settings/auto-assignment", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextVal }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message);
+      toast.success(nextVal ? "Auto-assignment enabled" : "Auto-assignment paused");
+    } catch (err: any) {
+      setAutoAssignEnabled(!nextVal);
+      toast.error(err.message || "Failed to update auto-assignment setting");
+    }
+  };
+
   const handleAssignSingle = async (orderId: string, expertId?: string) => {
     try {
-      const res = await fetch("/api/admin/orders/assign", {
+      const endpoint = expertId ? "/api/admin/assignments" : "/api/admin/orders/assign";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(expertId ? { orderId, expertId } : { orderId }),
@@ -114,16 +142,44 @@ export default function AdminQueue() {
           </p>
         </div>
 
-        {queue.length > 0 && (
-          <button
-            onClick={handleBatchAutoAssign}
-            disabled={batchAssigning || availableExperts.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg shadow-sm hover:opacity-90 disabled:opacity-50"
-          >
-            <Sparkles className="w-4 h-4" />
-            {batchAssigning ? "Dispatching..." : "Auto-Assign All Eligible"}
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Auto-Assignment Toggle */}
+          <div className="flex items-center gap-2.5 bg-card border rounded-lg px-3.5 py-2 shadow-sm">
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-semibold leading-tight">Auto-Assignment</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">
+                {autoAssignLoading ? "Loading..." : autoAssignEnabled ? "Active" : "Paused"}
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoAssignEnabled}
+              disabled={autoAssignLoading}
+              onClick={handleToggleAutoAssign}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                autoAssignEnabled ? "bg-emerald-600" : "bg-muted-foreground/30"
+              } ${autoAssignLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  autoAssignEnabled ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+
+          {queue.length > 0 && (
+            <button
+              onClick={handleBatchAutoAssign}
+              disabled={batchAssigning || availableExperts.length === 0}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg shadow-sm hover:opacity-90 disabled:opacity-50"
+            >
+              <Sparkles className="w-4 h-4" />
+              {batchAssigning ? "Dispatching..." : "Auto-Assign All Eligible"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Critical SLA Warning Banner */}

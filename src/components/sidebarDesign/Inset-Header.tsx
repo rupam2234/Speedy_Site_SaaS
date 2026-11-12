@@ -4,7 +4,7 @@ import { Bell, Check, Circle } from "lucide-react";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import { Separator } from "../ui/separator";
 import { SidebarTrigger } from "../ui/sidebar";
-import { useSupabaseUser } from "../utils/supabase/AuthProvider";
+import { useSupabaseUser, useUserRole } from "../utils/supabase/AuthProvider";
 import { useEffect, useRef, useState } from "react";
 import { cachedData, cleanExpiredCache } from "../utils";
 import { createPortal } from "react-dom";
@@ -17,6 +17,7 @@ export default function SidebarInsetHeader() {
   const [notifcations, setNotifications] = useState<Notifications[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const user = useSupabaseUser();
+  const role = useUserRole();
   const { selectedSite, orders } = useSiteContext();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,14 +46,13 @@ export default function SidebarInsetHeader() {
       if (!dropdownRef.current?.contains(target)) {
         setShowNotifications(false);
 
-        // silently update the notifications on db
-        updateNotifications(tempReadNotifications.current);
+        if (tempReadNotifications.current.length > 0) {
+          const idsToMark = [...tempReadNotifications.current];
+          tempReadNotifications.current = [];
+          sessionStorage.removeItem("ss-notifications");
 
-        // if update success / no error thrown, we can flash the cache
-        sessionStorage.removeItem("ss-notifications");
-
-        // reset temp notification
-        tempReadNotifications.current = [];
+          updateNotifications(idsToMark).catch(() => {});
+        }
       }
     }
 
@@ -134,73 +134,75 @@ export default function SidebarInsetHeader() {
           setShowNotifications((prev) => !prev);
         }}
       >
-        {!needsSetup && activeSite ? (
-          /* Site is fully configured: show it as a status, not a call to action. */
-          <span className="inline-flex items-center gap-1.5 rounded-sm bg-emerald-500 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
-            Connected
-          </span>
-        ) : needsSetup ? (
-          <CustomTooltip
-            content={
-              <div className="flex w-52 flex-col gap-2 p-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
-                  Progress
-                </p>
-                <ul className="flex flex-col gap-1.5">
-                  {setupSteps.map((step) => (
-                    <li
-                      key={step.label}
-                      className="flex items-center gap-2 text-[11px] leading-none"
-                    >
-                      {step.done ? (
-                        <Check className="size-3 shrink-0 text-emerald-500" />
-                      ) : (
-                        <Circle className="size-3 shrink-0 opacity-30" />
-                      )}
-                      <span className={step.done ? "" : "opacity-60"}>
-                        {step.label}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-[10px] leading-relaxed opacity-60">
-                  {stepsLeft === 0
-                    ? "Everything is configured."
-                    : isOnSetupRoute
-                      ? "You're already on the setup screen."
-                      : `${stepsLeft} step${stepsLeft === 1 ? "" : "s"} left — click to continue.`}
-                </p>
-              </div>
-            }
-            side="bottom"
-            delay={200}
-            trigger={
-              <button
-                onClick={() => {
-                  // Already inside setup: never navigate again, or the current
-                  // intent (e.g. ?intent=new-site) is dropped and the tour falls
-                  // back to a previously-selected configured site.
-                  if (isOnSetupRoute) return;
-                  router.push(
-                    activeSite
-                      ? `/dashboard/onboarding?site=${activeSite}`
-                      : "/dashboard/onboarding",
-                  );
-                }}
-                onMouseDown={(e) => e.stopPropagation()}
-                aria-label="Setup status"
-                disabled={isOnSetupRoute}
-                className={`text-xs font-bold underline decoration-dotted underline-offset-4 ${
-                  isOnSetupRoute
-                    ? "cursor-help opacity-60"
-                    : "cursor-pointer hover:text-primary-foreground/80"
-                }`}
-              >
-                Setup status
-              </button>
-            }
-          />
-        ) : null}
+        {role === "user" && (
+          !needsSetup && activeSite ? (
+            /* Site is fully configured: show it as a status, not a call to action. */
+            <span className="inline-flex items-center gap-1.5 rounded-sm bg-emerald-500 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
+              Connected
+            </span>
+          ) : needsSetup ? (
+            <CustomTooltip
+              content={
+                <div className="flex w-52 flex-col gap-2 p-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                    Progress
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    {setupSteps.map((step) => (
+                      <li
+                        key={step.label}
+                        className="flex items-center gap-2 text-[11px] leading-none"
+                      >
+                        {step.done ? (
+                          <Check className="size-3 shrink-0 text-emerald-500" />
+                        ) : (
+                          <Circle className="size-3 shrink-0 opacity-30" />
+                        )}
+                        <span className={step.done ? "" : "opacity-60"}>
+                          {step.label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-[10px] leading-relaxed opacity-60">
+                    {stepsLeft === 0
+                      ? "Everything is configured."
+                      : isOnSetupRoute
+                        ? "You're already on the setup screen."
+                        : `${stepsLeft} step${stepsLeft === 1 ? "" : "s"} left — click to continue.`}
+                  </p>
+                </div>
+              }
+              side="bottom"
+              delay={200}
+              trigger={
+                <button
+                  onClick={() => {
+                    // Already inside setup: never navigate again, or the current
+                    // intent (e.g. ?intent=new-site) is dropped and the tour falls
+                    // back to a previously-selected configured site.
+                    if (isOnSetupRoute) return;
+                    router.push(
+                      activeSite
+                        ? `/dashboard/onboarding?site=${activeSite}`
+                        : "/dashboard/onboarding",
+                    );
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  aria-label="Setup status"
+                  disabled={isOnSetupRoute}
+                  className={`text-xs font-bold underline decoration-dotted underline-offset-4 ${
+                    isOnSetupRoute
+                      ? "cursor-help opacity-60"
+                      : "cursor-pointer hover:text-primary-foreground/80"
+                  }`}
+                >
+                  Setup status
+                </button>
+              }
+            />
+          ) : null
+        )}
 
         <span className="relative">
           <Bell
@@ -296,6 +298,8 @@ export default function SidebarInsetHeader() {
    * @param ids notifications that are viewed / read
    */
   async function updateNotifications(ids: string[]) {
+    if (!ids.length) return;
+
     const res = await fetch("/api/notifications/update", {
       method: "POST",
       headers: {
@@ -303,6 +307,8 @@ export default function SidebarInsetHeader() {
       },
       body: JSON.stringify({ ids: ids }),
     });
+
+    if (res.status === 401) return;
 
     const body: any = await res.json();
 

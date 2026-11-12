@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
 import { requireRole } from "@/app/api/helpers/requireRole";
+import { dispatchAssignmentNotification } from "@/lib/services/assignmentService";
 
 const worker = setupDB();
 
@@ -108,7 +109,10 @@ export async function POST() {
           status: "pending",
         });
 
-      if (!insertError) assignedCount++;
+      if (!insertError) {
+        assignedCount++;
+        await dispatchAssignmentNotification(item.order_id, picked);
+      }
     }
 
     return NextResponse.json(

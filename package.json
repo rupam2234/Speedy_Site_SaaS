@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit --skipLibCheck",
+    "test": "node --import ./tests/register.mjs --test tests/*.test.mjs",
     "build:extended-vitals": "npx esbuild scripts/extended-rum.js --bundle --minify --format=esm --outfile=public/rum.js",
     "build:journey": "npx esbuild scripts/journey.js --bundle --minify --format=iife --outfile=public/journey.min.js"
   },
