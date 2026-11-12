@@ -1,5 +1,5 @@
 # ==============================================================================
-# speedy-site — Task Automation Makefile (Frontend / Edge)
+# speedy-site: Task Automation Makefile (Frontend / Edge)
 # ==============================================================================
 
 .PHONY: help check lint build \
@@ -84,7 +84,7 @@ dev:
 	pnpm run dev
 
 docker-dev:
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+	docker compose -f docker-compose.dev.yml up --build
 
 docker-prod:
 	docker compose up --build -d

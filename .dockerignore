@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+next-env.d.ts
+cloudflare-workers/**/node_modules
+cloudflare-workers/**/.wrangler
+supabase/.temp
+supabase/.branches
+coverage
+*.log

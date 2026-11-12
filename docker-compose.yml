@@ -1,8 +1,8 @@
-# Supabase Local Development Stack
+# Full Stack Production Configuration (Supabase + Next.js Frontend)
 # Matches supabase/config.toml ports
-# Run: docker compose up -d
+# Run: docker compose up --build -d
 # Stop: docker compose down
-# Reset DB: docker compose down -v && docker compose up -d
+# Reset DB: docker compose down -v && docker compose up --build -d
 
 services:
   # ---------------------------------------------------------------------------
@@ -19,12 +19,84 @@ services:
       - "54322:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Auth (GoTrue authentication server)
+  # ---------------------------------------------------------------------------
+  auth:
+    image: public.ecr.aws/supabase/gotrue:v2.197.0
+    container_name: supabase_auth
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: http://localhost:54321
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://postgres:postgres@db:5432/postgres?search_path=auth
+      GOTRUE_DB_NAMESPACE: auth
+      GOTRUE_SITE_URL: http://localhost:3000
+      GOTRUE_URI_ALLOW_LIST: "*"
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_SMTP_ADMIN_EMAIL: admin@email.com
+      GOTRUE_SMTP_HOST: inbucket
+      GOTRUE_SMTP_PORT: 2500
+      GOTRUE_SMTP_SENDER_NAME: speedy-site
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9999/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Database Migrations (runs after db and auth initialize schemas)
+  # ---------------------------------------------------------------------------
+  migrate:
+    image: supabase/postgres:15.8.1.021
+    container_name: supabase_migrate
+    environment:
+      PGPASSWORD: postgres
+    volumes:
+      - ./supabase/migrations:/migrations:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        psql -h db -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE SCHEMA IF NOT EXISTS supabase_migrations; CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations (version text PRIMARY KEY, statements text[], name text);"
+        for f in /migrations/*.sql; do
+          [ -f "$$f" ] || continue
+          base="$$(basename "$$f" .sql)"
+          ver="$${base%%_*}"
+          name="$${base#*_}"
+          applied="$$(psql -h db -U postgres -d postgres -tAc "SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '$${ver}'")"
+          if [ "$$applied" != "1" ]; then
+            echo "Applying migration $$base..."
+            psql -h db -U postgres -d postgres -v ON_ERROR_STOP=1 -f "$$f"
+            psql -h db -U postgres -d postgres -v ON_ERROR_STOP=1 -c "INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('$${ver}', '$${name}') ON CONFLICT DO NOTHING;"
+          fi
+        done
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    restart: "no"
     networks:
       - supabase
 
@@ -39,16 +111,16 @@ services:
       PGRST_DB_SCHEMA: public
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
-    ports:
-      - "54321:3000"
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     networks:
       - supabase
 
   # ---------------------------------------------------------------------------
-  # Kong API Gateway (routes requests to rest, realtime, storage, etc.)
+  # Kong API Gateway (routes requests to rest, auth, realtime, storage, etc.)
   # ---------------------------------------------------------------------------
   kong:
     image: kong:3.4
@@ -64,9 +136,14 @@ services:
     volumes:
       - ./supabase/kong.yml:/usr/local/kong/kong.yml:ro
     depends_on:
-      - rest
-      - realtime
-      - storage
+      auth:
+        condition: service_healthy
+      rest:
+        condition: service_started
+      realtime:
+        condition: service_started
+      storage:
+        condition: service_started
     networks:
       - supabase
 
@@ -87,8 +164,6 @@ services:
       API_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
       SECRET_KEY_BASE: not-the-production-secret-key-base-change-me
       ERL_AFLAGS: "-proto_dist inet_tcp"
-    ports:
-      - "54321:4000"
     depends_on:
       db:
         condition: service_healthy
@@ -102,8 +177,8 @@ services:
     image: supabase/storage-api:v1.11.4
     container_name: supabase_storage
     environment:
-      ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiZXhwIjoxOTk5OTk5OTk5fQ.4lG1Vw7D0n73r8i8kF9cVt8t2N5l5G7w8w8w8w8w8w8
-      SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJleHAiOjE5OTk5OTk5OTl9.5lG1Vw7D0n73r8i8kF9cVt8t2N5l5G7w8w8w8w8w8w8
+      ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
       POSTGREST_URL: http://rest:3000
       PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
       DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
@@ -115,13 +190,13 @@ services:
       GLOBAL_S3_BUCKET: stub
       ENABLE_IMAGE_TRANSFORMATION: "true"
       IMGPROXY_URL: http://imgproxy:5001
-    ports:
-      - "54321:5000"
     volumes:
       - storage_data:/var/lib/storage
     depends_on:
-      - db
-      - rest
+      db:
+        condition: service_healthy
+      rest:
+        condition: service_started
     networks:
       - supabase
 
@@ -154,8 +229,6 @@ services:
       PG_META_DB_NAME: postgres
       PG_META_DB_USER: postgres
       PG_META_DB_PASSWORD: postgres
-    ports:
-      - "54321:8080"
     depends_on:
       db:
         condition: service_healthy
@@ -201,10 +274,8 @@ services:
     image: supabase/edge-runtime:v1.64.4
     container_name: supabase_edge_runtime
     environment:
-      SUPABASE_EDGE_RUNTIME_PORT: 54321
+      SUPABASE_EDGE_RUNTIME_PORT: 9000
       SUPABASE_EDGE_RUNTIME_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
-    ports:
-      - "54321:9000"
     networks:
       - supabase
 
@@ -223,8 +294,6 @@ services:
       LOGFLARE_PG_USER: postgres
       LOGFLARE_PG_PASSWORD: postgres
       LOGFLARE_PG_DATABASE: postgres
-    ports:
-      - "54321:4000"
     depends_on:
       db:
         condition: service_healthy
@@ -255,6 +324,38 @@ services:
       retries: 10
     networks:
       - supabase
+
+  # ---------------------------------------------------------------------------
+  # Frontend (Next.js Production Server)
+  # ---------------------------------------------------------------------------
+  frontend:
+    image: speedy-site-frontend
+    container_name: speedy-site-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:54321}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}
+        NEXT_PUBLIC_DEV_BASE_URL: ${NEXT_PUBLIC_DEV_BASE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_PROD_BASE_URL: ${NEXT_PUBLIC_PROD_BASE_URL:-http://localhost:3000}
+    network_mode: host
+    environment:
+      NODE_ENV: production
+      PORT: ${FRONTEND_PORT:-3000}
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:54321}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU}
+      NEXT_PUBLIC_DEV_BASE_URL: ${NEXT_PUBLIC_DEV_BASE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_PROD_BASE_URL: ${NEXT_PUBLIC_PROD_BASE_URL:-http://localhost:3000}
+    depends_on:
+      kong:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
 
 networks:
   supabase:
