@@ -105,7 +105,7 @@ function buildPluginPhp(secretKey: string) {
       if ($cached !== false) {
           // Cache hit
           if (!empty($cached['inject']) && !empty($cached['scriptUrl'])) {
-              wp_enqueue_script('speedy-site-rum', $cached['scriptUrl'], array(), null, true);
+              wp_enqueue_script('speedy-site-rum', $cached['scriptUrl'], array(), null, false);
           }
           return;
       }
@@ -140,7 +140,7 @@ function buildPluginPhp(secretKey: string) {
 
       // If entitled, enqueue the collector
       if (!empty($data['inject']) && !empty($data['scriptUrl'])) {
-          wp_enqueue_script('speedy-site-rum', $data['scriptUrl'], array(), null, true);
+          wp_enqueue_script('speedy-site-rum', $data['scriptUrl'], array(), null, false);
       }
   });
 
