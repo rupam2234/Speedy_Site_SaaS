@@ -158,6 +158,32 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Affordance default: Tailwind v4 preflight no longer gives buttons a
+     pointer cursor, so declare it here for every clickable element.
+     Explicit cursor-* utilities still override this (utilities layer wins). */
+  a[href],
+  button,
+  label,
+  select,
+  summary,
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"]::file-selector-button {
+    cursor: pointer;
+  }
+
+  /* A disabled control must never invite a click. */
+  button:disabled,
+  button[aria-disabled="true"],
+  button[data-disabled="true"],
+  a[aria-disabled="true"],
+  a[data-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 .cl-cardBox {

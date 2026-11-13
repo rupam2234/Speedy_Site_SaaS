@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, LucideIcon, Settings2 } from "lucide-react";
+import { ChevronRight, LucideIcon } from "lucide-react";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -21,7 +21,6 @@ import { LayoutDashboardIcon } from "lucide-react";
 export default function MainNav({
   NavItems,
   DashboardItems,
-  Settings,
 }: {
   NavItems: {
     title: string;
@@ -38,12 +37,7 @@ export default function MainNav({
     isActive: false;
   };
 
-  Settings?: {
-    title: string;
-    url: string;
-    icon: typeof Settings2;
-    isActive: false;
-  };
+
 }) {
   return (
     <SidebarGroup>
@@ -107,22 +101,7 @@ export default function MainNav({
         ))}
       </SidebarMenu>
 
-      {Settings && Settings.title && (
-        <SidebarMenu>
-          <Collapsible className="mb-2">
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                <a href={Settings.url} title={Settings.title}>
-                  <SidebarMenuButton tooltip={Settings.title}>
-                    {Settings.icon && <Settings.icon />}
-                    {Settings.title}
-                  </SidebarMenuButton>
-                </a>
-              </CollapsibleTrigger>
-            </SidebarMenuItem>
-          </Collapsible>
-        </SidebarMenu>
-      )}
+
     </SidebarGroup>
   );
 }

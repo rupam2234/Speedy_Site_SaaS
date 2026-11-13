@@ -9,46 +9,13 @@ import { useSiteContext } from "../siteContext";
 import { cachedData, cleanExpiredCache } from "@/components/utils";
 import { createPortal } from "react-dom";
 
-export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
-  const { selectedSite } = useSiteContext();
-  const [secretKey, setSecretKey] = useState<string>("");
 
-  useEffect(() => {
-    if (!selectedSite) return;
-
-    // Cleanup expired keys
-    cleanExpiredCache({
-      prefix: "plugin_analysis_secret",
-      session_Storage: false,
-    });
-
-    const fetchSecret = async () => {
-      try {
-        // Fetch the secret from cache or API
-        let secret = await getWpSecret(selectedSite);
-
-        // If no secret found, generate a new key and save it
-        if (!secret) {
-          const newKey =
-            Math.random().toString(36).substring(2, 15) +
-            Math.random().toString(36).substring(2, 15);
-
-          await saveWpSecret(newKey, selectedSite);
-          secret = newKey; // update secret with new key
-        }
-
-        // Set state with the resolved secret
-        setSecretKey(secret);
-      } catch (error) {
-        console.error("Failed to fetch or generate secret:", error);
-        setSecretKey(""); // or handle error state as needed
-      }
-    };
-
-    fetchSecret();
-  }, [selectedSite]);
-
-  const phpCode = `<?php
+/**
+ * Builds the plugin PHP with this domain's access key baked in, so the
+ * downloaded zip is pre-authenticated on activation day.
+ */
+function buildPluginPhp(secretKey: string) {
+  return `<?php
   /**
    * Plugin Name: Speedy Site Plugin Auditor
    * Description: Connects your site to the Speedy Site plugin performance auditor and auto-injects RUM collector for paid plans.
@@ -138,7 +105,7 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
       if ($cached !== false) {
           // Cache hit
           if (!empty($cached['inject']) && !empty($cached['scriptUrl'])) {
-              wp_enqueue_script('speedy-site-rum', $cached['scriptUrl'], array(), null, true);
+              wp_enqueue_script('speedy-site-rum', $cached['scriptUrl'], array(), null, false);
           }
           return;
       }
@@ -173,7 +140,7 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
 
       // If entitled, enqueue the collector
       if (!empty($data['inject']) && !empty($data['scriptUrl'])) {
-          wp_enqueue_script('speedy-site-rum', $data['scriptUrl'], array(), null, true);
+          wp_enqueue_script('speedy-site-rum', $data['scriptUrl'], array(), null, false);
       }
   });
 
@@ -224,7 +191,85 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
       );
   }
   `;
+}
 
+/**
+ * Reads the plugin access key for a domain, generating and storing one the
+ * first time. Same cached key the plugin page has always used.
+ */
+export async function resolvePluginSecret(domain: string): Promise<string> {
+  if (!domain) throw new Error("Domain is required");
+
+  // Drop expired cached keys before reading
+  cleanExpiredCache({
+    prefix: "plugin_analysis_secret",
+    session_Storage: false,
+  });
+
+  const existing = await getWpSecret(domain);
+  if (existing) return existing;
+
+  // First time for this domain: generate a key and store it
+  const generated =
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15);
+  await saveWpSecret(generated, domain);
+  return generated;
+}
+
+/**
+ * Zips the plugin with this domain access key baked in and downloads it.
+ * Shared by the connection modal and the setup tour, so a site connects on
+ * activation without the user copying any key.
+ */
+export async function downloadPluginZip(domain: string): Promise<void> {
+  if (!domain) throw new Error("Domain is required");
+
+  const secretKey = await resolvePluginSecret(domain);
+
+  const zip = new JSZip();
+  const folder = zip.folder("speedy-site-plugin-auditor");
+  folder?.file("speedy-site-plugin-auditor.php", buildPluginPhp(secretKey));
+  const content = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(content);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "speedy-site-plugin-auditor.zip";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
+  const { selectedSite } = useSiteContext();
+  const [secretKey, setSecretKey] = useState<string>("");
+
+  useEffect(() => {
+    if (!selectedSite) return;
+
+    let alive = true;
+    resolvePluginSecret(selectedSite)
+      .then((secret) => {
+        if (alive) setSecretKey(secret);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch or generate secret:", error);
+        if (alive) setSecretKey("");
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [selectedSite]);
+
+  async function handlePluginDownload() {
+    try {
+      await downloadPluginZip(selectedSite);
+    } catch (error) {
+      console.error("Failed to download plugin:", error);
+    }
+  }
   return createPortal(
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-[#141414]/80 backdrop-blur-sm">
       <motion.div
@@ -250,7 +295,7 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
             <div className="relative mt-8 group">
               <div className="flex gap-2">
                 <button
-                  onClick={() => handlePluginDownload(phpCode)}
+                  onClick={handlePluginDownload}
                   disabled={!secretKey}
                   className="border border-[#141414] p-2 hover:bg-[#141414] hover:text-[#E4E3E0]
                             disabled:opacity-50 disabled:cursor-not-allowed
@@ -338,29 +383,12 @@ export async function getWpSecret(domain: string) {
 
     const body: any = await res.json();
 
-    if (!res.ok) {
+    if (!res.ok && res.status !== 404) {
+      // 404 is the normal "no secret minted for this site yet" answer, the
+      // caller mints one; anything else is worth seeing in the console.
       console.error(body.message ?? "failed to fetch secret");
     }
 
     return body.data;
   }
-}
-
-/**
- * Downloads the plugin in zip file into user's PC
- * @param phpCode plugin code
- */
-async function handlePluginDownload(phpCode: string) {
-  const zip = new JSZip();
-  const folder = zip.folder("speedy-site-plugin-auditor");
-  folder?.file("speedy-site-plugin-auditor.php", phpCode);
-  const content = await zip.generateAsync({ type: "blob" });
-  const url = URL.createObjectURL(content);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "speedy-site-plugin-auditor.zip";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }

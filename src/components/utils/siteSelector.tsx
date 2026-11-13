@@ -3,15 +3,15 @@
 import * as React from "react";
 import { ArrowRight, CirclePlus, PlusCircle } from "lucide-react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
-import { AddNewWebsite, CustomTooltip } from "../theme";
-import Image from "next/image";
-import { createPortal } from "react-dom";
+import { CustomTooltip } from "../theme";
+import { SiteIcon } from "./siteIcon";
+import { useRouter } from "next/navigation";
 
 export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
   const { selectedSite, setSelectedSite, orders, setCollapsed } =
     useSiteContext();
   const [isOpen, setOpen] = React.useState<boolean>(false);
-  const [displayModal, setDisplayModal] = React.useState<boolean>(false);
+  const router = useRouter();
 
   const selectorRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -55,7 +55,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
       <>
         <div
           className="text-blue-500 font-medium text-sm flex p-2 items-center gap-1 cursor-pointer min-w-30"
-          onClick={() => setDisplayModal(true)}
+          onClick={() => router.push("/dashboard/onboarding?intent=new-site")}
         >
           {collapsed ? (
             <CustomTooltip
@@ -70,13 +70,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
           )}
         </div>
 
-        {displayModal &&
-          createPortal(
-            <AddNewWebsite
-              setDisplay={({ display }) => setDisplayModal(display)}
-            />,
-            document.body,
-          )}
+
       </>
     );
   }
@@ -99,32 +93,18 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                 content={selectedSite}
                 side="right"
                 trigger={
-                  <Image
-                    src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon.fav}`}
-                    alt={`${selectedFavicon.site}_logo`}
-                    width={16}
-                    height={16}
-                    className="rounded"
-                    loading="lazy"
+                  <SiteIcon
+                    favicon={selectedFavicon.fav}
+                    site={selectedFavicon.site}
                   />
                 }
               />
             ) : (
               <div className="flex items-center gap-1">
-                {selectedFavicon.fav === null ? (
-                  <div className="w-4 h-4 bg-gray-300 rounded flex items-center justify-center text-xs text-gray-600">
-                    ?
-                  </div>
-                ) : (
-                  <Image
-                    src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${selectedFavicon.fav}`}
-                    alt={`${selectedFavicon.site}_logo`}
-                    width={16}
-                    height={16}
-                    className="rounded"
-                    loading="lazy"
-                  />
-                )}
+                <SiteIcon
+                  favicon={selectedFavicon.fav}
+                  site={selectedFavicon.site}
+                />
 
                 <span className="truncate">{selectedSite}</span>
               </div>
@@ -154,20 +134,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                   setOpen(false);
                 }}
               >
-                {x.favicon_file === null || x.favicon_file === undefined ? (
-                  <div className="w-4 h-4 bg-gray-300 rounded flex items-center justify-center text-xs text-gray-600">
-                    ?
-                  </div>
-                ) : (
-                  <Image
-                    src={`https://tmpvygehhshrgsqxzaty.supabase.co/storage/v1/object/public/favicons/${x.favicon_file}`}
-                    alt={`${x.website_name}_logo`}
-                    width={16}
-                    height={16}
-                    className="rounded"
-                    loading="lazy"
-                  />
-                )}
+                <SiteIcon favicon={x.favicon_file} site={x.website_name} />
 
                 <p>{x.website_name}</p>
               </div>
@@ -175,7 +142,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
           })}
           <div
             className="flex items-center gap-2 py-1 text-sm px-2 hover:bg-primary/5 dark:hover:bg-secondary-background cursor-pointer"
-            onClick={() => setDisplayModal(true)}
+            onClick={() => router.push("/dashboard/onboarding?intent=new-site")}
           >
             <PlusCircle size={16} className="text-primary/80" />
             Add a new site
@@ -183,13 +150,7 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
         </div>
       )}
 
-      {displayModal &&
-        createPortal(
-          <AddNewWebsite
-            setDisplay={({ display }) => setDisplayModal(display)}
-          />,
-          document.body,
-        )}
+
     </div>
   );
 }

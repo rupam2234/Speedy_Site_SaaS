@@ -26,17 +26,29 @@ export async function POST(req: NextRequest) {
         .upsert({ domain: domain.trim(), wp_secret: secret }, { onConflict: "domain" });
 
       if (error) {
+        // 23503 = the domain has no orders row: the site is not connected to
+        // this account yet, which is a client problem, not a server one.
+        if ((error as { code?: string }).code === "23503") {
+          return NextResponse.json(
+            { message: "Connect this site to your account first" },
+            { status: 409 },
+          );
+        }
         return NextResponse.json({ message: "Failed to save WP secret" }, { status: 500 });
       }
 
       return NextResponse.json({message: "Secret saved"}, {status: 200})
     }
 
+    // A site that has never downloaded the plugin has no wp_key row yet. That
+    // is a normal "no secret" answer rather than an error, so the lookup must
+    // not use .single() -- it throws when zero rows come back.
     const { error, data } = await worker
       .from("wp_key")
       .select("wp_secret")
       .eq("domain", domain)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (error) {
       throw new Error(error.message ?? "Error fetching WP secret");

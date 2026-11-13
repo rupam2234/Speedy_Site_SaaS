@@ -1,0 +1,267 @@
+# Supabase Local Development Stack
+# Matches supabase/config.toml ports
+# Run: docker compose up -d
+# Stop: docker compose down
+# Reset DB: docker compose down -v && docker compose up -d
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  db:
+    image: supabase/postgres:15.8.1.021
+    container_name: supabase_db
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "54322:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # PostgREST API (RESTful API on top of PostgreSQL)
+  # ---------------------------------------------------------------------------
+  rest:
+    image: postgrest/postgrest:v12.2.3
+    container_name: supabase_rest
+    environment:
+      PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres
+      PGRST_DB_SCHEMA: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+    ports:
+      - "54321:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Kong API Gateway (routes requests to rest, realtime, storage, etc.)
+  # ---------------------------------------------------------------------------
+  kong:
+    image: kong:3.4
+    container_name: supabase_kong
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,correlation-id,acl,key-auth
+    ports:
+      - "54321:8000"
+      - "5443:8443"
+    volumes:
+      - ./supabase/kong.yml:/usr/local/kong/kong.yml:ro
+    depends_on:
+      - rest
+      - realtime
+      - storage
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Realtime Server (WebSocket for realtime subscriptions)
+  # ---------------------------------------------------------------------------
+  realtime:
+    image: supabase/realtime:v0.38.22
+    container_name: supabase_realtime
+    environment:
+      PORT: 4000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: 'SET search_path TO _realtime'
+      API_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      SECRET_KEY_BASE: not-the-production-secret-key-base-change-me
+      ERL_AFLAGS: "-proto_dist inet_tcp"
+    ports:
+      - "54321:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Storage API (S3-compatible file storage)
+  # ---------------------------------------------------------------------------
+  storage:
+    image: supabase/storage-api:v1.11.4
+    container_name: supabase_storage
+    environment:
+      ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiZXhwIjoxOTk5OTk5OTk5fQ.4lG1Vw7D0n73r8i8kF9cVt8t2N5l5G7w8w8w8w8w8w8
+      SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJleHAiOjE5OTk5OTk5OTl9.5lG1Vw7D0n73r8i8kF9cVt8t2N5l5G7w8w8w8w8w8w8
+      POSTGREST_URL: http://rest:3000
+      PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      GLOBAL_S3_BUCKET: stub
+      ENABLE_IMAGE_TRANSFORMATION: "true"
+      IMGPROXY_URL: http://imgproxy:5001
+    ports:
+      - "54321:5000"
+    volumes:
+      - storage_data:/var/lib/storage
+    depends_on:
+      - db
+      - rest
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # imgproxy (on-the-fly image transformations)
+  # ---------------------------------------------------------------------------
+  imgproxy:
+    image: darthsim/imgproxy:v3.9.0
+    container_name: supabase_imgproxy
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      IMGPROXY_ENABLE_WEBP_DETECTION: "true"
+    volumes:
+      - storage_data:/var/lib/storage:ro
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Meta (Supabase metadata API for CLI)
+  # ---------------------------------------------------------------------------
+  meta:
+    image: supabase/meta:v0.76.0
+    container_name: supabase_meta
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: postgres
+    ports:
+      - "54321:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Studio (Dashboard UI)
+  # ---------------------------------------------------------------------------
+  studio:
+    image: supabase/studio:20241202-5b1f6e2
+    container_name: supabase_studio
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      STUDIO_PG_META_HOST: meta
+      STUDIO_PG_META_PORT: 8080
+      DEFAULT_ORGANIZATION: local
+      DEFAULT_PROJECT: local
+    ports:
+      - "54323:3000"
+    depends_on:
+      - meta
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Inbucket (Email testing UI)
+  # ---------------------------------------------------------------------------
+  inbucket:
+    image: inbucket/inbucket:v2.4.0
+    container_name: supabase_inbucket
+    ports:
+      - "54324:54324"
+      - "54325:2500"
+      - "54326:1100"
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Edge Runtime (Deno-based edge functions)
+  # ---------------------------------------------------------------------------
+  edge-runtime:
+    image: supabase/edge-runtime:v1.64.4
+    container_name: supabase_edge_runtime
+    environment:
+      SUPABASE_EDGE_RUNTIME_PORT: 54321
+      SUPABASE_EDGE_RUNTIME_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+    ports:
+      - "54321:9000"
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Logflare (Analytics/Logs)
+  # ---------------------------------------------------------------------------
+  analytics:
+    image: supabase/logflare:1.7.0
+    container_name: supabase_analytics
+    environment:
+      LOGFLARE_SINGLE_TENANT_MODE: "true"
+      LOGFLARE_API_KEY: "supabase-analytics-key"
+      LOGFLARE_PRIVATE_API_KEY: "supabase-private-analytics-key"
+      LOGFLARE_PG_HOST: db
+      LOGFLARE_PG_PORT: 5432
+      LOGFLARE_PG_USER: postgres
+      LOGFLARE_PG_PASSWORD: postgres
+      LOGFLARE_PG_DATABASE: postgres
+    ports:
+      - "54321:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - supabase
+
+  # ---------------------------------------------------------------------------
+  # Vector (pgvector for AI/embeddings)
+  # ---------------------------------------------------------------------------
+  vector:
+    image: supabase/postgres:15.8.1.021
+    container_name: supabase_vector
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    command: >
+      postgres -c shared_preload_libraries=vector
+      -c max_connections=100
+    ports:
+      - "54327:5432"
+    volumes:
+      - vector_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - supabase
+
+networks:
+  supabase:
+    name: supabase_network
+    driver: bridge
+
+volumes:
+  db_data:
+  storage_data:
+  vector_data:
