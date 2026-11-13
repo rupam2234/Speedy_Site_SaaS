@@ -3,7 +3,10 @@ project_id = "tmpvygehhshrgsqxzaty"
 [db]
   major_version = 15
   port = 54322
-  # seed = "supabase/seed.sql"  # uncomment to load starter data on `supabase db reset`
+
+[db.seed]
+  enabled = true
+  sql_paths = ['./seed.sql']
 
 [api]
   port = 54321

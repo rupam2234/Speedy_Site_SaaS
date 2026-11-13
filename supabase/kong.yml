@@ -77,12 +77,13 @@ services:
           - /analytics
         strip_path: true
 
-  # Auth (GoTrue - uses rest endpoint)
+  # Auth (GoTrue)
   - name: auth
-    url: http://rest:3000
+    url: http://auth:9999
     routes:
       - name: auth
         paths:
+          - /auth/v1
           - /auth
         strip_path: true
 

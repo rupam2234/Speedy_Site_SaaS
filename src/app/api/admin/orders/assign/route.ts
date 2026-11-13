@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
 import { requireRole } from "@/app/api/helpers/requireRole";
+import { dispatchAssignmentNotification } from "@/lib/services/assignmentService";
 
 const worker = setupDB();
 
@@ -43,6 +44,8 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) throw new Error(error.message);
+
+    await dispatchAssignmentNotification(orderId, assignedExpertId);
 
     return NextResponse.json({ assignment: data }, { status: 201 });
   } catch (error: any) {

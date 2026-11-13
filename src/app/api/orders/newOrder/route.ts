@@ -1,7 +1,10 @@
 import { setupDB } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { OrderData } from "@/app/api";
 import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
+import { runAutoAssignmentIfEnabled } from "@/lib/services/assignmentService";
+
+export const runtime = "nodejs";
 
 const worker = setupDB();
 
@@ -124,6 +127,20 @@ export async function POST(req: Request) {
         .from("user_services")
         .update({ order_id: insertedOrder.order_id, website_name: insertedOrder.website_name, updated_at: new Date().toISOString() })
         .eq("id", activeManaged.id);
+
+      // Run auto-assignment in a separate background task when enabled
+      if (insertedOrder.order_status) {
+        after(async () => {
+          try {
+            await runAutoAssignmentIfEnabled(insertedOrder.order_id);
+          } catch (bgError) {
+            console.error(
+              `Background auto-assignment failed for order ${insertedOrder.order_id}:`,
+              bgError,
+            );
+          }
+        });
+      }
 
       return NextResponse.json(
         {
