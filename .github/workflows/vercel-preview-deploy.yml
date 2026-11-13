@@ -1,10 +1,9 @@
-name: Vercel Deploy
+name: Vercel Preview Deploy
 
 on:
   push:
     branches:
-      - main
-      - dev
+      - staging
 
 concurrency:
   group: vercel-${{ github.ref }}
@@ -15,7 +14,7 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy to Vercel
+    name: Deploy Preview to Vercel
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -40,23 +39,13 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          else
-            vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-          fi
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-          else
-            vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          fi
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project to Vercel
         id: vercel_deploy
@@ -64,18 +53,13 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          PROD_FLAG=""
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            PROD_FLAG="--prod"
-          fi
-
           # Detach .git temporarily so Vercel CLI does not attach commit author metadata
           # which triggers Vercel Hobby's "author is not a member" restriction.
           if [ -d .git ]; then
             mv .git .git_backup
           fi
 
-          vercel deploy --prebuilt $PROD_FLAG --yes --no-wait --token=${{ secrets.VERCEL_TOKEN }} > deploy_output.txt 2>&1
+          vercel deploy --prebuilt --yes --no-wait --token=${{ secrets.VERCEL_TOKEN }} > deploy_output.txt 2>&1
           DEPLOY_EXIT=$?
 
           if [ -d .git_backup ]; then
@@ -101,6 +85,6 @@ jobs:
           echo "### 🚀 Vercel Deployment Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Target Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Environment:** ${{ github.ref == 'refs/heads/main' && 'Production' || 'Preview' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Preview" >> $GITHUB_STEP_SUMMARY
           echo "- **Deployment URL:** [${{ steps.vercel_deploy.outputs.url }}](${{ steps.vercel_deploy.outputs.url }})" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
