@@ -66,7 +66,10 @@ export default function Main() {
       key: `${step.key}-${index}`,
       shortTitle: step.shortTitle,
       done: tour.isStepDone(index),
-      active: index === tour.activeIndex,
+      // Only one circle is darkened at a time: while activation is still
+      // required the "activate" pin owns the active state; the tour steps
+      // become active once the site has a service entitlement.
+      active: tour.hasServiceForSite === true && index === tour.activeIndex,
       selectable: tour.isStepDone(index),
       marker: index + 1,
       tourIndex: index,

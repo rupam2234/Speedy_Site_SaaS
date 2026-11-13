@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Check, Circle } from "lucide-react";
+import { Bell, Check, Circle, Download } from "lucide-react";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import { Separator } from "../ui/separator";
 import { SidebarTrigger } from "../ui/sidebar";
@@ -12,13 +12,20 @@ import { Notifications } from "@/app/api";
 import { CustomTooltip } from "../theme";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { downloadPluginZip } from "@/app/(dashboard)/dashboard/wordpress-plugin-analysis/companionPlugin";
 
 export default function SidebarInsetHeader() {
   const [notifcations, setNotifications] = useState<Notifications[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const user = useSupabaseUser();
   const role = useUserRole();
-  const { selectedSite, orders } = useSiteContext();
+  const { selectedSite, orders, isLoadingOrders } = useSiteContext();
   const router = useRouter();
   const searchParams = useSearchParams();
   // Resolve the active site the same way the setup tour does (url site -> adding
@@ -121,6 +128,21 @@ export default function SidebarInsetHeader() {
 
   const stepsLeft = setupSteps.filter((step) => !step.done).length;
 
+  // Only sites with an active paid managed_wp order can (re)download the plugin.
+  const isPaidOrder =
+    selectedOrder?.product_type === "managed_wp" &&
+    selectedOrder?.order_status === true;
+  const canDownloadPlugin = !needsSetup && activeSite && isPaidOrder;
+
+  async function handleDownloadPlugin() {
+    if (!activeSite) return;
+    try {
+      await downloadPluginZip(activeSite);
+    } catch (error) {
+      console.error("Failed to download plugin:", error);
+    }
+  }
+
   return (
     <header className="sticky z-50 top-0 flex h-16 shrink-0 items-center bg-primary-foreground dark:bg-secondary-background justify-between border-b">
       <div className="flex items-center gap-1 px-3">
@@ -135,8 +157,38 @@ export default function SidebarInsetHeader() {
         }}
       >
         {role === "user" && (
-          !needsSetup && activeSite ? (
-            /* Site is fully configured: show it as a status, not a call to action. */
+          isLoadingOrders ? (
+            /* Pure visual skeleton — no text, same size/shape as the Connected badge so there's no layout shift or flash of "Setup status". */
+            <span
+              className="inline-flex items-center gap-1.5 rounded-sm bg-primary/10 px-3 py-1.5 text-[1px] transparent animate-pulse"
+            >
+              <span className="size-4 rounded-full bg-primary/20" />
+              <span className="w-10 h-4 rounded bg-primary/20" />
+            </span>
+          ) : canDownloadPlugin ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1.5 rounded-sm bg-emerald-500 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white"
+                >
+                  <Download className="size-3.5" />
+                  Connected
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="bottom"
+                align="start"
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <DropdownMenuItem onClick={handleDownloadPlugin}>
+                  <Download className="size-3.5 mr-2" />
+                  Regenerate Plugin
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : !needsSetup && activeSite ? (
+            /* Site is fully configured but no paid order: show status only. */
             <span className="inline-flex items-center gap-1.5 rounded-sm bg-emerald-500 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
               Connected
             </span>

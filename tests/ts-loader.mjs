@@ -42,6 +42,8 @@ const INSET_HEADER_STUBS = new Map([
   ["../ui/separator", "ui-separator"],
   ["../theme", "ui-theme"],
   ["../utils", "ui-utils"],
+  ["@/components/ui/dropdown-menu", "ui-dropdown-menu"],
+  ["@/app/(dashboard)/dashboard/wordpress-plugin-analysis/companionPlugin", "ui-companionPlugin"],
 ]);
 
 export async function resolve(specifier, context, nextResolve) {
@@ -53,6 +55,9 @@ export async function resolve(specifier, context, nextResolve) {
   }
   if (specifier === "next/navigation") {
     return { url: virtualUrl("next-navigation"), shortCircuit: true };
+  }
+  if (specifier === "next/link") {
+    return { url: virtualUrl("next-link"), shortCircuit: true };
   }
 
   if (context.parentURL?.endsWith("/Inset-Header.tsx") && INSET_HEADER_STUBS.has(specifier)) {
@@ -160,6 +165,22 @@ const VIRTUAL_SOURCES = {
   "ui-utils": `
     export async function cachedData() { return { response: [] }; }
     export function cleanExpiredCache() {}
+  `,
+  "next-link": `
+    import React from "react";
+    export default function Link({ children, ...props }) {
+      return React.createElement("a", props, children);
+    }
+  `,
+  "ui-dropdown-menu": `
+    import React from "react";
+    export function DropdownMenu({ children }) { return React.createElement(React.Fragment, null, children); }
+    export function DropdownMenuTrigger({ children }) { return React.createElement(React.Fragment, null, children); }
+    export function DropdownMenuContent({ children }) { return React.createElement(React.Fragment, null, children); }
+    export function DropdownMenuItem({ children, onClick }) { return React.createElement("div", { onClick }, children); }
+  `,
+  "ui-companionPlugin": `
+    export async function downloadPluginZip() {}
   `,
 };
 
