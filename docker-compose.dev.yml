@@ -1,0 +1,61 @@
+# Standalone Development Configuration (Local Supabase CLI + Next.js Dev Server)
+# Usage: docker compose -f docker-compose.dev.yml up --build
+
+services:
+  # ==========================================
+  # Local Supabase Lifecycle Service
+  # ==========================================
+  supabase:
+    image: speedy-site-supabase-dev
+    container_name: speedy-site-supabase-dev
+    build:
+      context: ./supabase
+      dockerfile: Dockerfile.dev
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:${PWD}
+    working_dir: ${PWD}
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/.supabase-ready && supabase status >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 120s
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  # ==========================================
+  # Frontend Web Service (Next.js Dev Server)
+  # ==========================================
+  frontend:
+    image: speedy-site-frontend-dev
+    container_name: speedy-site-frontend-dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    network_mode: host
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./next.config.ts:/app/next.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./postcss.config.mjs:/app/postcss.config.mjs
+      - ./tailwind.config.js:/app/tailwind.config.js
+      - ./eslint.config.mjs:/app/eslint.config.mjs
+      - ./components.json:/app/components.json
+    environment:
+      - NODE_ENV=development
+      - PORT=${FRONTEND_PORT:-3000}
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+      - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      - NEXT_PUBLIC_DEV_BASE_URL=${NEXT_PUBLIC_DEV_BASE_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_PROD_BASE_URL=${NEXT_PUBLIC_PROD_BASE_URL:-http://localhost:3000}
+    depends_on:
+      supabase:
+        condition: service_healthy

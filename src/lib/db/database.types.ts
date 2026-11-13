@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.3"
   }
   public: {
     Tables: {
@@ -112,6 +112,30 @@ export type Database = {
           },
         ]
       }
+      experts_pool: {
+        Row: {
+          capacity: number
+          expert_id: string
+          is_available: boolean
+          last_assigned_at: string | null
+          rr_position: number
+        }
+        Insert: {
+          capacity?: number
+          expert_id: string
+          is_available?: boolean
+          last_assigned_at?: string | null
+          rr_position?: number
+        }
+        Update: {
+          capacity?: number
+          expert_id?: string
+          is_available?: boolean
+          last_assigned_at?: string | null
+          rr_position?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -142,56 +166,121 @@ export type Database = {
         }
         Relationships: []
       }
-      one_time_orders: {
+      optimization_tasks: {
         Row: {
-          amount_total: number
-          checkout_session_id: string | null
+          actual_impact: Json | null
+          assigned_to: string | null
+          category: string | null
+          completed_at: string | null
           created_at: string | null
-          currency: string
-          customer_email: string | null
+          description: string | null
           id: string
-          payment_status: string
-          plan: string | null
-          quantity: number
-          status: string
-          stripe_customer_id: string | null
-          user_id: string
+          impact_score: number | null
+          status: string | null
+          title: string
+          user_service_id: string
         }
         Insert: {
-          amount_total: number
-          checkout_session_id?: string | null
+          actual_impact?: Json | null
+          assigned_to?: string | null
+          category?: string | null
+          completed_at?: string | null
           created_at?: string | null
-          currency?: string
-          customer_email?: string | null
+          description?: string | null
           id?: string
-          payment_status: string
-          plan?: string | null
-          quantity?: number
-          status?: string
-          stripe_customer_id?: string | null
-          user_id: string
+          impact_score?: number | null
+          status?: string | null
+          title: string
+          user_service_id: string
         }
         Update: {
-          amount_total?: number
-          checkout_session_id?: string | null
+          actual_impact?: Json | null
+          assigned_to?: string | null
+          category?: string | null
+          completed_at?: string | null
           created_at?: string | null
-          currency?: string
-          customer_email?: string | null
+          description?: string | null
           id?: string
-          payment_status?: string
-          plan?: string | null
-          quantity?: number
-          status?: string
-          stripe_customer_id?: string | null
-          user_id?: string
+          impact_score?: number | null
+          status?: string | null
+          title?: string
+          user_service_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "one_time_orders_plan_fkey"
-            columns: ["plan"]
+            foreignKeyName: "optimization_tasks_user_service_id_fkey"
+            columns: ["user_service_id"]
             isOneToOne: false
-            referencedRelation: "plan_metadata"
-            referencedColumns: ["plan"]
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["service_id"]
+          },
+          {
+            foreignKeyName: "optimization_tasks_user_service_id_fkey"
+            columns: ["user_service_id"]
+            isOneToOne: false
+            referencedRelation: "user_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_assignments: {
+        Row: {
+          accepted_at: string | null
+          assigned_at: string
+          assigned_by: string | null
+          completed_at: string | null
+          expert_id: string
+          id: string
+          is_active: boolean
+          order_id: string
+          skip_reason: string | null
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          assigned_at?: string
+          assigned_by?: string | null
+          completed_at?: string | null
+          expert_id: string
+          id?: string
+          is_active?: boolean
+          order_id: string
+          skip_reason?: string | null
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          assigned_at?: string
+          assigned_by?: string | null
+          completed_at?: string | null
+          expert_id?: string
+          id?: string
+          is_active?: boolean
+          order_id?: string
+          skip_reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_assignments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_assignments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_assignments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_cf_zone_per_site"
+            referencedColumns: ["order_id"]
           },
         ]
       }
@@ -201,6 +290,7 @@ export type Database = {
           order_date: string
           order_id: string
           order_status: boolean
+          product_type: string | null
           report_email: string | null
           rum_connection: boolean | null
           usage_by_site: number
@@ -208,12 +298,16 @@ export type Database = {
           website_address: string
           website_name: string
           weekly_report: boolean | null
+          setup_completed_at: string | null
+          setup_step: number
+          tour: Json
         }
         Insert: {
           favicon_file?: string | null
           order_date?: string
           order_id?: string
           order_status: boolean
+          product_type?: string | null
           report_email?: string | null
           rum_connection?: boolean | null
           usage_by_site?: number
@@ -221,12 +315,16 @@ export type Database = {
           website_address: string
           website_name: string
           weekly_report?: boolean | null
+          setup_completed_at?: string | null
+          setup_step?: number
+          tour?: Json
         }
         Update: {
           favicon_file?: string | null
           order_date?: string
           order_id?: string
           order_status?: boolean
+          product_type?: string | null
           report_email?: string | null
           rum_connection?: boolean | null
           usage_by_site?: number
@@ -234,36 +332,9 @@ export type Database = {
           website_address?: string
           website_name?: string
           weekly_report?: boolean | null
-        }
-        Relationships: []
-      }
-      plan_metadata: {
-        Row: {
-          default_billing_interval: string | null
-          degradation_policy: string
-          plan: string
-          price: number
-          site_limit: number | null
-          usage_limit: number
-          wp_plugin_audits: number
-        }
-        Insert: {
-          default_billing_interval?: string | null
-          degradation_policy?: string
-          plan: string
-          price?: number
-          site_limit?: number | null
-          usage_limit: number
-          wp_plugin_audits?: number
-        }
-        Update: {
-          default_billing_interval?: string | null
-          degradation_policy?: string
-          plan?: string
-          price?: number
-          site_limit?: number | null
-          usage_limit?: number
-          wp_plugin_audits?: number
+          setup_completed_at?: string | null
+          setup_step?: number
+          tour?: Json
         }
         Relationships: []
       }
@@ -402,6 +473,7 @@ export type Database = {
           domain_name: string | null
           events: Json | null
           id: number
+          pageview_id: string | null
           previous_page: string | null
           session_id: string | null
         }
@@ -411,6 +483,7 @@ export type Database = {
           domain_name?: string | null
           events?: Json | null
           id?: number
+          pageview_id?: string | null
           previous_page?: string | null
           session_id?: string | null
         }
@@ -420,6 +493,7 @@ export type Database = {
           domain_name?: string | null
           events?: Json | null
           id?: number
+          pageview_id?: string | null
           previous_page?: string | null
           session_id?: string | null
         }
@@ -468,71 +542,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_cf_zone_per_site"
             referencedColumns: ["website_name"]
-          },
-        ]
-      }
-      subscriptions: {
-        Row: {
-          billing_interval: string | null
-          created_at: string | null
-          current_usage: number
-          period_ends_at: string | null
-          period_starts_at: string | null
-          plan: string
-          quantity: number
-          status: string
-          stripe_customer_id: string | null
-          stripe_session_id: string | null
-          stripe_subscription_id: string | null
-          stripe_subscription_status: string | null
-          trial_ends_at: string | null
-          updated_at: string | null
-          user_id: string
-          wp_plugin_audits: number | null
-        }
-        Insert: {
-          billing_interval?: string | null
-          created_at?: string | null
-          current_usage?: number
-          period_ends_at?: string | null
-          period_starts_at?: string | null
-          plan?: string
-          quantity?: number
-          status?: string
-          stripe_customer_id?: string | null
-          stripe_session_id?: string | null
-          stripe_subscription_id?: string | null
-          stripe_subscription_status?: string | null
-          trial_ends_at?: string | null
-          updated_at?: string | null
-          user_id: string
-          wp_plugin_audits?: number | null
-        }
-        Update: {
-          billing_interval?: string | null
-          created_at?: string | null
-          current_usage?: number
-          period_ends_at?: string | null
-          period_starts_at?: string | null
-          plan?: string
-          quantity?: number
-          status?: string
-          stripe_customer_id?: string | null
-          stripe_session_id?: string | null
-          stripe_subscription_id?: string | null
-          stripe_subscription_status?: string | null
-          trial_ends_at?: string | null
-          updated_at?: string | null
-          user_id?: string
-          wp_plugin_audits?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_plan_fkey"
-            columns: ["plan"]
-            isOneToOne: false
-            referencedRelation: "plan_metadata"
-            referencedColumns: ["plan"]
           },
         ]
       }
@@ -607,6 +616,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_services: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json | null
+          order_id: string | null
+          purchased_at: string | null
+          service_type: Database["public"]["Enums"]["service_type_enum"]
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          website_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          purchased_at?: string | null
+          service_type: Database["public"]["Enums"]["service_type_enum"]
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          website_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          purchased_at?: string | null
+          service_type?: Database["public"]["Enums"]["service_type_enum"]
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          website_name?: string | null
+        }
+        Relationships: []
+      }
       website_metadata: {
         Row: {
           description: string | null
@@ -634,42 +685,6 @@ export type Database = {
           site_type?: string | null
           title?: string | null
           url?: string
-        }
-        Relationships: []
-      }
-      user_services: {
-        Row: {
-          created_at: string | null
-          id: string
-          metadata: Json | null
-          order_id: string | null
-          service_type: string | null
-          status: string | null
-          updated_at: string | null
-          user_id: string | null
-          website_name: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          metadata?: Json | null
-          order_id?: string | null
-          service_type?: string | null
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          website_name?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          metadata?: Json | null
-          order_id?: string | null
-          service_type?: string | null
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          website_name?: string | null
         }
         Relationships: []
       }
@@ -717,13 +732,6 @@ export type Database = {
             referencedRelation: "v_cf_zone_per_site"
             referencedColumns: ["order_id"]
           },
-          {
-            foreignKeyName: "wordpress_cred_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "one_time_orders"
-            referencedColumns: ["id"]
-          },
         ]
       }
       wp_key: {
@@ -769,105 +777,118 @@ export type Database = {
           },
         ]
       }
+      wp_scans: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          results: Json | null
+          scan_type: string
+          started_at: string | null
+          status: string | null
+          user_service_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          results?: Json | null
+          scan_type: string
+          started_at?: string | null
+          status?: string | null
+          user_service_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          results?: Json | null
+          scan_type?: string
+          started_at?: string | null
+          status?: string | null
+          user_service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wp_scans_user_service_id_fkey"
+            columns: ["user_service_id"]
+            isOneToOne: false
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["service_id"]
+          },
+          {
+            foreignKeyName: "wp_scans_user_service_id_fkey"
+            columns: ["user_service_id"]
+            isOneToOne: false
+            referencedRelation: "user_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       cloudflare_kv_tracking: {
         Row: {
-          created_at: string | null
-          current_usage: number | null
-          default_billing_interval: string | null
-          degradation_policy: string | null
+          cf_status: string | null
+          config_backup: Json | null
+          expires_at: string | null
+          favicon_file: string | null
+          metadata: Json | null
+          order_date: string | null
           order_id: string | null
-          period_ends_at: string | null
-          period_starts_at: string | null
-          plan: string | null
-          price: number | null
-          quantity: number | null
-          status: string | null
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
-          updated_at: string | null
-          usage_limit: number | null
+          order_status: boolean | null
+          product_type: string | null
+          purchased_at: string | null
+          report_email: string | null
+          rum_connection: boolean | null
+          service_id: string | null
+          service_status: string | null
+          service_type: Database["public"]["Enums"]["service_type_enum"] | null
+          token: string | null
+          usage_by_site: number | null
           user_id: string | null
+          website_address: string | null
           website_name: string | null
+          weekly_report: boolean | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_plan_fkey"
-            columns: ["plan"]
-            isOneToOne: false
-            referencedRelation: "plan_metadata"
-            referencedColumns: ["plan"]
-          },
-        ]
+        Relationships: []
       }
-      subscription_with_limit: {
+      experts_pool_live: {
         Row: {
-          active_sites: number | null
-          computed_usage_limit: number | null
-          created_at: string | null
-          current_usage: number | null
-          degradation_policy: string | null
-          period_ends_at: string | null
-          period_starts_at: string | null
-          plan: string | null
-          quantity: number | null
-          status: string | null
-          trial_ends_at: string | null
-          updated_at: string | null
-          usage_limit: number | null
-          user_id: string | null
+          active_load: number | null
+          capacity: number | null
+          expert_id: string | null
+          is_available: boolean | null
+          last_assigned_at: string | null
+          rr_position: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_plan_fkey"
-            columns: ["plan"]
-            isOneToOne: false
-            referencedRelation: "plan_metadata"
-            referencedColumns: ["plan"]
-          },
-        ]
+        Insert: {
+          active_load?: never
+          capacity?: number | null
+          expert_id?: string | null
+          is_available?: boolean | null
+          last_assigned_at?: string | null
+          rr_position?: number | null
+        }
+        Update: {
+          active_load?: never
+          capacity?: number | null
+          expert_id?: string | null
+          is_available?: boolean | null
+          last_assigned_at?: string | null
+          rr_position?: number | null
+        }
+        Relationships: []
       }
       v_cf_zone_per_site: {
         Row: {
           config_backup: Json | null
           order_id: string | null
           order_status: boolean | null
-          site_id: string | null
           status: string | null
           token: string | null
           user_id: string | null
           website_name: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cloudflare_auth_site_id_fkey"
-            columns: ["site_id"]
-            isOneToOne: false
-            referencedRelation: "cloudflare_kv_tracking"
-            referencedColumns: ["order_id"]
-          },
-          {
-            foreignKeyName: "cloudflare_auth_site_id_fkey"
-            columns: ["site_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["order_id"]
-          },
-          {
-            foreignKeyName: "cloudflare_auth_site_id_fkey"
-            columns: ["site_id"]
-            isOneToOne: false
-            referencedRelation: "v_cf_zone_per_site"
-            referencedColumns: ["order_id"]
-          },
-        ]
-      }
-      wp_plugin_scans: {
-        Row: {
-          audit_completed: number | null
-          audit_limit: number | null
-          user_id: string | null
         }
         Relationships: []
       }
@@ -1497,6 +1518,7 @@ export type Database = {
           visit_count: number
         }[]
       }
+      pick_next_expert: { Args: never; Returns: string }
       process_web_vitals_date_range: {
         Args: { end_date?: string; start_date: string }
         Returns: {
@@ -1589,6 +1611,7 @@ export type Database = {
           top_isp: string
         }[]
       }
+      upsert_rum_metrics_batch: { Args: { payloads: Json }; Returns: undefined }
       urlencode:
         | { Args: { data: Json }; Returns: string }
         | {
@@ -1673,6 +1696,7 @@ export type Database = {
         | "analytics_only"
         | "summary_analytics"
         | "full_report"
+      service_type_enum: "managed_wp" | "rum_renewal" | "free"
     }
     CompositeTypes: {
       http_header: {
@@ -1704,12 +1728,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1733,11 +1757,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1758,11 +1782,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1783,11 +1807,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1800,11 +1824,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1822,6 +1846,7 @@ export const Constants = {
         "summary_analytics",
         "full_report",
       ],
+      service_type_enum: ["managed_wp", "rum_renewal", "free"],
     },
   },
 } as const

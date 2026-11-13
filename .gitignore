@@ -1,3 +1,5 @@
+.wrangler/
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -21,7 +23,12 @@
 
 # production
 /build
-/cloudflare-workers
+
+# cloudflare workers: source and wrangler config are tracked, only local
+# wrangler state and dependencies stay ignored (each worker .gitignore repeats these)
+cloudflare-workers/**/.wrangler/
+cloudflare-workers/**/node_modules/
+cloudflare-workers/**/.dev.vars
 
 # misc
 .DS_Store
@@ -47,5 +54,3 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
-
-

@@ -1,11 +1,12 @@
 import { setupDB } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { OrderData } from "@/app/api";
 import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
+import { runAutoAssignmentIfEnabled } from "@/lib/services/assignmentService";
+
+export const runtime = "nodejs";
 
 const worker = setupDB();
-
-const FREE_SITE_LIMIT = 1;
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
     // Fetch the user's services once and derive the entitlement
     const { data: services, error: serviceError } = await worker
       .from("user_services")
-      .select("id, service_type, status, metadata")
+      .select("id, service_type, status, metadata, order_id, website_name")
       .eq("user_id", user_id);
 
     if (serviceError) {
@@ -50,12 +51,26 @@ export async function POST(req: Request) {
       );
     }
 
-    const activeManaged = services?.find(
-      (s) => s.service_type === "managed_wp" && s.status === "active"
-    );
-    const activeFree = services?.find(
-      (s) => s.service_type === "free" && s.status === "active"
-    );
+    // Each managed_wp entitlement covers the site it is bound to, so a new site
+    // needs one that is still unused. Accounts that already paid for this site
+    // are handled by the existing-site check below.
+    const activeManaged = (services ?? []).find((s) => {
+      if (s.service_type !== "managed_wp" || s.status !== "active") return false;
+      const limit = (s.metadata as Record<string, any>)?.site_limit ?? 1;
+      const used = s.website_name ? 1 : 0;
+      return used < limit;
+    });
+    // No free tier: a site can only be connected behind its own managed_wp
+    // entitlement, which is what the setup flow sells before this step.
+    if (!activeManaged) {
+      return NextResponse.json(
+        {
+          error:
+            "Connecting this site needs its own WordPress Performance Optimization service. Complete the setup payment first.",
+        },
+        { status: 403 },
+      );
+    }
 
     // Check if website already exists for this user
     const { data: existingSite, error: siteError } = await worker
@@ -80,30 +95,6 @@ export async function POST(req: Request) {
     }
 
     if (activeManaged) {
-      // Paid tier: enforce the metadata site limit server-side
-      const siteLimit =
-        (activeManaged.metadata as Record<string, any>)?.site_limit ?? 1;
-
-      const { count, error: countError } = await worker
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user_id)
-        .eq("product_type", "managed_wp");
-
-      if (countError) {
-        return NextResponse.json(
-          { error: "Error checking site limit" },
-          { status: 500 },
-        );
-      }
-
-      if (count !== null && count >= siteLimit) {
-        return NextResponse.json(
-          { error: `Site limit reached (${siteLimit}).` },
-          { status: 403 },
-        );
-      }
-
       const {
         data: insertedOrder,
         error: insertError,
@@ -134,79 +125,22 @@ export async function POST(req: Request) {
       // Link the order to the managed_wp service
       await worker
         .from("user_services")
-        .update({ order_id: insertedOrder.order_id, updated_at: new Date().toISOString() })
+        .update({ order_id: insertedOrder.order_id, website_name: insertedOrder.website_name, updated_at: new Date().toISOString() })
         .eq("id", activeManaged.id);
 
-      return NextResponse.json(
-        {
-          message: "Order data inserted successfully",
-          order: insertedOrder ? insertedOrder : null,
-        },
-        { status: 200 },
-      );
-    }
-
-    if (activeFree) {
-      // Free tier: exactly one connected site (CrUX web vitals)
-      const { count, error: countError } = await worker
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user_id);
-
-      if (countError) {
-        return NextResponse.json(
-          { error: "Error checking site limit" },
-          { status: 500 },
-        );
+      // Run auto-assignment in a separate background task when enabled
+      if (insertedOrder.order_status) {
+        after(async () => {
+          try {
+            await runAutoAssignmentIfEnabled(insertedOrder.order_id);
+          } catch (bgError) {
+            console.error(
+              `Background auto-assignment failed for order ${insertedOrder.order_id}:`,
+              bgError,
+            );
+          }
+        });
       }
-
-      if (count !== null && count >= FREE_SITE_LIMIT) {
-        return NextResponse.json(
-          {
-            error:
-              "Free plan allows one connected site. Upgrade to WordPress Performance Optimization to add more.",
-          },
-          { status: 403 },
-        );
-      }
-
-      const {
-        data: insertedOrder,
-        error: insertError,
-        status: insertStatus,
-      } = await worker
-        .from("orders")
-        .insert({
-          website_name: orderData.website_name,
-          website_address: orderData.website_address,
-          favicon_file: orderData.favicon_file,
-          order_status: orderData.order_status,
-          user_id,
-          product_type: "free",
-        })
-        .select("*")
-        .single();
-
-      if (insertError) {
-        // uniq_orders_free_per_user makes double-submissions fail safely here
-        return NextResponse.json(
-          {
-            error: "Failed to insert order data",
-            details: insertError.message,
-          },
-          { status: insertStatus },
-        );
-      }
-
-      // Bind the free entitlement to the connected site
-      await worker
-        .from("user_services")
-        .update({
-          order_id: insertedOrder.order_id,
-          website_name: insertedOrder.website_name,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", activeFree.id);
 
       return NextResponse.json(
         {
@@ -217,13 +151,8 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json(
-      {
-        error:
-          "No active service found. Connect your free site or purchase a WordPress Performance Optimization service first.",
-      },
-      { status: 403 },
-    );
+    // Unreachable: the entitlement check above already 403s without an active
+    // managed_wp service, and orders are only ever managed_wp now.
   } catch (error) {
     return NextResponse.json(
       {

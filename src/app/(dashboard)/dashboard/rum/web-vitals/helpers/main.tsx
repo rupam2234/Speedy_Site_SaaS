@@ -275,7 +275,7 @@ export default function Main() {
       default:
         return [];
     }
-  }, [activeMetric, contributors, selectedSite, selectedDevice]);
+  }, [activeMetric, contributors, selectedDevice]);
 
   const { selectedDist, totalEvents } = useMemo(() => {
     const selectedDist =
@@ -291,7 +291,7 @@ export default function Main() {
         : 0;
 
     return { selectedDist, totalEvents };
-  }, [distData, selectedDevice, activeMetric, startDate, endDate]);
+  }, [distData, selectedDevice, activeMetric]);
 
   const activeSeries = useMemo(() => {
     if (historyData === undefined) return [];

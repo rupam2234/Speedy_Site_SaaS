@@ -157,7 +157,8 @@ do B now, fold the views into C as the engine lands.
       CONFLICT switch until duplicates are checked)
 - [x] Rotate the committed `SUPABASE_SERVICE_ROLE_KEY` into a wrangler secret
       (2026-10-13: removed from both wrangler.jsonc, uploaded as secret to
-      both workers; Supabase-side key rotation still pending, user action)
+      all 4 workers (analytics-cron, traffic-source-cron, event-buffer, site-metadata);
+      Supabase-side rotation completed 2026-10-13; RUM ingestion verified end-to-end)
 - [x] Reduce cron frequency to every 4 hours (`0 */4 * * *`, both wrangler.jsonc)
 - [x] Deploy: both workers deployed 2026-10-13 (versions 3289aeda, fdc774f4);
       verified live: `/health` 200 public, no-auth reads 401, authed reads

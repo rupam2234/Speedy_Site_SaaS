@@ -25,7 +25,7 @@ BEGIN
 
     INSERT INTO user_services (user_id, service_type, status, metadata)
     SELECT NEW.id, 'free'::service_type_enum, 'active',
-           '{"plan": "Free", "max_sites": 1, "features": ["crux"]}'::jsonb
+           '{"plan": "Free", "max_sites": 3, "features": ["crux"]}'::jsonb
     WHERE NOT EXISTS (
         SELECT 1 FROM user_services
         WHERE user_id = NEW.id AND service_type = 'free'

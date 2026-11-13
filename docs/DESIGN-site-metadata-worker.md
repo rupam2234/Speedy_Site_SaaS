@@ -112,13 +112,19 @@ Two changes worth making:
 
 ## Cleanup (same PR)
 
-- Delete `cloudflare-workers/sub-kv-metadata/`
-- Remove `SUBSCRIPTION_METADATA` binding; the existing namespace is reused by
+- [x] Delete `cloudflare-workers/sub-kv-metadata/` — done in the repo; the live
+  worker and its KV namespace are still to be removed on Cloudflare
+- [x] Remove `SUBSCRIPTION_METADATA` binding; the existing namespace is reused by
   `SITE_METADATA`, so the first sync deletes its stale keys (no new namespace
   needed)
-- Delete the commented-out backup block in `cloudflare-workers/rum/src/index.js`
+- [x] Delete the commented-out backup block in `cloudflare-workers/rum/src/index.js`
   (AGENT.md rule 1)
-- Move the committed service key to a wrangler secret, then rotate it in Supabase
+- [x] Remove dead code and the commented temp line in `event-buffer/src/index.js`
+  (AGENT.md rule 1); tighten CORS (echo origin without credentials)
+- [x] Verify the `DB` (D1) binding in event-buffer is actually used; remove if
+  dead — no `env.DB` reference in event-buffer and no `[[d1_databases]]` left in
+  `wrangler.toml`, so it is already gone
+- Move the committed service key to a wrangler secret, then rotate it in Supabase ✅ (2026-10-13: rotated in Supabase, synced to all 4 workers, RUM ingestion verified)
 - Remove dead code and the commented temp line in `event-buffer/src/index.js`
   (AGENT.md rule 1); tighten CORS (echo origin without credentials)
 - Verify the `DB` (D1) binding in event-buffer is actually used; remove if dead
@@ -141,6 +147,13 @@ Rotate the key in Supabase first: it was committed in the old wrangler configs.
 4. Delete `sub-kv-metadata` and its namespace
 5. Verify: plugin-installed script loads from `rum.speedy.site/rum.js`; events
    for an entitled domain return 200; an unknown domain returns 403
+
+Steps 2-5 need Cloudflare access and are tracked in `docs/migration/README.md`
+2.1/2.2. The prerequisite that used to block them was tracking, not code: the
+root `.gitignore` ignored the whole `/cloudflare-workers` directory, so
+`site-metadata/` and `event-buffer/wrangler.toml` existed on disk but could never
+be committed or deployed from CI. That ignore is now scoped to `.wrangler/`,
+`node_modules/` and `.dev.vars`.
 
 ## Scale audit: free plan budget (2026-10-11)
 

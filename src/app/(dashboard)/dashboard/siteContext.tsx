@@ -1,13 +1,14 @@
 "use client";
 
 import { OrderData } from "@/app/api";
-import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
+import { useSupabaseUser, useUserRole, useUserRoleLoading, getCachedOrdersSync, getCachedSelectedSiteSync } from "@/components/utils/supabase/AuthProvider";
 import { CruxData, DailyCruxData } from "@/data-types/index";
 import React, {
   createContext,
   useContext,
   useState,
   useEffect,
+  useLayoutEffect,
   useRef,
   useCallback,
 } from "react";
@@ -38,6 +39,11 @@ type SiteContextType = {
   setEndDate: (d?: Date) => void;
   plan: string | null;
   setPlan: (plan: string | null) => void;
+  planExpiresAt: string | null;
+  setPlanExpiresAt: (expiresAt: string | null) => void;
+  // user role cached client‑side
+  role: "user" | "admin" | "expert" | null;
+  roleLoading: boolean;
 };
 
 export const SiteContext = createContext<SiteContextType>({
@@ -63,6 +69,10 @@ export const SiteContext = createContext<SiteContextType>({
   setEndDate: () => {},
   plan: "",
   setPlan: () => {},
+  planExpiresAt: null,
+  setPlanExpiresAt: () => {},
+  role: null,
+  roleLoading: true,
 });
 
 export default function SiteContextProvider({
@@ -70,10 +80,24 @@ export default function SiteContextProvider({
 }: {
   children: React.ReactNode;
 }) {
+  // Initialize with loading state on both server and client to avoid hydration mismatch
   const [orders, setOrders] = useState<OrderData[] | null>(null);
   const [isLoadingOrders, setIsLoadingOrders] = useState<boolean>(true);
   const [selectedSite, setSelectedSite] = useState<string>("");
-  const [hydrated, setHydrated] = useState(false);
+
+  // Read from sessionStorage cache immediately after hydration (before paint)
+  useLayoutEffect(() => {
+    const cachedOrders = getCachedOrdersSync();
+    const cachedSelectedSite = getCachedSelectedSiteSync();
+
+    if (cachedOrders) {
+      setOrders(cachedOrders);
+      setIsLoadingOrders(false);
+    }
+    if (cachedSelectedSite) {
+      setSelectedSite(cachedSelectedSite);
+    }
+  }, []);
 
   const [dailyCrux, setDailyCrux] = useState<DailyCruxData | null>(null);
   const [cruxData, setCruxData] = useState<CruxData[]>([]);
@@ -92,7 +116,11 @@ export default function SiteContextProvider({
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [plan, setPlan] = useState<string | null>(null);
+  const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
 
+  // Get role from AuthProvider (single source of truth, cached in sessionStorage)
+  const role = useUserRole();
+  const roleLoading = useUserRoleLoading();
   const user = useSupabaseUser();
   const searchParams = useSearchParams();
   const fetchCalledRef = useRef<{
@@ -101,17 +129,19 @@ export default function SiteContextProvider({
   } | null>(null);
 
   const handleInitialSiteSelection = useCallback(
-    (orderList: OrderData[], siteFromUrl?: string) => {
+    (orderList: OrderData[], siteFromUrl?: string | null) => {
       setSelectedSite((prev) => {
-        // If the user already has a site selected in state, don't override it
+        // An explicit selection always wins.
         if (prev) return prev;
 
-        // If a site is provided in the URL, try to match it
-        if (
-          siteFromUrl &&
-          orderList.some((o) => o.website_name === siteFromUrl)
-        ) {
-          return siteFromUrl;
+        // The url is authoritative: use it only when the list actually has that
+        // site. Falling back to orderList[0] would silently switch the account
+        // to a different site whenever the list is stale (the 5-minute orders
+        // cache), which then fights the layout's url sync in a loop.
+        if (siteFromUrl) {
+          return orderList.some((o) => o.website_name === siteFromUrl)
+            ? siteFromUrl
+            : prev;
         }
 
         // Default to the first site in the array
@@ -120,15 +150,6 @@ export default function SiteContextProvider({
     },
     [],
   );
-
-  // Restore selected site from session storage on mount
-  useEffect(() => {
-    const stored = sessionStorage.getItem("selected-site");
-    if (stored) {
-      setSelectedSite(stored);
-    }
-    setHydrated(true);
-  }, []);
 
   // Persist selected site whenever it changes
   useEffect(() => {
@@ -164,7 +185,9 @@ export default function SiteContextProvider({
       }
 
       try {
-        const response = await fetch("/api/orders/fetchOrder");
+        const response = await fetch("/api/orders/fetchOrder", {
+          credentials: "include",
+        });
         if (!response.ok) throw new Error("Failed to fetch orders");
 
         const { data }: { data: OrderData[] } = await response.json();
@@ -191,9 +214,9 @@ export default function SiteContextProvider({
     [handleInitialSiteSelection],
   );
 
-  // Trigger fetch on user load or URL change
+  // Trigger fetch on user load - no longer waits for hydrated
   useEffect(() => {
-    if (!user?.id || !hydrated) return;
+    if (!user?.id) return;
 
     const siteFromUrl = searchParams.get("site");
 
@@ -205,13 +228,14 @@ export default function SiteContextProvider({
       return;
     }
 
-    fetchOrders(siteFromUrl ?? "", user.id);
-
+    // Update ref BEFORE async call to prevent race conditions
     fetchCalledRef.current = {
       userId: user.id,
       siteFromUrl,
     };
-  }, [user?.id, hydrated, searchParams, fetchOrders]);
+
+    fetchOrders(siteFromUrl ?? "", user.id);
+  }, [user?.id, fetchOrders]);
 
   return (
     <SiteContext.Provider
@@ -240,6 +264,10 @@ export default function SiteContextProvider({
         setEndDate,
         plan,
         setPlan,
+        planExpiresAt,
+        setPlanExpiresAt,
+        role,
+        roleLoading,
       }}
     >
       {children}

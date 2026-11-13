@@ -3,13 +3,13 @@
 echo "VERCEL_ENV: $VERCEL_ENV"
 echo "VERCEL_GIT_COMMIT_REF: $VERCEL_GIT_COMMIT_REF"
 
-# 1. Branch filter
+# 1. Branch filter (non-main branches deployed via GitHub Actions to bypass Hobby author restrictions)
 case "$VERCEL_GIT_COMMIT_REF" in
-  preview|main|master)
+  main|master)
     ;;
   *)
-    echo "No need to build for branch $VERCEL_GIT_COMMIT_REF"
-    echo "Skipping deployment."
+    echo "Branch $VERCEL_GIT_COMMIT_REF is deployed via GitHub Actions."
+    echo "Skipping native Vercel deployment."
     exit 0
     ;;
 esac

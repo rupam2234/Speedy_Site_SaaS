@@ -67,6 +67,15 @@ export async function cachedData<T, M extends any[] = []>({
   // if no cache fetch fresh data
   const response: T = await fn(...(args ?? ([] as unknown as M)));
 
+  // A nullish response means the lookup found nothing (or the fetch failed).
+  // Writing it to storage would freeze that miss for the whole TTL: the plugin
+  // access-key lookup would keep answering "no secret", every download would
+  // then mint a new key and overwrite the one an installed plugin already
+  // carries. Pass it through instead of caching it.
+  if (response === null || response === undefined) {
+    return { response, isCached: false };
+  }
+
   if (ttl <= 0) {
     return { response, isCached: false };
   }

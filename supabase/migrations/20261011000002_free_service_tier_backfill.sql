@@ -18,7 +18,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Paying users keep only their paid services (grandfathered).
 INSERT INTO user_services (user_id, service_type, status, metadata)
 SELECT u.id, 'free'::service_type_enum, 'active',
-       '{"plan": "Free", "max_sites": 1, "features": ["crux"]}'::jsonb
+       '{"plan": "Free", "max_sites": 3, "features": ["crux"]}'::jsonb
 FROM auth.users u
 WHERE NOT EXISTS (
     SELECT 1 FROM user_services us WHERE us.user_id = u.id

@@ -5,7 +5,7 @@ export function SpeedySiteLogo({ isDark }: { isDark: boolean }) {
   return (
     <>
       {isDark ? (
-        <Link href="/" className="cursor-pointer ring-0 focus:ring-0">
+        <Link href="/" className="ring-0 focus:ring-0">
           <Image
             src="/images/logos/Speedy-site-logo-light.png"
             alt="SpeedySite-logo-dark"
@@ -14,7 +14,7 @@ export function SpeedySiteLogo({ isDark }: { isDark: boolean }) {
           />
         </Link>
       ) : (
-        <Link href="/" className="cursor-pointer ring-0 focus:ring-0">
+        <Link href="/" className="ring-0 focus:ring-0">
           <Image
             src="/images/logos/Speedy-site-logo-dark.png"
             alt="SpeedySite-logo-light"

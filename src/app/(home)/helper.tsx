@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
+import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 import { FeatureCore } from "./homepage";
 import Image from "next/image";

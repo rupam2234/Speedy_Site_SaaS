@@ -4,8 +4,6 @@ import { NextResponse } from "next/server";
 
 const worker = setupDB();
 
-const FREE_SITE_LIMIT = 1;
-
 export async function GET() {
   const { user, error } = await getSupabaseServerUser();
   const user_id = user?.id ? user?.id : null;
@@ -51,20 +49,14 @@ export async function GET() {
       );
     }
 
-    // Free tier: one connected site with CrUX web vitals
-    const { error: siteError, count } = await worker
-      .from("orders")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user_id);
-
-    if (siteError) {
-      throw new Error(siteError?.message ?? "failed to fetch site count");
-    }
-
-    const reached = count !== null && count >= FREE_SITE_LIMIT;
+    // No free tier: without an active managed_wp service the account cannot
+    // connect a site at all, so there is nothing to report a limit for.
     return NextResponse.json(
-      { reachedLimit: reached, limit: FREE_SITE_LIMIT, current: count },
-      { status: 200 }
+      {
+        message:
+          "No active service. Connect a site requires the WordPress Performance Optimization service.",
+      },
+      { status: 403 }
     );
   } catch (error: any) {
     return NextResponse.json({ message: error.message ?? "Server error" }, { status: 500 });
