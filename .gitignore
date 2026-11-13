@@ -34,6 +34,11 @@ cloudflare-workers/**/.dev.vars
 .DS_Store
 *.pem
 
+# python
+__pycache__/
+*.pyc
+*.pyo
+
 # debug
 npm-debug.log*
 yarn-debug.log*
