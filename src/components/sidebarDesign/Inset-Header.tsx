@@ -156,12 +156,10 @@ export default function SidebarInsetHeader() {
           setShowNotifications((prev) => !prev);
         }}
       >
-        {role === "user" && (
-          isLoadingOrders ? (
+        {role === "user" &&
+          (isLoadingOrders ? (
             /* Pure visual skeleton — no text, same size/shape as the Connected badge so there's no layout shift or flash of "Setup status". */
-            <span
-              className="inline-flex items-center gap-1.5 rounded-sm bg-primary/10 px-3 py-1.5 text-[1px] transparent animate-pulse"
-            >
+            <span className="inline-flex items-center gap-1.5 rounded-sm bg-primary/10 px-3 py-1.5 text-[1px] transparent animate-pulse">
               <span className="size-4 rounded-full bg-primary/20" />
               <span className="w-10 h-4 rounded bg-primary/20" />
             </span>
@@ -253,8 +251,7 @@ export default function SidebarInsetHeader() {
                 </button>
               }
             />
-          ) : null
-        )}
+          ) : null)}
 
         <span className="relative">
           <Bell
