@@ -434,7 +434,8 @@ export function useOnboardingTour(
   }
 
   async function startPayment() {
-    if (!site) return;
+    // Payment does not require a pre-selected site: a new-site checkout
+    // creates the entitlement first, the site is connected afterward.
     setBusy("payment");
     setError(null);
     try {

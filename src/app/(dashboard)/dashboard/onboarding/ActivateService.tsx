@@ -23,9 +23,9 @@ type ActivateServiceProps = {
 export function ActivateService({ busy, onPay }: ActivateServiceProps) {
   return (
     <StepCard
-      eyebrow="Service activation"
-      title="Activate the service to connect your site"
-      description="One payment, one year of service. No auto-renewal."
+      eyebrow="Speed up your site"
+      title="Make your site fast, and keep it fast"
+      description="A slow site loses visitors and ranks lower. Pay once, get a faster site and performance monitoring for a full year."
     >
       <div className="space-y-5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -37,15 +37,16 @@ export function ActivateService({ busy, onPay }: ActivateServiceProps) {
               $299
             </span>
             <span className="text-xs font-medium text-primary/60">
-              one-time payment · one year of service
+              one-time · one year of faster site
             </span>
           </div>
         </div>
 
         <p className="max-w-prose text-sm leading-relaxed text-primary/70">
-          Real-user performance data monitoring, diagnosis and performance
-          optimization for your site. You also get the WP Rocket caching plugin
-          as part of the optimization practice (optional).
+          Faster page loads, better Google rankings, and happier visitors. Your
+          site gets real-user speed monitoring, web vitals diagnosis, and
+          performance fixes by our experts plus premium WP Rocket caching plugin
+          included.
         </p>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -57,19 +58,19 @@ export function ActivateService({ busy, onPay }: ActivateServiceProps) {
             {busy === "payment" && (
               <LoaderCircle className="size-3.5 animate-spin" />
             )}
-            Pay $299
+            Fix My Site Speed, $299
           </Button>
           <Link
             href="/dashboard/pricing"
             className="text-xs font-medium text-primary/60 underline-offset-4 transition-colors hover:text-primary hover:underline"
           >
-            Compare plans
+            Check plan details
           </Link>
         </div>
 
         <div className="space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-primary/40">
-            Once the service is active, you will
+            What you'll get
           </p>
           <ol className="space-y-2">
             {STEPS.map((step, index) => (
@@ -87,7 +88,7 @@ export function ActivateService({ busy, onPay }: ActivateServiceProps) {
             ))}
           </ol>
           <p className="text-[11px] leading-relaxed text-primary/50">
-            Nothing is configured until you go through them, so there is no rush.
+            Nothing is configured until you run the steps, so there is no rush.
           </p>
         </div>
       </div>
