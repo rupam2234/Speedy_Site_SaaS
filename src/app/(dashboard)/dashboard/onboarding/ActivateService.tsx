@@ -70,7 +70,7 @@ export function ActivateService({ busy, onPay }: ActivateServiceProps) {
 
         <div className="space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-primary/40">
-            What you'll get
+            What you will get
           </p>
           <ol className="space-y-2">
             {STEPS.map((step, index) => (
