@@ -47,7 +47,8 @@ export const STEPS: readonly StepMeta[] = [
   {
     // signature_verified is the last key written, so it is what "done" means.
     key: "signature_verified",
-    title: "Download, install and verify the plugin",
+    title:
+      "Link up your site monitoring and optimization via speedy site plugin",
     shortTitle: "Plugin",
     description: "Download the plugin, activate it, then verify the connection",
     records: [1, 2, 3, 4],
