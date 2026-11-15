@@ -19,7 +19,6 @@ import {
   getStatusColor,
 } from ".";
 
-
 export default function Main() {
   const {
     selectedSite,
@@ -149,7 +148,6 @@ export default function Main() {
 
   return (
     <>
-
       <RumWebVitalToolbar
         enableDistribution={false}
         enableAllDevices={false}
@@ -280,6 +278,7 @@ export default function Main() {
                 </>
               );
             })()}
+
           </div>
           <CustomTooltip
             content={

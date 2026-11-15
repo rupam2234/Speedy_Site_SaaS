@@ -288,17 +288,23 @@ export default function Main() {
         style: { backgroundColor: "#66cc8f", color: "white" },
       });
 
-      // delete order cache
-      sessionStorage.removeItem("orders");
+      // Give the toast a beat, then land on the dashboard root -- a relative
+      // path, so it resolves identically locally and in production -- where
+      // the next available site is picked automatically. The caches are
+      // cleared first: the site context re-hydrates orders and the selected
+      // site from sessionStorage before paint, and a stale selected site
+      // would point the dashboard straight back at the deleted one.
+      setTimeout(() => {
+        sessionStorage.removeItem("orders");
+        sessionStorage.removeItem("orders-ts");
+        sessionStorage.removeItem("selected-site");
+        window.location.href = "/dashboard";
+      }, 3000);
     } catch (error) {
       console.error(error);
     } finally {
       setDeleting(false);
       setConfirmingDelete(false);
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 3000);
     }
   }
 }

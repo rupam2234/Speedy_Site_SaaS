@@ -22,7 +22,7 @@ import { useOnboardingTour } from "./useOnboardingTour";
 export default function Main() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { selectedSite, orders } = useSiteContext();
+  const { selectedSite } = useSiteContext();
 
   const siteFromUrl = searchParams.get("site");
   // "Connect another site" starts the same flow from step 1 with no site
@@ -31,13 +31,19 @@ export default function Main() {
   const activeSite = isAddingSite ? "" : (siteFromUrl ?? selectedSite);
   const tour = useOnboardingTour(activeSite, siteFromUrl);
 
-  // Wait for the site context, the per-site entitlement answer and the
-  // reconcile answer: rendering any card before they are all known is what made
-  // step 1 flash, or the pay button appear when payment was already done.
+  // Only the payment card depends on the per-site entitlement answers, so only
+  // it waits for them: the tour steps are fully determined by the order row and
+  // render the moment orders are known. Gating everything on hasPaidForSite /
+  // hasServiceForSite / reconcile is what made the step 1 -> step 2 handoff
+  // flash a full-screen loader: switching the url to ?site=<new site> re-runs
+  // those checks, and their null state blocked the whole page for a round-trip
+  // even though the next card was already decided. When the tour IS complete
+  // we still wait, so the pay button never flashes before we know whether
+  // payment already happened.
   if (
     tour.isLoading ||
-    tour.hasServiceForSite === null ||
-    tour.isReconciling
+    (tour.isTourComplete &&
+      (tour.hasPaidForSite === null || tour.isReconciling))
   ) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
@@ -50,31 +56,25 @@ export default function Main() {
   // the user clicked and falls back to the active one.
   const currentStepIndex = tour.viewedStep ?? tour.activeIndex;
 
-  // One bar for the whole journey: activate -> add site -> plugin -> verify.
+  // One bar for the whole journey: add site -> plugin -> activate (payment).
   const progressSteps: ProgressStep[] = [
-    {
-      key: "activate",
-      shortTitle: "Activate",
-      done: tour.hasServiceForSite,
-      active: !tour.hasServiceForSite,
-      marker: <CreditCard className="size-4" />,
-    },
-  ];
-
-  STEPS.forEach((step, index) => {
-    progressSteps.push({
+    ...STEPS.map((step, index) => ({
       key: `${step.key}-${index}`,
       shortTitle: step.shortTitle,
       done: tour.isStepDone(index),
-      // Only one circle is darkened at a time: while activation is still
-      // required the "activate" pin owns the active state; the tour steps
-      // become active once the site has a service entitlement.
-      active: tour.hasServiceForSite === true && index === tour.activeIndex,
+      active: index === tour.activeIndex && !tour.isTourComplete,
       selectable: tour.isStepDone(index),
       marker: index + 1,
       tourIndex: index,
-    });
-  });
+    })),
+    {
+      key: "activate",
+      shortTitle: "Activate",
+      done: Boolean(tour.hasPaidForSite),
+      active: tour.isTourComplete && !tour.hasPaidForSite,
+      marker: <CreditCard className="size-4" />,
+    },
+  ];
 
   const handleSelectStep = (index: number) => {
     const entry = progressSteps[index];
@@ -127,16 +127,7 @@ export default function Main() {
 
       <StepProgress steps={progressSteps} onSelect={handleSelectStep} />
 
-      {!tour.hasServiceForSite ? (
-        <ActivateService busy={tour.busy} onPay={tour.startPayment} />
-      ) : tour.isTourComplete ? (
-        <SetupComplete
-          onGoToDashboard={() => router.push(`/dashboard?site=${activeSite}`)}
-          onAddAnotherSite={() =>
-            router.push("/dashboard/onboarding?intent=new-site")
-          }
-        />
-      ) : (
+      {!tour.isTourComplete ? (
         <StepContent
           index={currentStepIndex}
           site={activeSite}
@@ -144,20 +135,27 @@ export default function Main() {
           hasProbed={tour.hasProbed}
           polling={tour.polling}
           busy={tour.busy}
-          orders={orders}
           siteInput={tour.siteInput}
           setSiteInput={tour.setSiteInput}
+          wpLoginUrl={tour.wpLoginUrl}
+          setWpLoginUrl={tour.setWpLoginUrl}
+          existingSite={tour.existingSite}
           addingSite={tour.addingSite}
           addSiteError={tour.addSiteError}
           addSiteSuccess={tour.addSiteSuccess}
-          addSiteLog={tour.addSiteLog}
           onCreateSite={tour.createSite}
           onDownloadPlugin={handleDownloadPlugin}
           onCheckPlugin={tour.checkPlugin}
           onConfirmPluginInstalled={tour.confirmPluginInstalled}
           onVerifyInstallation={tour.verifyInstallation}
-          onSelectSite={(site) =>
-            router.push(`/dashboard/onboarding?site=${site}`)
+        />
+      ) : !tour.hasPaidForSite ? (
+        <ActivateService busy={tour.busy} onPay={tour.startPayment} />
+      ) : (
+        <SetupComplete
+          onGoToDashboard={() => router.push(`/dashboard?site=${activeSite}`)}
+          onAddAnotherSite={() =>
+            router.push("/dashboard/onboarding?intent=new-site")
           }
         />
       )}

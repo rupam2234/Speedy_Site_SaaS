@@ -1,8 +1,9 @@
 // Setup steps of the single gateway flow (add site -> install the plugin).
 //
 // Verifying the installation is deliberately NOT its own step: it is the tail
-// of the plugin step, so the bar shows Activate -> Site -> Plugin and the setup
-// is complete the moment the plugin installation is verified.
+// of the plugin step, so the bar shows Site -> Plugin -> Activate and the setup
+// is complete the moment the plugin installation is verified and payment is
+// made.
 //
 // Progress is recorded on the `orders` row (tour jsonb + setup_step) by
 // /api/orders/setup-step. The "add site" step has no server key (the account
@@ -13,8 +14,9 @@
 // Site credentials are not collected here: they come later from the expert
 // workspace.
 //
-// Payment is not a step either: ActivateService gates the flow from its own
-// card, shown in the stepper as a leading pin.
+// Payment happens at the end of the flow, after the plugin is verified.
+// ActivateService gates the final step from its own card, shown in the
+// stepper as a trailing pin.
 
 export type StepKey =
   | "site_selected"

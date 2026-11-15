@@ -95,6 +95,76 @@ export async function provisionEntitlement(
 }
 
 
+/** The bits of a paid session the order link needs. */
+export type PaidOrderSession = {
+  id: string;
+  metadata?:
+    | Record<string, string | null | undefined>
+    | { [key: string]: string | null | undefined }
+    | null;
+};
+
+/**
+ * Finalizes the "paid" side of the end-of-setup payment flow.
+ *
+ * The `orders` row is created while the site is being connected (order_status
+ * = false) and is only meaningful once payment lands, so a paid checkout for a
+ * pending order must (1) bind the freshly provisioned entitlement to that
+ * order and (2) flip the order row to `order_status = true`. That single flip
+ * is what the whole dashboard reads as "this site is live": the site switcher,
+ * the RUM/enhancement gates, the expert queue filters and the header badge all
+ * key off it.
+ *
+ * Shared by the Stripe webhook and the reconcile-on-return endpoint so a
+ * missed webhook converges on exactly the same end state. Idempotent: safe to
+ * call repeatedly, and also safe to call when the entitlement already existed.
+ *
+ * Returns the order the payment was for, so callers can run follow-up work
+ * (expert auto-assignment) only when there is one.
+ */
+export async function finalizePaidOrder(
+  session: PaidOrderSession,
+): Promise<{ orderId: string | null }> {
+  const orderId = session.metadata?.order_id;
+  const websiteName = session.metadata?.website_name;
+
+  // Standalone purchases (no pending order) provision a plain entitlement and
+  // have nothing to link.
+  if (!orderId || typeof orderId !== "string" || orderId.length === 0) {
+    return { orderId: null };
+  }
+
+  // 1. Bind the entitlement created for this session to the order it paid for.
+  const { data: entitlement } = await worker
+    .from("user_services")
+    .select("id, order_id")
+    .eq("metadata->>stripe_session_id", session.id)
+    .maybeSingle();
+
+  if (
+    entitlement &&
+    (!entitlement.order_id || entitlement.order_id !== orderId)
+  ) {
+    await worker
+      .from("user_services")
+      .update({
+        order_id: orderId,
+        website_name: websiteName ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", entitlement.id);
+  }
+
+  // 2. Flip the order row to paid. This is the only place order_status ever
+  //    becomes true for the onboarding flow (see /api/orders/managed/add).
+  await worker
+    .from("orders")
+    .update({ order_status: true })
+    .eq("order_id", orderId);
+
+  return { orderId };
+}
+
 /**
  * The plan the signed-in account currently resolves to, read straight from
  * `user_services` (no client cache) so a just-provisioned entitlement is

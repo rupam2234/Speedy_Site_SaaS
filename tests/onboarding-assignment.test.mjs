@@ -619,7 +619,13 @@ describe("Onboarding & Expert Assignment System", () => {
       assert.match(userPendingHtml, /Setup status/);
 
       globalThis.__TEST_UI_MOCKS__.orders = [
-        { website_name: "site.example.com", tour: { signature_verified: true } },
+        {
+          website_name: "site.example.com",
+          // "Connected" requires payment too: an order row is created unpaid
+          // during setup and only order_status = true means paid.
+          order_status: true,
+          tour: { signature_verified: true },
+        },
       ];
       const userConnectedHtml = renderToStaticMarkup(React.createElement(SidebarInsetHeader));
       assert.match(userConnectedHtml, /Connected/);

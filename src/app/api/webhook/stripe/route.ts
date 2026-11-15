@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import Stripe from "stripe";
-import { provisionEntitlement } from "@/lib/entitlement";
+import { finalizePaidOrder, provisionEntitlement } from "@/lib/entitlement";
+import { runAutoAssignmentIfEnabled } from "@/lib/services/assignmentService";
 
 export const runtime = "nodejs";
 
@@ -41,12 +42,7 @@ export async function POST(req: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // Provision the ENTITLEMENT only — the order itself is created by
-        // /api/orders/managed/add once the customer submits WP credentials
-        // (the UI flow: Stripe success -> required-data page -> managed/add,
-        // which looks up this row via metadata->>stripe_session_id).
-        // Shared with /api/checkout/reconcile, so a missed delivery can be
-        // replayed with byte-identical data.
+        // Provision the ENTITLEMENT.
         const result = await provisionEntitlement({
           id: session.id,
           client_reference_id:
@@ -55,6 +51,28 @@ export async function POST(req: Request) {
           currency: session.currency ?? null,
           customer: session.customer,
         });
+
+        // Payment at the end of setup: bind the entitlement to the pending
+        // order and flip that order to paid. finalizePaidOrder is a no-op for
+        // standalone purchases (no order_id in the metadata).
+        const { orderId } = await finalizePaidOrder(session);
+
+        // The order only becomes real at payment, so the expert queue is only
+        // fed now. runAutoAssignmentIfEnabled is itself idempotent (it skips
+        // orders that already have an active assignment), so a late webhook
+        // racing the reconcile endpoint cannot double-assign.
+        if (orderId) {
+          after(async () => {
+            try {
+              await runAutoAssignmentIfEnabled(orderId);
+            } catch (bgError) {
+              console.error(
+                `Background auto-assignment failed for order ${orderId}:`,
+                bgError,
+              );
+            }
+          });
+        }
 
         return NextResponse.json({ received: true, ...result });
       }

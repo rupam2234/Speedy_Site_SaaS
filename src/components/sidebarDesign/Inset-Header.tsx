@@ -103,7 +103,11 @@ export default function SidebarInsetHeader() {
   // plugin_installed is only an intermediate key, so requiring it here too is
   // how the header and the tour drifted apart.
   const wpConfigured = Boolean(siteTour.signature_verified);
-  const needsSetup = !activeSite || !wpConfigured;
+  // Payment reads the flag, not the row: an order exists as soon as the site
+  // is connected, and only order_status = true (flipped by the Stripe webhook
+  // / reconcile endpoint) means payment actually landed.
+  const isPaid = selectedOrder?.order_status === true;
+  const needsSetup = !activeSite || !wpConfigured || !isPaid;
 
   // Hovering "Finish setup" shows what is left for THIS site, not a pitch.
   // Verifying the installation is the tail of the plugin step (not its own
@@ -111,14 +115,15 @@ export default function SidebarInsetHeader() {
   // marks the site complete, so tooltip and badge agree.
   // Per-site only. "Done" for the incoming steps is decided by the order row of
   // the site being configured (selectedOrder), never by account-wide signals:
-  // an order row means THIS site already consumed its managed_wp entitlement
-  // (paid) and is connected. The old account-level `plan` / `orders.length`
-  // reads reported OTHER sites' state, so on the "add a new site" flow they
-  // claimed "payment done" + "site connected" while this site was still on the
-  // pay step. A brand-new site (no activeSite -> no selectedOrder) honestly
-  // shows every step still pending.
+  // the row proves THIS site is connected, and its order_status flag proves
+  // THIS site is paid (an order is created unpaid while the site is connected
+  // and flips when the Stripe webhook / reconcile endpoint processes payment).
+  // The old account-level `plan` / `orders.length` reads reported OTHER sites'
+  // state, so on the "add a new site" flow they claimed "payment done" + "site
+  // connected" while this site was still on the pay step. A brand-new site (no
+  // activeSite -> no selectedOrder) honestly shows every step still pending.
   const setupSteps = [
-    { label: "Payment done", done: Boolean(selectedOrder) },
+    { label: "Payment done", done: isPaid },
     { label: "Site connected", done: Boolean(selectedOrder) },
     {
       label: "Plugin connected & verified",

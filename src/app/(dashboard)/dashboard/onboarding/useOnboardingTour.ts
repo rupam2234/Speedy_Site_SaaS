@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { OrderData } from "@/app/api";
 import { useAddSite } from "@/components/theme/addSite";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
@@ -36,6 +37,8 @@ export type OnboardingTour = {
    * with payment. null = not resolved yet.
    */
   hasServiceForSite: boolean | null;
+  /** True when an active managed_wp entitlement exists AND is linked to an order (payment completed). */
+  hasPaidForSite: boolean | null;
   /** True while a missed-webhook reconcile is in flight. */
   isReconciling: boolean;
   /** Step shown in the content panel; null follows the active step. */
@@ -44,10 +47,14 @@ export type OnboardingTour = {
   // "add your site" step
   siteInput: string;
   setSiteInput: (value: string) => void;
+  /** WordPress login URL collected alongside the domain. */
+  wpLoginUrl: string;
+  setWpLoginUrl: (value: string) => void;
+  /** Set when an existing order is found for this domain. */
+  existingSite: { order_id: string; website_name: string } | null;
   addingSite: boolean;
   addSiteError: string | null;
   addSiteSuccess: string | null;
-  addSiteLog: string[];
   createSite: () => Promise<void>;
   // later steps
   /** Binds the HMAC silently and runs the given plugin zip downloader. */
@@ -72,6 +79,7 @@ export function useOnboardingTour(
   site: string,
   siteFromUrl: string | null,
 ): OnboardingTour {
+  const router = useRouter();
   const {
     selectedSite,
     setSelectedSite,
@@ -98,6 +106,8 @@ export function useOnboardingTour(
   const [hasServiceForSite, setHasServiceForSite] = useState<boolean | null>(
     null,
   );
+  /** True when an active managed_wp entitlement exists AND is linked to an order (payment completed). */
+  const [hasPaidForSite, setHasPaidForSite] = useState<boolean | null>(null);
   /** Starts true: the first paint waits for the reconcile answer. */
   const [isReconciling, setIsReconciling] = useState(true);
 
@@ -117,7 +127,8 @@ export function useOnboardingTour(
     setHasProbed(false);
     setPolling(false);
     setViewedStep(null);
-  }, [site]);
+    addSite.setExistingSite(null);
+  }, [site, addSite.setExistingSite]);
 
   // The orders row behind the active site, straight from the dashboard context.
   const order = orders?.find((o) => o.website_name === site) ?? null;
@@ -279,12 +290,35 @@ export function useOnboardingTour(
     }
   }, [site, user?.id]);
 
+  /** Is there an active managed_wp entitlement linked to an order (payment done)? */
+  const checkPaidForSite = useCallback(async () => {
+    if (!user?.id || !site) {
+      setHasPaidForSite(null);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/orders/managed/paid?site=${encodeURIComponent(site)}`,
+      );
+      if (!res.ok) {
+        setHasPaidForSite(false);
+        return;
+      }
+      const body: any = await res.json();
+      setHasPaidForSite(Boolean(body.paid));
+    } catch {
+      setHasPaidForSite(false);
+    }
+  }, [site, user?.id]);
+
   // Re-resolved whenever the active site changes, so switching sites (or asking
   // to add one) re-evaluates the gate.
   useEffect(() => {
     setHasServiceForSite(null);
+    setHasPaidForSite(null);
     checkServiceForSite();
-  }, [checkServiceForSite]);
+    checkPaidForSite();
+  }, [checkServiceForSite, checkPaidForSite]);
 
   // No service for this site yet: the webhook may have been missed (local dev
   // without Stripe and adopt the plan it reports, so a payment the customer
@@ -355,6 +389,14 @@ export function useOnboardingTour(
     } catch {
       // non-fatal: the site is selected either way
     }
+
+    // Advance the tour onto the site that was just created. Until the url
+    // carries ?site=, the ?intent=new-site branch pins activeSite to "" (that
+    // is what keeps the add-site card open while nothing is connected), so
+    // without this swap the tour sits on step 1 showing the success message
+    // instead of moving on to the plugin step. Orders are refetched above
+    // first so the new site is already in the list when the url resolves.
+    router.replace(`/dashboard/onboarding?site=${created}`);
   }
 
   async function downloadPlugin(
@@ -434,15 +476,20 @@ export function useOnboardingTour(
   }
 
   async function startPayment() {
-    // Payment does not require a pre-selected site: a new-site checkout
-    // creates the entitlement first, the site is connected afterward.
+    // Payment happens at the end of setup: link the entitlement to the
+    // existing order via checkout session metadata so the webhook binds them.
+    const order = orders?.find((o) => o.website_name === site);
     setBusy("payment");
     setError(null);
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceKey: "managed_wp" }),
+        body: JSON.stringify({
+          priceKey: "managed_wp",
+          order_id: order?.order_id ?? null,
+          website_name: order?.website_name ?? null,
+        }),
       });
       const body: any = await res.json();
       if (!res.ok || !body.url) {
@@ -463,6 +510,7 @@ export function useOnboardingTour(
     completedCount,
     isTourComplete,
     hasServiceForSite,
+    hasPaidForSite,
     isReconciling,
     plugin,
     hasProbed,
@@ -473,10 +521,12 @@ export function useOnboardingTour(
     setViewedStep,
     siteInput: addSite.input,
     setSiteInput: addSite.setInput,
+    wpLoginUrl: addSite.wpLoginUrl,
+    setWpLoginUrl: addSite.setWpLoginUrl,
+    existingSite: addSite.existingSite,
     addingSite: addSite.isProcessing,
     addSiteError: addSite.error,
     addSiteSuccess: addSite.success,
-    addSiteLog: addSite.log,
     createSite,
     downloadPlugin,
     checkPlugin: probeOnce,
