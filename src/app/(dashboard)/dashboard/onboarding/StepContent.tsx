@@ -1,5 +1,5 @@
+import Link from "next/link";
 import { Check, FileArchive, LoaderCircle, Lock } from "lucide-react";
-import type { OrderData } from "@/app/api";
 import { Button } from "@/components/ui/button";
 import { RUM_SCRIPT_URL } from "@/lib/wordpress/injection";
 import { cn } from "@/lib/utils";
@@ -19,21 +19,21 @@ type StepContentProps = {
   /** True while we keep re-checking after the user confirmed the install. */
   polling: boolean;
   busy: string | null;
-  orders: OrderData[] | null;
   // "add your site"
   siteInput: string;
   setSiteInput: (value: string) => void;
+  wpLoginUrl: string;
+  setWpLoginUrl: (value: string) => void;
   addingSite: boolean;
   addSiteError: string | null;
   addSiteSuccess: string | null;
-  addSiteLog: string[];
+  existingSite: { order_id: string; website_name: string } | null;
   onCreateSite: () => void;
   // later steps
   onDownloadPlugin: () => void;
   onCheckPlugin: () => void;
   onConfirmPluginInstalled: () => void;
   onVerifyInstallation: () => void;
-  onSelectSite: (site: string) => void;
 };
 
 /** Live plugin status shared by the plugin and the verify step. */
@@ -124,37 +124,34 @@ function PluginStatusPills({
 
 /** Domain form + progress log of the add-site flow. */
 function AddSiteStep({
-  site,
-  orders,
   siteInput,
   setSiteInput,
+  wpLoginUrl,
+  setWpLoginUrl,
   addingSite,
   addSiteError,
   addSiteSuccess,
-  addSiteLog,
+  existingSite,
   onCreateSite,
-  onSelectSite,
 }: {
-  site: string;
-  orders: OrderData[] | null;
   siteInput: string;
   setSiteInput: (value: string) => void;
+  wpLoginUrl: string;
+  setWpLoginUrl: (value: string) => void;
   addingSite: boolean;
   addSiteError: string | null;
   addSiteSuccess: string | null;
-  addSiteLog: string[];
+  existingSite: { order_id: string; website_name: string } | null;
   onCreateSite: () => void;
-  onSelectSite: (site: string) => void;
 }) {
   return (
     <div className="space-y-4">
       <p className="text-xs text-primary/70">
-        Enter the domain you want us to look after. We fetch its favicon and
-        connect it to your account in one go.
+        Enter the domain you want us to help speed up and monitor performance.
       </p>
 
       <form
-        className="flex flex-wrap gap-3 items-center"
+        className="flex flex-col items-start gap-3 w-full max-w-md"
         onSubmit={(e) => {
           e.preventDefault();
           onCreateSite();
@@ -165,21 +162,46 @@ function AddSiteStep({
           required
           value={siteInput}
           onChange={(e) => setSiteInput(e.target.value)}
-          placeholder="www.speedy.site"
+          placeholder="yoursite.com"
           disabled={addingSite}
           className="border border-primary/30 rounded-sm px-3 py-2 text-sm w-full max-w-xs outline-none focus:border-primary"
         />
-        <Button type="submit" disabled={addingSite} className={CTA_CLASS}>
+        <input
+          type="text"
+          required
+          value={wpLoginUrl}
+          onChange={(e) => setWpLoginUrl(e.target.value)}
+          placeholder="https://example.com/wp-login.php"
+          disabled={addingSite}
+          className="border border-primary/30 rounded-sm px-3 py-2 text-sm w-full max-w-xs outline-none focus:border-primary"
+        />
+        <Button type="submit" disabled={addingSite}>
           {addingSite && <LoaderCircle className="size-3.5 animate-spin" />}
-          Connect site
+          {addingSite ? <>Connecting...</> : <>Connect site</>}
         </Button>
       </form>
 
-      {addSiteLog.length > 0 && (
-        <pre className="rounded-sm border border-primary/20 bg-primary/4 p-3 font-mono text-xs max-h-32 overflow-y-auto text-black dark:text-amber-300">
-          {addSiteLog.join("\n")}
-        </pre>
+      {existingSite && (
+        <div className="rounded-sm border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
+          <p className="text-xs font-medium text-emerald-700">
+            {existingSite.website_name} is already connected to your account.
+          </p>
+          <p className="text-[10px] text-emerald-600">
+            Continue setup at its configuration status page.
+          </p>
+          <Link
+            href={`/dashboard/onboarding?site=${existingSite.website_name}`}
+            className="text-xs font-medium text-emerald-600 underline hover:text-emerald-700"
+          >
+            Go to configuration status →
+          </Link>
+        </div>
       )}
+
+      <p className="text-[10px] text-primary/50">
+        The login URL is where you access wp-admin. This is a reference for
+        experts to work on your site during performance optimization.
+      </p>
 
       {addSiteError && <p className="text-xs text-red-500">{addSiteError}</p>}
       {addSiteSuccess && (
@@ -187,32 +209,6 @@ function AddSiteStep({
           <Check className="size-3" />
           {addSiteSuccess}
         </p>
-      )}
-
-      {/* already-connected sites, for accounts that are not new */}
-      {orders && orders.length > 0 && (
-        <div className="space-y-2 border-t border-primary/10 pt-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-primary/40">
-            Or continue with a site you already connected
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {orders.map((order) => (
-              <button
-                key={order.order_id}
-                type="button"
-                onClick={() => onSelectSite(order.website_name)}
-                className={cn(
-                  "text-xs px-3 py-1.5 rounded-sm border transition-colors",
-                  order.website_name === site
-                    ? "border-primary bg-primary/10 font-medium"
-                    : "border-primary/20 hover:bg-primary/5",
-                )}
-              >
-                {order.website_name}
-              </button>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );
@@ -229,19 +225,19 @@ export function StepContent({
   hasProbed,
   polling,
   busy,
-  orders,
   siteInput,
   setSiteInput,
+  wpLoginUrl,
+  setWpLoginUrl,
+  existingSite,
   addingSite,
   addSiteError,
   addSiteSuccess,
-  addSiteLog,
   onCreateSite,
   onDownloadPlugin,
   onCheckPlugin,
   onConfirmPluginInstalled,
   onVerifyInstallation,
-  onSelectSite,
 }: StepContentProps) {
   const step = STEPS[index];
   const isPluginReady = plugin.installed && plugin.keyed;
@@ -253,102 +249,101 @@ export function StepContent({
       description={step.description}
     >
       {index === 0 && (
-          <AddSiteStep
-            site={site}
-            orders={orders}
-            siteInput={siteInput}
-            setSiteInput={setSiteInput}
-            addingSite={addingSite}
-            addSiteError={addSiteError}
-            addSiteSuccess={addSiteSuccess}
-            addSiteLog={addSiteLog}
-            onCreateSite={onCreateSite}
-            onSelectSite={onSelectSite}
-          />
-        )}
+        <AddSiteStep
+          siteInput={siteInput}
+          setSiteInput={setSiteInput}
+          wpLoginUrl={wpLoginUrl}
+          setWpLoginUrl={setWpLoginUrl}
+          existingSite={existingSite}
+          addingSite={addingSite}
+          addSiteError={addSiteError}
+          addSiteSuccess={addSiteSuccess}
+          onCreateSite={onCreateSite}
+        />
+      )}
 
-        {index === 1 && (
-          <div className="space-y-3">
-            <p className="text-xs text-primary/70">
-              Download the Speedy Site plugin and activate it on {site}: in
-              wp-admin go to Plugins, Add New, Upload Plugin. Your access key is
-              assigned to the download automatically, so there is nothing to
-              copy or paste.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={onDownloadPlugin}
-                disabled={busy === "download"}
-                className={CTA_CLASS}
-              >
-                {busy === "download" ? (
-                  <LoaderCircle className="size-3.5 animate-spin" />
-                ) : (
-                  <FileArchive className="size-3.5" />
-                )}
-                Download the plugin
-              </Button>
-              <Button
-                variant="outline"
-                onClick={onConfirmPluginInstalled}
-                disabled={busy === "plugin"}
-                className={CTA_CLASS}
-              >
-                {busy === "plugin" && (
-                  <LoaderCircle className="size-3.5 animate-spin" />
-                )}
-                I installed and activated it
-              </Button>
-            </div>
-            <PluginStatusRow
-              site={site}
-              plugin={plugin}
-              hasProbed={hasProbed}
-              polling={polling}
-            />
-            <PluginStatusPills plugin={plugin} hasProbed={hasProbed} />
-
-            <div className="flex flex-wrap items-center gap-3 border-t border-primary/10 pt-3">
-              <Button
-                onClick={onVerifyInstallation}
-                disabled={busy === "verify" || !isPluginReady}
-                className={CTA_CLASS}
-              >
-                {busy === "verify" && (
-                  <LoaderCircle className="size-3.5 animate-spin" />
-                )}
-                Verify the installation
-              </Button>
-              <Button
-                variant="outline"
-                onClick={onCheckPlugin}
-                disabled={plugin.loading}
-                className={CTA_CLASS}
-              >
-                {plugin.loading ? (
-                  <LoaderCircle className="size-3.5 animate-spin" />
-                ) : (
-                  "Check the plugin"
-                )}
-              </Button>
-              {!isPluginReady && (
-                <span className="text-xs text-amber-600">
-                  Activate the plugin on {site} first.
-                </span>
+      {index === 1 && (
+        <div className="space-y-3">
+          <p className="text-xs text-primary/70">
+            Download the Speedy Site plugin and activate it on {site}: in
+            wp-admin go to Plugins, Add New, Upload Plugin. Your access key is
+            assigned to the download automatically, so there is nothing to copy
+            or paste.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={onDownloadPlugin}
+              disabled={busy === "download"}
+              className={CTA_CLASS}
+            >
+              {busy === "download" ? (
+                <LoaderCircle className="size-3.5 animate-spin" />
+              ) : (
+                <FileArchive className="size-3.5" />
               )}
-            </div>
-
-            <p className="text-xs text-primary/60">
-              Verifying confirms the connection and assigns the real-user
-              collector, served from{" "}
-              <code className="font-mono text-[11px] break-all">
-                {RUM_SCRIPT_URL}
-              </code>
-              . The plugin injects it automatically, so data starts flowing as
-              soon as the service is active.
-            </p>
+              Download the plugin
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onConfirmPluginInstalled}
+              disabled={busy === "plugin"}
+              className={CTA_CLASS}
+            >
+              {busy === "plugin" && (
+                <LoaderCircle className="size-3.5 animate-spin" />
+              )}
+              I installed and activated it
+            </Button>
           </div>
-        )}
+          <PluginStatusRow
+            site={site}
+            plugin={plugin}
+            hasProbed={hasProbed}
+            polling={polling}
+          />
+          <PluginStatusPills plugin={plugin} hasProbed={hasProbed} />
+
+          <div className="flex flex-wrap items-center gap-3 border-t border-primary/10 pt-3">
+            <Button
+              onClick={onVerifyInstallation}
+              disabled={busy === "verify" || !isPluginReady}
+              className={CTA_CLASS}
+            >
+              {busy === "verify" && (
+                <LoaderCircle className="size-3.5 animate-spin" />
+              )}
+              Verify the installation
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onCheckPlugin}
+              disabled={plugin.loading}
+              className={CTA_CLASS}
+            >
+              {plugin.loading ? (
+                <LoaderCircle className="size-3.5 animate-spin" />
+              ) : (
+                "Check the plugin"
+              )}
+            </Button>
+            {!isPluginReady && (
+              <span className="text-xs text-amber-600">
+                Activate the plugin on {site} first.
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-primary/60">
+            Verifying confirms the connection and assigns the real-user
+            collector, served from{" "}
+            <code className="font-mono text-[11px] break-all">
+              {RUM_SCRIPT_URL}
+            </code>
+            . The plugin injects it automatically, so data starts flowing as
+            soon as the service is active.
+          </p>
+        </div>
+      )}
     </StepCard>
   );
 }

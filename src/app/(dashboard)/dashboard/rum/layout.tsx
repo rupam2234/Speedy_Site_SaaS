@@ -13,12 +13,9 @@ interface RumLayoutProps {
 }
 
 export default function RumLayout({ children }: RumLayoutProps) {
-  const { plan, orders, isLoadingOrders } = useSiteContext();
+  const { selectedSite, orders, isLoadingOrders } = useSiteContext();
 
-  // Show nothing until plan is loaded
-  if (plan === null) return null;
-
-  if (isLoadingOrders) {
+  if (isLoadingOrders || !selectedSite) {
     return (
       <div className="h-[80vh] flex items-center justify-center">
         <LoadingAnimation />
@@ -31,9 +28,13 @@ export default function RumLayout({ children }: RumLayoutProps) {
     return <NoSiteSelected />;
   }
 
-  // Selected site, free plan
-  if (plan === "Free") return <UpgradeFallback />;
+  // Paid PER SITE, not per account. The order row is created unpaid while the
+  // site is being connected and only flips to order_status = true when
+  // payment completes, so a site that is still pending stays CrUX-only even
+  // when the account has other paid sites.
+  const selectedOrder = orders.find((o) => o.website_name === selectedSite);
+  if (selectedOrder?.order_status !== true) return <UpgradeFallback />;
 
-  // Selected site and paid plan
+  // Selected site, paid for
   return <>{children}</>;
 }

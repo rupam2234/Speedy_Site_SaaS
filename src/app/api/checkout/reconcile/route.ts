@@ -1,7 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import Stripe from "stripe";
 import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
-import { provisionEntitlement, resolvePlan } from "@/lib/entitlement";
+import {
+  finalizePaidOrder,
+  provisionEntitlement,
+  resolvePlan,
+} from "@/lib/entitlement";
+import { runAutoAssignmentIfEnabled } from "@/lib/services/assignmentService";
 import { MANAGED_WP_PRICE_ID } from "@/lib/products";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "build-placeholder"); // build-safe
@@ -24,6 +29,10 @@ const SCAN_WINDOW_SECONDS = 30 * 60;
  *
  * Returns the account's freshly resolved plan so the caller can update the UI
  * immediately, without waiting for the client-side plan cache to expire.
+ *
+ * It also performs the webhook's order finalization (bind the entitlement to
+ * the pending order, flip it to paid) so a payment whose webhook never landed
+ * still completes the site instead of leaving it stuck at the pay step.
  */
 export async function POST(req: Request) {
   const { user, error } = await getSupabaseServerUser();
@@ -47,6 +56,12 @@ export async function POST(req: Request) {
 
     let provisioned = false;
     let reason = "nothing-to-do";
+    // The paid session whose entitlement/order link we must converge on. Kept
+    // even when the entitlement already existed ("exists"), because the order
+    // side of the link can still be missing (webhook died midway) and
+    // finalizePaidOrder heals it.
+    let paidSession: { id: string; metadata?: Record<string, any> } | null =
+      null;
 
     // Precise path: the Stripe redirect carries the session id.
     if (sessionId) {
@@ -62,6 +77,7 @@ export async function POST(req: Request) {
         );
       }
 
+      paidSession = { id: session.id, metadata: session.metadata ?? undefined };
       const result = await provisionEntitlement(session, expectedAmount);
       provisioned = result.provisioned;
       reason = result.reason;
@@ -85,12 +101,31 @@ export async function POST(req: Request) {
         .sort((a, b) => b.created - a.created);
 
       for (const session of mine) {
+        paidSession = { id: session.id, metadata: session.metadata ?? undefined };
         const result = await provisionEntitlement(session, expectedAmount);
         if (result.provisioned) {
           provisioned = true;
           reason = result.reason;
           break;
         }
+      }
+    }
+
+    // Same finalization the webhook performs: bind the entitlement to the
+    // pending order and flip that order to paid. No-op without order metadata.
+    if (paidSession) {
+      const { orderId } = await finalizePaidOrder(paidSession);
+      if (orderId) {
+        after(async () => {
+          try {
+            await runAutoAssignmentIfEnabled(orderId);
+          } catch (bgError) {
+            console.error(
+              `Background auto-assignment failed for order ${orderId}:`,
+              bgError,
+            );
+          }
+        });
       }
     }
 

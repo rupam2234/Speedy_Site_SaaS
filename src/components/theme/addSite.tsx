@@ -12,8 +12,14 @@ export type AddSite = {
   success: string | null;
   /** Progress lines, oldest first. */
   log: string[];
-  /** Connects the typed domain and returns it, or null when it failed. */
+  /** WordPress login URL being collected alongside the domain. */
+  wpLoginUrl: string;
+  setWpLoginUrl: (value: string) => void;
+  /** Connects the domain + WP login URL and returns the domain, or null when it failed. */
   handleAddWebsite: () => Promise<string | null>;
+  /** Set when an existing order is found for this domain. */
+  existingSite: { order_id: string; website_name: string } | null;
+  setExistingSite: (value: { order_id: string; website_name: string } | null) => void;
 };
 
 /**
@@ -26,11 +32,15 @@ export type AddSite = {
 export function useAddSite(): AddSite {
   const user = useSupabaseUser();
   const [input, setInput] = useState<string>("");
+  const [wpLoginUrl, setWpLoginUrl] = useState<string>("");
   const [isProcessing, setProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [log, setLog] = useState<string[]>([]);
-
+  const [existingSite, setExistingSite] = useState<{
+    order_id: string;
+    website_name: string;
+  } | null>(null);
   function appendLog(stage: string) {
     setLog((prev) => [...prev, `${new Date().toLocaleTimeString()} - ${stage}`]);
   }
@@ -39,6 +49,7 @@ export function useAddSite(): AddSite {
     setProcessing(true);
     setError(null);
     setSuccess(null);
+    setExistingSite(null);
 
     appendLog("validating");
     const cleanDomain = extractRootDomain(input?.trim());
@@ -46,6 +57,31 @@ export function useAddSite(): AddSite {
     if (!cleanDomain) {
       setError("Please enter a valid domain (e.g. example.com)");
       appendLog("error");
+      setProcessing(false);
+      return null;
+    }
+
+    if (!wpLoginUrl?.trim()) {
+      setError("Please enter your WordPress login URL (e.g. https://example.com/wp-login.php)");
+      appendLog("error");
+      setProcessing(false);
+      return null;
+    }
+
+    // Early duplicate check BEFORE any favicon upload or order creation.
+    appendLog("checking existing site");
+    const checkRes = await fetch(`/api/orders/managed/check?site=${encodeURIComponent(cleanDomain)}`);
+    const checkBody: any = await checkRes.json();
+
+    if (checkBody.exists && checkBody.order) {
+      setExistingSite({
+        order_id: checkBody.order.order_id,
+        website_name: checkBody.order.website_name,
+      });
+      setError(
+        `${cleanDomain} is already connected to your account. Go to its configuration status to continue setup.`,
+      );
+      appendLog("exists");
       setProcessing(false);
       return null;
     }
@@ -67,7 +103,7 @@ export function useAddSite(): AddSite {
     }
 
     appendLog("creating order");
-    const res = await addOrder(favicon_file, cleanDomain, user?.id);
+    const res = await addOrder(favicon_file, cleanDomain, wpLoginUrl.trim(), user?.id);
 
     if (!res) {
       setError("Unexpected error occurred.");
@@ -89,7 +125,14 @@ export function useAddSite(): AddSite {
 
     // Handle other errors
     if (res.status !== 200) {
-      setError(res.body.error || res.body.message || "Failed to create site.");
+      // Keep the server's `details` visible (it usually carries the Postgres
+      // error code/message, e.g. the upsert constraint failures) so the UI
+      // never hides the real reason behind a generic sentence.
+      const message =
+        res.body.error || res.body.message || "Failed to create site.";
+      setError(
+        res.body.details ? `${message} (${res.body.details})` : message,
+      );
       appendLog("error");
       setProcessing(false);
       return null;
@@ -104,22 +147,31 @@ export function useAddSite(): AddSite {
   async function addOrder(
     uploadedFavicon: string | null,
     domain: string,
+    wpLoginUrl: string,
     userId?: string,
   ): Promise<{ status: number; body: any } | null> {
     if (!domain) return null;
 
     const orderData: OrderData = {
-      order_status: true,
+      // Created unpaid: the order only becomes live (order_status = true) when
+      // the Stripe webhook / reconcile endpoint processes the payment. The
+      // server enforces this regardless of what the client sends.
+      order_status: false,
       website_address: `https://${domain}`,
       website_name: domain,
       favicon_file: uploadedFavicon,
     };
 
     try {
-      const res = await fetch("/api/orders/newOrder", {
+      const res = await fetch("/api/orders/managed/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderData, user_id: userId }),
+        body: JSON.stringify({
+          orderData,
+          user_id: userId,
+          website: domain,
+          wp_login_url: wpLoginUrl,
+        }),
       });
 
       const body = await res.json();
@@ -137,6 +189,10 @@ export function useAddSite(): AddSite {
     error,
     success,
     log,
+    wpLoginUrl,
+    setWpLoginUrl,
+    existingSite,
+    setExistingSite,
     handleAddWebsite,
   };
 }

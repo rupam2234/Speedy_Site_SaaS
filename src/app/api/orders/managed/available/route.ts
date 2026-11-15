@@ -9,7 +9,8 @@ const worker = setupDB();
  * Can a site be connected right now without a new payment?
  *
  * The flow is per site, not per account:
- *  - a site that already has an order is already paid for, so it may continue;
+ *  - a site that already has a paid order (order_status = true) may continue;
+ *    a pending (unpaid) order does not unlock anything on its own;
  *  - a brand-new site needs an unused `managed_wp` entitlement (each purchase
  *    covers one site), which is why unconnected sites start with payment.
  */
@@ -23,20 +24,26 @@ export async function GET(req: Request) {
   const site = normalizeDomain(new URL(req.url).searchParams.get("site"));
 
   try {
-    // Already connected to this account: its entitlement was consumed by it.
+    // Already connected to this account: its order was flipped to paid when
+    // the entitlement was consumed by it.
     if (site) {
       const { data: existingOrder } = await worker
         .from("orders")
-        .select("order_id")
+        .select("order_id, order_status")
         .eq("user_id", user.id)
         .eq("website_name", site)
         .maybeSingle();
 
       if (existingOrder) {
-        return NextResponse.json(
-          { available: true, reason: "already-connected" },
-          { status: 200 },
-        );
+        // An order row alone no longer means "paid": sites are created during
+        // setup (order_status = false) and only flip when payment completes,
+        // so an unpaid order falls through to the payment gate below.
+        if (existingOrder.order_status === true) {
+          return NextResponse.json(
+            { available: true, reason: "already-connected" },
+            { status: 200 },
+          );
+        }
       }
     }
 

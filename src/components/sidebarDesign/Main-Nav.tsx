@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, LucideIcon } from "lucide-react";
+import { ChevronRight, Lock, LucideIcon } from "lucide-react";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -27,6 +27,8 @@ export default function MainNav({
     url: string;
     icon?: LucideIcon;
     isActive: boolean;
+    /** Renders a lock marker: the entry exists but is gated for this site. */
+    locked?: boolean;
     items?: { title: string; url: string }[];
   }[];
 
@@ -69,10 +71,25 @@ export default function MainNav({
             >
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={items.title}>
+                  <SidebarMenuButton
+                    tooltip={
+                      items.locked
+                        ? `${items.title} (locked until this site's payment is complete)`
+                        : items.title
+                    }
+                  >
                     {items.icon && <items.icon />}
                     <span>{items.title}</span>
-                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    {items.locked && (
+                      <Lock className="ml-auto size-3 text-primary/40" />
+                    )}
+                    <ChevronRight
+                      className={
+                        items.locked
+                          ? "ml-1 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
+                          : "ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
+                      }
+                    />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -90,10 +107,20 @@ export default function MainNav({
             </Collapsible>
           ) : (
             <SidebarMenuItem key={items.title}>
-              <SidebarMenuButton asChild tooltip={items.title}>
+              <SidebarMenuButton
+                asChild
+                tooltip={
+                  items.locked
+                    ? `${items.title} (locked until this site's payment is complete)`
+                    : items.title
+                }
+              >
                 <a href={items.url}>
                   {items.icon && <items.icon />}
                   <span>{items.title}</span>
+                  {items.locked && (
+                    <Lock className="ml-auto size-3 text-primary/40" />
+                  )}
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>

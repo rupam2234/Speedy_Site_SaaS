@@ -26,7 +26,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { priceKey }: { priceKey?: string } = await req.json();
+    const {
+      priceKey,
+      order_id,
+      website_name,
+    }: { priceKey?: string; order_id?: string | null; website_name?: string | null } =
+      await req.json();
 
     // Default to the only product for now; "mode" is accepted but ignored —
     // the business model is one-time payment only (no subscriptions)
@@ -51,15 +56,18 @@ export async function POST(req: Request) {
       mode: "payment",
       line_items: [{ price: product.price, quantity: 1 }],
       customer_email: user.email ?? undefined,
-      // Webhook reads these to provision the entitlement
+      // Webhook reads these to provision the entitlement and link it to the order
       client_reference_id: user.id,
       metadata: {
         user_id: user.id,
         product_type: product.productType,
+        // Optional: when paying at the end of setup, link the entitlement to
+        // the existing order instead of creating a standalone entitlement.
+        order_id: order_id ?? "",
+        website_name: website_name ?? "",
       },
-      // Payment done -> back to the setup gateway, which reconciles the
-      // entitlement itself. Site credentials are collected later, from the
-      // expert workspace.
+      // Payment done -> back to the onboarding steps flow. The webhook will
+      // link the entitlement to the pending order (if one exists).
       success_url: `${BASE_URL}/dashboard/onboarding`,
       cancel_url: `${BASE_URL}/account/one-time-payment/cancel`,
     });

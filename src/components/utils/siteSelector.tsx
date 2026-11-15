@@ -39,6 +39,14 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
 
   const selectedOrder = orders?.find((o) => o.website_name === selectedSite);
 
+  // An order row only means "live site" once payment completed: rows are
+  // created unpaid while the site is being connected (order_status = false)
+  // and flip to true when the Stripe webhook / reconcile endpoint processes
+  // the payment. Pending sites are shown, but they route to their setup page
+  // instead of being treated as a fully active site.
+  const isPaid = (order?: { order_status?: boolean }) =>
+    order?.order_status === true;
+
   const selectedFavicon = {
     fav: selectedOrder?.favicon_file,
     site: selectedOrder?.website_name,
@@ -100,13 +108,18 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                 }
               />
             ) : (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 min-w-0">
                 <SiteIcon
                   favicon={selectedFavicon.fav}
                   site={selectedFavicon.site}
                 />
 
                 <span className="truncate">{selectedSite}</span>
+                {!isPaid(selectedOrder) && (
+                  <span className="shrink-0 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-600">
+                    Pending
+                  </span>
+                )}
               </div>
             )}
 
@@ -130,13 +143,26 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                 key={i}
                 className="flex items-center gap-2 py-1 text-sm px-2 hover:bg-primary/5 dark:hover:bg-secondary-background cursor-pointer"
                 onClick={() => {
-                  setSelectedSite(x.website_name);
                   setOpen(false);
+                  // Unpaid sites are not live yet: open their setup/status page
+                  // instead of switching the dashboard to a locked site.
+                  if (!isPaid(x)) {
+                    router.push(
+                      `/dashboard/onboarding?site=${x.website_name}`,
+                    );
+                    return;
+                  }
+                  setSelectedSite(x.website_name);
                 }}
               >
                 <SiteIcon favicon={x.favicon_file} site={x.website_name} />
 
-                <p>{x.website_name}</p>
+                <p className="truncate">{x.website_name}</p>
+                {!isPaid(x) && (
+                  <span className="ml-auto shrink-0 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-600">
+                    Pending payment
+                  </span>
+                )}
               </div>
             );
           })}
