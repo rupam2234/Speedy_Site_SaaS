@@ -16,18 +16,22 @@ Speedy Site is a **WordPress performance optimization service powered by real us
 Use root automation to execute standard quality gates across subsystems:
 - **Quality Check**: Run `make check` (runs frontend linter).
 - **Generated Types Are Read-Only**: Never edit `src/types/database.types.ts` directly. Update schemas/migrations and run `make types`.
-- **Environment & Secrets**: Never hardcode secrets or commit `.env` files. Reference `.env.example`.
+- **Environment & Secrets**: Never hardcode secrets or credentials; always read from environment variables. Never commit `.env` files. Reference `.env.example`.
+- **Protected Branches**: Never push directly to `main`. Push changes through a feature branch and merge cleanly.
 
 ## 2. Code Rules & Style Invariants
-- **No Em-Dashes**: Never use the em-dash character "—" in code, comments, docs, or UI copy. Use commas, colons, parentheses, or split sentences.
+- **No Em-Dashes**: Never use the em-dash character in code, comments, docs, or UI copy. Use commas, colons, semicolons, parentheses, or split sentences.
 - **Comments**: Key functions only, 3 lines maximum, only `//` comments explaining the *why*. Delete dead code.
-- **Performance First**: Server components preferred, batched queries (no N+1), index-aware DB queries, lightweight error paths in Cloudflare Workers.
+- **Performance First**: Server components preferred, batched queries (no N+1), index-aware DB queries, lightweight error paths in Cloudflare Workers. Keep bundle sizes minimal.
+- **Clean Code & Reuse**: Reuse existing components, hooks, and helpers before creating new ones. Shared logic belongs in `src/lib`. Follow standard Next.js route conventions.
+- **Error Handling & Logging**: Never silently swallow errors; log or propagate with structured responses (`error` and `message` fields).
 - **Impact Log**: Record major impactful architectural changes in `docs/IMPACT-LOG.md`.
 
 ## 3. Documentation Guidelines
 - **Doc-First Discovery**: Before analyzing code or wandering through files, inspect documentation first (`docs/`). They contain curated architectural context, schema summaries, and file responsibilities.
 - **Macro Dossiers (`docs/systems/*.md`)**: High-level component topologies, service routes, and system architecture.
 - **Developmental Plans & Roadmaps (`docs/plans/`)**: Feature overhauls, milestones, and architectural phases must be planned in `docs/plans/`. Plan filenames MUST be prefixed with their creation timestamp (`YYYY-MM-DD_HHMMSS_<slug>.md`). Keep `docs/plans/README.md` synchronized.
+- **Migration & Service Model**: When modifying billing, auth gates, telemetry workers, or database schemas, review `docs/migration/README.md` and follow the safe de-integration pattern.
 
 ## 4. Ongoing Documentation Maintenance Protocol (Agent Operational Rules)
 When implementing features or refactoring code during conversation turns, follow this maintenance lifecycle:
@@ -36,6 +40,20 @@ When implementing features or refactoring code during conversation turns, follow
    - Sync progress with `python ~/.gemini/config/plugins/workspace-docs/skills/workspace-docs/scripts/manage_plans.py update <plan_name> --status completed`.
 2. **On Architectural Shifts (`docs/systems/`, `docs/protocols/`)**:
    - Update `docs/systems/*.md` or `docs/protocols/*.md` when changing system topologies, introducing services, or altering wire formats.
+
+---
+
+## 5. Technology Stack Quick Reference
+
+| Layer | Technology |
+| :--- | :--- |
+| **App** | Next.js 15 (App Router) + TypeScript + Tailwind CSS 4 |
+| **DB & Auth** | Supabase (Postgres + Auth); generated types in `src/types/database.types.ts` |
+| **Edge** | Cloudflare Workers (`cloudflare-workers/`: RUM ingestion, event buffer, analytics cron) |
+| **Billing** | Stripe |
+| **Email** | Resend |
+| **Cache** | Upstash Redis |
+| **Collector** | `scripts/extended-rum.js` -> built to `public/rum.js` (`pnpm run build:extended-vitals`) |
 
 ---
 

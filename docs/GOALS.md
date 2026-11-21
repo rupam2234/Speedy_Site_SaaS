@@ -2,7 +2,7 @@
 #
 
 > Single source of truth for what we are building and why.
-> **Read this before implementing anything** (see `AGENT.md`, rule 4).
+> **Read this before implementing anything** (see `AGENTS.md`).
 
 ---
 

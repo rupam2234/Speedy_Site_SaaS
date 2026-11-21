@@ -217,7 +217,7 @@ resumes. A paid user who lands here directly sees the tour as complete.
 
 ## 5. Fixes already applied in this change (code/doc disagreements)
 
-`AGENT.md` rule 5: docs and code disagree, so flag and fix before building.
+`AGENTS.md` rule 3: docs and code disagree, so flag and fix before building.
 
 1. **`src/app/api/orders/newOrder/route.ts` enforced `FREE_SITE_LIMIT = 1`**
    while `api/orders/site-limit`, the DB trigger `enforce_free_site_limit` and

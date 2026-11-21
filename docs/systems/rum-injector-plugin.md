@@ -191,7 +191,7 @@ Trade-off and fallback:
   `inject:true`. Prefer the server-side decision for its simplicity; keep the stub
   as a documented option.
 
-The module stays tiny and non-blocking, consistent with `AGENT.md` rule 6 (the
+The module stays tiny and non-blocking, consistent with `AGENTS.md` rule 2 (the
 collector and its install path must not add measurable page weight or blocking work).
 
 ---

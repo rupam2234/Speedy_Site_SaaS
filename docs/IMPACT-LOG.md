@@ -2,7 +2,7 @@
 
 > **Purpose:** a short, interview-ready record of the most impactful
 > engineering changes to speedy.site. Newest first.
-> **Entry rules (AGENT.md rule 8):** only major, measurable changes (cost,
+> **Entry rules (AGENTS.md rule 2):** only major, measurable changes (cost,
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.

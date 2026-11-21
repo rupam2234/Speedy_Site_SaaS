@@ -127,7 +127,7 @@ Reuses the existing managed-WP order + expert assignment design:
 ## 4. Phased roadmap
 
 ### Phase 0: Refocus the message ✅ (this change)
-- `AGENT.md` engineering rules
+- `AGENTS.md` engineering rules
 - `docs/GOALS.md` mission doc
 - Homepage refocused: plugin-first story, real-user-data positioning
 - Homepage pricing simplified to the single $299 one-time offer

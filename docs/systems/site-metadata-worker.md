@@ -118,15 +118,15 @@ Two changes worth making:
   `SITE_METADATA`, so the first sync deletes its stale keys (no new namespace
   needed)
 - [x] Delete the commented-out backup block in `cloudflare-workers/rum/src/index.js`
-  (AGENT.md rule 1)
+  (AGENTS.md rule 1)
 - [x] Remove dead code and the commented temp line in `event-buffer/src/index.js`
-  (AGENT.md rule 1); tighten CORS (echo origin without credentials)
+  (AGENTS.md rule 1); tighten CORS (echo origin without credentials)
 - [x] Verify the `DB` (D1) binding in event-buffer is actually used; remove if
   dead — no `env.DB` reference in event-buffer and no `[[d1_databases]]` left in
   `wrangler.toml`, so it is already gone
 - Move the committed service key to a wrangler secret, then rotate it in Supabase ✅ (2026-10-13: rotated in Supabase, synced to all 4 workers, RUM ingestion verified)
 - Remove dead code and the commented temp line in `event-buffer/src/index.js`
-  (AGENT.md rule 1); tighten CORS (echo origin without credentials)
+  (AGENTS.md rule 1); tighten CORS (echo origin without credentials)
 - Verify the `DB` (D1) binding in event-buffer is actually used; remove if dead
 
 ### Secrets to configure before deploying (user actions)
