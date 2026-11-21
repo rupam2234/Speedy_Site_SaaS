@@ -5,7 +5,7 @@ import { normalizeDomain } from "@/lib/wordpress/domain";
 
 const worker = setupDB();
 
-// Setup step keys, in tour order (docs/DESIGN-user-onboarding-flow.md §4.2).
+// Setup step keys, in tour order (docs/systems/user-onboarding-flow.md §4.2).
 // The user walks four steps; preparing the signature and assigning the
 // collector are recorded silently behind the plugin download + verification,
 // so one UI step writes more than one key.

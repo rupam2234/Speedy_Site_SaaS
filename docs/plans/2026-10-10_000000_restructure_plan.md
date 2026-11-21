@@ -1,8 +1,9 @@
 # Restructure Plan: Reshaping speedy.site
 
-> **Status:** Draft v1 · **Owner:** Speedy Site · **Created:** 2026-10-10
-> **Goal:** Refocus speedy.site as a WordPress performance optimization service
-> powered by real user data and WordPress backend tests.
+> **Status:** 🟡 **IN PROGRESS**
+> **Created:** 2026-10-10
+> **Owner:** Speedy Site
+> **Goal:** Refocus speedy.site as a WordPress performance optimization service powered by real user data and WordPress backend tests.
 > Read `docs/GOALS.md` first; this plan implements it.
 
 ---
@@ -21,7 +22,7 @@
 | RUM dashboard | `src/app/(dashboard)/dashboard/rum/**` | Evidence UI for customers & experts |
 | WordPress APIs | `src/app/api/wordpress/{check-connection,plugin-analysis,limits,wp-secret}` | Starting point of the backend test suite |
 | Managed WP order flow | `src/app/api/orders/managed/**`, `/(dashboard)/dashboard/managed-wp` | The service channel (already sold) |
-| Expert assignment design | `docs/DESIGN-managed-wp-order-assignment.md` | Round-robin expert queue (reuse for issue routing) |
+| Expert assignment design | `docs/systems/managed-wp-order-assignment.md` | Round-robin expert queue (reuse for issue routing) |
 | Ticket system | `src/app/api/tickets/**` | Customer ↔ expert communication (reuse) |
 | Billing & plans | `src/app/api/subscriptions/**`, `src/app/account/**` | The $299 one-time path (`one_time_orders`) becomes the only offer |
 
@@ -200,7 +201,7 @@ Still open:
 4. Refund policy for the one-time fee (e.g. 30-day guarantee)? And how exactly
    do we grandfather or migrate existing subscribers?
 5. Analytics stack fate: the analytics workers are bleeding free-tier quota
-   (audit + refactor plan in `docs/DESIGN-analytics-refactor.md`). Quick wins
+   (audit + refactor plan in `docs/systems/analytics-pipeline.md`). Quick wins
    are planned regardless; the open call is Supabase-direct reads (option B)
    vs retiring analytics into the issue detection engine (option C).
 

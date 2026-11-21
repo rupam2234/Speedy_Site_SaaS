@@ -5,8 +5,8 @@
 > customer: site assignment, public data checks (CrUX + PSI), the dashboard
 > upgrade opt-in, and the configuration tour that binds the WP plugin and
 > collects the one-time payment.
-> Read with `docs/GOALS.md`, `docs/RESTRUCTURE-PLAN.md`,
-> `docs/DESIGN-rum-injector-plugin.md`, `docs/DESIGN-site-metadata-worker.md`.
+> Read with `docs/GOALS.md`, `docs/plans/2026-10-10_000000_restructure_plan.md`,
+> `docs/systems/rum-injector-plugin.md`, `docs/systems/site-metadata-worker.md`.
 
 ---
 
@@ -228,7 +228,7 @@ resumes. A paid user who lands here directly sees the tour as complete.
    `20261103000001_free_site_limit_10.sql` (see `docs/IMPACT-LOG.md`). Verified
    while writing this plan.
 2. **`src/components/theme/addSite.tsx` showed the manual RUM `<script>`
-   snippet** after adding a site, contradicting `docs/DESIGN-rum-injector-plugin.md`
+   snippet** after adding a site, contradicting `docs/systems/rum-injector-plugin.md`
    ("remove legacy manual snippet", slice C) and `docs/GOALS.md` ("free tier is
    CrUX only"). **Fixed in this change:** the "Quick RUM Configuration" block is
    replaced by a "Connect your site, step by step" button into the tour.
@@ -239,7 +239,7 @@ resumes. A paid user who lands here directly sees the tour as complete.
 
 The user's diagram puts payment **after** the plugin steps. The entitlement
 model is unchanged: `managed_wp` active is what makes `api/wordpress/injection`
-answer `inject: true` (docs/DESIGN-rum-injector-plugin.md §3), and the
+answer `inject: true` (docs/systems/rum-injector-plugin.md §3), and the
 `event-buffer` edge rejects beacons for unentitled domains independently.
 
 So step 5 ("assign the RUM script") binds and verifies the plugin; the
@@ -285,9 +285,9 @@ Each slice is independently shippable; C is the revenue-visible one.
 ## Related docs
 
 - `docs/GOALS.md`: product loop, one-plugin principle, $299 model.
-- `docs/RESTRUCTURE-PLAN.md`: Phase 1 plugin scope.
-- `docs/DESIGN-rum-injector-plugin.md`: injection + entitlement contract.
-- `docs/DESIGN-site-metadata-worker.md`: entitlement mirror and edge gate.
+- `docs/plans/2026-10-10_000000_restructure_plan.md`: Phase 1 plugin scope.
+- `docs/systems/rum-injector-plugin.md`: injection + entitlement contract.
+- `docs/systems/site-metadata-worker.md`: entitlement mirror and edge gate.
 
    `rum_assigned_at` is stamped and the step shows the collector URL
    (`https://rum.speedy.site/rum.js`) plus "starts collecting the moment your

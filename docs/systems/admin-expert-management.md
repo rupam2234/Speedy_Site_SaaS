@@ -1,7 +1,7 @@
 # DESIGN: Admin Console & Service Expert Management
 
 > **Status:** Implemented v1 · **Owner:** Speedy Site · **Last updated:** 2026-10-23
-> **Scope:** Clean admin workspace under unified `/dashboard/*` URLs for inviting and managing service experts, triaging customer tickets, and dispatching managed WP orders. Experts authenticate via existing login flow with `userRole: expert`. Read with `docs/GOALS.md`, `docs/RESTRUCTURE-PLAN.md`, and `docs/DESIGN-managed-wp-order-assignment.md`.
+> **Scope:** Clean admin workspace under unified `/dashboard/*` URLs for inviting and managing service experts, triaging customer tickets, and dispatching managed WP orders. Experts authenticate via existing login flow with `userRole: expert`. Read with `docs/GOALS.md`, `docs/plans/2026-10-10_000000_restructure_plan.md`, and `docs/systems/managed-wp-order-assignment.md`.
 
 ---
 
@@ -14,7 +14,7 @@ The managed-WP service channel needs a dedicated admin workspace where admins ca
 - Reassign, force-assign, skip, or close orders
 - Experts log in through the **existing** `/sign-in` flow; their `profiles.role = 'expert'` gates what they see (only their assigned orders)
 
-Today the `profiles` table already uses `role ∈ { "user", "admin" }` (tickets module). We extend it to `"expert"` and build the admin console on top of the assignment foundation in `docs/DESIGN-managed-wp-order-assignment.md`.
+Today the `profiles` table already uses `role ∈ { "user", "admin" }` (tickets module). We extend it to `"expert"` and build the admin console on top of the assignment foundation in `docs/systems/managed-wp-order-assignment.md`.
 
 ---
 
@@ -24,7 +24,7 @@ Today the `profiles` table already uses `role ∈ { "user", "admin" }` (tickets 
 |---|---|---|
 | `profiles` table | `id, email, role` | ✅ extend role values, add CHECK constraint |
 | `orders` table | `order_id, user_id, website_name, order_status, …` | ✅ assignment target |
-| `order_assignments` / `experts_pool` | per `DESIGN-managed-wp-order-assignment.md` | ✅ Phase 1 tables |
+| `order_assignments` / `experts_pool` | per `managed-wp-order-assignment.md` | ✅ Phase 1 tables |
 | Supabase Auth | `auth.users` + `profiles` trigger | ✅ expert onboarding = create user + profile row |
 | Ticket system role gating | `/api/tickets/*` server-side `profiles.role` check | ✅ copy pattern for `/api/admin/*` |
 | Next.js App Router + dashboard layout | `/(dashboard)/dashboard/**` | ✅ new `/admin/**` routes under same layout |
@@ -58,7 +58,7 @@ role ∈ { "user" | "admin" | "expert" }
 
 ---
 
-## Data Model (from `DESIGN-managed-wp-order-assignment.md`, summarized)
+## Data Model (from `managed-wp-order-assignment.md`, summarized)
 
 ### `order_assignments`
 ```sql
@@ -188,6 +188,6 @@ No new worker secrets; all admin/expert logic runs in Next.js API routes.
 
 ## Related Docs
 
-- `docs/DESIGN-managed-wp-order-assignment.md`: assignment data model, RR algorithm, Phase 1 SQL
+- `docs/systems/managed-wp-order-assignment.md`: assignment data model, RR algorithm, Phase 1 SQL
 - `docs/GOALS.md`: product loop, principles
-- `docs/RESTRUCTURE-PLAN.md`: Phase 5 service channel integration
+- `docs/plans/2026-10-10_000000_restructure_plan.md`: Phase 5 service channel integration

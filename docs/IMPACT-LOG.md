@@ -83,7 +83,7 @@ plan from `service_type` alone — `data.some(s => s.service_type === "managed_w
 — never checking `status` or `expires_at`, so a cancelled or expired row still
 counted as paid. Every other entitlement gate in the repo already applies the
 full predicate: `src/lib/wordpress/injection.ts` (`.eq("service_type", "managed_wp").eq("status", "active")` plus an `expires_at` future-or-null
-check) and the `site-metadata` worker (`docs/DESIGN-site-metadata-worker.md`:
+check) and the `site-metadata` worker (`docs/systems/site-metadata-worker.md`:
 paid = managed_wp + active + expires_at null-or-future). `activePlan.ts` was the
 only consumer that skipped it — and it is the one that drives the UI.
 
@@ -269,7 +269,7 @@ checkout button.
 ---
 ## 2026-10-23 · Paid Managed WP sites finally get a RUM-entitled domain and an injector API
 
-**Problem:** the RUM ingestion gate (`site-metadata` → `event-buffer`) decides eligibility from `user_services.website_name` on a `managed_wp` row, but neither paid path ever wrote that column. The Stripe webhook creates the entitlement with no site, `POST /api/orders/managed/add` only stored `payment_id` on `wordpress_cred`, and the dashboard `newOrder` paid branch set `order_id` only. Net effect: every paying Managed WP customer had `user_services.website_name = null`, so the sync skipped the domain, the KV never listed it, and `event-buffer` returned 403 on every beacon (the script loads, no data collected). There was also no documented, self-contained API for the plugin to ask whether to inject the collector. Detail: `docs/DESIGN-rum-injector-plugin.md`.
+**Problem:** the RUM ingestion gate (`site-metadata` → `event-buffer`) decides eligibility from `user_services.website_name` on a `managed_wp` row, but neither paid path ever wrote that column. The Stripe webhook creates the entitlement with no site, `POST /api/orders/managed/add` only stored `payment_id` on `wordpress_cred`, and the dashboard `newOrder` paid branch set `order_id` only. Net effect: every paying Managed WP customer had `user_services.website_name = null`, so the sync skipped the domain, the KV never listed it, and `event-buffer` returned 403 on every beacon (the script loads, no data collected). There was also no documented, self-contained API for the plugin to ask whether to inject the collector. Detail: `docs/systems/rum-injector-plugin.md`.
 
 **Changes:**
 - `src/app/api/orders/newOrder/route.ts`: the paid (`activeManaged`) branch now sets `website_name: insertedOrder.website_name` on the `user_services` link, mirroring the free branch.
@@ -295,7 +295,7 @@ checkout button.
 - The hook is isolated: any assignment failure is logged and swallowed, so it can never fail the customer's order creation. `assigned_by` is left null to mark it as system/auto (the admin route records the acting admin instead).
 
 **Impact (before → after):**
-- Paid Managed WP order: created but never assigned → auto-assigned to the next available expert (round-robin, capacity-aware) the moment experts populate the pool. Design detail: `docs/DESIGN-admin-expert-management.md` (Phase 1) and `docs/DESIGN-managed-wp-order-assignment.md` (P2).
+- Paid Managed WP order: created but never assigned → auto-assigned to the next available expert (round-robin, capacity-aware) the moment experts populate the pool. Design detail: `docs/systems/admin-expert-management.md` (Phase 1) and `docs/systems/managed-wp-order-assignment.md` (P2).
 
 **Where to verify:** `tsc --noEmit` and `eslint` pass on the route; `POST /rest/v1/rpc/pick_next_expert` returns `null` while the pool is empty (so orders currently go to the unassigned queue). End-to-end proof needs one available expert in `experts_pool`: submit `POST /api/orders/managed/add` and confirm an active `order_assignments` row (`status='pending'`, one per order) is created.
 
@@ -305,7 +305,7 @@ checkout button.
 
 **Problem:** The managed WP optimization service lacked an operational control center for admins to triage customer tickets, track SLA-breaching unassigned orders, dispatch/reassign orders to developer pools with capacity limits, and review live performance metrics. Additionally, URL paths leaked internal directory names (`/admin`), the tickets discussion view suffered from flexbox height clipping and container scroll occlusion, and navigating to `/account` broke the sidebar layout due to missing context providers.
 
-**Changes (details: `docs/DESIGN-admin-expert-management.md`):**
+**Changes (details: `docs/systems/admin-expert-management.md`):**
 - **Operations Mission Control (`/dashboard`):** Executive overview with 4 KPI metrics (queue depth, active optimizations, developer utilization, open tickets), critical SLA warning banner for orders waiting > 12h, operational dispatch shortcuts, and live feed.
 - **Managed WP Orders (`/dashboard/orders`):** Search by domain, customer email, or order ID; status filter pills; pagination; sliding detail drawer linking directly to live RUM Core Web Vitals evidence; and dispatch actions (Assign, Reassign, Skip with reason, Mark Completed) with assignment audit trail.
 - **SLA-Aware Unassigned Queue (`/dashboard/queue`):** Real-time wait duration badges (`<1h`, `4–12h`, `>12h critical`), inline dispatch modal (auto round-robin or manual selection), and batch auto-assign.
@@ -354,7 +354,7 @@ collected). Secondarily, the gate trusted the payload's own
 `data.siteDomain`, so a copied `<script>` tag plus curl could write into another
 site's metrics.
 
-**Changes (details: `docs/DESIGN-site-metadata-worker.md`):**
+**Changes (details: `docs/systems/site-metadata-worker.md`):**
 - New `site-metadata` worker syncs entitlement from `services_with_domains` into KV
   `SITE_METADATA` (`domain:{website_name}` → `{serviceId, status, expiresAt, pageviewLimit}`)
 - `event-buffer` derives the domain from Origin/Referer at the edge instead of the
@@ -384,7 +384,7 @@ domain and 403 for an unknown one; `rum.speedy.site/rum.js` serving is untouched
 whole pipeline through unauthenticated endpoints; writes were N+1 against a
 D1 database with zero indexes; reads bypassed every cache layer we own.
 
-**Changes (details: `docs/DESIGN-analytics-refactor.md`):**
+**Changes (details: `docs/systems/analytics-pipeline.md`):**
 - All worker endpoints now require a secret header; public `/` and `/test`
   triggers deleted; the secret that lived in the client bundle removed
 - Upserts rewritten: 3N queries per cron run → 1 keys-read + 1 `env.DB.batch()`

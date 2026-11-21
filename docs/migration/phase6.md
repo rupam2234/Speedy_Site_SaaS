@@ -11,5 +11,5 @@
    - Verify performance and zero-regression loading states across customer dashboards with mixed service tiers.
 
 ### Notes
-* Read path optimizations from `docs/DESIGN-analytics-refactor.md` should be respected when binding telemetry cards.
+* Read path optimizations from `docs/systems/analytics-pipeline.md` should be respected when binding telemetry cards.
 * The Supabase database view `cloudflare_kv_tracking` and RPC `get_daily_web_metrics` provide verified data interfaces.

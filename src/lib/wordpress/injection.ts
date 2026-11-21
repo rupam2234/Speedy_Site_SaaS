@@ -3,7 +3,7 @@ import { setupDB } from "@/lib/db";
 import { normalizeDomain } from "./domain";
 
 // Collector is served publicly; entitlement is enforced at the edge, so no secret
-// and no id belong in the URL (docs/DESIGN-site-metadata-worker.md).
+// and no id belong in the URL (docs/systems/site-metadata-worker.md).
 export const RUM_SCRIPT_URL = "https://rum.speedy.site/rum.js";
 
 export type InjectionResult =

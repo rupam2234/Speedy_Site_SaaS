@@ -1,7 +1,7 @@
 # DESIGN: site-metadata worker (RUM entitlement KV)
 
 > Phase 2 of the migration tracker, updated for the plugin-install model.
-> Read with `docs/GOALS.md` and `docs/RESTRUCTURE-PLAN.md`.
+> Read with `docs/GOALS.md` and `docs/plans/2026-10-10_000000_restructure_plan.md`.
 
 ## Problem
 
