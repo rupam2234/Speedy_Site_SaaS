@@ -19,6 +19,8 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { OrderChatPanel } from "@/components/chat";
+import type { ChannelType } from "@/lib/chat/types";
 
 interface AssignmentHistory {
   id: string;
@@ -73,6 +75,7 @@ export default function AdminOrders() {
 
   // Selected Order for Detail Drawer
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [adminChatTab, setAdminChatTab] = useState<ChannelType>("internal");
 
   // Modals
   const [pickFor, setPickFor] = useState<Order | null>(null);
@@ -286,7 +289,7 @@ export default function AdminOrders() {
                         <div className="text-xs text-muted-foreground">{order.websiteAddress}</div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="text-xs text-foreground">{order.customerEmail ?? "—"}</div>
+                        <div className="text-xs text-foreground">{order.customerEmail ?? "-"}</div>
                         <div className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]">{order.userId}</div>
                       </td>
                       <td className="px-4 py-3">
@@ -314,7 +317,7 @@ export default function AdminOrders() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : "—"}
+                        {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : "-"}
                       </td>
                       <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
@@ -472,6 +475,53 @@ export default function AdminOrders() {
                     </button>
                   )}
                 </div>
+              </div>
+
+              {/* Order Communication Channels */}
+              <div className="space-y-3 pt-2 border-t">
+                <div className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                  Communication Channels
+                </div>
+
+                <div className="flex rounded-lg border p-1 bg-muted/40 gap-1">
+                  <button
+                    onClick={() => setAdminChatTab("internal")}
+                    className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-all ${
+                      adminChatTab === "internal"
+                        ? "bg-background text-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span>Expert Backchannel (Active)</span>
+                  </button>
+                  <button
+                    onClick={() => setAdminChatTab("client")}
+                    className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-all ${
+                      adminChatTab === "client"
+                        ? "bg-background text-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span>Customer Chat (Read-Only)</span>
+                  </button>
+                </div>
+
+                <OrderChatPanel
+                  key={`${selectedOrder.orderId}-${adminChatTab}`}
+                  orderId={selectedOrder.orderId}
+                  channelType={adminChatTab}
+                  isReadOnlyOverride={adminChatTab === "client"}
+                  title={
+                    adminChatTab === "client"
+                      ? "Customer Dialogue Stream"
+                      : "Staff Backchannel"
+                  }
+                  subtitle={
+                    adminChatTab === "client"
+                      ? "Read-only inspection; intervention disabled"
+                      : "Direct coordination with the assigned expert"
+                  }
+                />
               </div>
 
               {/* Assignment Audit Trail Timeline */}

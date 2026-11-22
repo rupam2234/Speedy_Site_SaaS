@@ -1,8 +1,8 @@
 # Plan: Order Communication Channels (Customer-Expert with Admin Oversight)
 
-> **Status:** 🟡 **IN PROGRESS**  
+> **Status:** 🟢 **COMPLETED**  
 > **Created:** 2026-11-21 20:57:05  
-> **Last Updated:** 2026-11-21  
+> **Last Updated:** 2026-11-22  
 > **Target Source Files:** `supabase/migrations/`, `src/types/database.types.ts`, `src/lib/chat/`, `src/components/chat/`, `src/app/(dashboard)/dashboard/`  
 > **Prerequisites:** [2026-11-21_192616_00_initial_architecture_setup.md](file:///home/victor/Projects/Speedy_Site_SaaS/docs/plans/2026-11-21_192616_00_initial_architecture_setup.md)  
 > **Related ADR:** [ADR-0002: Order-Scoped Communication Channels with Role-Gated Access](file:///home/victor/Projects/Speedy_Site_SaaS/docs/adr/0002-order-communication-channels.md)  
@@ -11,32 +11,32 @@
 
 ## 📋 Phase Objectives & Progress Checklist
 
-- [ ] **Phase 1: Database Schema & Row Level Security (RLS)**
-  - [ ] Migration for `order_conversations` and `order_messages` tables.
-  - [ ] Unique constraints on `(order_id, channel_type)` where `channel_type IN ('client', 'internal')`.
-  - [ ] Composite index on `order_messages(conversation_id, created_at DESC)`.
-  - [ ] Row Level Security policies enforcing client read/write, admin read-only on client channel, and admin-expert internal backchannel.
-  - [ ] Regenerate TypeScript definitions (`make types`).
-- [ ] **Phase 2: Supabase Realtime Setup & Channel Contracts**
-  - [ ] Add `order_messages` to `supabase_realtime` publication.
-  - [ ] Implement typed Realtime client listener helper in `src/lib/chat/realtime.ts`.
-  - [ ] Wire presence and typing indicator broadcast channels.
-- [ ] **Phase 3: Server Actions & Data Access Layer**
-  - [ ] Fetch paginated message history (`cursor`, `limit = 50`) with sender profile metadata.
-  - [ ] Server action for sending messages with role and assignment validation.
-  - [ ] Server action for batch-updating `read_at` timestamps for incoming unread messages.
-- [ ] **Phase 4: Notification Pipeline (Email Fallback)**
-  - [ ] Debounced unread notification strategy (Resend integration).
-  - [ ] Notification preferences check and rate-limiting to prevent recipient inbox spam.
-- [ ] **Phase 5: UI Components & Dashboard Integration**
-  - [ ] Reusable chat components in `src/components/chat/` (`MessageList`, `MessageBubble`, `ChatInput`, `TypingIndicator`).
-  - [ ] Customer Dashboard integration: Customer-expert chat panel inside order details.
-  - [ ] Expert Dashboard integration: Dual-view panel (`Customer Chat` and `Internal Admin Notes`).
-  - [ ] Admin Dashboard integration: Read-only customer dialogue stream alongside active Admin-to-Expert communication thread.
-- [ ] **Phase 6: Quality Verification & Gate Checks**
-  - [ ] RLS policy audit: Verify admin cannot insert into `client` channel.
-  - [ ] Customer isolation audit: Verify customer cannot read or write to `internal` channel.
-  - [ ] Linting, type checks, and doc coverage (`make check`).
+- [x] **Phase 1: Database Schema & Row Level Security (RLS)**
+  - [x] Migration for `order_conversations` and `order_messages` tables.
+  - [x] Unique constraints on `(order_id, channel_type)` where `channel_type IN ('client', 'internal')`.
+  - [x] Composite index on `order_messages(conversation_id, created_at DESC)`.
+  - [x] Row Level Security policies enforcing client read/write, admin read-only on client channel, and admin-expert internal backchannel.
+  - [x] Regenerate TypeScript definitions (`make types`).
+- [x] **Phase 2: Supabase Realtime Setup & Channel Contracts**
+  - [x] Add `order_messages` to `supabase_realtime` publication.
+  - [x] Implement typed Realtime client listener helper in `src/lib/chat/realtime.ts`.
+  - [x] Wire presence and typing indicator broadcast channels.
+- [x] **Phase 3: Server Actions & Data Access Layer**
+  - [x] Fetch paginated message history (`cursor`, `limit = 50`) with sender profile metadata.
+  - [x] Server action for sending messages with role and assignment validation.
+  - [x] Server action for batch-updating `read_at` timestamps for incoming unread messages.
+- [x] **Phase 4: Notification Pipeline (Email Fallback)**
+  - [x] Debounced unread notification strategy (Resend integration).
+  - [x] Notification preferences check and rate-limiting to prevent recipient inbox spam.
+- [x] **Phase 5: UI Components & Dashboard Integration**
+  - [x] Reusable chat components in `src/components/chat/` (`MessageList`, `MessageBubble`, `ChatInput`, `TypingIndicator`).
+  - [x] Customer Dashboard integration: Customer-expert chat panel inside order details.
+  - [x] Expert Dashboard integration: Dual-view panel (`Customer Chat` and `Internal Admin Notes`).
+  - [x] Admin Dashboard integration: Read-only customer dialogue stream alongside active Admin-to-Expert communication thread.
+- [x] **Phase 6: Quality Verification & Gate Checks**
+  - [x] RLS policy audit: Verify admin cannot insert into `client` channel.
+  - [x] Customer isolation audit: Verify customer cannot read or write to `internal` channel.
+  - [x] Linting, type checks, and doc coverage (`make check`).
 
 ---
 

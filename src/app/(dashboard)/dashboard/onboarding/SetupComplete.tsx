@@ -24,6 +24,9 @@ export function SetupComplete({
           Go to the dashboard
         </button>
 
+        {/* TODO (Co-developer handover per ADR-0002): Add primary CTA button
+            "Message Your Assigned Expert" linking to /dashboard/managed-wp/status?site=<site> */}
+
         {/* Adding a site runs the same integration flow */}
         <button
           onClick={onAddAnotherSite}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Check, Circle, Download } from "lucide-react";
+import { Bell, Check, Circle, Download, MessageSquare } from "lucide-react";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import { Separator } from "../ui/separator";
 import { SidebarTrigger } from "../ui/sidebar";
@@ -163,7 +163,7 @@ export default function SidebarInsetHeader() {
       >
         {role === "user" &&
           (isLoadingOrders ? (
-            /* Pure visual skeleton — no text, same size/shape as the Connected badge so there's no layout shift or flash of "Setup status". */
+            /* Pure visual skeleton: no text, same size/shape as the Connected badge so there's no layout shift or flash of "Setup status". */
             <span className="inline-flex items-center gap-1.5 rounded-sm bg-primary/10 px-3 py-1.5 text-[1px] transparent animate-pulse">
               <span className="size-4 rounded-full bg-primary/20" />
               <span className="w-10 h-4 rounded bg-primary/20" />
@@ -187,6 +187,16 @@ export default function SidebarInsetHeader() {
                 <DropdownMenuItem onClick={handleDownloadPlugin}>
                   <Download className="size-3.5 mr-2" />
                   Regenerate Plugin
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/managed-wp/status?site=${encodeURIComponent(activeSite)}`
+                    )
+                  }
+                >
+                  <MessageSquare className="size-3.5 mr-2" />
+                  Chat with Expert
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -224,7 +234,7 @@ export default function SidebarInsetHeader() {
                       ? "Everything is configured."
                       : isOnSetupRoute
                         ? "You're already on the setup screen."
-                        : `${stepsLeft} step${stepsLeft === 1 ? "" : "s"} left — click to continue.`}
+                        : `${stepsLeft} step${stepsLeft === 1 ? "" : "s"} left: click to continue.`}
                   </p>
                 </div>
               }
@@ -258,6 +268,22 @@ export default function SidebarInsetHeader() {
             />
           ) : null)}
 
+        {role === "user" && isPaidOrder && activeSite && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(
+                `/dashboard/managed-wp/status?site=${encodeURIComponent(activeSite)}`
+              );
+            }}
+            title="Chat with your performance expert"
+            aria-label="Chat with your performance expert"
+            className="flex items-center justify-center rounded-full p-1 text-primary/50 hover:text-primary transition-colors cursor-pointer"
+          >
+            <MessageSquare size={19} />
+          </button>
+        )}
+
         <span className="relative">
           <Bell
             size={20}
@@ -289,29 +315,31 @@ export default function SidebarInsetHeader() {
               <>
                 {notifcations.map((x) => (
                   <div
-                    className="px-2 cursor-pointer hover:bg-slate-500/20 text-xs py-2 border-y border-y-primary-foreground/10"
+                    className="px-2 cursor-pointer hover:bg-slate-500/20 text-xs py-2 border-y border-y-primary-foreground/10 transition-colors"
                     key={x.id}
                     onClick={() => {
-                      tempReadNotifications.current.push(x.id!); // notifications that are viewed
-
-                      return setNotifications(
-                        notifcations.filter((n) => n !== x),
-                      );
+                      if (x.id) tempReadNotifications.current.push(x.id);
+                      setNotifications(notifcations.filter((n) => n !== x));
+                      setShowNotifications(false);
+                      if (x.link) {
+                        router.push(x.link);
+                      }
                     }}
                   >
-                    <div className="font-mono space-y-2">
-                      <p className="capitalize">{x.type}</p>
-                      <p>{x.message}</p>
-                      {/* {!x.link ? (
-                        <></>
-                      ) : (
-                        <Link
-                          className="text-blue-400 hover:text-blue-500"
-                          href={x.link}
-                        >
-                          Click here
-                        </Link>
-                      )} */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between font-mono">
+                        <p className="capitalize font-semibold text-primary-foreground/90">
+                          {x.type?.replace("_", " ")}
+                        </p>
+                        {x.link && (
+                          <span className="text-[10px] text-blue-300 font-medium">
+                            Open
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-primary-foreground/80 font-sans text-xs">
+                        {x.message}
+                      </p>
                     </div>
                   </div>
                 ))}
