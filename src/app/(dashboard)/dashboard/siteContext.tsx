@@ -20,7 +20,13 @@ type SiteContextType = {
   orders: OrderData[] | null;
   isLoadingOrders: boolean;
   setOrders: (orders: OrderData[] | null) => void;
-  fetchOrders: (siteFromUrl?: string, userId?: string) => Promise<void>;
+  fetchOrders: (
+    siteFromUrl?: string,
+    userId?: string,
+    forceRefresh?: boolean,
+  ) => Promise<void>;
+  /** Incremented on every force-refresh to bust memoization in consumers. */
+  ordersVersion: number;
   dailyCrux: DailyCruxData | null;
   setDailyCrux: (dailyData: DailyCruxData | null) => void;
   cruxData: CruxData[];
@@ -53,6 +59,7 @@ export const SiteContext = createContext<SiteContextType>({
   isLoadingOrders: true,
   setOrders: () => {},
   fetchOrders: async () => {},
+  ordersVersion: 0,
   dailyCrux: null,
   setDailyCrux: () => {},
   selectedDevice: "Desktop",
@@ -84,6 +91,7 @@ export default function SiteContextProvider({
   const [orders, setOrders] = useState<OrderData[] | null>(null);
   const [isLoadingOrders, setIsLoadingOrders] = useState<boolean>(true);
   const [selectedSite, setSelectedSite] = useState<string>("");
+  const [ordersVersion, setOrdersVersion] = useState<number>(0);
 
   // Read from sessionStorage cache immediately after hydration (before paint)
   useLayoutEffect(() => {
@@ -160,7 +168,11 @@ export default function SiteContextProvider({
 
   // The Fetch Logic
   const fetchOrders = useCallback(
-    async (siteFromUrl?: string, userId?: string) => {
+    async (
+      siteFromUrl?: string,
+      userId?: string,
+      forceRefresh?: boolean,
+    ) => {
       if (!userId) {
         setIsLoadingOrders(false);
         return;
@@ -171,8 +183,9 @@ export default function SiteContextProvider({
       const cachedOrders = sessionStorage.getItem("orders");
       const cachedTime = sessionStorage.getItem("orders-ts");
 
-      // Check Cache (5 minute TTL)
+      // Check Cache (5 minute TTL) — unless forceRefresh is true
       if (
+        !forceRefresh &&
         cachedOrders &&
         cachedTime &&
         now - parseInt(cachedTime) < 5 * 60 * 1000
@@ -196,6 +209,9 @@ export default function SiteContextProvider({
           sessionStorage.setItem("orders", JSON.stringify(data));
           sessionStorage.setItem("orders-ts", Date.now().toString());
           setOrders(data);
+          if (forceRefresh) {
+            setOrdersVersion((v) => v + 1);
+          }
           handleInitialSiteSelection(data, siteFromUrl);
         } else {
           // Explicitly set to empty array if no orders found in DB
@@ -246,6 +262,7 @@ export default function SiteContextProvider({
         selectedSite,
         setSelectedSite,
         fetchOrders,
+        ordersVersion,
         dailyCrux,
         setDailyCrux,
         selectedDevice,

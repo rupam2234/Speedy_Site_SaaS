@@ -1,11 +1,15 @@
-import Link from "next/link";
-import { Check, FileArchive, LoaderCircle, Lock } from "lucide-react";
+﻿import Link from "next/link";
+import {
+  Check,
+  FileArchive,
+  LoaderCircle,
+  ArrowRight,
+  CheckCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RUM_SCRIPT_URL } from "@/lib/wordpress/injection";
-import { cn } from "@/lib/utils";
 import { StepCard } from "./StepCard";
 import { STEPS } from "./steps";
-import type { PluginStatus } from "./useOnboardingTour";
+import type { VerifyStatus } from "./useOnboardingTour";
 
 const CTA_CLASS =
   "h-9 rounded-sm px-4 text-xs font-bold uppercase tracking-wide";
@@ -13,12 +17,14 @@ const CTA_CLASS =
 type StepContentProps = {
   index: number;
   site: string;
-  plugin: PluginStatus;
-  /** True once this session has asked the site about the plugin. */
-  hasProbed: boolean;
-  /** True while we keep re-checking after the user confirmed the install. */
-  polling: boolean;
+  /** Single state for the verify button + success message on the plugin step. */
+  verifyStatus: VerifyStatus;
   busy: string | null;
+  error: string | null;
+  isStepDone: (index: number) => boolean;
+  isTourComplete: boolean;
+  goNext: () => void;
+  goToStep: (index: number) => void;
   // "add your site"
   siteInput: string;
   setSiteInput: (value: string) => void;
@@ -31,96 +37,8 @@ type StepContentProps = {
   onCreateSite: () => void;
   // later steps
   onDownloadPlugin: () => void;
-  onCheckPlugin: () => void;
-  onConfirmPluginInstalled: () => void;
   onVerifyInstallation: () => void;
 };
-
-/** Live plugin status shared by the plugin and the verify step. */
-function PluginStatusRow({
-  site,
-  plugin,
-  hasProbed,
-  polling,
-}: {
-  site: string;
-  plugin: PluginStatus;
-  hasProbed: boolean;
-  polling: boolean;
-}) {
-  if (!hasProbed) {
-    return (
-      <p className="text-xs text-primary/50">
-        We have not looked at {site} yet - that starts when you confirm the
-        plugin is active.
-      </p>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2 text-xs">
-      {plugin.loading ? (
-        <>
-          <LoaderCircle className="size-3.5 animate-spin text-primary/50" />
-          <span className="text-primary/60">Checking {site}...</span>
-        </>
-      ) : plugin.installed ? (
-        <span className="font-medium text-emerald-600">
-          Plugin is live on {site}
-        </span>
-      ) : polling ? (
-        <>
-          <LoaderCircle className="size-3.5 animate-spin text-primary/50" />
-          <span className="text-primary/60">
-            Not visible yet, re-checking every 8s
-          </span>
-        </>
-      ) : (
-        <span className="text-amber-600">No plugin detected on {site} yet</span>
-      )}
-    </div>
-  );
-}
-
-/** The two facts the plugin status answers: installed, and keyed. */
-function PluginStatusPills({
-  plugin,
-  hasProbed,
-}: {
-  plugin: PluginStatus;
-  hasProbed: boolean;
-}) {
-  // Before the first check we have no idea, so say nothing rather than "not
-  // detected", which would read as a failure.
-  if (!hasProbed) return null;
-
-  return (
-    <div className="flex items-center gap-4 text-xs">
-      <span
-        className={cn(
-          "flex items-center gap-1",
-          plugin.installed ? "text-emerald-600" : "text-primary/50",
-        )}
-      >
-        {plugin.installed ? (
-          <Check className="size-3.5" />
-        ) : (
-          <FileArchive className="size-3.5" />
-        )}
-        Plugin {plugin.installed ? "installed" : "not detected"}
-      </span>
-      <span
-        className={cn(
-          "flex items-center gap-1",
-          plugin.keyed ? "text-emerald-600" : "text-primary/50",
-        )}
-      >
-        <Lock className="size-3.5" />
-        Access key {plugin.keyed ? "assigned" : "missing"}
-      </span>
-    </div>
-  );
-}
 
 /** Domain form + progress log of the add-site flow. */
 function AddSiteStep({
@@ -146,9 +64,9 @@ function AddSiteStep({
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-xs text-primary/70">
+      {/* <p className="text-xs text-primary/70">
         Enter the domain you want us to help speed up and monitor performance.
-      </p>
+      </p> */}
 
       <form
         className="flex flex-col items-start gap-3 w-full max-w-md"
@@ -193,7 +111,7 @@ function AddSiteStep({
             href={`/dashboard/onboarding?site=${existingSite.website_name}`}
             className="text-xs font-medium text-emerald-600 underline hover:text-emerald-700"
           >
-            Go to configuration status →
+            Go to configuration status â†’
           </Link>
         </div>
       )}
@@ -221,10 +139,13 @@ function AddSiteStep({
 export function StepContent({
   index,
   site,
-  plugin,
-  hasProbed,
-  polling,
+  verifyStatus,
   busy,
+  error,
+  isStepDone,
+  isTourComplete,
+  goNext,
+  goToStep,
   siteInput,
   setSiteInput,
   wpLoginUrl,
@@ -235,12 +156,11 @@ export function StepContent({
   addSiteSuccess,
   onCreateSite,
   onDownloadPlugin,
-  onCheckPlugin,
-  onConfirmPluginInstalled,
   onVerifyInstallation,
 }: StepContentProps) {
   const step = STEPS[index];
-  const isPluginReady = plugin.installed && plugin.keyed;
+  const isLastTourStep = index === STEPS.length - 1;
+  const isStepCompleted = isStepDone(index);
 
   return (
     <StepCard
@@ -263,13 +183,15 @@ export function StepContent({
       )}
 
       {index === 1 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <p className="text-xs text-primary/70">
             Download the Speedy Site plugin and activate it on {site}: in
             wp-admin go to Plugins, Add New, Upload Plugin. Your access key is
             assigned to the download automatically, so there is nothing to copy
             or paste.
           </p>
+
+          {/* Download button - always visible */}
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={onDownloadPlugin}
@@ -283,65 +205,95 @@ export function StepContent({
               )}
               Download the plugin
             </Button>
-            <Button
-              variant="outline"
-              onClick={onConfirmPluginInstalled}
-              disabled={busy === "plugin"}
-              className={CTA_CLASS}
-            >
-              {busy === "plugin" && (
-                <LoaderCircle className="size-3.5 animate-spin" />
-              )}
-              I installed and activated it
-            </Button>
           </div>
-          <PluginStatusRow
-            site={site}
-            plugin={plugin}
-            hasProbed={hasProbed}
-            polling={polling}
-          />
-          <PluginStatusPills plugin={plugin} hasProbed={hasProbed} />
 
-          <div className="flex flex-wrap items-center gap-3 border-t border-primary/10 pt-3">
-            <Button
-              onClick={onVerifyInstallation}
-              disabled={busy === "verify" || !isPluginReady}
-              className={CTA_CLASS}
-            >
-              {busy === "verify" && (
-                <LoaderCircle className="size-3.5 animate-spin" />
-              )}
-              Verify the installation
-            </Button>
+          {/* Verify installation button with ONE status line under it: the
+              error and the success message share the same slot (they can
+              never both be set -- every attempt clears `error` first). */}
+          <div className="space-y-2">
             <Button
               variant="outline"
-              onClick={onCheckPlugin}
-              disabled={plugin.loading}
-              className={CTA_CLASS}
+              onClick={onVerifyInstallation}
+              disabled={verifyStatus === "verifying"}
+              className={`${CTA_CLASS} w-auto justify-start text-left gap-2`}
             >
-              {plugin.loading ? (
-                <LoaderCircle className="size-3.5 animate-spin" />
+              {verifyStatus === "verifying" ? (
+                <>
+                  <LoaderCircle className="size-3.5 animate-spin" />
+                  Verifying...
+                </>
+              ) : verifyStatus === "verified" ? (
+                <>
+                  <CheckCircle className="size-3.5 text-emerald-600" />
+                  Verified
+                </>
               ) : (
-                "Check the plugin"
+                <>
+                  <FileArchive className="size-3.5 text-primary/50" />
+                  Verify installation
+                </>
               )}
             </Button>
-            {!isPluginReady && (
-              <span className="text-xs text-amber-600">
-                Activate the plugin on {site} first.
-              </span>
+            {error ? (
+              <p className="text-xs text-red-500">{error}</p>
+            ) : (
+              verifyStatus === "verified" && (
+                <p className="text-xs text-emerald-600">
+                  Plugin installed and verified successfully
+                </p>
+              )
             )}
           </div>
+        </div>
+      )}
 
-          <p className="text-xs text-primary/60">
-            Verifying confirms the connection and assigns the real-user
-            collector, served from{" "}
-            <code className="font-mono text-[11px] break-all">
-              {RUM_SCRIPT_URL}
-            </code>
-            . The plugin injects it automatically, so data starts flowing as
-            soon as the service is active.
-          </p>
+      {/* Next/Complete Payment button at bottom of each step */}
+      {!isTourComplete && (
+        <div className="mt-6 pt-4 border-t border-primary/10 flex justify-between">
+          {/* Back button (except step 0) */}
+          {index > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => goToStep(index - 1)}
+              className="h-8 px-3 text-xs"
+            >
+              Back
+            </Button>
+          )}
+
+          {/* Next or Complete Payment button. "Go to dashboard" deliberately
+              lives only on the completion page (ActivateService once payment
+              is confirmed), never on a tour step like this one. */}
+          <div className="flex items-center gap-2 ml-auto">
+            {isStepCompleted && isLastTourStep ? (
+              // Last step completed - show Complete Payment
+              <Button
+                onClick={goNext}
+                className="h-9 rounded-lg px-5 text-xs font-bold uppercase tracking-wide"
+              >
+                Complete Payment <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            ) : isLastTourStep ? (
+              // Last step not completed - show Next (disabled until done)
+              <Button
+                onClick={goNext}
+                disabled={!isStepCompleted}
+                className="h-9 rounded-lg px-5 text-xs font-bold uppercase tracking-wide"
+              >
+                Next <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            ) : (
+              // Middle steps - show Next
+              <Button
+                onClick={goNext}
+                disabled={!isStepCompleted}
+                className="h-9 rounded-lg px-5 text-xs font-bold uppercase tracking-wide"
+              >
+                Next <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </StepCard>

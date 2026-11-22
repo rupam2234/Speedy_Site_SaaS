@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import { useSiteContext } from "../siteContext";
 import { ActivateService } from "./ActivateService";
-import { SetupComplete } from "./SetupComplete";
 import { StepContent } from "./StepContent";
 import { StepProgress, type ProgressStep } from "./StepProgress";
 import { STEPS } from "./steps";
@@ -25,11 +24,12 @@ export default function Main() {
   const { selectedSite } = useSiteContext();
 
   const siteFromUrl = searchParams.get("site");
+  const sessionIdFromUrl = searchParams.get("session_id");
   // "Connect another site" starts the same flow from step 1 with no site
   // selected, so the add-site card becomes the active one.
   const isAddingSite = searchParams.get("intent") === "new-site";
   const activeSite = isAddingSite ? "" : (siteFromUrl ?? selectedSite);
-  const tour = useOnboardingTour(activeSite, siteFromUrl);
+  const tour = useOnboardingTour(activeSite, siteFromUrl, sessionIdFromUrl);
 
   // Only the payment card depends on the per-site entitlement answers, so only
   // it waits for them: the tour steps are fully determined by the order row and
@@ -42,6 +42,8 @@ export default function Main() {
   // payment already happened.
   if (
     tour.isLoading ||
+    !tour.stepsVerified ||
+    !tour.isPositioned ||
     (tour.isTourComplete &&
       (tour.hasPaidForSite === null || tour.isReconciling))
   ) {
@@ -52,9 +54,11 @@ export default function Main() {
     );
   }
 
-  // The stepper can look at any completed step, so the panel follows the step
-  // the user clicked and falls back to the active one.
-  const currentStepIndex = tour.viewedStep ?? tour.activeIndex;
+  // The panel is positioned once from the DB-verified steps on load (see
+  // useOnboardingTour); after that it only moves when the user presses
+  // Next / Back or picks a step from the progress bar -- never automatically
+  // when a step completes in the background.
+  const currentStepIndex = tour.currentStep;
 
   // One bar for the whole journey: add site -> plugin -> activate (payment).
   const progressSteps: ProgressStep[] = [
@@ -62,7 +66,7 @@ export default function Main() {
       key: `${step.key}-${index}`,
       shortTitle: step.shortTitle,
       done: tour.isStepDone(index),
-      active: index === tour.activeIndex && !tour.isTourComplete,
+      active: index === tour.currentStep && tour.currentStep < STEPS.length,
       selectable: tour.isStepDone(index),
       marker: index + 1,
       tourIndex: index,
@@ -71,7 +75,7 @@ export default function Main() {
       key: "activate",
       shortTitle: "Activate",
       done: Boolean(tour.hasPaidForSite),
-      active: tour.isTourComplete && !tour.hasPaidForSite,
+      active: tour.currentStep >= STEPS.length && !tour.hasPaidForSite,
       marker: <CreditCard className="size-4" />,
     },
   ];
@@ -81,9 +85,7 @@ export default function Main() {
 
     if (entry.tourIndex === undefined) return;
     if (!tour.isStepDone(entry.tourIndex)) return;
-    tour.setViewedStep(
-      entry.tourIndex === tour.activeIndex ? null : entry.tourIndex,
-    );
+    tour.goToStep(entry.tourIndex);
   };
 
   // The zip builder pulls in JSZip, so it only loads when the user asks for it.
@@ -101,40 +103,35 @@ export default function Main() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-primary">Service setup</h1>
-          {!tour.hasServiceForSite ? (
-            <p className="text-sm text-primary/70 mt-1">
-              Connect a WordPress site {">"} Verify plugin connection {">"}{" "}
-              Start continious performance monitoring & data backed optimization
-            </p>
-          ) : (
-            <p className="text-sm text-primary/70 mt-1">
-              {isAddingSite
-                ? "Connect another site and it will run through the same integration steps."
-                : `${STEPS.length} short steps to connect ${activeSite || "your site"} and start real-user monitoring.`}
-            </p>
-          )}
+          <p className="text-sm text-primary/70 mt-1">
+            Connect a WordPress site {">"} Verify plugin connection {">"} Start
+            continious performance monitoring & data backed optimization
+          </p>
         </div>
         <p className="text-xs font-medium text-primary/60">
           {doneCount} of {progressSteps.length} complete
         </p>
       </header>
 
-      {tour.error && (
+      {/* {tour.error && (
         <p className="text-xs text-red-500 border border-red-500/30 bg-red-500/5 rounded-sm px-3 py-2">
           {tour.error}
         </p>
-      )}
+      )} */}
 
       <StepProgress steps={progressSteps} onSelect={handleSelectStep} />
 
-      {!tour.isTourComplete ? (
+      {currentStepIndex < STEPS.length ? (
         <StepContent
           index={currentStepIndex}
           site={activeSite}
-          plugin={tour.plugin}
-          hasProbed={tour.hasProbed}
-          polling={tour.polling}
+          verifyStatus={tour.verifyStatus}
           busy={tour.busy}
+          error={tour.error}
+          isStepDone={tour.isStepDone}
+          isTourComplete={currentStepIndex >= STEPS.length}
+          goNext={tour.goNext}
+          goToStep={tour.goToStep}
           siteInput={tour.siteInput}
           setSiteInput={tour.setSiteInput}
           wpLoginUrl={tour.wpLoginUrl}
@@ -145,18 +142,23 @@ export default function Main() {
           addSiteSuccess={tour.addSiteSuccess}
           onCreateSite={tour.createSite}
           onDownloadPlugin={handleDownloadPlugin}
-          onCheckPlugin={tour.checkPlugin}
-          onConfirmPluginInstalled={tour.confirmPluginInstalled}
           onVerifyInstallation={tour.verifyInstallation}
         />
-      ) : !tour.hasPaidForSite ? (
-        <ActivateService busy={tour.busy} onPay={tour.startPayment} />
       ) : (
-        <SetupComplete
-          onGoToDashboard={() => router.push(`/dashboard?site=${activeSite}`)}
-          onAddAnotherSite={() =>
-            router.push("/dashboard/onboarding?intent=new-site")
-          }
+        // Past the last tour step: straight to the payment card, no
+        // intermediate "continue to payment" page.
+        <ActivateService
+          busy={tour.busy}
+          onPay={tour.startPayment}
+          paymentComplete={Boolean(tour.hasPaidForSite)}
+          onRedirect={() => {
+            // Drop the orders cache so the dashboard refetches and the site
+            // selector immediately drops the "Pending" badge (order_status
+            // just flipped server-side via webhook/reconcile).
+            sessionStorage.removeItem("orders");
+            sessionStorage.removeItem("orders-ts");
+            router.push(`/dashboard?site=${activeSite}`);
+          }}
         />
       )}
 

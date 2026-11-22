@@ -1,6 +1,7 @@
 import { setupDB } from "@/lib/db";
 import { createRouteSupabaseClient } from "@/lib/db/server";
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeDomain } from "@/lib/wordpress/domain";
 
 const worker = setupDB();
 
@@ -14,6 +15,7 @@ export async function POST(req: NextRequest) {
   const supabase = createRouteSupabaseClient(req, res);
 
   const { domain }: Props = await req.json();
+  const normalized = normalizeDomain(domain);
 
   const {
     data: { user },
@@ -23,7 +25,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "User unauthorized" }, { status: 401 });
   }
 
-  if (!domain) {
+  if (!normalized) {
     return NextResponse.json(
       { message: "Bad request" },
       { status: 400 }
@@ -32,11 +34,40 @@ export async function POST(req: NextRequest) {
 
   try {
 
-    // validate the domain for user
-    const { data: verifiedDomain, error: validationError } = await worker.from("orders").select("website_name, order_id").eq("website_name", domain).eq("user_id", user.id).maybeSingle();
+    // validate the domain for user — try raw domain first (orders created by
+    // newOrder/route.ts store website_name without normalization), then
+    // normalized (orders created by managed/add normalize it).
+    let verifiedDomain = null;
+    let validationError = null;
 
-    if (validationError || verifiedDomain?.website_name !== domain) {
-      throw new Error(validationError?.message || "Unauthorised")
+    const { data: rawResult, error: rawError } = await worker
+      .from("orders")
+      .select("website_name, order_id")
+      .eq("website_name", domain)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (rawResult) {
+      verifiedDomain = rawResult;
+    } else if (normalized !== domain) {
+      const { data: normResult, error: normError } = await worker
+        .from("orders")
+        .select("website_name, order_id")
+        .eq("website_name", normalized)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (normResult) {
+        verifiedDomain = normResult;
+      } else {
+        validationError = normError || rawError;
+      }
+    } else {
+      validationError = rawError;
+    }
+
+    if (validationError || !verifiedDomain) {
+      throw new Error(validationError?.message || "Unauthorised");
     }
 
     // then delete the site
@@ -61,6 +92,15 @@ export async function POST(req: NextRequest) {
         })
         .eq("order_id", verifiedDomain.order_id);
     }
+
+    // Drop the per-domain plugin signature so a freshly re-added site can't
+    // inherit a stale verified state from the deleted order's wp_key row.
+    // wp_key.domain is always stored normalized, so normalize the order's
+    // website_name before matching.
+    await worker
+      .from("wp_key")
+      .delete()
+      .eq("domain", normalizeDomain(verifiedDomain.website_name));
 
     return NextResponse.json({ message: "website deleted" }, { status: 200 });
   } catch (error: any) {

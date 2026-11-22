@@ -205,8 +205,8 @@ INSERT INTO public.orders (
     true,
     0,
     false,
-    4,
-    '{"signature_verified": true}'::jsonb,
+    3,
+    '{"site_selected": true, "plugin_verified": true, "service_active": true}'::jsonb,
     now() - interval '1 hour'
   ),
   (

@@ -121,7 +121,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // ALWAYS set user from cache immediately if available
     if (cachedUser) {
       setUser(cachedUser);
-      roleFetchedForUser.current = cachedUser.id;
+      // Only the USER is cached here — never mark the role as fetched. That
+      // made verifyAuth() below early-return ("Role already fetched") and
+      // skip the role fetch entirely, leaving role = null for the session.
     }
 
     // If we have a valid cached role, use it immediately
@@ -143,8 +145,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const { data: authListener } = browserClient.auth.onAuthStateChange(
       async (event, session) => {
+        console.log(
+          "[AuthProvider] Auth state change:",
+          event,
+          session?.user?.id,
+        );
         if (event === "SIGNED_OUT") {
           // Clear auth state immediately on sign out
+          console.log("[AuthProvider] SIGNED_OUT - clearing auth");
           setUser(null);
           setRole(null);
           setRoleLoading(false);
@@ -155,6 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (event === "SIGNED_IN") {
           // Verify auth only on sign in (not on token refresh)
           if (session?.user) {
+            console.log("[AuthProvider] SIGNED_IN - calling verifyAuth");
             verifyAuth();
           }
         }
@@ -172,7 +181,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await browserClient.auth.getUser();
 
       if (error) {
-        console.log(error.message);
         setUser(null);
         setRole(null);
         setRoleLoading(false);
@@ -186,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!freshUser) {
         // No user - clear everything
+        console.log("[AuthProvider] No freshUser, clearing");
         setUser(null);
         setRole(null);
         setRoleLoading(false);
@@ -206,9 +215,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return; // Already done
       }
 
-      // Check role cache
+      // Check role cache — a cached NULL role means "never resolved" (the old
+      // API returned null for users whose profiles.role was unset). Since
+      // /api/user/role now defaults missing roles to "user", treat a null
+      // cache entry as a miss and re-fetch instead of trusting it.
       const roleCache = readRoleCache();
-      if (roleCache) {
+      if (roleCache && roleCache.role !== null) {
+        console.log(
+          "[AuthProvider] Setting role from roleCache:",
+          roleCache.role,
+        );
         setRole(roleCache.role);
         setRoleLoading(false);
         roleFetchedForUser.current = freshUser.id;
@@ -217,16 +233,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Fetch role from API
       setRoleLoading(true);
-      const res = await fetch("/api/user/role");
+      const res = await fetch("/api/user/role", {
+        credentials: "include",
+      });
       const json = await res.json();
-      const fetchedRole = (json.role as Role) ?? null;
+      // Unresolved role must not mean "no badge": every account without an
+      // explicit admin/expert role is a customer, matching the API default.
+      const fetchedRole = (json.role as Role) ?? "user";
 
       setRole(fetchedRole);
-      writeRoleCache(fetchedRole);
+      // Never cache an unresolved role, so the next load retries the fetch.
+      if (fetchedRole !== null) {
+        writeRoleCache(fetchedRole);
+      }
       setRoleLoading(false);
       roleFetchedForUser.current = freshUser.id;
     } catch (err) {
-      console.error("Auth verification failed:", err);
       setUser(null);
       setRole(null);
       setRoleLoading(false);

@@ -6,7 +6,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Edit, LoaderIcon, Trash } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { OrderData } from "@/app/api";
 import { useSiteContext } from "../siteContext";
@@ -15,15 +15,154 @@ import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import Integrations, { CfConnection } from "./integrations";
 import { getRateLimiter, setRatelimiter } from "@/components/utils";
 
+// Connection status types (matching the API)
+type ConnectionStatusType =
+  | "unknown"
+  | "pending"
+  | "connected"
+  | "verified"
+  | "expired"
+  | "error";
+
+interface ConnectionStatus {
+  status: ConnectionStatusType;
+  message: string;
+  details: {
+    pluginInstalled: boolean;
+    hasSecret: boolean;
+    hasSignature: boolean;
+    signatureExpired: boolean;
+    hmacVerifiedAt: string | null;
+    rumAssignedAt: string | null;
+    entitled: boolean;
+    hmacExpiresAt: string | null;
+  };
+  checkedAt: number;
+}
+
+// Cache helpers — 30 days in localStorage
+const CONNECTION_CACHE_PREFIX = "wp-connection-status-";
+const CONNECTION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+function getCachedConnectionStatus(domain: string): ConnectionStatus | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(`${CONNECTION_CACHE_PREFIX}${domain}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.checkedAt < CONNECTION_TTL_MS) {
+      return parsed;
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return null;
+}
+
+function setCachedConnectionStatus(domain: string, status: ConnectionStatus) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      `${CONNECTION_CACHE_PREFIX}${domain}`,
+      JSON.stringify({ ...status, checkedAt: Date.now() }),
+    );
+  } catch {
+    // ignore quota errors
+  }
+}
+
 export default function Main() {
   const [siteData, setSiteData] = useState<OrderData>();
-  const { selectedSite } = useSiteContext();
+  const { selectedSite, role, roleLoading } = useSiteContext();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [cloudflareStatus, setCloudflareStatus] = useState<CfConnection>({
     isConnected: false,
     key: "",
   });
   const [isDeleting, setDeleting] = useState<boolean>(false);
+
+  // WordPress connection status
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatus | null>(null);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
+
+  // Check connection with API
+  const checkConnection = useCallback(async () => {
+    if (!selectedSite) return;
+
+    setIsCheckingConnection(true);
+    try {
+      const res = await fetch("/api/wordpress/connection-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ domain: selectedSite }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.status) {
+        const status: ConnectionStatus = {
+          status: data.status,
+          message: data.message,
+          details: data.details,
+          checkedAt: Date.now(),
+        };
+        setConnectionStatus(status);
+        setCachedConnectionStatus(selectedSite, status);
+      } else {
+        const status: ConnectionStatus = {
+          status: "error",
+          message: data.error || data.message || "Failed to check connection",
+          details: {
+            pluginInstalled: false,
+            hasSecret: false,
+            hasSignature: false,
+            signatureExpired: false,
+            hmacVerifiedAt: null,
+            rumAssignedAt: null,
+            entitled: false,
+            hmacExpiresAt: null,
+          },
+          checkedAt: Date.now(),
+        };
+        setConnectionStatus(status);
+        setCachedConnectionStatus(selectedSite, status);
+      }
+    } catch (err: any) {
+      const status: ConnectionStatus = {
+        status: "error",
+        message: err.message || "Network error",
+        details: {
+          pluginInstalled: false,
+          hasSecret: false,
+          hasSignature: false,
+          signatureExpired: false,
+          hmacVerifiedAt: null,
+          rumAssignedAt: null,
+          entitled: false,
+          hmacExpiresAt: null,
+        },
+        checkedAt: Date.now(),
+      };
+      setConnectionStatus(status);
+      setCachedConnectionStatus(selectedSite, status);
+    } finally {
+      setIsCheckingConnection(false);
+    }
+  }, [selectedSite]);
+
+  // Load cached status on mount/selectedSite change
+  useEffect(() => {
+    if (selectedSite) {
+      const cached = getCachedConnectionStatus(selectedSite);
+      if (cached) {
+        setConnectionStatus(cached);
+      }
+    } else {
+      setConnectionStatus(null);
+    }
+  }, [selectedSite]);
 
   useEffect(() => {
     fetchDomainData(selectedSite);
@@ -162,6 +301,49 @@ export default function Main() {
                 <span className="font-medium text-red-500">Not Connected</span>
               )}
             </div>
+
+            {/* wordpress connection */}
+            {role === "user" && !roleLoading && selectedSite && (
+              <div className="flex justify-between items-center">
+                <Label className="text-muted-foreground">
+                  WordPress Connection
+                </Label>
+                {isCheckingConnection ? (
+                  <LoaderIcon size={14} className="animate-spin" />
+                ) : connectionStatus ? (
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`font-medium ${
+                        connectionStatus.status === "verified" &&
+                        connectionStatus.details.entitled
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {connectionStatus.status === "verified" &&
+                      connectionStatus.details.entitled
+                        ? "Connected"
+                        : connectionStatus.message}
+                    </span>
+                    <button
+                      onClick={checkConnection}
+                      disabled={isCheckingConnection}
+                      className="px-2 py-1 text-xs bg-primary/80 text-primary-foreground rounded-sm hover:bg-primary/70"
+                    >
+                      Recheck
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={checkConnection}
+                    disabled={isCheckingConnection}
+                    className="px-2 py-1 text-xs bg-primary/80 text-primary-foreground rounded-sm hover:bg-primary/70"
+                  >
+                    Check Connection
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -298,6 +480,15 @@ export default function Main() {
         sessionStorage.removeItem("orders");
         sessionStorage.removeItem("orders-ts");
         sessionStorage.removeItem("selected-site");
+        // Clear ALL WordPress connection caches (any domain format, e.g.
+        // www.example.com vs example.com) so a freshly re-added site can't
+        // inherit a stale "verified" status from the deleted order's wp_key row.
+        Object.keys(localStorage)
+          .filter((key) => key.startsWith("wp-connection-status-"))
+          .forEach((key) => localStorage.removeItem(key));
+        Object.keys(sessionStorage)
+          .filter((key) => key.startsWith("wp-connection-status-"))
+          .forEach((key) => sessionStorage.removeItem(key));
         window.location.href = "/dashboard";
       }, 3000);
     } catch (error) {

@@ -37,6 +37,7 @@ export async function GET() {
         .insert({
           id: userId,
           email: user.email ?? null,
+          role: "user",
         });
 
       if (insertProfileError) {

@@ -241,35 +241,87 @@ export async function downloadPluginZip(domain: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Download plugin with a pre-resolved secret key (for ConnectionPlugin component).
+ */
+export async function downloadPluginZipWithKey(domain: string, secretKey: string): Promise<void> {
+  if (!domain) throw new Error("Domain is required");
+
+  const zip = new JSZip();
+  const folder = zip.folder("speedy-site-plugin-auditor");
+  folder?.file("speedy-site-plugin-auditor.php", buildPluginPhp(secretKey));
+  const content = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(content);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "speedy-site-plugin-auditor.zip";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
   const { selectedSite } = useSiteContext();
   const [secretKey, setSecretKey] = useState<string>("");
 
   useEffect(() => {
     if (!selectedSite) return;
-
     let alive = true;
-    resolvePluginSecret(selectedSite)
-      .then((secret) => {
-        if (alive) setSecretKey(secret);
-      })
-      .catch((error) => {
-        console.error("Failed to fetch or generate secret:", error);
+
+    async function fetchSecretAndStatus() {
+      try {
+        // Fetch secret
+        const secretRes = await fetch("/api/wordpress/wp-secret", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ domain: selectedSite }),
+        });
+        const secretBody = await secretRes.json();
+        if (alive && secretBody.data) {
+          setSecretKey(secretBody.data);
+        }
+
+        // Fetch connection status
+        await checkConnection();
+      } catch (error) {
+        console.error("Failed to fetch secret or status:", error);
         if (alive) setSecretKey("");
-      });
+      }
+    }
+
+    fetchSecretAndStatus();
 
     return () => {
       alive = false;
     };
   }, [selectedSite]);
 
-  async function handlePluginDownload() {
+  async function checkConnection() {
+    if (!selectedSite) return;
     try {
-      await downloadPluginZip(selectedSite);
+      const res = await fetch("/api/wordpress/connection-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain: selectedSite }),
+      });
+      const data = await res.json();
+      // Connection status is fetched but not stored in state (UI not fully updated yet)
+      console.log("Connection status:", data);
+    } catch (error) {
+      console.error("Failed to check connection:", error);
+    }
+  }
+
+  async function handlePluginDownload() {
+    if (!selectedSite || !secretKey) return;
+    try {
+      await downloadPluginZipWithKey(selectedSite, secretKey);
     } catch (error) {
       console.error("Failed to download plugin:", error);
     }
   }
+
   return createPortal(
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-[#141414]/80 backdrop-blur-sm">
       <motion.div

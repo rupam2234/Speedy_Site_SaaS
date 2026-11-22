@@ -435,15 +435,16 @@ export default function Home() {
             {/* THE STORY CONTENT */}
             <div className="mt-5 space-y-8">
               <p className="text-xl text-slate-600 max-w-3xl mx-auto font-light leading-relaxed">
-                Our journey began with a dedicated solution for WordPress
-                optimization. Rooted in the mission to improve site speed and
-                user experience, we helped many websites enhance their Core Web
-                Vitals.
+                We started as a dedicated WordPress optimization service to help
+                site owners improve their page speed and user experience.
+                Throughout our journey, we helped many WordPress sites enhance
+                their Core Web Vitals.
               </p>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto font-light leading-relaxed">
-                And now we are putting the pieces together: actual users, faster
-                WordPress diagnosis, and fixes with measured impact. Same
-                mission, smarter assistance.
+                Now we have integrated RUM, a real user experience data
+                collection module for faster debugging, resolving and to provide
+                you insights on performance, experience and live issues under
+                one service.
               </p>
             </div>
           </div>
@@ -476,14 +477,11 @@ export default function Home() {
             </div>
 
             <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">
-              Trusted by{" "}
-              <span className="text-primary italic font-serif">
-                Site Owners
-              </span>
+              Trusted by 200+ WordPress Site Owners
             </h2>
             <p className="mt-4 text-slate-500 max-w-xl mx-auto text-lg font-light">
-              Over 150 WordPress sites trust us to turn performance data into
-              faster, smoother websites with green Web Vitals.
+              All sites benefited with faster page experience and green web
+              vitals.
             </p>
           </div>
 
@@ -597,16 +595,12 @@ export default function Home() {
             href="/sign-up"
             className="group relative inline-flex items-center gap-2 rounded-full bg-white text-indigo-700 px-10 py-3 font-bold text-lg hover:bg-gray-50 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-indigo-900/20"
           >
-            Sign Up Free
+            Sign up for free
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
           <p className="mt-4 max-w-2xl mx-auto text-center text-xs font-bold text-primary/60 uppercase tracking-[0.2em]">
-            Try connecting your WordPress site and get Web Vitals reports for
-            free. Upgrade only when your site needs optimization.
+            Upgrade when your site needs optimization.
           </p>
-          {/* <p className="text-xs text-primary/60 italic">
-            No credit card needed.
-          </p> */}
         </div>
       </section>
 

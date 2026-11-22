@@ -155,11 +155,24 @@ export async function finalizePaidOrder(
       .eq("id", entitlement.id);
   }
 
-  // 2. Flip the order row to paid. This is the only place order_status ever
-  //    becomes true for the onboarding flow (see /api/orders/managed/add).
+  // 2. Flip the order row to paid and mark the final setup step done. This is
+  //    the only place order_status / tour.service_active become true for the
+  //    onboarding flow (see /api/orders/managed/add).
+  const { data: paidOrder } = await worker
+    .from("orders")
+    .select("tour")
+    .eq("order_id", orderId)
+    .maybeSingle();
+
   await worker
     .from("orders")
-    .update({ order_status: true })
+    .update({
+      order_status: true,
+      tour: {
+        ...((paidOrder?.tour as Record<string, boolean> | null) ?? {}),
+        service_active: true,
+      },
+    })
     .eq("order_id", orderId);
 
   return { orderId };

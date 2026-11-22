@@ -11,6 +11,9 @@ type AddManagedOrderBody = {
   website: string;
   wp_login_url: string;
   payment_id?: string | null;
+  /** Sent by the onboarding flow (useAddSite): orderData.favicon_file holds the
+   *  Supabase storage path of the uploaded favicon (e.g. favicon-x.com.png). */
+  orderData?: { favicon_file?: string | null };
 };
 
 /**
@@ -48,8 +51,12 @@ export async function POST(req: Request) {
   const user_id = user.id;
 
   try {
-    const { website, wp_login_url, payment_id }: AddManagedOrderBody =
-      await req.json().catch(() => ({}));
+    const {
+      website,
+      wp_login_url,
+      payment_id,
+      orderData,
+    }: AddManagedOrderBody = await req.json().catch(() => ({}));
 
     if (!website || !wp_login_url) {
       return NextResponse.json(
@@ -57,6 +64,14 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+
+    // The favicon was already fetched + uploaded to storage by the client;
+    // we only persist the resulting storage path on the orders row.
+    const faviconFile =
+      typeof orderData?.favicon_file === "string" &&
+      orderData.favicon_file.trim()
+        ? orderData.favicon_file.trim()
+        : null;
 
     const websiteName = normalizeDomain(website);
     if (!websiteName) {
@@ -108,10 +123,23 @@ export async function POST(req: Request) {
         );
       }
 
+      // Orders created before favicon storage existed have favicon_file =
+      // null even though the file may already sit in the bucket: backfill it
+      // when the client re-sends an uploaded path.
+      if (!existingSite.favicon_file && faviconFile) {
+        await worker
+          .from("orders")
+          .update({ favicon_file: faviconFile })
+          .eq("order_id", existingSite.order_id);
+      }
+
       return NextResponse.json(
         {
           message: `${websiteName} already exists.`,
-          order: existingSite,
+          order: {
+            ...existingSite,
+            favicon_file: existingSite.favicon_file ?? faviconFile,
+          },
         },
         { status: 409 },
       );
@@ -131,6 +159,7 @@ export async function POST(req: Request) {
           .insert({
             website_name: websiteName,
             website_address: websiteAddress,
+            favicon_file: faviconFile,
             order_status: false,
             user_id,
             product_type: "managed_wp",
