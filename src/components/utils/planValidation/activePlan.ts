@@ -7,7 +7,7 @@ import { browserClient } from "@/lib/db";
  * future or null.
  *
  * Same rule as `src/lib/wordpress/injection.ts` and the site-metadata worker
- * (docs/DESIGN-site-metadata-worker.md). Matching on service_type alone made
+ * (docs/systems/site-metadata-worker.md). Matching on service_type alone made
  * cancelled / expired rows render "Managed WP" on /dashboard/pricing.
  */
 function isLiveManagedWp(service: {

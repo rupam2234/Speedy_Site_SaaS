@@ -3,8 +3,8 @@
 > **Status:** Draft v1 · **Owner:** Speedy Site · **Last updated:** 2026-10-23
 > **Scope:** Architecture and decisions for the `rum-injector` module of the
 > Speedy Site WordPress plugin. No implementation code. Read with
-> `docs/GOALS.md`, `docs/RESTRUCTURE-PLAN.md` (Phase 1, §2.1) and
-> `docs/DESIGN-site-metadata-worker.md`.
+> `docs/GOALS.md`, `docs/plans/2026-10-10_000000_restructure_plan.md` (Phase 1, §2.1) and
+> `docs/systems/site-metadata-worker.md`.
 
 ---
 
@@ -24,7 +24,7 @@ What exists today:
 - Ingestion is entitlement-gated fail-closed: the `site-metadata` worker mirrors
   only active paid domains into the `SITE_METADATA` KV, and `event-buffer` rejects
   any Origin/Referer domain that is missing or expired (403). Verified 2026-10-22
-  (`docs/IMPACT-LOG.md`, `docs/DESIGN-site-metadata-worker.md`).
+  (`docs/IMPACT-LOG.md`, `docs/systems/site-metadata-worker.md`).
 - A companion-plugin blueprint ships from the dashboard
   (`src/app/(dashboard)/dashboard/wordpress-plugin-analysis/companionPlugin.tsx`):
   it bakes a per-domain secret as `SPEEDY_SITE_AUTH_KEY`, registers the
@@ -80,7 +80,7 @@ Unchanged and authoritative:
   truth. The collector reports the same label (`location.hostname`).
 - Free = CrUX only; the injector must not run.
 
-This mirrors the entitlement mirror in `docs/DESIGN-site-metadata-worker.md` and
+This mirrors the entitlement mirror in `docs/systems/site-metadata-worker.md` and
 reuses the same seat of data (`user_services`) that drives `activePlan.ts`,
 `site-limit`, and `newOrder`.
 
@@ -157,7 +157,7 @@ Notes:
 
 - Rate-limit per domain (reuse the existing rate limiter) to blunt abuse.
 - The collector URL carries no secret and no `id`. Per
-  `docs/DESIGN-site-metadata-worker.md`, the `id` is not an authz signal, and
+  `docs/systems/site-metadata-worker.md`, the `id` is not an authz signal, and
   `extended-rum.js` derives the domain from `location.hostname`, so `id` is not
   needed. Existing traffic continuity is preserved because events are keyed by
   `domain_name` from the host, not by `id`.
@@ -197,7 +197,7 @@ Trade-off and fallback:
   `inject:true`. Prefer the server-side decision for its simplicity; keep the stub
   as a documented option.
 
-The module stays tiny and non-blocking, consistent with `AGENT.md` rule 6 (the
+The module stays tiny and non-blocking, consistent with `AGENTS.md` rule 2 (the
 collector and its install path must not add measurable page weight or blocking work).
 
 ---
@@ -209,7 +209,7 @@ collector and its install path must not add measurable page weight or blocking w
 - Ingestion is the real gate: `event-buffer` derives the domain from Origin/Referer
   and rejects non-entitled domains (403, fail closed). A copied script tag cannot
   write into another site's metrics because the payload domain is never trusted
-  (`docs/DESIGN-site-metadata-worker.md`, "Protection layers").
+  (`docs/systems/site-metadata-worker.md`, "Protection layers").
 - The injection API is authenticated per domain by the existing secret so it cannot
   be used to enumerate or spam entitlement lookups. It fails closed. Its answer is
   a UX signal, not an authorization decision; a wrong "inject" still cannot produce
@@ -279,12 +279,12 @@ companion plugin's `check-connection` before the injector lands.
 ## 12. Open decisions
 
 1. Repo layout: top-level `wp-plugin/` in this monorepo, versus a standalone repo
-   (`docs/RESTRUCTURE-PLAN.md` §6). A monorepo path keeps install/auth contracts in
+   (`docs/plans/2026-10-10_000000_restructure_plan.md` §6). A monorepo path keeps install/auth contracts in
    one change; a standalone repo eases WordPress.org publishing.
 2. Distribution: continue zip-download from the dashboard until Phase 6, or ship a
    real installable `.zip` now.
 3. Domain identity: match on root (registered) domain to survive apex vs `www`, or
-   exact host. `docs/DESIGN-site-metadata-worker.md` also lists the order-prefix vs
+   exact host. `docs/systems/site-metadata-worker.md` also lists the order-prefix vs
    `wp-secret` site key as an open choice; this doc assumes exact host with a
    root-domain fallback.
 4. Cache TTLs: injection-API cache (default 60s) and plugin transient (default 5
@@ -298,6 +298,6 @@ companion plugin's `check-connection` before the injector lands.
 ## Related docs
 
 - `docs/GOALS.md`: product loop and the one-plugin, zero-friction principle.
-- `docs/RESTRUCTURE-PLAN.md`: Phase 1 plugin scope and §2.1 `rum-injector`.
-- `docs/DESIGN-site-metadata-worker.md`: entitlement mirror and the ingestion gate.
-- `docs/DESIGN-managed-wp-order-assignment.md`: expert assignment (unchanged here).
+- `docs/plans/2026-10-10_000000_restructure_plan.md`: Phase 1 plugin scope and §2.1 `rum-injector`.
+- `docs/systems/site-metadata-worker.md`: entitlement mirror and the ingestion gate.
+- `docs/systems/managed-wp-order-assignment.md`: expert assignment (unchanged here).

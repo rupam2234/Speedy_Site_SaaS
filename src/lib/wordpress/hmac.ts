@@ -4,7 +4,7 @@ import { normalizeDomain } from "./domain";
 
 const worker = setupDB();
 
-// Binding window for a prepared signature (docs/DESIGN-user-onboarding-flow.md
+// Binding window for a prepared signature (docs/systems/user-onboarding-flow.md
 // tour step 2). After it expires the user re-prepares and reinstalls.
 const SIGNATURE_TTL_MS = 24 * 60 * 60 * 1000;
 

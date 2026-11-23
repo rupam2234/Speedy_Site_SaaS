@@ -2,7 +2,7 @@
 #
 
 > Single source of truth for what we are building and why.
-> **Read this before implementing anything** (see `AGENT.md`, rule 4).
+> **Read this before implementing anything** (see `AGENTS.md`).
 
 ---
 
@@ -111,5 +111,5 @@ Experts fix real issues faster → measurable Core Web Vitals / speed wins
 
 ## Related docs
 
-- `docs/RESTRUCTURE-PLAN.md`: the phased plan reshaping speedy.site
-- `docs/DESIGN-managed-wp-order-assignment.md`: expert assignment for managed WP orders
+- `docs/plans/2026-10-10_000000_restructure_plan.md`: the phased plan reshaping speedy.site
+- `docs/systems/managed-wp-order-assignment.md`: expert assignment for managed WP orders

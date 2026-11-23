@@ -11,7 +11,11 @@ const worker = setupDB();
 //   1 plugin_verified - the WP plugin's HMAC signature verified against wp_key
 //   2 service_active  - payment completed (also written by the payment
 //                       finalization, see finalizePaidOrder in @/lib/entitlement)
-const STEP_KEYS = ["site_selected", "plugin_verified", "service_active"] as const;
+const STEP_KEYS = [
+  "site_selected",
+  "plugin_verified",
+  "service_active",
+] as const;
 
 /**
  * Records one setup step for a site.
@@ -65,9 +69,14 @@ export async function POST(req: Request) {
         .select("hmac_verified_at")
         .eq("domain", websiteName)
         .maybeSingle();
-      if (!(wpKey as { hmac_verified_at: string | null } | null)?.hmac_verified_at) {
+      if (
+        !(wpKey as { hmac_verified_at: string | null } | null)?.hmac_verified_at
+      ) {
         return NextResponse.json(
-          { error: "Plugin not verified. Install the plugin and verify the connection first." },
+          {
+            error:
+              "Plugin not verified. Install the plugin and verify the connection first.",
+          },
           { status: 400 },
         );
       }

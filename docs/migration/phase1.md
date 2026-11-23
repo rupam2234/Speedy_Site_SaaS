@@ -33,7 +33,7 @@ Transition the data storage layer from recurring Stripe `subscriptions` to one-t
    - Added role `expert`, tables `experts_pool` and `order_assignments`, RLS policies, and capacity-aware round-robin routing function `pick_next_expert()` via `20261022000001_admin_expert_management.sql`.
    - **Repair applied 2026-10-23**: Initial function call failed with `42703 column e.active_load does not exist`. Fixed via follow-up migration `20261023000001_fix_pick_next_expert.sql` (never edited applied migrations in place).
    - Functional verification: Empty pool returned `null`; available expert advanced round-robin position (`0` → `1` → `2`); test expert cleanly cascade-deleted.
-   - Reference: `docs/DESIGN-admin-expert-management.md`.
+   - Reference: `docs/systems/admin-expert-management.md`.
 
 5. **Type Generation & TypeScript Build Validation**
    - Regenerated `src/lib/db/database.types.ts` directly from production schema (`supabase gen types typescript`).
