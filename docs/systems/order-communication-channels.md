@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS public.order_messages (
    - Server handler `dispatchInAppChatNotification` in `src/app/api/emails/chatNotification.ts` executes immediately on new message creation.
    - Generates in-app notification rows in `public.notifications` for active participants without triggering external emails.
 3. **15-Minute Grace Window & Unread Digest (ADR-0003)**:
-   - Supabase `pg_cron` runs every 2 minutes invoking `POST /api/cron/chat-notifications` via `pg_net` with Bearer token authentication.
+   - Supabase `pg_cron` runs every 5 minutes invoking `POST /api/cron/chat-notifications` via `pg_net` with Bearer token authentication.
    - Messages read within 15 minutes (`read_at IS NOT NULL`) are completely suppressed from email delivery.
    - Messages unread after 15 minutes (`read_at IS NULL AND email_notified_at IS NULL AND created_at <= now() - interval '15 minutes'`) are batched by recipient and conversation into a single responsive HTML email digest via Resend.
    - Dispatched message IDs are atomically stamped with `email_notified_at = now()` to guarantee idempotency.

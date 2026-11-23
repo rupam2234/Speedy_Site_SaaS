@@ -27,7 +27,7 @@
   - [x] Implement atomic update setting `email_notified_at = now()` for all dispatched message IDs to prevent double delivery.
 - [x] **Phase 4: Cron Evaluation Route & Security Authorization**
   - [x] Implement secure route `POST /api/cron/chat-notifications` gated by `CRON_SECRET_TOKEN` or `ADMIN_WEBHOOK_SECRET`.
-  - [x] Wire `pg_cron` + `pg_net` to call `POST /api/cron/chat-notifications` on a recurring interval (e.g. every 2 minutes).
+  - [x] Wire `pg_cron` + `pg_net` to call `POST /api/cron/chat-notifications` on a recurring interval (e.g. every 5 minutes).
   - [x] Query unread candidate messages: `read_at IS NULL AND email_notified_at IS NULL AND created_at <= now() - interval '15 minutes'`.
   - [x] Group messages by recipient and conversation/order, resolve recipient addresses from `profiles`, and trigger digest dispatch.
 - [x] **Phase 5: Automated Test Suite & Quality Verification**
@@ -98,11 +98,11 @@ WHERE read_at IS NULL AND email_notified_at IS NULL;
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
 
--- Register recurring scheduled job (every 2 minutes)
+-- Register recurring scheduled job (every 5 minutes)
 -- Invokes internal cron endpoint with bearer authentication
 SELECT cron.schedule(
     'process-unread-chat-notifications',
-    '*/2 * * * *',
+    '*/5 * * * *',
     $$
     SELECT net.http_post(
         url := current_setting('app.settings.service_url', true) || '/api/cron/chat-notifications',

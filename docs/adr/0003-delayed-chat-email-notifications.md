@@ -42,7 +42,7 @@ The platform requires an email notification delivery strategy that:
 - **Cons:** Cloudflare Worker cron jobs are being phased out in our migration architecture. Vercel Cron has restrictive execution limits on Hobby tier plans.
 
 ### Alternative C: Native Supabase `pg_cron` + `pg_net` with API Digest Endpoint (Chosen)
-- **Pros:** Runs directly inside Supabase Postgres where messages live. Executes on a tight schedule (every 2 minutes) without maintaining standing external daemon infrastructure. Leverages partial Postgres indexing for zero-overhead scans.
+- **Pros:** Runs directly inside Supabase Postgres where messages live. Executes on a regular schedule (every 5 minutes) without maintaining standing external daemon infrastructure. Leverages partial Postgres indexing for zero-overhead scans.
 - **Cons:** Requires enabling `pg_cron` and `pg_net` extensions and setting internal service configuration variables.
 
 ---
@@ -63,7 +63,7 @@ The platform requires an email notification delivery strategy that:
    - Partial index `idx_order_messages_cron_digest` on `(created_at) WHERE read_at IS NULL AND email_notified_at IS NULL`.
 
 3. **Scheduler**:
-   - Supabase `pg_cron` runs every 2 minutes invoking `POST /api/cron/chat-notifications` via `pg_net` with a Bearer authentication token.
+   - Supabase `pg_cron` runs every 5 minutes invoking `POST /api/cron/chat-notifications` via `pg_net` with a Bearer authentication token.
 
 4. **15-Minute Grace Evaluation**:
    - Messages viewed within 15 minutes set `read_at = now()`. The cron scan ignores any message where `read_at IS NOT NULL` (zero emails sent).

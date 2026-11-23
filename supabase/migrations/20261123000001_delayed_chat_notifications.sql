@@ -19,7 +19,7 @@ WHERE read_at IS NULL AND email_notified_at IS NULL;
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
 
--- 5. Register recurring scheduled job (every 2 minutes)
+-- 5. Register recurring scheduled job (every 5 minutes)
 -- Safely unschedule first if previously registered
 DO $$
 BEGIN
@@ -31,7 +31,7 @@ BEGIN
 
         PERFORM cron.schedule(
             'process-unread-chat-notifications',
-            '*/2 * * * *',
+            '*/5 * * * *',
             $cron$
             SELECT net.http_post(
                 url := coalesce(current_setting('app.settings.service_url', true), 'http://localhost:3000') || '/api/cron/chat-notifications',
