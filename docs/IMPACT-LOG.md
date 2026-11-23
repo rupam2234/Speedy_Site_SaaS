@@ -2,13 +2,57 @@
 
 > **Purpose:** a short, interview-ready record of the most impactful
 > engineering changes to speedy.site. Newest first.
-> **Entry rules (AGENT.md rule 8):** only major, measurable changes (cost,
+> **Entry rules (AGENTS.md rule 2):** only major, measurable changes (cost,
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
-> **Last updated:** 2026-11-03
+> **Last updated:** 2026-11-23
+---
+
+## 2026-11-23: Delayed Chat Email Notifications (15-Minute Grace Window & Digest)
+
+**Problem:** Immediate email alerts sent on every chat message flooded recipient inboxes during active back-and-forth conversations, generating dozens of redundant notifications for messages users had already viewed on their screens.
+
+**Changes:**
+1. Database migration adding `email_notified_at` column, composite and partial indexes on `order_messages`, and Supabase `pg_cron` schedule registration calling `/api/cron/chat-notifications`.
+2. Decoupled in-app notifications from external email alerts in `src/app/api/chat/messages/route.ts`: in-app notifications (`public.notifications`) remain immediate, while real-time message posting bypasses Resend completely.
+3. Created unread digest dispatcher and responsive HTML template in `src/app/api/emails/chatNotification.ts` batching unread messages per recipient and updating `email_notified_at = now()`.
+4. Implemented secure cron route `src/app/api/cron/chat-notifications/route.ts` with Bearer/webhook authorization, 15-minute grace window evaluation, and recipient resolution.
+5. Added automated unit and integration tests in `tests/delayed-chat-notifications.test.mjs` verifying suppression, threshold, consolidation, idempotency, and security gates.
+
+**Impact:** Eliminates inbox spam during active chat sessions while ensuring unread messages are reliably aggregated into a single actionable email digest after 15 minutes.
+
+**Where to verify:** `pnpm test` (all 15 test cases passing); `make check` (zero lint issues); migration `supabase/migrations/20261123000001_delayed_chat_notifications.sql`.
+
+**Interview one-liner:** "Replaced noisy per-message email notifications with a 15-minute grace window and Supabase pg_cron digest pipeline that consolidates unread order messages and suppresses alerts for active users."
 
 ---
+
+## 2026-11-23 · Checkout returns to the originating environment
+
+**Problem:** The checkout callback selected its destination from `NODE_ENV`. A local `next start` server runs with `NODE_ENV=production`, so Stripe returned localhost customers to `speedy.site` instead of the local onboarding flow.
+
+**Changes:** `/api/checkout` now resolves the public request origin from the browser `Origin`, proxy-forwarded host, or request URL, with configured environment URLs only as a fallback. The success URL remains on that origin and opens onboarding step 3.
+
+**Impact:** Local, production, and preview checkouts return to the environment where checkout started. The success and cancel callbacks cannot accidentally cross environments, and the local onboarding flow remains testable against the test Stripe account.
+
+**Verify:** `pnpm typecheck`, changed-file ESLint, `pnpm build`; authenticated local checkout returned `http://localhost:3000/dashboard/onboarding?...&step=3`, while a production-origin request returned `https://speedy.site/dashboard/onboarding?...&step=3`.
+
+**Interview summary:** Payment callbacks now stay in the environment where the customer started, so local and preview onboarding flows complete correctly without leaking into production.
+
+---
+
+## 2026-11-23 · Stable WordPress plugin keys and live combined status
+
+**Problem:** Plugin downloads could generate or overwrite a site's key, the settings page cached a stale connected state for 30 days, and a deactivated plugin could still appear connected. Plugin and RUM state were checked separately.
+
+**Changes:** Key creation now lives only in the authenticated `plugin-key` API, uses 256-bit CSPRNG output, reuses the existing key on every download, and enforces unique secrets in the database. The legacy `wp-secret` write path is closed. The plugin exposes a live status route and enqueues the RUM collector globally in the frontend header. The settings API probes plugin and RUM state together with no client-side status cache and persists both timestamps.
+
+**Impact:** Reinstalling is safe and does not rotate credentials. Disabling the plugin is reflected as not active on the next settings check. RUM status now reflects the same live probe instead of a stale order flag. The plugin transient-caches an entitled RUM decision for five minutes and a negative decision for 30 seconds, avoiding an API call on every page view while allowing payment to activate RUM promptly.
+
+**Verify:** `pnpm run typecheck`, `pnpm test`, `pnpm build`; settings page live check; plugin download twice and confirm the baked key is identical.
+
+**Interview summary:** Plugin connections now use stable per-site credentials and live status, so reinstalls do not break and deactivation is visible immediately.
 
 ## 2026-11-03 · Free tier site limit increased to 10 + add-site reliability fix
 
@@ -83,7 +127,7 @@ plan from `service_type` alone — `data.some(s => s.service_type === "managed_w
 — never checking `status` or `expires_at`, so a cancelled or expired row still
 counted as paid. Every other entitlement gate in the repo already applies the
 full predicate: `src/lib/wordpress/injection.ts` (`.eq("service_type", "managed_wp").eq("status", "active")` plus an `expires_at` future-or-null
-check) and the `site-metadata` worker (`docs/DESIGN-site-metadata-worker.md`:
+check) and the `site-metadata` worker (`docs/systems/site-metadata-worker.md`:
 paid = managed_wp + active + expires_at null-or-future). `activePlan.ts` was the
 only consumer that skipped it — and it is the one that drives the UI.
 
@@ -255,7 +299,8 @@ checkout button.
     - Reads the site's host via `home_url()`, normalizes it (trim/lowercase/strip one leading `www.`) to match the API's `normalizeDomain`.
     - Uses the pre-shared `SPEEDY_SITE_AUTH_KEY` as the per-domain secret.
     - Calls `POST {apiOrigin}/api/wordpress/injection` with `{ domain, key }`.
-    - Transient-caches the response for 5 minutes (`speedy_site_rum_injection_<md5(domain)>`).
+    - Transient-caches an entitled response for 5 minutes and a negative response
+      for 30 seconds (`speedy_site_rum_injection_v1_7_<md5(domain)>`).
     - On `{ "inject": true, "scriptUrl": "..." }`, enqueues the collector via `wp_enqueue_script` (in footer).
     - Fail-closed on network errors, non-200, or malformed responses.
   - The download button continues to produce `speedy-site-plugin-auditor.zip` with the updated PHP.
@@ -269,7 +314,7 @@ checkout button.
 ---
 ## 2026-10-23 · Paid Managed WP sites finally get a RUM-entitled domain and an injector API
 
-**Problem:** the RUM ingestion gate (`site-metadata` → `event-buffer`) decides eligibility from `user_services.website_name` on a `managed_wp` row, but neither paid path ever wrote that column. The Stripe webhook creates the entitlement with no site, `POST /api/orders/managed/add` only stored `payment_id` on `wordpress_cred`, and the dashboard `newOrder` paid branch set `order_id` only. Net effect: every paying Managed WP customer had `user_services.website_name = null`, so the sync skipped the domain, the KV never listed it, and `event-buffer` returned 403 on every beacon (the script loads, no data collected). There was also no documented, self-contained API for the plugin to ask whether to inject the collector. Detail: `docs/DESIGN-rum-injector-plugin.md`.
+**Problem:** the RUM ingestion gate (`site-metadata` → `event-buffer`) decides eligibility from `user_services.website_name` on a `managed_wp` row, but neither paid path ever wrote that column. The Stripe webhook creates the entitlement with no site, `POST /api/orders/managed/add` only stored `payment_id` on `wordpress_cred`, and the dashboard `newOrder` paid branch set `order_id` only. Net effect: every paying Managed WP customer had `user_services.website_name = null`, so the sync skipped the domain, the KV never listed it, and `event-buffer` returned 403 on every beacon (the script loads, no data collected). There was also no documented, self-contained API for the plugin to ask whether to inject the collector. Detail: `docs/systems/rum-injector-plugin.md`.
 
 **Changes:**
 - `src/app/api/orders/newOrder/route.ts`: the paid (`activeManaged`) branch now sets `website_name: insertedOrder.website_name` on the `user_services` link, mirroring the free branch.
@@ -295,7 +340,7 @@ checkout button.
 - The hook is isolated: any assignment failure is logged and swallowed, so it can never fail the customer's order creation. `assigned_by` is left null to mark it as system/auto (the admin route records the acting admin instead).
 
 **Impact (before → after):**
-- Paid Managed WP order: created but never assigned → auto-assigned to the next available expert (round-robin, capacity-aware) the moment experts populate the pool. Design detail: `docs/DESIGN-admin-expert-management.md` (Phase 1) and `docs/DESIGN-managed-wp-order-assignment.md` (P2).
+- Paid Managed WP order: created but never assigned → auto-assigned to the next available expert (round-robin, capacity-aware) the moment experts populate the pool. Design detail: `docs/systems/admin-expert-management.md` (Phase 1) and `docs/systems/managed-wp-order-assignment.md` (P2).
 
 **Where to verify:** `tsc --noEmit` and `eslint` pass on the route; `POST /rest/v1/rpc/pick_next_expert` returns `null` while the pool is empty (so orders currently go to the unassigned queue). End-to-end proof needs one available expert in `experts_pool`: submit `POST /api/orders/managed/add` and confirm an active `order_assignments` row (`status='pending'`, one per order) is created.
 
@@ -305,7 +350,7 @@ checkout button.
 
 **Problem:** The managed WP optimization service lacked an operational control center for admins to triage customer tickets, track SLA-breaching unassigned orders, dispatch/reassign orders to developer pools with capacity limits, and review live performance metrics. Additionally, URL paths leaked internal directory names (`/admin`), the tickets discussion view suffered from flexbox height clipping and container scroll occlusion, and navigating to `/account` broke the sidebar layout due to missing context providers.
 
-**Changes (details: `docs/DESIGN-admin-expert-management.md`):**
+**Changes (details: `docs/systems/admin-expert-management.md`):**
 - **Operations Mission Control (`/dashboard`):** Executive overview with 4 KPI metrics (queue depth, active optimizations, developer utilization, open tickets), critical SLA warning banner for orders waiting > 12h, operational dispatch shortcuts, and live feed.
 - **Managed WP Orders (`/dashboard/orders`):** Search by domain, customer email, or order ID; status filter pills; pagination; sliding detail drawer linking directly to live RUM Core Web Vitals evidence; and dispatch actions (Assign, Reassign, Skip with reason, Mark Completed) with assignment audit trail.
 - **SLA-Aware Unassigned Queue (`/dashboard/queue`):** Real-time wait duration badges (`<1h`, `4–12h`, `>12h critical`), inline dispatch modal (auto round-robin or manual selection), and batch auto-assign.
@@ -354,7 +399,7 @@ collected). Secondarily, the gate trusted the payload's own
 `data.siteDomain`, so a copied `<script>` tag plus curl could write into another
 site's metrics.
 
-**Changes (details: `docs/DESIGN-site-metadata-worker.md`):**
+**Changes (details: `docs/systems/site-metadata-worker.md`):**
 - New `site-metadata` worker syncs entitlement from `services_with_domains` into KV
   `SITE_METADATA` (`domain:{website_name}` → `{serviceId, status, expiresAt, pageviewLimit}`)
 - `event-buffer` derives the domain from Origin/Referer at the edge instead of the
@@ -384,7 +429,7 @@ domain and 403 for an unknown one; `rum.speedy.site/rum.js` serving is untouched
 whole pipeline through unauthenticated endpoints; writes were N+1 against a
 D1 database with zero indexes; reads bypassed every cache layer we own.
 
-**Changes (details: `docs/DESIGN-analytics-refactor.md`):**
+**Changes (details: `docs/systems/analytics-pipeline.md`):**
 - All worker endpoints now require a secret header; public `/` and `/test`
   triggers deleted; the secret that lived in the client bundle removed
 - Upserts rewritten: 3N queries per cron run → 1 keys-read + 1 `env.DB.batch()`
@@ -483,3 +528,23 @@ a free service automatically; entitlement enforcement moved into the database.
 **Interview one-liner:** "We migrated billing from recurring subscriptions to
 a one-time service model, moving entitlement checks from application code
 into the database with trigger-based provisioning."
+
+## 2026-11-22: Order-scoped communication channels with role-gated access (ADR-0002)
+
+**Problem:** Customers, assigned performance experts, and administrators required structured communication scoped to specific WordPress optimization orders. Platform administrators needed full visibility into customer-expert dialogue for quality assurance without ability to post to customer threads, while requiring a private backchannel to coordinate with experts.
+
+**Changes:**
+1. Database migration adding `order_conversations` and `order_messages` tables with strict Row Level Security (RLS) enforcing customer read/write on client channels, admin read-only observation on client channels, and private admin-expert internal channels.
+2. Realtime listener hook and broadcast channel support in `src/lib/chat/realtime.ts`.
+3. Role-gated server API endpoints (`/api/chat/conversations`, `/api/chat/messages`, `/api/chat/messages/read`) with notification pipeline dispatch (in-app and Resend email alerts).
+4. Reusable frontend chat UI suite in `src/components/chat/` (`OrderChatPanel`, `MessageBubble`, `ChatInput`, `TypingIndicator`).
+5. Dashboard integrations:
+   - Customer dashboard (`/dashboard/managed-wp/status`) integrated with live expert chat.
+   - Expert dashboard (`/dashboard/expert/orders`) equipped with dual-channel drawer.
+   - Admin dashboard (`/dashboard/admin/orders`) equipped with read-only customer dialogue stream alongside active expert backchannel.
+6. Automated test suite in `tests/order-communication-channels.test.mjs` verifying role isolation and write rejection.
+
+**Impact:** Tamper-proof, order-scoped communication with zero third-party chat server dependencies, enforcing compliance oversight and staff coordination natively in Supabase and Next.js.
+
+**Interview one-liner:** "Implemented dual-channel order messaging with Postgres RLS: platform admins can supervise client threads in strict read-only mode while maintaining an isolated staff backchannel with assigned experts."
+

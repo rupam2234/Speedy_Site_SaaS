@@ -5,16 +5,16 @@ import { normalizeDomain } from "@/lib/wordpress/domain";
 
 const worker = setupDB();
 
-// Setup step keys, in tour order (docs/DESIGN-user-onboarding-flow.md §4.2).
-// The user walks four steps; preparing the signature and assigning the
-// collector are recorded silently behind the plugin download + verification,
-// so one UI step writes more than one key.
+// The three setup steps, aligned 1:1 with the onboarding progress bar
+// (Site -> Plugin -> Activate) and stored as keys of orders.tour:
+//   0 site_selected   - the account has this site connected
+//   1 plugin_verified - the WP plugin's HMAC signature verified against wp_key
+//   2 service_active  - payment completed (also written by the payment
+//                       finalization, see finalizePaidOrder in @/lib/entitlement)
 const STEP_KEYS = [
   "site_selected",
-  "signature_bound",
-  "plugin_installed",
-  "signature_verified",
-  "rum_assigned",
+  "plugin_verified",
+  "service_active",
 ] as const;
 
 /**
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
     const { data: order } = await worker
       .from("orders")
-      .select("order_id, tour, setup_step")
+      .select("order_id, tour, setup_step, order_status")
       .eq("user_id", user.id)
       .eq("website_name", websiteName)
       .maybeSingle();
@@ -60,6 +60,35 @@ export async function POST(req: Request) {
       ...((order.tour as Record<string, boolean> | null) ?? {}),
       [key]: true,
     };
+
+    // Steps that depend on external state are validated server-side: the
+    // client must not be able to claim a step without the actual proof.
+    if (key === "plugin_verified") {
+      const { data: wpKey } = await worker
+        .from("wp_key")
+        .select("hmac_verified_at")
+        .eq("domain", websiteName)
+        .maybeSingle();
+      if (
+        !(wpKey as { hmac_verified_at: string | null } | null)?.hmac_verified_at
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Plugin not verified. Install the plugin and verify the connection first.",
+          },
+          { status: 400 },
+        );
+      }
+    }
+
+    if (key === "service_active" && order.order_status !== true) {
+      return NextResponse.json(
+        { error: "Payment not completed for this site yet." },
+        { status: 400 },
+      );
+    }
+
     const setup_step = Math.max(order.setup_step ?? 0, step + 1);
 
     const { data: updated, error: updateError } = await worker
@@ -67,8 +96,8 @@ export async function POST(req: Request) {
       .update({
         tour,
         setup_step,
-        // The last key in the chain means the setup is finished.
-        ...(key === "rum_assigned"
+        // The last step (payment) means the setup is finished.
+        ...(key === "service_active"
           ? { setup_completed_at: new Date().toISOString() }
           : {}),
       })

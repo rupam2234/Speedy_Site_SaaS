@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { LoadingAnimation } from "@/components/theme/loadingAnimation";
 import { useSiteContext } from "../siteContext";
 import { ActivateService } from "./ActivateService";
-import { SetupComplete } from "./SetupComplete";
 import { StepContent } from "./StepContent";
 import { StepProgress, type ProgressStep } from "./StepProgress";
 import { STEPS } from "./steps";
@@ -22,22 +21,41 @@ import { useOnboardingTour } from "./useOnboardingTour";
 export default function Main() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { selectedSite, orders } = useSiteContext();
+  const { selectedSite } = useSiteContext();
 
   const siteFromUrl = searchParams.get("site");
+  const sessionIdFromUrl = searchParams.get("session_id");
+  // User-visible step numbers are 1-based. Stripe returns with step=3 so the
+  // completion/activation card is shown after payment.
+  const stepFromUrl = Number(searchParams.get("step"));
+  const requestedStep =
+    Number.isInteger(stepFromUrl) && stepFromUrl >= 1 ? stepFromUrl : null;
   // "Connect another site" starts the same flow from step 1 with no site
   // selected, so the add-site card becomes the active one.
   const isAddingSite = searchParams.get("intent") === "new-site";
   const activeSite = isAddingSite ? "" : (siteFromUrl ?? selectedSite);
-  const tour = useOnboardingTour(activeSite, siteFromUrl);
+  const tour = useOnboardingTour(
+    activeSite,
+    siteFromUrl,
+    sessionIdFromUrl,
+    requestedStep,
+  );
 
-  // Wait for the site context, the per-site entitlement answer and the
-  // reconcile answer: rendering any card before they are all known is what made
-  // step 1 flash, or the pay button appear when payment was already done.
+  // Only the payment card depends on the per-site entitlement answers, so only
+  // it waits for them: the tour steps are fully determined by the order row and
+  // render the moment orders are known. Gating everything on hasPaidForSite /
+  // hasServiceForSite / reconcile is what made the step 1 -> step 2 handoff
+  // flash a full-screen loader: switching the url to ?site=<new site> re-runs
+  // those checks, and their null state blocked the whole page for a round-trip
+  // even though the next card was already decided. When the tour IS complete
+  // we still wait, so the pay button never flashes before we know whether
+  // payment already happened.
   if (
     tour.isLoading ||
-    tour.hasServiceForSite === null ||
-    tour.isReconciling
+    !tour.stepsVerified ||
+    !tour.isPositioned ||
+    (tour.isTourComplete &&
+      (tour.hasPaidForSite === null || tour.isReconciling))
   ) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
@@ -46,44 +64,38 @@ export default function Main() {
     );
   }
 
-  // The stepper can look at any completed step, so the panel follows the step
-  // the user clicked and falls back to the active one.
-  const currentStepIndex = tour.viewedStep ?? tour.activeIndex;
+  // The panel is positioned once from the DB-verified steps on load (see
+  // useOnboardingTour); after that it only moves when the user presses
+  // Next / Back or picks a step from the progress bar -- never automatically
+  // when a step completes in the background.
+  const currentStepIndex = tour.currentStep;
 
-  // One bar for the whole journey: activate -> add site -> plugin -> verify.
+  // One bar for the whole journey: add site -> plugin -> activate (payment).
   const progressSteps: ProgressStep[] = [
-    {
-      key: "activate",
-      shortTitle: "Activate",
-      done: tour.hasServiceForSite,
-      active: !tour.hasServiceForSite,
-      marker: <CreditCard className="size-4" />,
-    },
-  ];
-
-  STEPS.forEach((step, index) => {
-    progressSteps.push({
+    ...STEPS.map((step, index) => ({
       key: `${step.key}-${index}`,
       shortTitle: step.shortTitle,
       done: tour.isStepDone(index),
-      // Only one circle is darkened at a time: while activation is still
-      // required the "activate" pin owns the active state; the tour steps
-      // become active once the site has a service entitlement.
-      active: tour.hasServiceForSite === true && index === tour.activeIndex,
+      active: index === tour.currentStep && tour.currentStep < STEPS.length,
       selectable: tour.isStepDone(index),
       marker: index + 1,
       tourIndex: index,
-    });
-  });
+    })),
+    {
+      key: "activate",
+      shortTitle: "Activate",
+      done: Boolean(tour.hasPaidForSite),
+      active: tour.currentStep >= STEPS.length && !tour.hasPaidForSite,
+      marker: <CreditCard className="size-4" />,
+    },
+  ];
 
   const handleSelectStep = (index: number) => {
     const entry = progressSteps[index];
 
     if (entry.tourIndex === undefined) return;
     if (!tour.isStepDone(entry.tourIndex)) return;
-    tour.setViewedStep(
-      entry.tourIndex === tour.activeIndex ? null : entry.tourIndex,
-    );
+    tour.goToStep(entry.tourIndex);
   };
 
   // The zip builder pulls in JSZip, so it only loads when the user asks for it.
@@ -101,64 +113,69 @@ export default function Main() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-primary">Service setup</h1>
-          {!tour.hasServiceForSite ? (
-            <p className="text-sm text-primary/70 mt-1">
-              Connect a WordPress site {">"} Verify plugin connection {">"}{" "}
-              Start continious performance monitoring & data backed optimization
-            </p>
-          ) : (
-            <p className="text-sm text-primary/70 mt-1">
-              {isAddingSite
-                ? "Connect another site and it will run through the same integration steps."
-                : `${STEPS.length} short steps to connect ${activeSite || "your site"} and start real-user monitoring.`}
-            </p>
-          )}
+          <p className="text-sm text-primary/70 mt-1">
+            Connect a WordPress site {">"} Verify plugin connection {">"} Start
+            continious performance monitoring & data backed optimization
+          </p>
         </div>
         <p className="text-xs font-medium text-primary/60">
           {doneCount} of {progressSteps.length} complete
         </p>
       </header>
 
-      {tour.error && (
+      {/* {tour.error && (
         <p className="text-xs text-red-500 border border-red-500/30 bg-red-500/5 rounded-sm px-3 py-2">
           {tour.error}
         </p>
-      )}
+      )} */}
 
       <StepProgress steps={progressSteps} onSelect={handleSelectStep} />
 
-      {!tour.hasServiceForSite ? (
-        <ActivateService busy={tour.busy} onPay={tour.startPayment} />
-      ) : tour.isTourComplete ? (
-        <SetupComplete
-          onGoToDashboard={() => router.push(`/dashboard?site=${activeSite}`)}
-          onAddAnotherSite={() =>
-            router.push("/dashboard/onboarding?intent=new-site")
-          }
-        />
-      ) : (
+      {currentStepIndex < STEPS.length ? (
         <StepContent
           index={currentStepIndex}
           site={activeSite}
-          plugin={tour.plugin}
-          hasProbed={tour.hasProbed}
-          polling={tour.polling}
+          verifyStatus={tour.verifyStatus}
           busy={tour.busy}
-          orders={orders}
+          error={tour.error}
+          isStepDone={tour.isStepDone}
+          isTourComplete={currentStepIndex >= STEPS.length}
+          goNext={tour.goNext}
+          goToStep={tour.goToStep}
           siteInput={tour.siteInput}
           setSiteInput={tour.setSiteInput}
+          wpLoginUrl={tour.wpLoginUrl}
+          setWpLoginUrl={tour.setWpLoginUrl}
+          existingSite={tour.existingSite}
           addingSite={tour.addingSite}
           addSiteError={tour.addSiteError}
           addSiteSuccess={tour.addSiteSuccess}
-          addSiteLog={tour.addSiteLog}
           onCreateSite={tour.createSite}
           onDownloadPlugin={handleDownloadPlugin}
-          onCheckPlugin={tour.checkPlugin}
-          onConfirmPluginInstalled={tour.confirmPluginInstalled}
           onVerifyInstallation={tour.verifyInstallation}
-          onSelectSite={(site) =>
-            router.push(`/dashboard/onboarding?site=${site}`)
-          }
+        />
+      ) : (
+        // Past the last tour step: straight to the payment card, no
+        // intermediate "continue to payment" page.
+        <ActivateService
+          busy={tour.busy}
+          onPay={tour.startPayment}
+          paymentComplete={Boolean(tour.hasPaidForSite)}
+          onRedirect={() => {
+            // Drop the orders cache so the dashboard refetches and the site
+            // selector immediately drops the "Pending" badge (order_status
+            // just flipped server-side via webhook/reconcile).
+            sessionStorage.removeItem("orders");
+            sessionStorage.removeItem("orders-ts");
+            // Invalidate the cached wp connection status so the sidebar
+            // "Setup status" dropdown refetches live wp_key state (plugin
+            // installed / signature verified) instead of showing stale
+            // pre-payment values for up to 30 days.
+            localStorage.removeItem(
+              `wp-connection-status-${activeSite}`,
+            );
+            router.push(`/dashboard?site=${activeSite}`);
+          }}
         />
       )}
 

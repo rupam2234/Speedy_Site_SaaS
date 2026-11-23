@@ -4,16 +4,18 @@ import { setupDB } from "@/lib/db";
 import { normalizeDomain } from "@/lib/wordpress/domain";
 import { verifySignature } from "@/lib/wordpress/hmac";
 
-const worker = setupDB();
-
 // Verifies the signature the plugin emitted (tour step 4).
 export async function POST(req: NextRequest) {
-  const { user, error } = await getSupabaseServerUser();
-  if (error || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    // The database client is created here rather than at module scope: an
+    // initialisation failure then becomes a JSON error response instead of
+    // Next's plain-text "Internal Server Error".
+    const worker = setupDB();
+    const { user, error } = await getSupabaseServerUser();
+    if (error || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { domain, signature }: { domain?: string; signature?: string } =
       await req.json();
     const normalized = normalizeDomain(domain);

@@ -57,6 +57,13 @@ export default function AppSidebar({
     (o) => o.website_name === selectedSite,
   )?.favicon_file;
 
+  // Per-site payment gate. Orders are created unpaid while a site is being
+  // connected (order_status = false) and flip to true when payment completes,
+  // so the paid sections are shown but locked until then. CrUX data is public
+  // Google data and stays available for any connected site.
+  const selectedOrder = orders?.find((o) => o.website_name === selectedSite);
+  const isSelectedSitePaid = selectedOrder?.order_status === true;
+
   const isAdmin = role === "admin";
   const isExpert = role === "expert";
 
@@ -275,6 +282,9 @@ export default function AppSidebar({
         url: "#",
         icon: Activity,
         isActive: true,
+        // Locked until this site's payment completes (the pages themselves
+        // show the upgrade fallback). CrUX stays open either way.
+        locked: !isSelectedSitePaid,
         items: [
           {
             title: "Web Vitals",
@@ -297,6 +307,7 @@ export default function AppSidebar({
         url: "#",
         icon: FlaskConical,
         isActive: false,
+        locked: !isSelectedSitePaid,
         items: [
           {
             title: "Images",
@@ -312,8 +323,12 @@ export default function AppSidebar({
         isActive: false,
         items: [
           {
-            title: "Status",
+            title: "Expert Chat",
             url: `/dashboard/managed-wp/status?site=${selectedSite}`,
+          },
+          {
+            title: "Setup Status",
+            url: `/dashboard/onboarding?site=${selectedSite}`,
           },
         ],
       },

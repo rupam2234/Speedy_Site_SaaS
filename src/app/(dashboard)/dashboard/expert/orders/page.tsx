@@ -2,6 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ExternalLink, MessageSquare, Shield, Users } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { OrderChatPanel } from "@/components/chat";
+import type { ChannelType } from "@/lib/chat/types";
 
 interface Assignment {
   assignmentId: string;
@@ -22,9 +32,12 @@ const EXPERT_ACTIONS: Record<string, string[]> = {
   completed: [],
 };
 
+// Expert order triage view with dual-channel communications center.
 export default function ExpertOrders() {
   const [orders, setOrders] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chatOrder, setChatOrder] = useState<Assignment | null>(null);
+  const [activeChannel, setActiveChannel] = useState<ChannelType>("client");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,6 +94,7 @@ export default function ExpertOrders() {
                 <th className="px-4 py-3 font-medium">Assigned</th>
                 <th className="px-4 py-3 font-medium">Accepted</th>
                 <th className="px-4 py-3 font-medium">Completed</th>
+                <th className="px-4 py-3 font-medium">Communications</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
@@ -88,8 +102,20 @@ export default function ExpertOrders() {
               {orders.map((order) => (
                 <tr key={order.assignmentId} className="border-b last:border-0">
                   <td className="px-4 py-3">
-                    <div className="font-medium">{order.websiteName ?? "Unnamed site"}</div>
-                    <div className="text-xs text-muted-foreground">{order.websiteAddress}</div>
+                    <div className="font-medium text-foreground">{order.websiteName ?? "Unnamed site"}</div>
+                    {order.websiteAddress ? (
+                      <a
+                        href={order.websiteAddress}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        {order.websiteAddress}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -114,6 +140,15 @@ export default function ExpertOrders() {
                     {order.completedAt ? new Date(order.completedAt).toLocaleString() : "-"}
                   </td>
                   <td className="px-4 py-3">
+                    <button
+                      onClick={() => setChatOrder(order)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5 text-primary" />
+                      <span>Open Chat</span>
+                    </button>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex gap-1">
                       {EXPERT_ACTIONS[order.status]?.map((next) => (
                         <button
@@ -132,6 +167,93 @@ export default function ExpertOrders() {
           </table>
         </div>
       )}
+
+      {/* Communications Center Drawer */}
+      <Sheet open={!!chatOrder} onOpenChange={(open) => !open && setChatOrder(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto p-6 space-y-4">
+          {chatOrder && (
+            <>
+              <SheetHeader>
+                <div className="flex items-center justify-between">
+                  <span className="capitalize px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                    {chatOrder.status.replace("_", " ")}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Order ID: {chatOrder.orderId.slice(0, 8)}...
+                  </span>
+                </div>
+                <SheetTitle className="text-lg font-bold mt-2">
+                  {chatOrder.websiteName ?? "Website Optimization"}
+                </SheetTitle>
+                <SheetDescription className="text-xs">
+                  {chatOrder.websiteAddress}
+                </SheetDescription>
+              </SheetHeader>
+
+              {/* Real User Data Deep-Link */}
+              {chatOrder.websiteName && (
+                <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-primary">Real User Data & Diagnostics</div>
+                    <div className="text-[11px] text-muted-foreground">Inspect Core Web Vitals and frontend evidence</div>
+                  </div>
+                  <a
+                    href={`/dashboard/rum/web-vitals?site=${encodeURIComponent(chatOrder.websiteName)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-2.5 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90 inline-flex items-center gap-1"
+                  >
+                    Open RUM <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
+
+              {/* Dual Channel Switcher */}
+              <div className="flex rounded-lg border p-1 bg-muted/40 gap-1">
+                <button
+                  onClick={() => setActiveChannel("client")}
+                  className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-all ${
+                    activeChannel === "client"
+                      ? "bg-background text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  <span>Customer Chat</span>
+                </button>
+                <button
+                  onClick={() => setActiveChannel("internal")}
+                  className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-all ${
+                    activeChannel === "internal"
+                      ? "bg-background text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Shield className="h-3.5 w-3.5" />
+                  <span>Admin Backchannel</span>
+                </button>
+              </div>
+
+              {/* Chat View */}
+              <OrderChatPanel
+                key={`${chatOrder.orderId}-${activeChannel}`}
+                orderId={chatOrder.orderId}
+                channelType={activeChannel}
+                title={
+                  activeChannel === "client"
+                    ? "Customer Communication"
+                    : "Admin Direct Backchannel"
+                }
+                subtitle={
+                  activeChannel === "client"
+                    ? "Direct client discussion for this order"
+                    : "Private internal instructions and questions with administrators"
+                }
+              />
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

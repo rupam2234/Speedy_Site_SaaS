@@ -1,71 +1,73 @@
+import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
 import { setupDB } from "@/lib/db";
+import { normalizeDomain } from "@/lib/wordpress/domain";
 import { NextRequest, NextResponse } from "next/server";
 
 interface Props {
   domain: string;
-  secret?: string
+  secret?: string;
 }
-
-const worker = setupDB();
 
 export async function POST(req: NextRequest) {
   try {
-    const { domain, secret }: Props = await req.json();
+    const worker = setupDB();
+    const { user, error } = await getSupabaseServerUser();
+    if (error || !user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
 
-    if (!domain) {
+    const { domain, secret }: Props = await req.json();
+    const normalized = normalizeDomain(domain);
+
+    if (!normalized) {
       return NextResponse.json(
         { message: "Bad request: domain is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    if(secret){
-      // insert the key into db
-      const { error } = await worker
-        .from("wp_key")
-        .upsert({ domain: domain.trim(), wp_secret: secret }, { onConflict: "domain" });
-
-      if (error) {
-        // 23503 = the domain has no orders row: the site is not connected to
-        // this account yet, which is a client problem, not a server one.
-        if ((error as { code?: string }).code === "23503") {
-          return NextResponse.json(
-            { message: "Connect this site to your account first" },
-            { status: 409 },
-          );
-        }
-        return NextResponse.json({ message: "Failed to save WP secret" }, { status: 500 });
-      }
-
-      return NextResponse.json({message: "Secret saved"}, {status: 200})
+    if (secret) {
+      return NextResponse.json(
+        { message: "Plugin keys are managed by /api/wordpress/plugin-key" },
+        { status: 409 },
+      );
     }
 
-    // A site that has never downloaded the plugin has no wp_key row yet. That
-    // is a normal "no secret" answer rather than an error, so the lookup must
-    // not use .single() -- it throws when zero rows come back.
-    const { error, data } = await worker
+    const { data: order } = await worker
+      .from("orders")
+      .select("website_name")
+      .eq("user_id", user.id)
+      .eq("website_name", normalized)
+      .maybeSingle();
+
+    if (!order) {
+      return NextResponse.json(
+        { message: "Connect this site to your account first" },
+        { status: 403 },
+      );
+    }
+
+    const { error: keyError, data } = await worker
       .from("wp_key")
       .select("wp_secret")
-      .eq("domain", domain)
+      .eq("domain", normalized)
       .limit(1)
       .maybeSingle();
 
-    if (error) {
-      throw new Error(error.message ?? "Error fetching WP secret");
-    }
+    if (keyError) throw new Error(keyError.message ?? "Error fetching WP secret");
 
     if (!data?.wp_secret) {
       return NextResponse.json(
         { message: "No secret found for this site" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    return NextResponse.json({ data }, {status: 200});
+    return NextResponse.json({ data }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json(
       { message: error.message ?? "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

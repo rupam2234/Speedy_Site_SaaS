@@ -1,10 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
 export function PlanUpgradeFallback() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { selectedSite, orders } = useSiteContext();
+  // The site this paywall sits on. Its order was created unpaid while the site
+  // was being connected, so the checkout carries it in the session metadata:
+  // the Stripe webhook / reconcile endpoint then binds the entitlement to that
+  // order and flips it to paid, unlocking this site (not just the account).
+  const pendingOrder =
+    orders?.find((o) => o.website_name === selectedSite) ?? null;
 
   const handleUpgrade = async () => {
     setLoading(true);
@@ -13,7 +21,11 @@ export function PlanUpgradeFallback() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceKey: "managed_wp" }),
+        body: JSON.stringify({
+          priceKey: "managed_wp",
+          order_id: pendingOrder?.order_id ?? null,
+          website_name: pendingOrder?.website_name ?? null,
+        }),
       });
       const data: any = await res.json();
       if (data.url) {
@@ -35,36 +47,58 @@ export function PlanUpgradeFallback() {
           <span className="text-3xl">🚀</span>
         </div>
 
-        <h2 className="text-lg font-semibold text-primary">Upgrade Required</h2>
+        <h2 className="text-lg font-semibold text-primary">
+          {pendingOrder ? "Finish activating this site" : "Upgrade Required"}
+        </h2>
 
         <p className="text-sm text-primary/80">
-          This feature requires the{" "}
-          <span className="font-medium">WordPress Performance Optimization</span>{" "}
-          service.
+          {pendingOrder ? (
+            <>
+              <span className="font-medium">{pendingOrder.website_name}</span>{" "}
+              is connected but its one-time payment is still pending. Until then
+              you can see its CrUX (public Google) data on the dashboard, and
+              everything below stays locked.
+            </>
+          ) : (
+            <>
+              This feature requires the{" "}
+              <span className="font-medium">
+                WordPress Performance Optimization
+              </span>{" "}
+              service.
+            </>
+          )}
         </p>
 
         <div className="border-t border-primary/10 pt-4 space-y-3 text-left">
-          <p className="font-medium text-xs text-primary/90">What you unlock:</p>
+          <p className="font-medium text-xs text-primary/90">
+            What you unlock:
+          </p>
           <ul className="space-y-2 pl-4">
             <li className="flex items-center gap-2 text-xs text-primary/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
-              <strong>Real-user Core Web Vitals</strong> -- not 28-day averages, actual visitor data
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-0.5" />
+              <strong>Real-user Core Web Vitals</strong> -- not 28-day averages,
+              actual visitor data
             </li>
             <li className="flex items-center gap-2 text-xs text-primary/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
-              <strong>Per-page, per-device, per-browser breakdown</strong> -- know exactly where users struggle
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-0.5" />
+              <strong>Per-page, per-device, per-browser breakdown</strong> --
+              know exactly where users struggle
             </li>
             <li className="flex items-center gap-2 text-xs text-primary/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
-              <strong>Auto-injected RUM script via plugin</strong> -- no copy-paste, zero maintenance
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-0.5" />
+              <strong>Auto-injected RUM script via plugin</strong> -- no
+              copy-paste, zero maintenance
             </li>
             <li className="flex items-center gap-2 text-xs text-primary/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
-              <strong>Issue detection + expert fix service</strong> -- we find and fix bottlenecks for you
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-0.5" />
+              <strong>Issue detection + expert fix service</strong> -- we find
+              and fix bottlenecks for you
             </li>
             <li className="flex items-center gap-2 text-xs text-primary/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 mt-0.5" />
-              <strong>Core Web Vitals Pass Guarantee</strong> -- or we keep optimizing until you pass
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-0.5" />
+              <strong>Core Web Vitals Pass Guarantee</strong> -- or we keep
+              optimizing until you pass
             </li>
           </ul>
         </div>
@@ -78,11 +112,14 @@ export function PlanUpgradeFallback() {
           className="mt-2 cursor-pointer w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={loading}
         >
-          {loading ? "Starting checkout..." : "Upgrade Now -- $299 / year"}
+          {loading
+            ? "Starting checkout..."
+            : pendingOrder
+              ? "Finish activation -- $299"
+              : "Upgrade Now -- $299 / year"}
         </button>
         {error && <p className="text-xs text-red-500">{error}</p>}
       </div>
     </div>
   );
 }
-

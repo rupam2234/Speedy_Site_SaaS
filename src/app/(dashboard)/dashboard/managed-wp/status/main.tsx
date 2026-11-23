@@ -7,8 +7,17 @@ import { useSiteContext } from "../../siteContext";
 import { ManagedOrderDashboard } from ".";
 import Link from "next/link";
 
+interface OrderInfo {
+  order_id: string;
+  website_name: string;
+  website_address: string;
+  order_status: boolean;
+  product_type?: string | null;
+}
+
 export default function Main() {
   const [managedOrder, setManagedOrder] = useState<boolean>(false);
+  const [orderData, setOrderData] = useState<OrderInfo | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { selectedSite } = useSiteContext();
 
@@ -17,14 +26,33 @@ export default function Main() {
 
     const validate = async () => {
       try {
-        const res = await fetch("/api/orders/managed/validate", {
-          headers: {
-            site: selectedSite,
-          },
-        });
+        const [validateRes, orderRes] = await Promise.all([
+          fetch("/api/orders/managed/validate", {
+            headers: {
+              site: selectedSite,
+            },
+          }),
+          fetch(`/api/orders/managed/check?site=${encodeURIComponent(selectedSite)}`),
+        ]);
 
-        const isValid: boolean = await res.json();
-        setManagedOrder(isValid);
+        let isValid: boolean = false;
+        try {
+          isValid = await validateRes.json();
+        } catch {
+          isValid = false;
+        }
+
+        let isManaged = isValid;
+        if (orderRes.ok) {
+          const checkJson = await orderRes.json();
+          if (checkJson.order) {
+            setOrderData(checkJson.order);
+            if (checkJson.order.product_type === "managed_wp") {
+              isManaged = true;
+            }
+          }
+        }
+        setManagedOrder(isManaged);
       } finally {
         setLoading(false);
       }
@@ -72,5 +100,5 @@ export default function Main() {
     );
   }
 
-  return <ManagedOrderDashboard />;
+  return <ManagedOrderDashboard order={orderData} site={selectedSite} />;
 }

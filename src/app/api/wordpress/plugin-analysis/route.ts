@@ -25,7 +25,15 @@ export async function POST(req: NextRequest) {
       },
     );
 
-    const data: any = await response.json();
+    // WordPress can answer with HTML (plugin missing, WAF block), so the body
+    // is parsed defensively.
+    const raw = await response.text();
+    let data: any = null;
+    try {
+      data = raw ? JSON.parse(raw) : null;
+    } catch {
+      data = null;
+    }
 
     if (!response.ok) {
       throw new Error("Unable to get data");

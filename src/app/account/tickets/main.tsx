@@ -1,6 +1,7 @@
 "use client";
 
-import { LoaderCircle, Tickets, Wrench } from "lucide-react";
+import { LoaderCircle, MessageSquare, Tickets, Wrench } from "lucide-react";
+import Link from "next/link";
 import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useSupabaseUser } from "@/components/utils/supabase/AuthProvider";
@@ -144,6 +145,22 @@ export default function Main() {
           </div>
         </div>
       </section>
+
+      {/* Managed Optimization Disambiguation Banner */}
+      <div className="mx-5 mb-2 p-3 rounded-lg border border-primary/20 bg-primary/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <MessageSquare className="h-4 w-4 text-primary shrink-0" />
+          <p className="text-xs text-primary/80">
+            Have questions about your active WordPress optimization? Chat directly with your dedicated performance expert in real time.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/managed-wp/status"
+          className="shrink-0 text-xs font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+        >
+          Open Expert Chat
+        </Link>
+      </div>
 
       {/* Tickets Layout */}
       <section className="relative p-5 grid grid-cols-3 md:grid-cols-6 md:gap-5 gap-3">

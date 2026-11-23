@@ -4,7 +4,7 @@
 > **Scope:** Fix the free-tier quota bleed in the analytics pipeline
 > (`analytics-cron`, `traffic-source-cron`, D1 mirror), then decide its
 > long-term fate: keep refactored, or retire into the issue detection engine.
-> Read with `docs/GOALS.md` and `docs/RESTRUCTURE-PLAN.md`.
+> Read with `docs/GOALS.md` and `docs/plans/2026-10-10_000000_restructure_plan.md`.
 
 ---
 
@@ -75,7 +75,7 @@ is a fresh invocation + D1 queries.
   `wrangler.jsonc`
 - `SUPABASE_SERVICE_ROLE_KEY` is committed as a plain var in both analytics
   `wrangler.jsonc` files; rotation is already required per
-  `docs/DESIGN-site-metadata-worker.md`
+  `docs/systems/site-metadata-worker.md`
 
 ### 6. Hourly full recompute
 
