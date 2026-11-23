@@ -18,6 +18,7 @@ Use root automation to execute standard quality gates across subsystems:
 - **Generated Types Are Read-Only**: Never edit `src/types/database.types.ts` directly. Update schemas/migrations and run `make types`.
 - **Environment & Secrets**: Never hardcode secrets or credentials; always read from environment variables. Never commit `.env` files. Reference `.env.example`.
 - **Protected Branches**: Never push directly to `main`. Push changes through a feature branch and merge cleanly.
+- **Database Migrations**: Never manually construct static timestamp prefixes (e.g. `...000001`). Always use 14-digit UTC timestamps (`YYYYMMDDHHMMSS_<name>.sql`) generated via `pnpm run db:new <name>` or `date -u +"%Y%m%d%H%M%S"`. Migration timestamps must be strictly monotonic.
 
 ## 2. Code Rules & Style Invariants
 - **No Em-Dashes**: Never use the em-dash character in code, comments, docs, or UI copy. Use commas, colons, semicolons, parentheses, or split sentences.
