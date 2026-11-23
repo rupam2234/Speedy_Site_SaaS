@@ -14,12 +14,20 @@ export async function POST(req: NextRequest){
     try{
         const res = await fetch(`https://${domain}/wp-json/speedy-site/v1/plugins`);
 
-        const data:any = await res.json();
+        // WordPress answers with an HTML page when the plugin is missing (or a
+        // WAF blocks the call), so the body is parsed defensively.
+        const raw = await res.text();
+        let data: any = null;
+        try {
+            data = raw ? JSON.parse(raw) : null;
+        } catch {
+            data = null;
+        }
 
         const found: {plugin: boolean, key: boolean} = {key: false, plugin: false};
 
         if(res.status === 401){
-            if (data.message === "Secret key not set in WordPress settings."){
+            if (data?.message === "Secret key not set in WordPress settings."){
                 found.key = false; 
                 found.plugin = true  // basically there's a house but front door is locked 
             }else{

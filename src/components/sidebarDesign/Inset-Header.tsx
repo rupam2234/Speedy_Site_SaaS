@@ -1,15 +1,14 @@
 "use client";
 
-import { Bell, Check, Circle, Loader2 } from "lucide-react";
+import { Bell, Check, Circle } from "lucide-react";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import { Separator } from "../ui/separator";
 import { SidebarTrigger } from "../ui/sidebar";
 import {
   useSupabaseUser,
   useUserRole,
-  useUserRoleLoading,
 } from "../utils/supabase/AuthProvider";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cachedData, cleanExpiredCache } from "../utils";
 import { createPortal } from "react-dom";
 import { Notifications } from "@/app/api";
@@ -17,69 +16,12 @@ import { CustomTooltip } from "../theme";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 
-// Connection status types (matching the API)
-type ConnectionStatusType =
-  | "unknown"
-  | "pending"
-  | "connected"
-  | "verified"
-  | "expired"
-  | "error";
-
-interface ConnectionStatus {
-  status: ConnectionStatusType;
-  message: string;
-  details: {
-    pluginInstalled: boolean;
-    hasSecret: boolean;
-    hasSignature: boolean;
-    signatureExpired: boolean;
-    hmacVerifiedAt: string | null;
-    rumAssignedAt: string | null;
-    entitled: boolean;
-    hmacExpiresAt: string | null;
-  };
-  checkedAt: number;
-}
-
-// Cache helpers — 30 days in localStorage
-const CONNECTION_CACHE_PREFIX = "wp-connection-status-";
-const CONNECTION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-
-function getCachedConnectionStatus(domain: string): ConnectionStatus | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(`${CONNECTION_CACHE_PREFIX}${domain}`);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (Date.now() - parsed.checkedAt < CONNECTION_TTL_MS) {
-      return parsed;
-    }
-  } catch {
-    // ignore parse errors
-  }
-  return null;
-}
-
-function setCachedConnectionStatus(domain: string, status: ConnectionStatus) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(
-      `${CONNECTION_CACHE_PREFIX}${domain}`,
-      JSON.stringify({ ...status, checkedAt: Date.now() }),
-    );
-  } catch {
-    // ignore quota errors
-  }
-}
-
 export default function SidebarInsetHeader() {
   const [notifcations, setNotifications] = useState<Notifications[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const user = useSupabaseUser();
   const role = useUserRole();
-  const roleLoading = useUserRoleLoading();
-  const { selectedSite, orders, isLoadingOrders } = useSiteContext();
+  const { selectedSite, orders } = useSiteContext();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -92,92 +34,6 @@ export default function SidebarInsetHeader() {
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const tempReadNotifications = useRef<string[]>([]);
-
-  // WordPress connection status — checked live against wp_key, not the stale
-  // tour boolean. Cached for 30 days so we don't hammer the API on every render.
-  const [connectionStatus, setConnectionStatus] =
-    useState<ConnectionStatus | null>(null);
-  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
-
-  const checkConnection = useCallback(async () => {
-    if (!activeSite) return;
-
-    setIsCheckingConnection(true);
-    try {
-      const res = await fetch("/api/wordpress/connection-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ domain: activeSite }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.status) {
-        const status: ConnectionStatus = {
-          status: data.status,
-          message: data.message,
-          details: data.details,
-          checkedAt: Date.now(),
-        };
-        setConnectionStatus(status);
-        setCachedConnectionStatus(activeSite, status);
-      } else {
-        const status: ConnectionStatus = {
-          status: "error",
-          message: data.error || data.message || "Failed to check connection",
-          details: {
-            pluginInstalled: false,
-            hasSecret: false,
-            hasSignature: false,
-            signatureExpired: false,
-            hmacVerifiedAt: null,
-            rumAssignedAt: null,
-            entitled: false,
-            hmacExpiresAt: null,
-          },
-          checkedAt: Date.now(),
-        };
-        setConnectionStatus(status);
-        setCachedConnectionStatus(activeSite, status);
-      }
-    } catch (err: any) {
-      const status: ConnectionStatus = {
-        status: "error",
-        message: err.message || "Network error",
-        details: {
-          pluginInstalled: false,
-          hasSecret: false,
-          hasSignature: false,
-          signatureExpired: false,
-          hmacVerifiedAt: null,
-          rumAssignedAt: null,
-          entitled: false,
-          hmacExpiresAt: null,
-        },
-        checkedAt: Date.now(),
-      };
-      setConnectionStatus(status);
-      setCachedConnectionStatus(activeSite, status);
-    } finally {
-      setIsCheckingConnection(false);
-    }
-  }, [activeSite]);
-
-  // Load cached status on mount/activeSite change for instant UI feedback,
-  // but ALWAYS kick off a live check so wpConfigured reflects real wp_key
-  // state instead of a stale cached "verified" from before a delete/re-add.
-  useEffect(() => {
-    if (activeSite) {
-      const cached = getCachedConnectionStatus(activeSite);
-      if (cached) {
-        setConnectionStatus(cached);
-      }
-      checkConnection();
-    } else {
-      setConnectionStatus(null);
-    }
-  }, [activeSite, checkConnection]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -227,41 +83,23 @@ export default function SidebarInsetHeader() {
     cachedNotifcations();
   }, [user]);
 
-  // The setup entry point shows while there is still work to do: no site at
-  // all, or the selected site has not finished its WordPress configuration.
-  // We read live wp_key state (plugin installed + signature + verified) rather
-  // than trusting the stale tour flags on the orders row.
+  // Setup status is derived from the same server state the onboarding flow
+  // writes (orders.tour + order_status), so this dropdown can never disagree
+  // with the steps page: site_selected / plugin_verified / service_active.
   const selectedOrder = orders?.find((o) => o.website_name === activeSite);
+  const siteTour = (selectedOrder?.tour ?? {}) as Record<string, boolean>;
 
-  const pluginInstalled = Boolean(connectionStatus?.details?.pluginInstalled);
-  const hasValidSignature = Boolean(
-    connectionStatus?.details?.hasSignature &&
-      !connectionStatus?.details?.signatureExpired,
-  );
-  const isSignatureVerified = Boolean(
-    connectionStatus?.details?.hmacVerifiedAt,
-  );
-
-  // Payment reads the flag, not the row: an order exists as soon as the site
-  // is connected, and only order_status = true (flipped by the Stripe webhook
-  // / reconcile endpoint) means payment actually landed.
+  const isSiteConnected = Boolean(selectedOrder);
+  const isPluginVerified = siteTour.plugin_verified === true;
+  // order_status flips to true only via the Stripe webhook / reconcile.
   const isPaid = selectedOrder?.order_status === true;
-  const wpConfigured = pluginInstalled && hasValidSignature && isSignatureVerified;
-  const needsSetup = !activeSite || !wpConfigured || !isPaid;
+  const setupDone = isSiteConnected && isPluginVerified && isPaid;
 
-  // Hovering "Finish setup" shows what is left for THIS site, not a pitch.
-  // Per-site only. "Done" for the incoming steps is decided by live wp_key
-  // state for THIS site, never by account-wide signals or stale tour flags.
+  // Hovering the button shows what is left for THIS site, not a pitch.
   const setupSteps = [
+    { label: "Site connected", done: isSiteConnected },
+    { label: "Plugin connected & verified", done: isPluginVerified },
     { label: "Payment done", done: isPaid },
-    {
-      label: "Site connected",
-      done: pluginInstalled && hasValidSignature,
-    },
-    {
-      label: "Plugin connected & verified",
-      done: wpConfigured,
-    },
   ];
 
   const stepsLeft = setupSteps.filter((step) => !step.done).length;
@@ -279,7 +117,7 @@ export default function SidebarInsetHeader() {
           setShowNotifications((prev) => !prev);
         }}
       >
-        {role === "user" && needsSetup ? (
+        {role === "user" ? (
           <CustomTooltip
             content={
               <div className="flex w-52 flex-col gap-2 p-1">
@@ -305,7 +143,7 @@ export default function SidebarInsetHeader() {
                 </ul>
                 <p className="text-[10px] leading-relaxed opacity-60">
                   {stepsLeft === 0
-                    ? "Everything is configured."
+                    ? "Everything is configured for this site."
                     : isOnSetupRoute
                       ? "You're already on the setup screen."
                       : `${stepsLeft} step${stepsLeft === 1 ? "" : "s"} left — click to continue.`}
@@ -333,7 +171,7 @@ export default function SidebarInsetHeader() {
                     : "cursor-pointer hover:text-primary/70"
                 }`}
               >
-                Setup status
+                {setupDone ? "Connected" : "Setup status"}
               </button>
             }
           />

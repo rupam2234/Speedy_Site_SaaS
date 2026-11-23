@@ -248,7 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setRoleLoading(false);
       roleFetchedForUser.current = freshUser.id;
-    } catch (err) {
+    } catch {
       setUser(null);
       setRole(null);
       setRoleLoading(false);

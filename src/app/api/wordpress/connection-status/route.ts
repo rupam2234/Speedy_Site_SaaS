@@ -3,8 +3,6 @@ import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
 import { setupDB } from "@/lib/db";
 import { normalizeDomain } from "@/lib/wordpress/domain";
 
-const worker = setupDB();
-
 // Type for wp_key row
 type WpKeyRow = {
   domain: string | null;
@@ -22,6 +20,8 @@ export interface ConnectionStatus {
   message: string;
   details: {
     pluginInstalled: boolean;
+    pluginActive: boolean;
+    rumActive: boolean;
     hasSecret: boolean;
     hasSignature: boolean;
     signatureExpired: boolean;
@@ -33,12 +33,19 @@ export interface ConnectionStatus {
 }
 
 export async function POST(req: NextRequest) {
-  const { user, error } = await getSupabaseServerUser();
-  if (error || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    // The database client is created here rather than at module scope: an
+    // initialisation failure then becomes a JSON error response instead of
+    // Next's plain-text "Internal Server Error".
+    const worker = setupDB();
+    // Auth is resolved inside the try block on purpose: a failure here used to
+    // escape the handler and Next answered with a plain-text
+    // "Internal Server Error", which the client then failed to parse as JSON.
+    const { user, error } = await getSupabaseServerUser();
+    if (error || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { domain }: { domain?: string } = await req.json();
     const normalized = normalizeDomain(domain);
 
@@ -74,6 +81,40 @@ export async function POST(req: NextRequest) {
 
     const wpKeyData = wpKey as WpKeyRow | null;
 
+    // Probe the site's plugin status endpoint. A missing route means the
+    // plugin is not active, even when the database still holds its old key.
+    let pluginActive = false;
+    let rumActive = false;
+    try {
+      const probe = await fetch(
+        `https://${normalized}/wp-json/speedy-site/v1/status`,
+        {
+          cache: "no-store",
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+      if (probe.ok) {
+        const raw = await probe.text();
+        const live = raw ? (JSON.parse(raw) as Record<string, unknown>) : null;
+        pluginActive = live?.pluginActive === true;
+        rumActive = pluginActive && live?.rumActive === true;
+      } else if (probe.status === 404) {
+        // Plugin versions before 1.4 have no status route. Their existing
+        // plugins route still proves that the plugin is active when it rejects
+        // the discovery request with 401.
+        const legacy = await fetch(
+          `https://${normalized}/wp-json/speedy-site/v1/plugins`,
+          {
+            cache: "no-store",
+            signal: AbortSignal.timeout(5000),
+          },
+        );
+        pluginActive = legacy.status === 401;
+      }
+    } catch (err: any) {
+      console.error("WordPress status probe failed:", err?.message ?? err);
+    }
+
     // Check entitlement
     const now = Date.now();
     const { data: services } = await worker
@@ -89,38 +130,68 @@ export async function POST(req: NextRequest) {
       return Number.isNaN(expires) || expires > now;
     });
 
-    // Determine status
-    const hasPlugin = !!wpKeyData?.wp_secret;
+    // Determine status. The plugin is provably installed when it holds the
+    // access secret OR a bound/verified HMAC signature (the onboarding flow
+    // verifies via HMAC; wp_secret is only written when the zip is generated).
+    const hasStoredKey = !!wpKeyData?.wp_secret;
     const hasSignature = !!wpKeyData?.hmac_signature;
     const signatureExpired = wpKeyData?.hmac_expires_at
       ? Date.parse(wpKeyData.hmac_expires_at) < now
       : false;
     const isVerified = !!wpKeyData?.hmac_verified_at;
     const isRumAssigned = !!wpKeyData?.rum_assigned_at;
+    const nowIso = new Date().toISOString();
+
+    // Persist the combined live result so plugin and RUM state always move
+    // together. A deactivated plugin clears the active timestamps.
+    const { error: statusUpdateError } = await worker
+      .from("wp_key" as any)
+      .update({
+        plugin_active_at: pluginActive ? nowIso : null,
+        rum_active_at: rumActive ? nowIso : null,
+        last_checked_at: nowIso,
+      })
+      .eq("domain", normalized);
+
+    if (statusUpdateError) {
+      console.error("Failed to persist WordPress status:", statusUpdateError.message);
+    }
+    // hmac_expires_at is the onboarding handshake window: it bounds how long
+    // the user has to finish the tour (prepare -> install -> hand the
+    // signature back). It is NOT a lease on a working connection. Once the
+    // handshake completed (hmac_verified_at / rum_assigned_at are stamped) the
+    // binding is permanent, and the runtime credential is wp_secret, which
+    // has no expiry. So an expired window only blocks a handshake that has
+    // not happened yet.
+    const bindingExpired = signatureExpired && !isVerified;
 
     let status: "pending" | "connected" | "verified" | "expired" | "error";
     let message: string;
 
-    if (!hasPlugin) {
+    if (!pluginActive) {
       status = "pending";
-      message = "Plugin not installed";
+      message = "Plugin is not active";
     } else if (!hasSignature) {
       status = "pending";
       message = "Plugin installed, awaiting signature";
-    } else if (signatureExpired) {
-      status = "expired";
-      message = "Signature expired, please re-prepare";
     } else if (!isVerified) {
-      status = "connected";
-      message = "Plugin connected, awaiting verification";
-    } else if (!isRumAssigned) {
-      status = "verified";
-      message = "Verified, RUM script assignment pending";
-    } else {
+      // The handshake is still open: the binding window decides whether it
+      // can still be completed or has to be re-prepared.
+      if (bindingExpired) {
+        status = "expired";
+        message = "Signature expired, please re-prepare";
+      } else {
+        status = "connected";
+        message = "Plugin connected, awaiting verification";
+      }
+    } else if (!isRumAssigned || !rumActive) {
       status = "verified";
       message = entitled
-        ? "Fully connected - RUM script active"
-        : "Verified but not entitled for RUM";
+        ? "Connected - RUM script is not active"
+        : "Connected but not entitled for RUM";
+    } else {
+      status = "verified";
+      message = "Fully connected - RUM script active";
     }
 
     return NextResponse.json({
@@ -128,8 +199,10 @@ export async function POST(req: NextRequest) {
       status,
       message,
       details: {
-        pluginInstalled: hasPlugin,
-        hasSecret: hasPlugin,
+        pluginInstalled: pluginActive,
+        pluginActive,
+        rumActive,
+        hasSecret: hasStoredKey,
         hasSignature,
         signatureExpired,
         hmacVerifiedAt: wpKeyData?.hmac_verified_at ?? null,

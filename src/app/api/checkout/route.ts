@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
 import { setupDB } from "@/lib/db";
 import { normalizeDomain } from "@/lib/wordpress/domain";
+import { getRequestOrigin } from "@/lib/requestOrigin";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "build-placeholder"); // build-safe
 
@@ -78,9 +79,10 @@ export async function POST(req: Request) {
     }
 
     const BASE_URL =
-      process.env.NODE_ENV === "development"
+      getRequestOrigin(req) ??
+      (process.env.NODE_ENV === "development"
         ? process.env.NEXT_PUBLIC_DEV_BASE_URL
-        : process.env.NEXT_PUBLIC_PROD_BASE_URL;
+        : process.env.NEXT_PUBLIC_PROD_BASE_URL);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -101,7 +103,7 @@ export async function POST(req: Request) {
       // Include session_id so the client can reconcile immediately on return,
       // and the site so the tour lands on the right site's completion page
       // instead of relying on a possibly stale selected-site cache.
-      success_url: `${BASE_URL}/dashboard/onboarding?session_id={CHECKOUT_SESSION_ID}${website_name ? `&site=${encodeURIComponent(normalizeDomain(website_name) ?? website_name)}` : ""}`, 
+      success_url: `${BASE_URL}/dashboard/onboarding?session_id={CHECKOUT_SESSION_ID}&step=3${website_name ? `&site=${encodeURIComponent(normalizeDomain(website_name) ?? website_name)}` : ""}`,
       cancel_url: `${BASE_URL}/account/one-time-payment/cancel`,
     });
 

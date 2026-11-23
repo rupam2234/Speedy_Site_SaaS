@@ -2,21 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerUser } from "../..";
 import { setupDB } from "@/lib/db";
 
-const worker = setupDB();
-
 interface Props {
   pluginAudit: boolean;
 }
 
 export async function POST(req: NextRequest) {
-  const { user } = await getSupabaseServerUser();
-
-  if (!user?.id)
-    return NextResponse.json({ message: "User unauthorized" }, { status: 401 });
-
-  const { pluginAudit }: Props = await req.json();
-
   try {
+    // The database client is created here rather than at module scope: an
+    // initialisation failure then becomes a JSON error response instead of
+    // Next's plain-text "Internal Server Error".
+    const worker = setupDB();
+    const { user } = await getSupabaseServerUser();
+
+    if (!user?.id)
+      return NextResponse.json({ message: "User unauthorized" }, { status: 401 });
+
+    const { pluginAudit }: Props = await req.json();
+
     if (!pluginAudit) {
       // Return current quota - check user_services for managed_wp service
       const { data: service, error: serviceError } = await worker

@@ -25,11 +25,21 @@ export default function Main() {
 
   const siteFromUrl = searchParams.get("site");
   const sessionIdFromUrl = searchParams.get("session_id");
+  // User-visible step numbers are 1-based. Stripe returns with step=3 so the
+  // completion/activation card is shown after payment.
+  const stepFromUrl = Number(searchParams.get("step"));
+  const requestedStep =
+    Number.isInteger(stepFromUrl) && stepFromUrl >= 1 ? stepFromUrl : null;
   // "Connect another site" starts the same flow from step 1 with no site
   // selected, so the add-site card becomes the active one.
   const isAddingSite = searchParams.get("intent") === "new-site";
   const activeSite = isAddingSite ? "" : (siteFromUrl ?? selectedSite);
-  const tour = useOnboardingTour(activeSite, siteFromUrl, sessionIdFromUrl);
+  const tour = useOnboardingTour(
+    activeSite,
+    siteFromUrl,
+    sessionIdFromUrl,
+    requestedStep,
+  );
 
   // Only the payment card depends on the per-site entitlement answers, so only
   // it waits for them: the tour steps are fully determined by the order row and
@@ -157,6 +167,13 @@ export default function Main() {
             // just flipped server-side via webhook/reconcile).
             sessionStorage.removeItem("orders");
             sessionStorage.removeItem("orders-ts");
+            // Invalidate the cached wp connection status so the sidebar
+            // "Setup status" dropdown refetches live wp_key state (plugin
+            // installed / signature verified) instead of showing stale
+            // pre-payment values for up to 30 days.
+            localStorage.removeItem(
+              `wp-connection-status-${activeSite}`,
+            );
             router.push(`/dashboard?site=${activeSite}`);
           }}
         />

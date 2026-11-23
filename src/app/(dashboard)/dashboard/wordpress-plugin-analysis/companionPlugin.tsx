@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { HowItWorks } from ".";
 import { useSiteContext } from "../siteContext";
-import { cachedData, cleanExpiredCache } from "@/components/utils";
+
 import { createPortal } from "react-dom";
 
 
@@ -15,19 +15,24 @@ import { createPortal } from "react-dom";
  * downloaded zip is pre-authenticated on activation day.
  */
 function buildPluginPhp(secretKey: string) {
+  const apiOrigin = (
+    process.env.NEXT_PUBLIC_PROD_BASE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "")
+  ).replace(/\/+$/, "");
+
   return `<?php
   /**
    * Plugin Name: Speedy Site Plugin Auditor
    * Description: Connects your site to the Speedy Site plugin performance auditor and auto-injects RUM collector for paid plans.
-   * Version: 1.3
+   * Version: 1.7
    * Author: Speedy Site
    */
 
   // Pre-authenticated key for this specific installation
   define('SPEEDY_SITE_AUTH_KEY', '${secretKey}');
 
-  // Dashboard origin for API calls (baked at zip generation time)
-  define('SPEEDY_SITE_API_ORIGIN', '${typeof window !== "undefined" ? window.location.origin : ""}');
+  // Production API origin; the WordPress server cannot reach the dashboard's localhost
+  define('SPEEDY_SITE_API_ORIGIN', '${apiOrigin}');
 
   // Add settings page (Optional, for manual overrides)
   add_action('admin_menu', function() {
@@ -77,42 +82,31 @@ function buildPluginPhp(secretKey: string) {
           'callback' => 'speedy_site_perf_auditor_get_plugins',
           'permission_callback' => 'speedy_site_perf_auditor_check_key'
       ));
+
+      register_rest_route('speedy-site/v1', '/status', array(
+          'methods' => 'GET',
+          'callback' => 'speedy_site_perf_auditor_get_status',
+          'permission_callback' => '__return_true'
+      ));
   });
 
   // RUM Injector module -- auto-injects collector for paid managed_wp sites
-  add_action('wp_enqueue_scripts', function () {
-      // Only run on frontend, not admin
-      if (is_admin()) return;
-
-      // Compute the host this site serves on (mirrors the API's normalizeDomain)
+  function speedy_site_get_rum_injection() {
       $host = wp_parse_url(home_url(), PHP_URL_HOST);
-      if (!$host) return;
+      if (!$host) return array('inject' => false, 'reason' => 'missing_domain');
+
       $domain = strtolower(trim($host));
-      $domain = preg_replace('/^www\./', '', $domain);
-
-      // Use the pre-authenticated key baked into this installation
+      $domain = preg_replace('/^www\\./', '', $domain);
       $key = defined('SPEEDY_SITE_AUTH_KEY') ? SPEEDY_SITE_AUTH_KEY : '';
-      if (!$key) return;
-
-      // API origin baked at zip generation time
       $apiOrigin = defined('SPEEDY_SITE_API_ORIGIN') ? rtrim(SPEEDY_SITE_API_ORIGIN, '/') : '';
-      if (!$apiOrigin) return;
+      if (!$key || !$apiOrigin) return array('inject' => false, 'reason' => 'missing_config');
 
-      // Transient cache key per domain (5 minute TTL)
-      $transientKey = 'speedy_site_rum_injection_' . md5($domain);
+      // Version the cache so an upgraded plugin never inherits an old decision.
+      $transientKey = 'speedy_site_rum_injection_v1_7_' . md5($domain);
       $cached = get_transient($transientKey);
+      if ($cached !== false) return $cached;
 
-      if ($cached !== false) {
-          // Cache hit
-          if (!empty($cached['inject']) && !empty($cached['scriptUrl'])) {
-              wp_enqueue_script('speedy-site-rum', $cached['scriptUrl'], array(), null, false);
-          }
-          return;
-      }
-
-      // Cache miss: call the injection API
-      $url = $apiOrigin . '/api/wordpress/injection';
-      $response = wp_remote_post($url, array(
+      $response = wp_remote_post($apiOrigin . '/api/wordpress/injection', array(
           'timeout' => 3,
           'blocking' => true,
           'headers' => array('Content-Type' => 'application/json'),
@@ -120,25 +114,28 @@ function buildPluginPhp(secretKey: string) {
       ));
 
       if (is_wp_error($response)) {
-          // Network error: fail closed, no script
-          return;
+          return array('inject' => false, 'reason' => 'request_failed');
+      }
+      $statusCode = wp_remote_retrieve_response_code($response);
+      if ($statusCode !== 200) {
+          return array('inject' => false, 'reason' => 'http_' . $statusCode);
       }
 
-      $code = wp_remote_retrieve_response_code($response);
-      if ($code !== 200) {
-          // Non-200: fail closed
-          return;
-      }
+      $data = json_decode(wp_remote_retrieve_body($response), true);
+      if (!is_array($data)) return array('inject' => false, 'reason' => 'invalid_response');
 
-      $body = wp_remote_retrieve_body($response);
-      $data = json_decode($body, true);
+      // A successful decision is safe to cache for five minutes. A negative
+      // decision can precede payment (or a missed webhook), so keep it only
+      // briefly to avoid leaving RUM inactive after the site becomes entitled.
+      $cacheTtl = !empty($data['inject']) ? 5 * MINUTE_IN_SECONDS : 30;
+      set_transient($transientKey, $data, $cacheTtl);
+      return $data;
+  }
 
-      if (!is_array($data)) return;
+  add_action('wp_enqueue_scripts', function () {
+      if (is_admin()) return;
 
-      // Cache the decision for 5 minutes
-      set_transient($transientKey, $data, 5 * MINUTE_IN_SECONDS);
-
-      // If entitled, enqueue the collector
+      $data = speedy_site_get_rum_injection();
       if (!empty($data['inject']) && !empty($data['scriptUrl'])) {
           wp_enqueue_script('speedy-site-rum', $data['scriptUrl'], array(), null, false);
       }
@@ -159,6 +156,17 @@ function buildPluginPhp(secretKey: string) {
       }
       
       return new WP_Error('rest_forbidden', 'Invalid secret key.', array('status' => 401));
+  }
+
+  function speedy_site_perf_auditor_get_status() {
+      $rum = speedy_site_get_rum_injection();
+      return array(
+          'pluginActive' => true,
+          'rumActive' => !empty($rum['inject']) && !empty($rum['scriptUrl']),
+          'rumScriptUrl' => !empty($rum['scriptUrl']) ? $rum['scriptUrl'] : null,
+          'rumReason' => !empty($rum['inject']) ? 'entitled' : (isset($rum['reason']) ? $rum['reason'] : 'not_entitled'),
+          'checkedAt' => gmdate('c')
+      );
   }
 
   function speedy_site_perf_auditor_get_plugins() {
@@ -194,27 +202,26 @@ function buildPluginPhp(secretKey: string) {
 }
 
 /**
- * Reads the plugin access key for a domain, generating and storing one the
- * first time. Same cached key the plugin page has always used.
+ * Resolves the stable per-site plugin key. The server owns key creation and
+ * always returns the existing key for a site, so every download is reusable.
  */
 export async function resolvePluginSecret(domain: string): Promise<string> {
   if (!domain) throw new Error("Domain is required");
 
-  // Drop expired cached keys before reading
-  cleanExpiredCache({
-    prefix: "plugin_analysis_secret",
-    session_Storage: false,
+  const res = await fetch("/api/wordpress/plugin-key", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ domain }),
   });
 
-  const existing = await getWpSecret(domain);
-  if (existing) return existing;
-
-  // First time for this domain: generate a key and store it
-  const generated =
-    Math.random().toString(36).substring(2, 15) +
-    Math.random().toString(36).substring(2, 15);
-  await saveWpSecret(generated, domain);
-  return generated;
+  const body: any = await readJson(res);
+  if (!res.ok || !body?.key) {
+    throw new Error(
+      body?.error || body?.message || "Failed to prepare plugin key",
+    );
+  }
+  return body.key;
 }
 
 /**
@@ -222,10 +229,16 @@ export async function resolvePluginSecret(domain: string): Promise<string> {
  * Shared by the connection modal and the setup tour, so a site connects on
  * activation without the user copying any key.
  */
-export async function downloadPluginZip(domain: string): Promise<void> {
+export async function downloadPluginZip(
+  domain: string,
+  resolvedSecretKey?: string,
+): Promise<void> {
   if (!domain) throw new Error("Domain is required");
 
-  const secretKey = await resolvePluginSecret(domain);
+  // Both onboarding and Settings use this function. The key is resolved by
+  // the same server endpoint, so their downloads always contain the same
+  // site-bound credential and the same plugin configuration.
+  const secretKey = resolvedSecretKey ?? (await resolvePluginSecret(domain));
 
   const zip = new JSZip();
   const folder = zip.folder("speedy-site-plugin-auditor");
@@ -245,20 +258,7 @@ export async function downloadPluginZip(domain: string): Promise<void> {
  * Download plugin with a pre-resolved secret key (for ConnectionPlugin component).
  */
 export async function downloadPluginZipWithKey(domain: string, secretKey: string): Promise<void> {
-  if (!domain) throw new Error("Domain is required");
-
-  const zip = new JSZip();
-  const folder = zip.folder("speedy-site-plugin-auditor");
-  folder?.file("speedy-site-plugin-auditor.php", buildPluginPhp(secretKey));
-  const content = await zip.generateAsync({ type: "blob" });
-  const url = URL.createObjectURL(content);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "speedy-site-plugin-auditor.zip";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  await downloadPluginZip(domain, secretKey);
 }
 
 export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
@@ -271,16 +271,8 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
 
     async function fetchSecretAndStatus() {
       try {
-        // Fetch secret
-        const secretRes = await fetch("/api/wordpress/wp-secret", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ domain: selectedSite }),
-        });
-        const secretBody = await secretRes.json();
-        if (alive && secretBody.data) {
-          setSecretKey(secretBody.data);
-        }
+        const secret = await resolvePluginSecret(selectedSite);
+        if (alive) setSecretKey(secret);
 
         // Fetch connection status
         await checkConnection();
@@ -305,7 +297,7 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain: selectedSite }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       // Connection status is fetched but not stored in state (UI not fully updated yet)
       console.log("Connection status:", data);
     } catch (error) {
@@ -383,64 +375,22 @@ export function ConnectionPlugin({ onClose }: { onClose: () => void }) {
 
 /**
  *
- * @param secret secret key
- * @param domain domain assigned
- * @returns saves WP plugin secret into database
- */
-async function saveWpSecret(secret: string, domain: string) {
-  if (!domain) return;
-
-  const res = await fetch("/api/wordpress/wp-secret", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ domain: domain, secret: secret }),
-  });
-
-  const body: any = await res.json();
-
-  if (!res.ok) {
-    console.error(body.message ?? "failed to save secret");
-  }
-
-  return;
-}
-
-/**
- *
  * @param domain domain to get WP secret for
  * @returns WP plugin secret of a domain
  */
 export async function getWpSecret(domain: string) {
-  if (!domain) {
-    throw new Error("Domain is required");
-  }
-
-  const key = `plugin_analysis_secret:${domain}`;
-
-  const { response } = await cachedData({
-    fn: () => innerFunc(domain),
-    key: key,
-    session_Storage: false,
-    ttl: 1440 * 60 * 1000, // 1 day
-  });
-
-  return response;
-
-  async function innerFunc(domain: string) {
-    const res = await fetch("/api/wordpress/wp-secret", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ domain: domain }),
-    });
-
-    const body: any = await res.json();
-
-    if (!res.ok && res.status !== 404) {
-      // 404 is the normal "no secret minted for this site yet" answer, the
-      // caller mints one; anything else is worth seeing in the console.
-      console.error(body.message ?? "failed to fetch secret");
-    }
-
-    return body.data;
+  return resolvePluginSecret(domain);
+}
+/**
+ * Reads a fetch response as JSON without throwing when the body is not JSON.
+ * A crashed handler answers with plain text ("Internal Server Error"), which
+ * otherwise surfaces as a raw "Unexpected token" error.
+ */
+async function readJson(res: Response): Promise<any> {
+  const raw = await res.text();
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
   }
 }

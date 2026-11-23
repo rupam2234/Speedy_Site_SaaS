@@ -67,40 +67,16 @@ export default function Main() {
       return;
     }
 
-    let rawKey = localStorage.getItem(`plugin_analysis_secret:${selectedSite}`);
-    let secret: string | null = null;
-
-    // ensures we have a key
-    if (!rawKey) {
-      rawKey = await wpSecret(selectedSite);
-    }
-
-    if (!rawKey) {
-      setError("Scan key not found. Please reconnect your plugin.");
-      return;
-    }
-
     try {
-      const parsed = JSON.parse(rawKey);
-
-      if (typeof parsed === "string") {
-        secret = parsed;
-      } else if (parsed?.data?.wp_secret) {
-        secret = parsed.data.wp_secret;
-      } else {
-        secret = null;
+      const secret = await wpSecret(selectedSite);
+      if (!secret) {
+        setError("Scan key not found. Please reconnect your plugin.");
+        return;
       }
+      handleNewScans(secret, selectedSite);
     } catch {
-      // fallback: raw string
-      secret = rawKey;
+      setError("Failed to get the plugin key. Please reconnect your plugin.");
     }
-
-    if (!secret) {
-      setError("Scan key is corrupted. Reconnect your plugin.");
-      return;
-    }
-
-    handleNewScans(secret, selectedSite);
   };
 
   if (!isReady || !selectedSite) {
@@ -211,10 +187,10 @@ export default function Main() {
         body: JSON.stringify({ domain }),
       });
 
-      const data: any = await res.json();
+      const data: any = await readJson(res);
 
       if (!res.ok)
-        throw new Error(data.message ?? "Failed to check WP connection.");
+        throw new Error(data?.message ?? "Failed to check WP connection.");
 
       setPluginStatus({
         isConnected: !!data?.found?.key && !!data?.found?.plugin,
@@ -258,10 +234,10 @@ export default function Main() {
             body: JSON.stringify({ domain, key }),
           });
 
-          const body: any = await res.json();
+          const body: any = await readJson(res);
 
           if (!res.ok)
-            throw new Error(body.message ?? "Failed to fetch plugin data");
+            throw new Error(body?.message ?? "Failed to fetch plugin data");
           return body.result;
         },
         key: cacheKey,
@@ -304,10 +280,10 @@ export default function Main() {
         body: JSON.stringify({ pluginAudit: false }), // pluginAudit: false means no scan run yet, we just need the quota info
       });
 
-      const body: any = await res.json();
+      const body: any = await readJson(res);
 
       if (!res.ok) {
-        throw new Error(body.message);
+        throw new Error(body?.message ?? "Request failed");
       }
 
       return body.data as AuditQuota;
@@ -325,10 +301,10 @@ export default function Main() {
       body: JSON.stringify({ pluginAudit: true }), // pluginAudit: TRUE means add one more scan to quota
     });
 
-    const body: any = await res.json();
+    const body: any = await readJson(res);
 
     if (!res.ok) {
-      throw new Error(body.message);
+      throw new Error(body?.message ?? "Request failed");
     }
 
     // Update state first
@@ -345,5 +321,18 @@ export default function Main() {
         expiry: Date.now() + 5 * 60 * 1000,
       }),
     );
+  }
+}
+/**
+ * Reads a fetch response as JSON without throwing when the body is not JSON.
+ * A crashed handler answers with plain text ("Internal Server Error"), which
+ * otherwise surfaces as a raw "Unexpected token" error.
+ */
+async function readJson(res: Response): Promise<any> {
+  const raw = await res.text();
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
   }
 }

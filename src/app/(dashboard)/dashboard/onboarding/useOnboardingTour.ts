@@ -93,6 +93,7 @@ export function useOnboardingTour(
   site: string,
   siteFromUrl: string | null,
   sessionId?: string | null,
+  requestedStep?: number | null,
 ): OnboardingTour {
   const router = useRouter();
   const {
@@ -158,14 +159,14 @@ export function useOnboardingTour(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ site, step: index }),
       });
-      const body: any = await res.json().catch(() => ({}));
+      const body: any = (await readJson(res)) ?? {};
       console.log("[completeStep] response:", { status: res.status, body });
       if (!res.ok) {
-        throw new Error(body.message ?? body.error ?? "Failed to record step");
+        throw new Error(body?.message ?? body?.error ?? "Failed to record step");
       }
       // Keep the context copy of the site in step with the server so the
       // stepper, the panel and the sidebar all agree without a refetch.
-      const updated: OrderData | undefined = body.order;
+      const updated: OrderData | undefined = body?.order;
       if (updated) {
         setOrders(
           orders?.map((o) =>
@@ -288,6 +289,19 @@ export function useOnboardingTour(
     const allStepsDone = firstOpenIndex === -1;
     if (allStepsDone && paidForSite === null) return;
     setPositionedForSite(site);
+    // A URL step is authoritative for the initial landing. Steps 1..N map to
+    // content indices 0..N-1; the trailing Activate card is step N+1 and uses
+    // STEPS.length as its internal index.
+    if (
+      requestedStep &&
+      requestedStep >= 1 &&
+      requestedStep <= STEPS.length + 1
+    ) {
+      setCurrentStep(
+        requestedStep <= STEPS.length ? requestedStep - 1 : STEPS.length,
+      );
+      return;
+    }
     setCurrentStep(
       allStepsDone && paidForSite ? STEPS.length : activeIndex,
     );
@@ -299,6 +313,7 @@ export function useOnboardingTour(
     positionedForSite,
     firstOpenIndex,
     paidForSite,
+    requestedStep,
   ]);
 
   // site_selected is recorded as soon as a site is active.
@@ -317,7 +332,7 @@ export function useOnboardingTour(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain: site }),
       });
-      const body: any = res.ok ? await res.json() : {};
+      const body: any = await readJson(res);
       console.log("[checkPlugin] response:", { status: res.status, body });
       const found: PluginStatus = {
         loading: false,
@@ -342,16 +357,16 @@ export function useOnboardingTour(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ domain: site }),
     });
-    const body: any = await res.json();
+    const body: any = await readJson(res);
     console.log("[bindSignature] response:", { status: res.status, body });
     if (!res.ok) {
-      throw new Error(body.message ?? "Failed to prepare signature");
+      throw new Error(body?.message ?? "Failed to prepare signature");
     }
-    setSignature(body.signature);
+    setSignature(body?.signature);
     // No tour step is recorded here: binding a signature is an internal
     // sub-event (it clears plugin_verified server-side on re-bind), and the
     // plugin step completes only when verification succeeds.
-    return body.signature ?? null;
+    return body?.signature ?? null;
   }, [site]);
 
   /** Can this site be connected right now without a new payment? */
@@ -364,8 +379,8 @@ export function useOnboardingTour(
       const query = site ? `?site=${encodeURIComponent(site)}` : "";
       const res = await fetch(`/api/orders/managed/available${query}`);
       if (!res.ok) return;
-      const body: any = await res.json();
-      setHasServiceForSite(Boolean(body.available));
+      const body: any = await readJson(res);
+      setHasServiceForSite(Boolean(body?.available));
     } catch {
       setHasServiceForSite(false);
     }
@@ -385,8 +400,8 @@ export function useOnboardingTour(
         setHasPaidForSite(false);
         return;
       }
-      const body: any = await res.json();
-      setHasPaidForSite(Boolean(body.paid));
+      const body: any = await readJson(res);
+      setHasPaidForSite(Boolean(body?.paid));
     } catch {
       setHasPaidForSite(false);
     }
@@ -435,12 +450,12 @@ export function useOnboardingTour(
         });
         if (!res.ok || !alive) return;
 
-        const body: any = await res.json();
+        const body: any = await readJson(res);
         if (!alive) return;
 
         if (body?.plan) {
-          setPlan(body.plan);
-          setPlanExpiresAt(body.expiresAt ?? null);
+          setPlan(body?.plan);
+          setPlanExpiresAt(body?.expiresAt ?? null);
         }
         // Always force-refresh the orders list after a reconcile answer: the
         // webhook may have flipped order_status = true even when the
@@ -448,6 +463,13 @@ export function useOnboardingTour(
         // The force refresh also rewrites the 5-minute sessionStorage cache,
         // so the site selector on /dashboard does not keep showing "Pending".
         await fetchOrders(undefined, user?.id, true);
+        // Invalidate the cached wp connection status for this site so the
+        // sidebar "Setup status" dropdown refetches live wp_key state
+        // (plugin installed / signature verified) instead of showing stale
+        // pre-payment values cached for up to 30 days.
+        if (site) {
+          localStorage.removeItem(`wp-connection-status-${site}`);
+        }
         if (body?.provisioned) {
           // A fresh entitlement now exists, so re-resolve the gate.
           await checkServiceForSite();
@@ -509,7 +531,7 @@ export function useOnboardingTour(
     setBusy("download");
     setError(null);
     try {
-      // The zip is self-contained -- its access key comes from wp-secret -- so
+      // The zip is self-contained -- its access key comes from plugin-key -- so
       // a signature-binding failure must never block the download. Binding is
       // best-effort here: verify re-issues it and reports the problem there,
       // where the user can actually do something about it.
@@ -560,13 +582,13 @@ export function useOnboardingTour(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain: site, signature: bound }),
       });
-      const body: any = await res.json();
+      const body: any = await readJson(res);
       console.log("[verifyInstallation] response:", {
         status: res.status,
         body,
       });
       if (!res.ok) {
-        throw new Error(body.message ?? body.reason ?? "Verification failed");
+        throw new Error(body?.message ?? body?.reason ?? "Verification failed");
       }
       // Record the plugin step (plugin_verified, index 1). The setup-step
       // route validates it against wp_key.hmac_verified_at, which this
@@ -614,8 +636,8 @@ export function useOnboardingTour(
         `/api/orders/managed/paid?site=${encodeURIComponent(site ?? "")}`,
       );
       if (paidRes.ok) {
-        const paidBody = await paidRes.json();
-        if (paidBody.paid === true) {
+        const paidBody = await readJson(paidRes);
+        if (paidBody?.paid === true) {
           setHasPaidForSite(true);
           router.push(`/dashboard?site=${site}`);
           return;
@@ -637,11 +659,11 @@ export function useOnboardingTour(
           website_name: order?.website_name ?? null,
         }),
       });
-      const body: any = await res.json();
-      if (!res.ok || !body.url) {
-        throw new Error(body.error ?? "Failed to start checkout");
+      const body: any = await readJson(res);
+      if (!res.ok || !body?.url) {
+        throw new Error(body?.error ?? "Failed to start checkout");
       }
-      window.location.href = body.url;
+      window.location.href = body?.url;
     } catch (err: any) {
       setError(err.message);
       setBusy(null);
@@ -678,4 +700,17 @@ export function useOnboardingTour(
     verifyInstallation,
     startPayment,
   };
+}
+/**
+ * Reads a fetch response as JSON without throwing when the body is not JSON.
+ * A crashed handler answers with plain text ("Internal Server Error"), which
+ * otherwise surfaces as a raw "Unexpected token" error.
+ */
+async function readJson(res: Response): Promise<any> {
+  const raw = await res.text();
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
