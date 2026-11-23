@@ -6,7 +6,26 @@
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
-> **Last updated:** 2026-11-03
+> **Last updated:** 2026-11-23
+
+---
+
+## 2026-11-23: Delayed Chat Email Notifications (15-Minute Grace Window & Digest)
+
+**Problem:** Immediate email alerts sent on every chat message flooded recipient inboxes during active back-and-forth conversations, generating dozens of redundant notifications for messages users had already viewed on their screens.
+
+**Changes:**
+1. Database migration adding `email_notified_at` column, composite and partial indexes on `order_messages`, and Supabase `pg_cron` schedule registration calling `/api/cron/chat-notifications`.
+2. Decoupled in-app notifications from external email alerts in `src/app/api/chat/messages/route.ts`: in-app notifications (`public.notifications`) remain immediate, while real-time message posting bypasses Resend completely.
+3. Created unread digest dispatcher and responsive HTML template in `src/app/api/emails/chatNotification.ts` batching unread messages per recipient and updating `email_notified_at = now()`.
+4. Implemented secure cron route `src/app/api/cron/chat-notifications/route.ts` with Bearer/webhook authorization, 15-minute grace window evaluation, and recipient resolution.
+5. Added automated unit and integration tests in `tests/delayed-chat-notifications.test.mjs` verifying suppression, threshold, consolidation, idempotency, and security gates.
+
+**Impact:** Eliminates inbox spam during active chat sessions while ensuring unread messages are reliably aggregated into a single actionable email digest after 15 minutes.
+
+**Where to verify:** `pnpm test` (all 15 test cases passing); `make check` (zero lint issues); migration `supabase/migrations/20261123000001_delayed_chat_notifications.sql`.
+
+**Interview one-liner:** "Replaced noisy per-message email notifications with a 15-minute grace window and Supabase pg_cron digest pipeline that consolidates unread order messages and suppresses alerts for active users."
 
 ---
 

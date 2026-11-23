@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setupDB } from "@/lib/db";
 import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
-import { dispatchChatNotification } from "@/app/api/emails/chatNotification";
+import { dispatchInAppChatNotification } from "@/app/api/emails/chatNotification";
 import type { ChannelType, OrderMessage } from "@/lib/chat/types";
 
 const worker = setupDB();
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
     // Query messages
     let query = (worker as any)
       .from("order_messages")
-      .select("id, conversation_id, sender_id, body, is_system, created_at, read_at")
+      .select("id, conversation_id, sender_id, body, is_system, created_at, read_at, email_notified_at")
       .eq("conversation_id", conversation.id)
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -145,6 +145,7 @@ export async function GET(req: NextRequest) {
           isSystem: m.is_system,
           createdAt: m.created_at,
           readAt: m.read_at,
+          emailNotifiedAt: m.email_notified_at ?? null,
           senderEmail: sender?.email || null,
           senderRole: (sender?.role as any) || "user",
         };
@@ -226,7 +227,7 @@ export async function POST(req: NextRequest) {
         body: trimmedBody,
         is_system: false,
       })
-      .select("id, conversation_id, sender_id, body, is_system, created_at, read_at")
+      .select("id, conversation_id, sender_id, body, is_system, created_at, read_at, email_notified_at")
       .single();
 
     if (insertError) throw insertError;
@@ -237,8 +238,8 @@ export async function POST(req: NextRequest) {
       .update({ last_message_at: inserted.created_at, updated_at: inserted.created_at })
       .eq("id", conversation.id);
 
-    // Asynchronously dispatch notifications
-    dispatchChatNotification({
+    // Asynchronously dispatch immediate in-app bell notifications
+    dispatchInAppChatNotification({
       orderId,
       websiteName: auth.order.website_name || "Website",
       channelType,
@@ -256,6 +257,7 @@ export async function POST(req: NextRequest) {
       isSystem: inserted.is_system,
       createdAt: inserted.created_at,
       readAt: inserted.read_at,
+      emailNotifiedAt: inserted.email_notified_at ?? null,
       senderEmail: auth.email,
       senderRole: auth.role as any,
     };

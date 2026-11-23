@@ -20,6 +20,7 @@ export interface OrderMessage {
   isSystem: boolean;
   createdAt: string;
   readAt: string | null;
+  emailNotifiedAt?: string | null;
   senderEmail?: string | null;
   senderRole?: ParticipantRole;
 }

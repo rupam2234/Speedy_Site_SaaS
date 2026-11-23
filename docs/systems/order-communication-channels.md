@@ -3,8 +3,8 @@
 > **Status:** Implemented v1  
 > **Owner:** Core Engineering Team  
 > **Last Updated:** 2026-11-23  
-> **Related ADR:** [ADR-0002: Order-Scoped Communication Channels with Role-Gated Access](file:///home/victor/Projects/Speedy_Site_SaaS/docs/adr/0002-order-communication-channels.md)  
-> **Related Plan:** [2026-11-21_205705_order_communication_channels.md](file:///home/victor/Projects/Speedy_Site_SaaS/docs/plans/2026-11-21_205705_order_communication_channels.md)  
+> **Related ADRs:** [ADR-0002: Order-Scoped Communication Channels](file:///home/victor/Projects/Speedy_Site_SaaS/docs/adr/0002-order-communication-channels.md), [ADR-0003: Delayed Chat Email Notifications](file:///home/victor/Projects/Speedy_Site_SaaS/docs/adr/0003-delayed-chat-email-notifications.md)  
+> **Related Plans:** [2026-11-21_205705_order_communication_channels.md](file:///home/victor/Projects/Speedy_Site_SaaS/docs/plans/2026-11-21_205705_order_communication_channels.md), [2026-11-23_120259_delayed_chat_email_notifications.md](file:///home/victor/Projects/Speedy_Site_SaaS/docs/plans/2026-11-23_120259_delayed_chat_email_notifications.md)  
 
 ---
 
@@ -67,13 +67,14 @@ CREATE TABLE IF NOT EXISTS public.order_conversations (
 Append-only log of messages within each conversation:
 ```sql
 CREATE TABLE IF NOT EXISTS public.order_messages (
-    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    conversation_id uuid NOT NULL REFERENCES public.order_conversations(id) ON DELETE CASCADE,
-    sender_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    body            text NOT NULL CHECK (char_length(trim(body)) > 0 AND char_length(body) <= 5000),
-    is_system       boolean NOT NULL DEFAULT false,
-    created_at      timestamptz NOT NULL DEFAULT now(),
-    read_at         timestamptz
+    id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    conversation_id   uuid NOT NULL REFERENCES public.order_conversations(id) ON DELETE CASCADE,
+    sender_id         uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    body              text NOT NULL CHECK (char_length(trim(body)) > 0 AND char_length(body) <= 5000),
+    is_system         boolean NOT NULL DEFAULT false,
+    created_at        timestamptz NOT NULL DEFAULT now(),
+    read_at           timestamptz,
+    email_notified_at timestamptz
 );
 ```
 
@@ -90,10 +91,14 @@ CREATE TABLE IF NOT EXISTS public.order_messages (
    - `order_messages` is published to `supabase_realtime`.
    - Client hook `useRealtimeChat` in `src/lib/chat/realtime.ts` listens for `INSERT` and `UPDATE` (read receipt) events scoped to `conversation_id`.
    - Realtime broadcast channel `order-convo:${conversationId}` broadcasts transient typing indicator states.
-2. **Notification Dispatch**:
-   - Server handler `dispatchChatNotification` in `src/app/api/emails/chatNotification.ts` executes on new messages.
-   - Generates in-app notification rows in `public.notifications`.
-   - Dispatches email alerts with message previews via Resend to counterparty inboxes when offline.
+2. **Immediate In-App Notifications**:
+   - Server handler `dispatchInAppChatNotification` in `src/app/api/emails/chatNotification.ts` executes immediately on new message creation.
+   - Generates in-app notification rows in `public.notifications` for active participants without triggering external emails.
+3. **15-Minute Grace Window & Unread Digest (ADR-0003)**:
+   - Supabase `pg_cron` runs every 2 minutes invoking `POST /api/cron/chat-notifications` via `pg_net` with Bearer token authentication.
+   - Messages read within 15 minutes (`read_at IS NOT NULL`) are completely suppressed from email delivery.
+   - Messages unread after 15 minutes (`read_at IS NULL AND email_notified_at IS NULL AND created_at <= now() - interval '15 minutes'`) are batched by recipient and conversation into a single responsive HTML email digest via Resend.
+   - Dispatched message IDs are atomically stamped with `email_notified_at = now()` to guarantee idempotency.
 
 ---
 
