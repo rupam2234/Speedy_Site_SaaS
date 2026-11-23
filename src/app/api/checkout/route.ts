@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabaseServerUser } from "@/app/api/helpers/getSupabaseUser";
+import { setupDB } from "@/lib/db";
+import { normalizeDomain } from "@/lib/wordpress/domain";
+import { getRequestOrigin } from "@/lib/requestOrigin";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "build-placeholder"); // build-safe
+
+const db = setupDB();
 
 // Product catalog — $299 one-time per site, never recurring (docs/GOALS.md)
 // `STRIPE_PRICE` is the name used in existing environments; the product-specific
@@ -47,10 +52,37 @@ export async function POST(req: Request) {
       );
     }
 
+    // Guard: if this site already has an active managed_wp entitlement linked
+    // to an order, do not create another checkout session — the site is
+    // already paid for.
+    if (website_name) {
+      const site = normalizeDomain(website_name);
+      const { data: existing } = await db
+        .from("user_services")
+        .select("id, order_id, website_name, status")
+        .eq("user_id", user.id)
+        .eq("service_type", "managed_wp")
+        .eq("status", "active")
+        .not("order_id", "is", null)
+        .eq("website_name", site)
+        .maybeSingle();
+
+      if (existing) {
+        return NextResponse.json(
+          {
+            error: `Site ${site} is already paid for.`,
+            alreadyPaid: true,
+          },
+          { status: 409 },
+        );
+      }
+    }
+
     const BASE_URL =
-      process.env.NODE_ENV === "development"
+      getRequestOrigin(req) ??
+      (process.env.NODE_ENV === "development"
         ? process.env.NEXT_PUBLIC_DEV_BASE_URL
-        : process.env.NEXT_PUBLIC_PROD_BASE_URL;
+        : process.env.NEXT_PUBLIC_PROD_BASE_URL);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -68,7 +100,10 @@ export async function POST(req: Request) {
       },
       // Payment done -> back to the onboarding steps flow. The webhook will
       // link the entitlement to the pending order (if one exists).
-      success_url: `${BASE_URL}/dashboard/onboarding`,
+      // Include session_id so the client can reconcile immediately on return,
+      // and the site so the tour lands on the right site's completion page
+      // instead of relying on a possibly stale selected-site cache.
+      success_url: `${BASE_URL}/dashboard/onboarding?session_id={CHECKOUT_SESSION_ID}&step=3${website_name ? `&site=${encodeURIComponent(normalizeDomain(website_name) ?? website_name)}` : ""}`,
       cancel_url: `${BASE_URL}/account/one-time-payment/cancel`,
     });
 

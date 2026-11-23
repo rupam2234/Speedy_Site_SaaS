@@ -4,17 +4,19 @@ import { setupDB } from "@/lib/db";
 import { normalizeDomain } from "@/lib/wordpress/domain";
 import { prepareSignature } from "@/lib/wordpress/hmac";
 
-const worker = setupDB();
-
-// Prepares the HMAC signature the WP plugin carries (tour step 2).
+// Prepares the HMAC signature the WP plugin carries (plugin step).
 // Only the user who connected the site can bind a signature to it.
 export async function POST(req: NextRequest) {
-  const { user, error } = await getSupabaseServerUser();
-  if (error || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    // The database client is created here rather than at module scope: an
+    // initialisation failure then becomes a JSON error response instead of
+    // Next's plain-text "Internal Server Error".
+    const worker = setupDB();
+    const { user, error } = await getSupabaseServerUser();
+    if (error || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { domain }: { domain?: string } = await req.json();
     const normalized = normalizeDomain(domain);
 
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     const { data: order } = await worker
       .from("orders")
-      .select("website_name")
+      .select("website_name, tour")
       .eq("user_id", user.id)
       .eq("website_name", normalized)
       .maybeSingle();
@@ -40,6 +42,22 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await prepareSignature(normalized);
+
+    // A freshly prepared signature invalidates any previous verification on
+    // this site. Clear the tour flag so the header can't show "verified" from
+    // a stale signature.
+    if (order) {
+      await worker
+        .from("orders")
+        .update({
+          tour: {
+            ...((order.tour as Record<string, boolean> | null) ?? {}),
+            plugin_verified: false,
+          },
+        })
+        .eq("website_name", normalized);
+    }
+
     return NextResponse.json(result, { status: 200 });
   } catch (err: any) {
     return NextResponse.json(

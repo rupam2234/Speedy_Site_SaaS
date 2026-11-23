@@ -7,7 +7,6 @@
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
 > **Last updated:** 2026-11-23
-
 ---
 
 ## 2026-11-23: Delayed Chat Email Notifications (15-Minute Grace Window & Digest)
@@ -28,6 +27,32 @@
 **Interview one-liner:** "Replaced noisy per-message email notifications with a 15-minute grace window and Supabase pg_cron digest pipeline that consolidates unread order messages and suppresses alerts for active users."
 
 ---
+
+## 2026-11-23 · Checkout returns to the originating environment
+
+**Problem:** The checkout callback selected its destination from `NODE_ENV`. A local `next start` server runs with `NODE_ENV=production`, so Stripe returned localhost customers to `speedy.site` instead of the local onboarding flow.
+
+**Changes:** `/api/checkout` now resolves the public request origin from the browser `Origin`, proxy-forwarded host, or request URL, with configured environment URLs only as a fallback. The success URL remains on that origin and opens onboarding step 3.
+
+**Impact:** Local, production, and preview checkouts return to the environment where checkout started. The success and cancel callbacks cannot accidentally cross environments, and the local onboarding flow remains testable against the test Stripe account.
+
+**Verify:** `pnpm typecheck`, changed-file ESLint, `pnpm build`; authenticated local checkout returned `http://localhost:3000/dashboard/onboarding?...&step=3`, while a production-origin request returned `https://speedy.site/dashboard/onboarding?...&step=3`.
+
+**Interview summary:** Payment callbacks now stay in the environment where the customer started, so local and preview onboarding flows complete correctly without leaking into production.
+
+---
+
+## 2026-11-23 · Stable WordPress plugin keys and live combined status
+
+**Problem:** Plugin downloads could generate or overwrite a site's key, the settings page cached a stale connected state for 30 days, and a deactivated plugin could still appear connected. Plugin and RUM state were checked separately.
+
+**Changes:** Key creation now lives only in the authenticated `plugin-key` API, uses 256-bit CSPRNG output, reuses the existing key on every download, and enforces unique secrets in the database. The legacy `wp-secret` write path is closed. The plugin exposes a live status route and enqueues the RUM collector globally in the frontend header. The settings API probes plugin and RUM state together with no client-side status cache and persists both timestamps.
+
+**Impact:** Reinstalling is safe and does not rotate credentials. Disabling the plugin is reflected as not active on the next settings check. RUM status now reflects the same live probe instead of a stale order flag. The plugin transient-caches an entitled RUM decision for five minutes and a negative decision for 30 seconds, avoiding an API call on every page view while allowing payment to activate RUM promptly.
+
+**Verify:** `pnpm run typecheck`, `pnpm test`, `pnpm build`; settings page live check; plugin download twice and confirm the baked key is identical.
+
+**Interview summary:** Plugin connections now use stable per-site credentials and live status, so reinstalls do not break and deactivation is visible immediately.
 
 ## 2026-11-03 · Free tier site limit increased to 10 + add-site reliability fix
 
@@ -274,7 +299,8 @@ checkout button.
     - Reads the site's host via `home_url()`, normalizes it (trim/lowercase/strip one leading `www.`) to match the API's `normalizeDomain`.
     - Uses the pre-shared `SPEEDY_SITE_AUTH_KEY` as the per-domain secret.
     - Calls `POST {apiOrigin}/api/wordpress/injection` with `{ domain, key }`.
-    - Transient-caches the response for 5 minutes (`speedy_site_rum_injection_<md5(domain)>`).
+    - Transient-caches an entitled response for 5 minutes and a negative response
+      for 30 seconds (`speedy_site_rum_injection_v1_7_<md5(domain)>`).
     - On `{ "inject": true, "scriptUrl": "..." }`, enqueues the collector via `wp_enqueue_script` (in footer).
     - Fail-closed on network errors, non-200, or malformed responses.
   - The download button continues to produce `speedy-site-plugin-auditor.zip` with the updated PHP.

@@ -19,7 +19,9 @@ export type AddSite = {
   handleAddWebsite: () => Promise<string | null>;
   /** Set when an existing order is found for this domain. */
   existingSite: { order_id: string; website_name: string } | null;
-  setExistingSite: (value: { order_id: string; website_name: string } | null) => void;
+  setExistingSite: (
+    value: { order_id: string; website_name: string } | null,
+  ) => void;
 };
 
 /**
@@ -42,7 +44,10 @@ export function useAddSite(): AddSite {
     website_name: string;
   } | null>(null);
   function appendLog(stage: string) {
-    setLog((prev) => [...prev, `${new Date().toLocaleTimeString()} - ${stage}`]);
+    setLog((prev) => [
+      ...prev,
+      `${new Date().toLocaleTimeString()} - ${stage}`,
+    ]);
   }
 
   async function handleAddWebsite(): Promise<string | null> {
@@ -62,7 +67,9 @@ export function useAddSite(): AddSite {
     }
 
     if (!wpLoginUrl?.trim()) {
-      setError("Please enter your WordPress login URL (e.g. https://example.com/wp-login.php)");
+      setError(
+        "Please enter your WordPress login URL (e.g. https://example.com/wp-login.php)",
+      );
       appendLog("error");
       setProcessing(false);
       return null;
@@ -70,7 +77,9 @@ export function useAddSite(): AddSite {
 
     // Early duplicate check BEFORE any favicon upload or order creation.
     appendLog("checking existing site");
-    const checkRes = await fetch(`/api/orders/managed/check?site=${encodeURIComponent(cleanDomain)}`);
+    const checkRes = await fetch(
+      `/api/orders/managed/check?site=${encodeURIComponent(cleanDomain)}`,
+    );
     const checkBody: any = await checkRes.json();
 
     if (checkBody.exists && checkBody.order) {
@@ -103,7 +112,12 @@ export function useAddSite(): AddSite {
     }
 
     appendLog("creating order");
-    const res = await addOrder(favicon_file, cleanDomain, wpLoginUrl.trim(), user?.id);
+    const res = await addOrder(
+      favicon_file,
+      cleanDomain,
+      wpLoginUrl.trim(),
+      user?.id,
+    );
 
     if (!res) {
       setError("Unexpected error occurred.");
@@ -130,16 +144,14 @@ export function useAddSite(): AddSite {
       // never hides the real reason behind a generic sentence.
       const message =
         res.body.error || res.body.message || "Failed to create site.";
-      setError(
-        res.body.details ? `${message} (${res.body.details})` : message,
-      );
+      setError(res.body.details ? `${message} (${res.body.details})` : message);
       appendLog("error");
       setProcessing(false);
       return null;
     }
 
     appendLog("done");
-    setSuccess(`${cleanDomain} is connected.`);
+    setSuccess(`${cleanDomain} is added.`);
     setProcessing(false);
     return cleanDomain;
   }

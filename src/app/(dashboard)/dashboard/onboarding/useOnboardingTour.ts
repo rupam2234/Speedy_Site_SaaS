@@ -14,20 +14,27 @@ export type PluginStatus = {
   keyed: boolean;
 };
 
+/**
+ * The single state driving the verify button and the success indicator on
+ * the plugin step: "verifying" while the request is in flight, "verified"
+ * once the server recorded the verification, "idle" otherwise (including
+ * right after a failed attempt, so the button never gets stuck).
+ */
+export type VerifyStatus = "idle" | "verifying" | "verified";
+
 export type OnboardingTour = {
   order: OrderData | null;
   isLoading: boolean;
   isStepDone: (index: number) => boolean;
-  /** First step that is not done yet; the last step once the tour is finished. */
-  activeIndex: number;
-  completedCount: number;
   /** True once every recorded step of the tour is done. */
   isTourComplete: boolean;
+  /** True once the steps were verified against the DB on this page load. */
+  stepsVerified: boolean;
+  /** True once the panel has been positioned for the active site. */
+  isPositioned: boolean;
   plugin: PluginStatus;
-  /** True once this session has actually asked the site about the plugin. */
-  hasProbed: boolean;
-  /** True while we keep re-checking after the user confirmed the install. */
-  polling: boolean;
+  /** One state for the whole verify button: idle -> verifying -> verified/idle. */
+  verifyStatus: VerifyStatus;
   busy: string | null;
   error: string | null;
   /**
@@ -41,9 +48,15 @@ export type OnboardingTour = {
   hasPaidForSite: boolean | null;
   /** True while a missed-webhook reconcile is in flight. */
   isReconciling: boolean;
-  /** Step shown in the content panel; null follows the active step. */
-  viewedStep: number | null;
-  setViewedStep: (index: number | null) => void;
+  /**
+   * The step the content panel is showing. The panel never moves on its own:
+   * it changes when the user presses Next or picks a step from the progress bar.
+   */
+  currentStep: number;
+  /** Moves the panel to the next step. */
+  goNext: () => void;
+  /** Moves the panel to a given step. */
+  goToStep: (index: number) => void;
   // "add your site" step
   siteInput: string;
   setSiteInput: (value: string) => void;
@@ -61,9 +74,10 @@ export type OnboardingTour = {
   downloadPlugin: (
     download: (domain: string) => Promise<void>,
   ) => Promise<void>;
-  /** Asks the site about the plugin once, for the re-check buttons. */
-  checkPlugin: () => void;
-  confirmPluginInstalled: () => Promise<void>;
+  /**
+   * Checks the plugin connection and, when the site answers, verifies the
+   * installation: binds the signature, confirms it and records the step.
+   */
   verifyInstallation: () => Promise<void>;
   startPayment: () => Promise<void>;
 };
@@ -78,6 +92,8 @@ export type OnboardingTour = {
 export function useOnboardingTour(
   site: string,
   siteFromUrl: string | null,
+  sessionId?: string | null,
+  requestedStep?: number | null,
 ): OnboardingTour {
   const router = useRouter();
   const {
@@ -98,11 +114,25 @@ export function useOnboardingTour(
     installed: false,
     keyed: false,
   });
-  const [hasProbed, setHasProbed] = useState(false);
-  const [polling, setPolling] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [viewedStep, setViewedStep] = useState<number | null>(null);
+  /**
+   * The step the content panel is showing. The flow is explicit: the panel
+   * only moves when the user presses Next or picks a step from the progress
+   * bar, never because a step completed in the background. STEPS.length means
+   * the panel has advanced past the last tour step onto the payment card.
+   */
+  const [currentStep, setCurrentStep] = useState(0);
+  /**
+   * The site the panel was initially positioned for. Guards the one-time
+   * positioning so later step completions never move the panel.
+   */
+  const [positionedForSite, setPositionedForSite] = useState<string | null>(
+    null,
+  );
+  /** True once the recorded steps were verified against the DB on this load. */
+  const [stepsVerified, setStepsVerified] = useState(false);
   const [hasServiceForSite, setHasServiceForSite] = useState<boolean | null>(
     null,
   );
@@ -119,58 +149,24 @@ export function useOnboardingTour(
     }
   }, [siteFromUrl, selectedSite, setSelectedSite]);
 
-  // Never carry state from one site into the next.
-  useEffect(() => {
-    setSignature(null);
-    setError(null);
-    setPlugin({ loading: false, installed: false, keyed: false });
-    setHasProbed(false);
-    setPolling(false);
-    setViewedStep(null);
-    addSite.setExistingSite(null);
-  }, [site, addSite.setExistingSite]);
-
-  // The orders row behind the active site, straight from the dashboard context.
-  const order = orders?.find((o) => o.website_name === site) ?? null;
-
-  // The "add your site" step has no server key: it is satisfied the moment the
-  // account has a site to configure. The orders row must actually exist: a
-  // stale cached site name (from sessionStorage after a delete, or another
-  // device) must not unlock the plugin steps, because wp_key and hmac both
-  // require the order row.
-  const isStepDone = (index: number) => {
-    const step = STEPS[index];
-    if (step.satisfiedBySite && step.records.length === 0) {
-      return Boolean(site && order);
-    }
-    const tour = (order?.tour ?? {}) as Record<string, boolean>;
-    return Boolean(tour[step.key]);
-  };
-
-  const firstOpenIndex = STEPS.findIndex((_, i) => !isStepDone(i));
-  // If every step is done, keep the last step as the current one.
-  const activeIndex = firstOpenIndex === -1 ? STEPS.length - 1 : firstOpenIndex;
-  const completedCount = STEPS.filter((_, i) => isStepDone(i)).length;
-  const isTourComplete = STEPS.every(
-    (_, i) => i === 0 || isStepDone(i),
-  );
-
   // Records one server step index and adopts the returned order.
   const completeStep = useCallback(
     async (index: number) => {
       if (!site) return;
+      console.log("[completeStep] recording step:", index);
       const res = await fetch("/api/orders/setup-step", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ site, step: index }),
       });
-      const body: any = await res.json().catch(() => ({}));
+      const body: any = (await readJson(res)) ?? {};
+      console.log("[completeStep] response:", { status: res.status, body });
       if (!res.ok) {
-        throw new Error(body.message ?? body.error ?? "Failed to record step");
+        throw new Error(body?.message ?? body?.error ?? "Failed to record step");
       }
       // Keep the context copy of the site in step with the server so the
       // stepper, the panel and the sidebar all agree without a refetch.
-      const updated: OrderData | undefined = body.order;
+      const updated: OrderData | undefined = body?.order;
       if (updated) {
         setOrders(
           orders?.map((o) =>
@@ -182,15 +178,143 @@ export function useOnboardingTour(
     [site, orders, setOrders],
   );
 
-  // Records every server index behind one tour step.
-  const completeTourStep = useCallback(
-    async (index: number) => {
-      for (const serverIndex of STEPS[index].records) {
-        await completeStep(serverIndex);
-      }
-    },
-    [completeStep],
-  );
+  // Never carry state from one site into the next.
+  useEffect(() => {
+    setSignature(null);
+    setError(null);
+    setVerifyStatus("idle");
+    setPlugin({ loading: false, installed: false, keyed: false });
+    // A different site means a different flow: start over on its first step.
+    setCurrentStep(0);
+    setPositionedForSite(null);
+    addSite.setExistingSite(null);
+  }, [site, addSite.setExistingSite]);
+
+  /**
+   * Move the panel to the next step. Advancing from the last tour step moves
+   * the panel one past the end (STEPS.length), which is what reveals the
+   * payment card -- so the payment view only appears after an explicit click,
+   * never automatically when the last step completes. Nothing is recorded
+   * here: the plugin step was already recorded at verify time, and the final
+   * step (service_active) is written by the payment webhook / reconcile.
+   */
+  const goNext = useCallback(() => {
+    setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
+  }, []);
+
+  /** Move the panel to a specific step (only if done or current). */
+  const goToStep = useCallback((index: number) => {
+    if (index >= 0 && index < STEPS.length) {
+      setCurrentStep(index);
+    }
+  }, []);
+
+  // The orders row behind the active site, straight from the dashboard context.
+  const order = orders?.find((o) => o.website_name === site) ?? null;
+
+  // Reflect the server-recorded verification on load/reload: when the order
+  // row already has plugin_verified, the button starts in "verified".
+  useEffect(() => {
+    const tour = (order?.tour ?? {}) as Record<string, boolean>;
+    if (tour.plugin_verified) setVerifyStatus("verified");
+  }, [order?.tour]);
+
+  // Payment truth merges two sources: the /paid endpoint (user_services
+  // linkage, via hasPaidForSite) and the orders row flag the Stripe webhook /
+  // reconcile flips (order_status). Either one means paid -- and the order
+  // flag is available as soon as the verified orders list arrives, which is
+  // what decides the landing spot right after a Stripe checkout return.
+  const paidForSite: boolean | null =
+    hasPaidForSite === true || order?.order_status === true
+      ? true
+      : hasPaidForSite;
+
+  // The "add your site" step has no server key: it is satisfied the moment the
+  // account has a site to configure. The orders row must actually exist: a
+  // stale cached site name (from sessionStorage after a delete, or another
+  // device) must not unlock the plugin steps, because wp_key and hmac both
+  // require the order row.
+  const isStepDone = (index: number) => {
+    const step = STEPS[index];
+    if (step.satisfiedBySite) {
+      return Boolean(site && order);
+    }
+    const tour = (order?.tour ?? {}) as Record<string, boolean>;
+    return Boolean(tour[step.key]);
+  };
+
+  const firstOpenIndex = STEPS.findIndex((_, i) => !isStepDone(i));
+  // If every step is done, keep the last step as the current one.
+  const activeIndex = firstOpenIndex === -1 ? STEPS.length - 1 : firstOpenIndex;
+  const isTourComplete = STEPS.every((_, i) => i === 0 || isStepDone(i));
+
+  // Verify the recorded steps against the DB on every page load: the context
+  // may be rendering a cached (up to 5 min old) orders list, which would
+  // position the panel on stale step data.
+  useEffect(() => {
+    if (!user?.id) return;
+    let alive = true;
+    setStepsVerified(false);
+    fetchOrders(undefined, user.id, true)
+      .catch(() => {})
+      .finally(() => {
+        if (alive) setStepsVerified(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [user?.id, fetchOrders]);
+
+  // One-time initial positioning per site, done only after the steps were
+  // verified against the DB: land on the first incomplete step (the one right
+  // after the last completed step), or on the last step when everything is
+  // done. Exception: when every step is done AND the site is paid (e.g. the
+  // return from Stripe checkout), land past the last step so the completion
+  // page shows instead of the plugin step. After this the panel only moves
+  // via Next/Back/progress-bar clicks.
+  useEffect(() => {
+    if (!stepsVerified) return;
+    if (positionedForSite === site) return;
+    if (!site) {
+      // "Connect another site" mode: no site yet, the add-site card is step 0.
+      setPositionedForSite(site);
+      setCurrentStep(0);
+      return;
+    }
+    // Wait for the verified orders list; a site missing from it (stale url)
+    // simply lands on step 0, because isStepDone(0) needs the order row.
+    if (!orders) return;
+    // All steps done: the payment answer decides the landing spot, so wait
+    // for it (the order flag / reconcile on the Stripe return resolve it).
+    const allStepsDone = firstOpenIndex === -1;
+    if (allStepsDone && paidForSite === null) return;
+    setPositionedForSite(site);
+    // A URL step is authoritative for the initial landing. Steps 1..N map to
+    // content indices 0..N-1; the trailing Activate card is step N+1 and uses
+    // STEPS.length as its internal index.
+    if (
+      requestedStep &&
+      requestedStep >= 1 &&
+      requestedStep <= STEPS.length + 1
+    ) {
+      setCurrentStep(
+        requestedStep <= STEPS.length ? requestedStep - 1 : STEPS.length,
+      );
+      return;
+    }
+    setCurrentStep(
+      allStepsDone && paidForSite ? STEPS.length : activeIndex,
+    );
+  }, [
+    site,
+    orders,
+    stepsVerified,
+    activeIndex,
+    positionedForSite,
+    firstOpenIndex,
+    paidForSite,
+    requestedStep,
+  ]);
 
   // site_selected is recorded as soon as a site is active.
   useEffect(() => {
@@ -208,51 +332,21 @@ export function useOnboardingTour(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain: site }),
       });
-      const body: any = res.ok ? await res.json() : {};
+      const body: any = await readJson(res);
+      console.log("[checkPlugin] response:", { status: res.status, body });
       const found: PluginStatus = {
         loading: false,
         installed: Boolean(body?.found?.plugin),
         keyed: Boolean(body?.found?.key),
       };
       setPlugin(found);
-      setHasProbed(true);
       return found;
-    } catch {
+    } catch (err: any) {
+      console.error("[checkPlugin] error:", err);
       setPlugin({ loading: false, installed: false, keyed: false });
-      setHasProbed(true);
       return null;
     }
   }, [site]);
-
-  /** One-off check behind the re-check buttons (no polling). */
-  const probeOnce = useCallback(() => {
-    checkPlugin();
-  }, [checkPlugin]);
-
-  // Nothing is checked until the user says the plugin is active; from then on
-  // we re-check every 8s until the site answers, then the step records itself.
-  useEffect(() => {
-    if (!polling) return;
-    let cancelled = false;
-
-    const poll = async () => {
-      const found = await checkPlugin();
-      if (cancelled || !found?.installed || !found.keyed) return;
-      setPolling(false);
-      completeTourStep(1).catch(() => {});
-    };
-
-    const timer = setInterval(poll, 8000);
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, [polling, checkPlugin, completeTourStep]);
-
-  // The retry loop only makes sense while the plugin step is the open one.
-  useEffect(() => {
-    if (polling && activeIndex !== 1) setPolling(false);
-  }, [polling, activeIndex]);
 
   // Binds the signature server-side and returns it. The user never sees, copies
   // or pastes it: the downloaded plugin already carries its own access key.
@@ -263,15 +357,17 @@ export function useOnboardingTour(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ domain: site }),
     });
-    const body: any = await res.json();
+    const body: any = await readJson(res);
+    console.log("[bindSignature] response:", { status: res.status, body });
     if (!res.ok) {
-      throw new Error(body.message ?? "Failed to prepare signature");
+      throw new Error(body?.message ?? "Failed to prepare signature");
     }
-    setSignature(body.signature);
-    // signature_bound is recorded the moment the plugin is handed out.
-    await completeStep(1);
-    return body.signature ?? null;
-  }, [site, completeStep]);
+    setSignature(body?.signature);
+    // No tour step is recorded here: binding a signature is an internal
+    // sub-event (it clears plugin_verified server-side on re-bind), and the
+    // plugin step completes only when verification succeeds.
+    return body?.signature ?? null;
+  }, [site]);
 
   /** Can this site be connected right now without a new payment? */
   const checkServiceForSite = useCallback(async () => {
@@ -283,8 +379,8 @@ export function useOnboardingTour(
       const query = site ? `?site=${encodeURIComponent(site)}` : "";
       const res = await fetch(`/api/orders/managed/available${query}`);
       if (!res.ok) return;
-      const body: any = await res.json();
-      setHasServiceForSite(Boolean(body.available));
+      const body: any = await readJson(res);
+      setHasServiceForSite(Boolean(body?.available));
     } catch {
       setHasServiceForSite(false);
     }
@@ -304,8 +400,8 @@ export function useOnboardingTour(
         setHasPaidForSite(false);
         return;
       }
-      const body: any = await res.json();
-      setHasPaidForSite(Boolean(body.paid));
+      const body: any = await readJson(res);
+      setHasPaidForSite(Boolean(body?.paid));
     } catch {
       setHasPaidForSite(false);
     }
@@ -320,11 +416,24 @@ export function useOnboardingTour(
     checkPaidForSite();
   }, [checkServiceForSite, checkPaidForSite]);
 
+  // Re-check payment status whenever orders are refetched (e.g. after the
+  // reconcile endpoint provisions a missed webhook, or a manual refresh). This
+  // makes sure hasPaidForSite flips to true even if the webhook was still
+  // processing when the page first mounted.
+  useEffect(() => {
+    if (!site || !user?.id || !orders) return;
+    checkPaidForSite();
+  }, [orders, site, user?.id, checkPaidForSite]);
+
   // No service for this site yet: the webhook may have been missed (local dev
   // without Stripe and adopt the plan it reports, so a payment the customer
   // already made opens the steps here instead of showing the pay button again.
+  // Also runs when we detect a return from Stripe (session_id in URL) to
+  // immediately reconcile a payment whose webhook hasn't landed yet.
   useEffect(() => {
-    if (hasServiceForSite !== false) {
+    const shouldReconcile = hasServiceForSite === false || Boolean(sessionId);
+
+    if (!shouldReconcile) {
       setIsReconciling(false);
       return;
     }
@@ -337,22 +446,38 @@ export function useOnboardingTour(
         const res = await fetch("/api/checkout/reconcile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ sessionId: sessionId ?? null }),
         });
         if (!res.ok || !alive) return;
 
-        const body: any = await res.json();
+        const body: any = await readJson(res);
         if (!alive) return;
 
         if (body?.plan) {
-          setPlan(body.plan);
-          setPlanExpiresAt(body.expiresAt ?? null);
+          setPlan(body?.plan);
+          setPlanExpiresAt(body?.expiresAt ?? null);
+        }
+        // Always force-refresh the orders list after a reconcile answer: the
+        // webhook may have flipped order_status = true even when the
+        // entitlement already existed (provisioned === false / "exists").
+        // The force refresh also rewrites the 5-minute sessionStorage cache,
+        // so the site selector on /dashboard does not keep showing "Pending".
+        await fetchOrders(undefined, user?.id, true);
+        // Invalidate the cached wp connection status for this site so the
+        // sidebar "Setup status" dropdown refetches live wp_key state
+        // (plugin installed / signature verified) instead of showing stale
+        // pre-payment values cached for up to 30 days.
+        if (site) {
+          localStorage.removeItem(`wp-connection-status-${site}`);
         }
         if (body?.provisioned) {
-          await fetchOrders(undefined, user?.id);
           // A fresh entitlement now exists, so re-resolve the gate.
           await checkServiceForSite();
         }
+        // Always re-check payment status: the webhook may have already
+        // provisioned the entitlement (provisioned === false / "exists") but
+        // the order flip to order_status = true still needs to be observed.
+        await checkPaidForSite();
       } catch {
         // fail soft: the gate simply stays up and can be retried
       } finally {
@@ -366,10 +491,12 @@ export function useOnboardingTour(
     };
   }, [
     hasServiceForSite,
+    sessionId,
     setPlan,
     setPlanExpiresAt,
     fetchOrders,
     checkServiceForSite,
+    checkPaidForSite,
     user?.id,
   ]);
 
@@ -399,14 +526,12 @@ export function useOnboardingTour(
     router.replace(`/dashboard/onboarding?site=${created}`);
   }
 
-  async function downloadPlugin(
-    download: (domain: string) => Promise<void>,
-  ) {
+  async function downloadPlugin(download: (domain: string) => Promise<void>) {
     if (!site) return;
     setBusy("download");
     setError(null);
     try {
-      // The zip is self-contained -- its access key comes from wp-secret -- so
+      // The zip is self-contained -- its access key comes from plugin-key -- so
       // a signature-binding failure must never block the download. Binding is
       // best-effort here: verify re-issues it and reports the problem there,
       // where the user can actually do something about it.
@@ -421,32 +546,35 @@ export function useOnboardingTour(
     }
   }
 
-  async function confirmPluginInstalled() {
-    setBusy("plugin");
-    setError(null);
-    try {
-      const found = await checkPlugin();
-      if (found?.installed && found.keyed) {
-        await completeTourStep(1);
-      } else {
-        // Not visible yet: keep looking so the user never has to click twice.
-        setPolling(true);
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setBusy(null);
-    }
-  }
-
   async function verifyInstallation() {
     if (!site) return;
-    setBusy("verify");
+    setVerifyStatus("verifying");
     setError(null);
     try {
+      // First, check if the plugin is installed and has the key
+      const found = await checkPlugin();
+      console.log("[verifyInstallation] plugin check:", found);
+
+      if (!found?.installed) {
+        setError(
+          "We can't verify the plugin for this site yet. Please install and activate the plugin first, then try again.",
+        );
+        setVerifyStatus("idle");
+        return;
+      }
+
+      if (!found?.keyed) {
+        setError(
+          "Plugin is installed but not yet authenticated. Please wait a moment and try again.",
+        );
+        setVerifyStatus("idle");
+        return;
+      }
+
       // The binding may predate this session (a reload between the two steps),
       // so re-issue it when the in-memory signature is gone.
       const bound = signature ?? (await bindSignature());
+      console.log("[verifyInstallation] bound:", bound);
       if (!bound) throw new Error("No signature bound for this site");
 
       const res = await fetch("/api/wordpress/hmac/verify", {
@@ -454,14 +582,22 @@ export function useOnboardingTour(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain: site, signature: bound }),
       });
-      const body: any = await res.json();
+      const body: any = await readJson(res);
+      console.log("[verifyInstallation] response:", {
+        status: res.status,
+        body,
+      });
       if (!res.ok) {
-        throw new Error(body.message ?? body.reason ?? "Verification failed");
+        throw new Error(body?.message ?? body?.reason ?? "Verification failed");
       }
-      // Verification stamps the signature binding and the collector assignment
-      // server-side, so this one write completes the whole plugin step.
-      await completeTourStep(1);
+      // Record the plugin step (plugin_verified, index 1). The setup-step
+      // route validates it against wp_key.hmac_verified_at, which this
+      // verify call just stamped.
+      await completeStep(1);
+      // Result arrived: leave the button in its terminal state.
+      setVerifyStatus("verified");
     } catch (err: any) {
+      console.error("[verifyInstallation] error:", err);
       // A missing HMAC secret is our configuration problem, not the user's, so
       // say what to do about it instead of showing a bare variable name.
       const message = err?.message ?? "Verification failed";
@@ -470,15 +606,47 @@ export function useOnboardingTour(
           ? `${message} - the service is not fully configured on our side yet. Please open a support ticket and we will finish the setup for you.`
           : message,
       );
-    } finally {
-      setBusy(null);
+      // Failed: back to idle so the user can simply click again.
+      setVerifyStatus("idle");
     }
   }
 
   async function startPayment() {
-    // Payment happens at the end of setup: link the entitlement to the
-    // existing order via checkout session metadata so the webhook binds them.
+    // Guard: if this site is already paid, don't create another checkout
+    // session — just treat it as done.
+    if (hasPaidForSite === true) {
+      router.push(`/dashboard?site=${site}`);
+      return;
+    }
+
     const order = orders?.find((o) => o.website_name === site);
+
+    // Guard: if the order row already shows paid, don't charge again.
+    if (order?.order_status === true) {
+      setHasPaidForSite(true);
+      router.push(`/dashboard?site=${site}`);
+      return;
+    }
+
+    // Pre-flight check: re-verify payment status right before charging.
+    // This catches payments that completed (webhook fired) after the page
+    // first loaded but before the user clicked pay again.
+    try {
+      const paidRes = await fetch(
+        `/api/orders/managed/paid?site=${encodeURIComponent(site ?? "")}`,
+      );
+      if (paidRes.ok) {
+        const paidBody = await readJson(paidRes);
+        if (paidBody?.paid === true) {
+          setHasPaidForSite(true);
+          router.push(`/dashboard?site=${site}`);
+          return;
+        }
+      }
+    } catch {
+      // Fail soft: fall through to the existing checkout flow.
+    }
+
     setBusy("payment");
     setError(null);
     try {
@@ -491,11 +659,11 @@ export function useOnboardingTour(
           website_name: order?.website_name ?? null,
         }),
       });
-      const body: any = await res.json();
-      if (!res.ok || !body.url) {
-        throw new Error(body.error ?? "Failed to start checkout");
+      const body: any = await readJson(res);
+      if (!res.ok || !body?.url) {
+        throw new Error(body?.error ?? "Failed to start checkout");
       }
-      window.location.href = body.url;
+      window.location.href = body?.url;
     } catch (err: any) {
       setError(err.message);
       setBusy(null);
@@ -506,19 +674,19 @@ export function useOnboardingTour(
     order,
     isLoading: !orders,
     isStepDone,
-    activeIndex,
-    completedCount,
     isTourComplete,
+    stepsVerified,
+    isPositioned: positionedForSite === site,
     hasServiceForSite,
-    hasPaidForSite,
+    hasPaidForSite: paidForSite,
     isReconciling,
     plugin,
-    hasProbed,
-    polling,
+    verifyStatus,
     busy,
     error,
-    viewedStep,
-    setViewedStep,
+    currentStep,
+    goNext,
+    goToStep,
     siteInput: addSite.input,
     setSiteInput: addSite.setInput,
     wpLoginUrl: addSite.wpLoginUrl,
@@ -529,9 +697,20 @@ export function useOnboardingTour(
     addSiteSuccess: addSite.success,
     createSite,
     downloadPlugin,
-    checkPlugin: probeOnce,
-    confirmPluginInstalled,
     verifyInstallation,
     startPayment,
   };
+}
+/**
+ * Reads a fetch response as JSON without throwing when the body is not JSON.
+ * A crashed handler answers with plain text ("Internal Server Error"), which
+ * otherwise surfaces as a raw "Unexpected token" error.
+ */
+async function readJson(res: Response): Promise<any> {
+  const raw = await res.text();
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
