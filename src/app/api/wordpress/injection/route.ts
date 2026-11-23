@@ -48,10 +48,16 @@ export async function POST(req: NextRequest) {
       case "inject":
         return NextResponse.json({ inject: true, scriptUrl: result.scriptUrl });
       case "unauthorized":
-        return NextResponse.json({ inject: false }, { status: 401 });
+        return NextResponse.json(
+          { inject: false, reason: "unauthorized" },
+          { status: 401 },
+        );
+      case "not-connected":
+        return NextResponse.json({ inject: false, reason: "not_connected" });
       default:
-        // not-connected / not-entitled: the plugin simply no-ops (CrUX only).
-        return NextResponse.json({ inject: false });
+        // The plugin uses this reason to distinguish a paid site that is not
+        // entitled yet from a connectivity/configuration failure.
+        return NextResponse.json({ inject: false, reason: "not_entitled" });
     }
   } catch {
     // Fail closed: any error means the collector is not injected.

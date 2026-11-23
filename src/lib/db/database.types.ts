@@ -738,19 +738,40 @@ export type Database = {
         Row: {
           created_at: string
           domain: string | null
+          hmac_expires_at: string | null
+          hmac_signature: string | null
+          hmac_verified_at: string | null
           id: number
+          last_checked_at: string | null
+          plugin_active_at: string | null
+          rum_active_at: string | null
+          rum_assigned_at: string | null
           wp_secret: string | null
         }
         Insert: {
           created_at?: string
           domain?: string | null
+          hmac_expires_at?: string | null
+          hmac_signature?: string | null
+          hmac_verified_at?: string | null
           id?: number
+          last_checked_at?: string | null
+          plugin_active_at?: string | null
+          rum_active_at?: string | null
+          rum_assigned_at?: string | null
           wp_secret?: string | null
         }
         Update: {
           created_at?: string
           domain?: string | null
+          hmac_expires_at?: string | null
+          hmac_signature?: string | null
+          hmac_verified_at?: string | null
           id?: number
+          last_checked_at?: string | null
+          plugin_active_at?: string | null
+          rum_active_at?: string | null
+          rum_assigned_at?: string | null
           wp_secret?: string | null
         }
         Relationships: [

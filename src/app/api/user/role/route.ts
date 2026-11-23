@@ -20,7 +20,8 @@ export async function GET() {
 
     if (profileError) throw new Error(profileError.message);
 
-    return NextResponse.json({ role: data?.role ?? null });
+    const role = data?.role ?? "user";
+    return NextResponse.json({ role });
   } catch (error: any) {
     return NextResponse.json({ role: null, error: error.message }, { status: 500 });
   }

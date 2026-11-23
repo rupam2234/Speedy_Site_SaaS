@@ -131,9 +131,10 @@ Single responsibility: answer "should this domain run the collector?".
 Auth and inputs:
 
 - `domain`: the host the plugin serves on (from `home_url()`).
-- `key`: the per-domain secret (`SPEEDY_SITE_AUTH_KEY`, also stored in WP option
-  `speedy_site_secret_key` and mirrored in our `wp_key` table by `wp-secret`).
-  Verified against the stored `wp_key.wp_secret` with a constant-time compare.
+- `key`: the per-domain secret (`SPEEDY_SITE_AUTH_KEY`, optionally stored in the WP
+  option `speedy_site_secret_key` and mirrored in our `wp_key` table by
+  `plugin-key`). Verified against the stored `wp_key.wp_secret` with a
+  constant-time compare.
 
 Server logic:
 
@@ -174,10 +175,15 @@ location) and add the injector as one small module.
 Behavior:
 
 - Hook `wp_enqueue_scripts`. Compute `home_url()` host.
-- Decide once per TTL using a WP transient (default 5 minutes) so the outbound call
-  is not made on every page view; store `{ inject, checked_at }` per host.
-- If entitled: enqueue `https://rum.speedy.site/rum.js` with `defer`, in the head,
-  exactly as the manual snippet did.
+- Decide once per TTL using a WP transient so the outbound call is not made on
+  every page view; cache an entitled decision for 5 minutes and a negative
+  decision for 30 seconds, so a payment completed after a pre-payment check
+  becomes active promptly. Store `{ inject, checked_at }` per host.
+- If entitled: enqueue `https://rum.speedy.site/rum.js` in the document header on
+  every frontend page. The admin section is excluded.
+- Expose `GET /wp-json/speedy-site/v1/status`. Its presence proves the plugin is
+  active; it also returns the current RUM injection decision so the SaaS can
+  update plugin and RUM status together.
 - If not entitled, cache says no, or the call fails or times out (short timeout,
   ~0.5s): do nothing. The site stays CrUX-only.
 - Free tier path is a genuine no-op; there is no snippet to leak.
