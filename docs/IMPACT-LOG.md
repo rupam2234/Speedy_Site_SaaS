@@ -7,6 +7,24 @@
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
 > **Last updated:** 2026-11-23
+---
+
+## 2026-11-23: Delayed Chat Email Notifications (15-Minute Grace Window & Digest)
+
+**Problem:** Immediate email alerts sent on every chat message flooded recipient inboxes during active back-and-forth conversations, generating dozens of redundant notifications for messages users had already viewed on their screens.
+
+**Changes:**
+1. Database migration adding `email_notified_at` column, composite and partial indexes on `order_messages`, and Supabase `pg_cron` schedule registration calling `/api/cron/chat-notifications`.
+2. Decoupled in-app notifications from external email alerts in `src/app/api/chat/messages/route.ts`: in-app notifications (`public.notifications`) remain immediate, while real-time message posting bypasses Resend completely.
+3. Created unread digest dispatcher and responsive HTML template in `src/app/api/emails/chatNotification.ts` batching unread messages per recipient and updating `email_notified_at = now()`.
+4. Implemented secure cron route `src/app/api/cron/chat-notifications/route.ts` with Bearer/webhook authorization, 15-minute grace window evaluation, and recipient resolution.
+5. Added automated unit and integration tests in `tests/delayed-chat-notifications.test.mjs` verifying suppression, threshold, consolidation, idempotency, and security gates.
+
+**Impact:** Eliminates inbox spam during active chat sessions while ensuring unread messages are reliably aggregated into a single actionable email digest after 15 minutes.
+
+**Where to verify:** `pnpm test` (all 15 test cases passing); `make check` (zero lint issues); migration `supabase/migrations/20261123000001_delayed_chat_notifications.sql`.
+
+**Interview one-liner:** "Replaced noisy per-message email notifications with a 15-minute grace window and Supabase pg_cron digest pipeline that consolidates unread order messages and suppresses alerts for active users."
 
 ---
 
@@ -510,3 +528,23 @@ a free service automatically; entitlement enforcement moved into the database.
 **Interview one-liner:** "We migrated billing from recurring subscriptions to
 a one-time service model, moving entitlement checks from application code
 into the database with trigger-based provisioning."
+
+## 2026-11-22: Order-scoped communication channels with role-gated access (ADR-0002)
+
+**Problem:** Customers, assigned performance experts, and administrators required structured communication scoped to specific WordPress optimization orders. Platform administrators needed full visibility into customer-expert dialogue for quality assurance without ability to post to customer threads, while requiring a private backchannel to coordinate with experts.
+
+**Changes:**
+1. Database migration adding `order_conversations` and `order_messages` tables with strict Row Level Security (RLS) enforcing customer read/write on client channels, admin read-only observation on client channels, and private admin-expert internal channels.
+2. Realtime listener hook and broadcast channel support in `src/lib/chat/realtime.ts`.
+3. Role-gated server API endpoints (`/api/chat/conversations`, `/api/chat/messages`, `/api/chat/messages/read`) with notification pipeline dispatch (in-app and Resend email alerts).
+4. Reusable frontend chat UI suite in `src/components/chat/` (`OrderChatPanel`, `MessageBubble`, `ChatInput`, `TypingIndicator`).
+5. Dashboard integrations:
+   - Customer dashboard (`/dashboard/managed-wp/status`) integrated with live expert chat.
+   - Expert dashboard (`/dashboard/expert/orders`) equipped with dual-channel drawer.
+   - Admin dashboard (`/dashboard/admin/orders`) equipped with read-only customer dialogue stream alongside active expert backchannel.
+6. Automated test suite in `tests/order-communication-channels.test.mjs` verifying role isolation and write rejection.
+
+**Impact:** Tamper-proof, order-scoped communication with zero third-party chat server dependencies, enforcing compliance oversight and staff coordination natively in Supabase and Next.js.
+
+**Interview one-liner:** "Implemented dual-channel order messaging with Postgres RLS: platform admins can supervise client threads in strict read-only mode while maintaining an isolated staff backchannel with assigned experts."
+

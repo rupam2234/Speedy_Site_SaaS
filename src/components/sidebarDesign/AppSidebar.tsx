@@ -323,7 +323,11 @@ export default function AppSidebar({
         isActive: false,
         items: [
           {
-            title: "Status",
+            title: "Expert Chat",
+            url: `/dashboard/managed-wp/status?site=${selectedSite}`,
+          },
+          {
+            title: "Setup Status",
             url: `/dashboard/onboarding?site=${selectedSite}`,
           },
         ],

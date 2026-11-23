@@ -9,6 +9,8 @@ This directory maintains immutable records of architectural and technical decisi
 | ADR # | Date | Title | Status | Chosen Option |
 | :--- | :--- | :--- | :--- | :--- |
 | **0001** | 2026-11-21 | [Initial System Architecture](0001-initial-architecture.md) | 🟢 Accepted | Standardized Modular Tiering |
+| **0002** | 2026-11-21 | [Order-Scoped Communication Channels](0002-order-communication-channels.md) | 🟢 Accepted | Order-Scoped Dual-Channel Native Architecture |
+| **0003** | 2026-11-23 | [Delayed Chat Email Notifications](0003-delayed-chat-email-notifications.md) | 🟢 Accepted | 15-Minute Grace Window with Supabase pg_cron Digest |
 
 ---
 

@@ -188,6 +188,8 @@ No new worker secrets; all admin/expert logic runs in Next.js API routes.
 
 ## Related Docs
 
+- `docs/systems/order-communication-channels.md`: Order communication channels and role-gated access
+- `docs/adr/0002-order-communication-channels.md`: Architectural decision for native dual-channel messaging
 - `docs/systems/managed-wp-order-assignment.md`: assignment data model, RR algorithm, Phase 1 SQL
 - `docs/GOALS.md`: product loop, principles
 - `docs/plans/2026-10-10_000000_restructure_plan.md`: Phase 5 service channel integration
