@@ -15,6 +15,7 @@ import { Notifications } from "@/app/api";
 import { CustomTooltip } from "../theme";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
+import { getSetupProgress } from "@/lib/setupProgress";
 
 export default function SidebarInsetHeader() {
   const [notifcations, setNotifications] = useState<Notifications[]>([]);
@@ -87,12 +88,12 @@ export default function SidebarInsetHeader() {
   // writes (orders.tour + order_status), so this dropdown can never disagree
   // with the steps page: site_selected / plugin_verified / service_active.
   const selectedOrder = orders?.find((o) => o.website_name === activeSite);
-  const siteTour = (selectedOrder?.tour ?? {}) as Record<string, boolean>;
+  const setupProgress = getSetupProgress(selectedOrder);
 
-  const isSiteConnected = Boolean(selectedOrder);
-  const isPluginVerified = siteTour.plugin_verified === true;
+  const isSiteConnected = setupProgress.siteConnected;
+  const isPluginVerified = setupProgress.pluginVerified;
   // order_status flips to true only via the Stripe webhook / reconcile.
-  const isPaid = selectedOrder?.order_status === true;
+  const isPaid = setupProgress.serviceActive;
   const setupDone = isSiteConnected && isPluginVerified && isPaid;
 
   // Hovering the button shows what is left for THIS site, not a pitch.

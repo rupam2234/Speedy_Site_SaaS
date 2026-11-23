@@ -5,6 +5,7 @@ import { ArrowRight, CirclePlus, PlusCircle } from "lucide-react";
 import { useSiteContext } from "@/app/(dashboard)/dashboard/siteContext";
 import { CustomTooltip } from "../theme";
 import { SiteIcon } from "./siteIcon";
+import { isSetupComplete } from "@/lib/setupProgress";
 import { useRouter } from "next/navigation";
 
 export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
@@ -144,15 +145,14 @@ export function SelectSite({ collapsed = false }: { collapsed?: boolean }) {
                 className="flex items-center gap-2 py-1 text-sm px-2 hover:bg-primary/5 dark:hover:bg-secondary-background cursor-pointer"
                 onClick={() => {
                   setOpen(false);
-                  // Unpaid sites are not live yet: open their setup/status page
-                  // instead of switching the dashboard to a locked site.
-                  if (!isPaid(x)) {
-                    router.push(
-                      `/dashboard/onboarding?site=${x.website_name}`,
-                    );
-                    return;
-                  }
                   setSelectedSite(x.website_name);
+                  // Incomplete setup resumes the onboarding panel. A completed
+                  // site stays on the dashboard instead of reopening setup.
+                  if (!isSetupComplete(x)) {
+                    router.push(
+                      `/dashboard/onboarding?site=${encodeURIComponent(x.website_name)}`,
+                    );
+                  }
                 }}
               >
                 <SiteIcon favicon={x.favicon_file} site={x.website_name} />

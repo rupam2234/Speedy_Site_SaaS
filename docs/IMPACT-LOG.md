@@ -271,6 +271,24 @@ checkout button.
 **Where to verify:** `npx supabase inspect db index-stats` -- the 10 dropped indexes no longer appear.
 
 ---
+## 2026-11-23 · Passive RUM visits now reach Cloudflare and Supabase
+
+**Problem:** The live WordPress collector loaded on `feedingnature.com`, and its domain was correctly present in both Supabase and the Cloudflare entitlement KV, but a passive browser visit produced no `rum_metrics` row. The deployed collector waited for LCP, CLS, and INP before its 20-second flush. INP requires an interaction, so passive visits remained buffered until a page-hide event. The collector also had no `pageview_id`, and its `application/json` beacon triggered a CORS preflight that failed in the browser before the POST was sent.
+
+**Changes:**
+- The collector generates one stable `pageview_id` per pageview and includes it in every payload, allowing the existing `upsert_rum_metrics_batch` RPC to merge continuation beacons into one row.
+- Passive visits flush after 20 seconds without requiring INP. A later INP value is sent as a continuation beacon under the same `pageview_id`.
+- `navigator.sendBeacon` now uses `text/plain;charset=UTF-8` for a CORS-safelisted request. The Worker still parses JSON and derives authorization from Origin/Referer, so the security gate is unchanged.
+- The root collector build now generates both `public/rum.js` and the Worker-served `cloudflare-workers/rum/src/rum.txt` from one source, with `esbuild` declared as a root dev dependency.
+
+**Impact (before → after):**
+- Passive pageview: no browser POST and no database row -> browser POST accepted with HTTP 202 and one merged `rum_metrics` row.
+- Continuation data: no pageview identity -> stable UUID merge key for interaction metrics.
+- Collector delivery: separate, drifting artifacts -> one reproducible source build.
+
+**Verified:** `feedingnature.com` returned HTTP 200 with `rum.speedy.site/rum.js`; Cloudflare tail showed the browser POST accepted with HTTP 202 and no exceptions; Supabase contained one browser row with `pageview_id`, geo, client, web-vitals, navigation, render-blocker, and resource-summary events. Unknown domains remained rejected with HTTP 403.
+
+---
 ## 2026-10-24 · Free tier site limit increased from 1 to 3
 
 **Change:** Free tier users can now connect up to 3 sites (was 1) without upgrading to a paid plan.

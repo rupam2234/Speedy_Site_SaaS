@@ -39,6 +39,7 @@ let worstCLS = null;
 
 let isFlushing = false;
 let hasFlushed = false;
+let lastSentINPValue = null;
 
 function createLongTaskTracker() {
   const buffer = [];
@@ -259,6 +260,10 @@ if (!sessionId) {
     : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`; // Fallback for older browsers
   setCookie("sessionId", sessionId);
 }
+
+const pageviewId = crypto.randomUUID
+  ? crypto.randomUUID()
+  : `pv-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const elementSummaryCache = new Map();
 
@@ -626,6 +631,8 @@ async function handleINP(metric) {
         .slice(0, 5),
     })),
   };
+
+  if (hasFlushed) flushINPContinuation();
 }
 
 function handleLCP(metric) {
@@ -1059,14 +1066,88 @@ function getRenderBlockers() {
   });
 })();
 
-function checkMetricsReady() {
-  // this checks for completion of vitals data to send on page unload, tab shift or page change
-  if (
-    worstCLS !== null &&
-    worstLCP !== null &&
-    (webVitalsINP !== null || maxCustomEntry !== null)
-  ) {
-    return true;
+function buildINPEvent() {
+  if (!webVitalsINP && !maxCustomEntry) return null;
+
+  let inpAttribution = {};
+  let inpValue = webVitalsINP
+    ? webVitalsINP.value
+    : maxCustomEntry
+      ? maxCustomEntry.duration
+      : null;
+  const attr = webVitalsINP?.attribution;
+  const topScript = getTopBlockingScript(webVitalsINP?.loaf || []);
+
+  if (webVitalsINP?.attribution) {
+    inpAttribution = {
+      target: attr?.target ? summarizeElement(attr.target) : "(unknown)",
+      eventType: attr.interactionType,
+      inputDelay: attr.inputDelay,
+      processingDuration: attr.processingDuration,
+      presentationDelay: attr.presentationDelay,
+      mainThreadFunctions: webVitalsINP.mainThreadBreakdown,
+      loaf: topScript
+        ? {
+            sourceURL: topScript.sourceURL,
+            duration: topScript.duration,
+            invoker: topScript.invoker,
+            type: topScript.type,
+            sourceCharPosition: topScript.sourceCharPosition,
+            layoutImpact: topScript.forcedStyleAndLayoutDuration,
+            isFirstParty: topScript.isFirstParty,
+          }
+        : null,
+    };
+  } else if (maxCustomEntry?.target) {
+    inpAttribution = {
+      target: maxCustomEntry?.target
+        ? summarizeElement(maxCustomEntry.target)
+        : "(unknown)",
+      eventType: maxCustomEntry.type,
+      inputDelay: maxCustomEntry.processingStart - maxCustomEntry.startTime,
+      processingTime:
+        maxCustomEntry.duration -
+        (maxCustomEntry.processingStart - maxCustomEntry.startTime),
+    };
+  } else {
+    inpAttribution = { target: "(unknown)", eventType: "unknown" };
+  }
+
+  if (inpValue === null) return null;
+  return {
+    type: "web-vital",
+    siteDomain,
+    name: "INP",
+    value: inpValue,
+    rating: classifyMetric(inpValue, INPThresholds),
+    attribution: inpAttribution,
+  };
+}
+
+function sendMetricsPayload(data) {
+  if (!data.length) return;
+
+  const payload = JSON.stringify({
+    pageview_id: pageviewId,
+    sessionId,
+    siteDomain,
+    currentPage,
+    previousPage,
+    data,
+  });
+
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(
+      CONFIG.API_URL,
+      new Blob([payload], { type: "text/plain;charset=UTF-8" }),
+    );
+  } else {
+    fetch(CONFIG.API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {});
   }
 }
 
@@ -1077,135 +1158,34 @@ function flushMetrics() {
   hasFlushed = true;
 
   try {
-    if (webVitalsINP || maxCustomEntry) {
-      let inpAttribution = {};
-      let inpValue = webVitalsINP
-        ? webVitalsINP.value
-        : maxCustomEntry
-          ? maxCustomEntry.duration
-          : null;
-      const attr = webVitalsINP?.attribution;
-      const topScript = getTopBlockingScript(webVitalsINP?.loaf || []);
-      // const inpTime = webVitalsINP?.startTime ?? maxCustomEntry?.startTime;
-
-      if (webVitalsINP?.attribution) {
-        inpAttribution = {
-          target: attr?.target ? summarizeElement(attr.target) : "(unknown)",
-          eventType: attr.interactionType,
-          inputDelay: attr.inputDelay,
-          processingDuration: attr.processingDuration,
-          presentationDelay: attr.presentationDelay,
-          mainThreadFunctions: webVitalsINP.mainThreadBreakdown,
-          loaf: topScript
-            ? {
-                sourceURL: topScript.sourceURL,
-                duration: topScript.duration,
-                invoker: topScript.invoker,
-                type: topScript.type,
-                sourceCharPosition: topScript.sourceCharPosition,
-                layoutImpact: topScript.layoutImpact,
-                isFirstParty: topScript.isFirstParty,
-              }
-            : null,
-        };
-      } else if (maxCustomEntry && maxCustomEntry.target) {
-        const inputDelay =
-          maxCustomEntry.processingStart - maxCustomEntry.startTime;
-        const processingTime = maxCustomEntry.duration - inputDelay;
-
-        inpAttribution = {
-          target: maxCustomEntry?.target
-            ? summarizeElement(maxCustomEntry.target)
-            : "(unknown)",
-          eventType: maxCustomEntry.name,
-          inputDelay: inputDelay,
-          processingDuration: processingTime,
-          loaf: topScript
-            ? {
-                sourceURL: topScript.sourceURL,
-                duration: topScript.duration,
-                invoker: topScript.invoker,
-                type: topScript.type,
-                sourceCharPosition: topScript.sourceCharPosition,
-                layoutImpact: topScript.layoutImpact,
-                isFirstParty: topScript.isFirstParty,
-              }
-            : null,
-        };
-      } else {
-        inpAttribution = { target: "(unknown)", eventType: "unknown" };
-      }
-
-      if (inpValue !== null) {
-        queueEvent({
-          type: "web-vital",
-          siteDomain,
-          name: "INP",
-          value: inpValue,
-          rating: classifyMetric(inpValue, INPThresholds),
-          attribution: inpAttribution,
-        });
-      }
+    const data = [...batchedData];
+    const inpEvent = buildINPEvent();
+    if (inpEvent) {
+      data.push(inpEvent);
+      lastSentINPValue = inpEvent.value;
     }
 
-    // aggregate CLS
-    if (worstCLS) batchedData.push(worstCLS);
-
-    //aggregate LCP
-    if (worstLCP) batchedData.push(worstLCP);
+    if (worstCLS) data.push(worstCLS);
+    if (worstLCP) data.push(worstLCP);
 
     const navigationTimingInfo = collectPerformanceMetrics();
+    if (navigationTimingInfo != null) data.push(navigationTimingInfo);
 
-    if (navigationTimingInfo != null) {
-      batchedData.push(navigationTimingInfo);
-    }
+    const renderBlockers = getRenderBlockers();
+    if (renderBlockers) data.push(renderBlockers);
 
-    const r_blockings = getRenderBlockers();
-
-    if (r_blockings) {
-      batchedData.push(r_blockings);
-    }
-
-    // compact resource waterfall (bucketed shape + top-N slow outliers)
     const resourceSummary = buildResourceSummary();
+    if (resourceSummary) data.push(resourceSummary);
 
-    if (resourceSummary) {
-      batchedData.push(resourceSummary);
-    }
-
-    // deduped JS / promise / resource-load errors
     if (errorBuckets.size > 0) {
-      batchedData.push({
+      data.push({
         type: "errors",
         siteDomain,
         errors: [...errorBuckets.values()],
       });
     }
 
-    // then we prep the payload
-    if (batchedData.length > 0) {
-      const payload = JSON.stringify({
-        sessionId,
-        siteDomain,
-        currentPage,
-        previousPage,
-        data: [...batchedData],
-      });
-
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(
-          CONFIG.API_URL,
-          new Blob([payload], { type: "application/json" }),
-        );
-      } else {
-        fetch(CONFIG.API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-          keepalive: true,
-        }).catch(() => {});
-      }
-    }
+    sendMetricsPayload(data);
   } finally {
     batchedData.length = 0;
     worstCLS = null;
@@ -1214,23 +1194,29 @@ function flushMetrics() {
   }
 }
 
-setTimeout(() => {
-  if (document.visibilityState === "visible") {
-    const isReady = checkMetricsReady();
-    if (isReady) flushMetrics();
-  }
-}, 20000); // flush after 20 seconds of page load
+function flushINPContinuation() {
+  if (isFlushing || !hasFlushed) return;
 
-// iOS Safari and modern browsers
+  const inpEvent = buildINPEvent();
+  if (!inpEvent || inpEvent.value <= (lastSentINPValue ?? 0)) return;
+
+  lastSentINPValue = inpEvent.value;
+  sendMetricsPayload([inpEvent]);
+}
+
+setTimeout(() => {
+  if (document.visibilityState === "visible") flushMetrics();
+}, 20000);
+
 window.addEventListener("pagehide", () => {
   if (!hasFlushed) flushMetrics();
+  else flushINPContinuation();
 });
 
-// Android/Chrome and most browsers
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden" && !hasFlushed) {
-    flushMetrics();
-  }
+  if (document.visibilityState !== "hidden") return;
+  if (!hasFlushed) flushMetrics();
+  else flushINPContinuation();
 });
 
 // fallback

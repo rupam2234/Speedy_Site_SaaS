@@ -8,12 +8,12 @@
 
 ## 1. Transport & Request Headers
 
-RUM beacons are transmitted asynchronously by the browser collector (`rum.js`) via `navigator.sendBeacon` or `fetch`:
+RUM beacons are transmitted asynchronously by the browser collector (`rum.js`) via `navigator.sendBeacon` or `fetch`. The beacon body is JSON, but the `sendBeacon` content type is `text/plain;charset=UTF-8` so it remains a CORS-safelisted request and does not require a preflight:
 
 ```http
 POST /collect HTTP/1.1
 Host: buffer.speedy.site
-Content-Type: application/json
+Content-Type: text/plain;charset=UTF-8
 Origin: https://example.com
 Referer: https://example.com/blog/sample-post
 ```
