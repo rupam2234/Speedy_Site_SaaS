@@ -101,18 +101,39 @@ function resourcesFromEvents(data) {
 	};
 }
 
+function fontEvidence(attribution) {
+	const font = attribution.font;
+	if (!font || typeof font !== "object") return null;
+	const resource = Array.isArray(font.fontData) ? font.fontData[0] : null;
+	return {
+		family: font.family ? String(font.family).slice(0, 120) : null,
+		weight: font.weight ? String(font.weight).slice(0, 32) : null,
+		size: font.size ? String(font.size).slice(0, 32) : null,
+		url: normalizeEvidenceUrl(resource?.url),
+		transfer_bytes: nonNegativeInteger(resource?.transferSize),
+	};
+}
+
 function lcpEvidence(data) {
 	const candidates = [];
 	for (const event of allEvents(data, "web-vital").filter((item) => item.name === "LCP")) {
 		const attribution = event.attribution || {};
 		candidates.push({
 			url: normalizeEvidenceUrl(attribution.url),
-			target: attribution.target || null,
+			target: attribution.target ? String(attribution.target).slice(0, 120) : null,
 			resource_load_delay_ms: nonNegativeInteger(attribution.resourceLoadDelay),
 			resource_load_duration_ms: nonNegativeInteger(attribution.resourceLoadDuration),
 			element_render_delay_ms: nonNegativeInteger(attribution.elementRenderDelay),
+			candidate_ttfb_ms: nonNegativeInteger(attribution.timeToFirstByte),
 			transfer_bytes: nonNegativeInteger(attribution.transferSize),
 			decoded_bytes: nonNegativeInteger(attribution.decodedBodySize),
+			image_width: nonNegativeInteger(attribution.width),
+			image_height: nonNegativeInteger(attribution.height),
+			is_lazy: typeof attribution.isLazy === "boolean" ? attribution.isLazy : null,
+			fetch_priority: attribution.fetchPriority
+				? String(attribution.fetchPriority).slice(0, 16)
+				: null,
+			font: fontEvidence(attribution),
 		});
 	}
 	return candidates.sort((a, b) => (b.element_render_delay_ms || 0) - (a.element_render_delay_ms || 0)).slice(0, 3);
@@ -152,14 +173,37 @@ function slowResourceEvidence(data) {
 	return resources.sort((a, b) => (b.duration_ms || 0) - (a.duration_ms || 0)).slice(0, 5);
 }
 
+function clsRect(rect) {
+	if (!rect || typeof rect !== "object" || Array.isArray(rect)) return null;
+	return {
+		x: finiteNumber(rect.x),
+		y: finiteNumber(rect.y),
+		width: nonNegativeInteger(rect.width),
+		height: nonNegativeInteger(rect.height),
+	};
+}
+
 function clsEvidence(data) {
 	const shifts = [];
 	for (const event of allEvents(data, "web-vital").filter((item) => item.name === "CLS")) {
 		for (const shift of event.attribution?.shifts || []) {
 			shifts.push({
-				target: shift.element || event.attribution?.largestShiftTarget || "(unknown)",
+				target: String(shift.element || event.attribution?.largestShiftTarget || "(unknown)").slice(0, 120),
+				involved_elements: (Array.isArray(shift.elements) ? shift.elements : [])
+					.slice(0, 5)
+					.map((element) => String(element).slice(0, 120)),
 				value: finiteNumber(shift.value),
 				viewport_ratio: finiteNumber(shift.impact?.viewportRatio),
+				time_ms: nonNegativeInteger(shift.time),
+				load_state: event.attribution?.loadState
+					? String(event.attribution.loadState).slice(0, 32)
+					: null,
+				area_delta: finiteNumber(shift.impact?.areaDelta),
+				distance_moved: finiteNumber(shift.impact?.distanceMoved),
+				dx: finiteNumber(shift.shift?.dx),
+				dy: finiteNumber(shift.shift?.dy),
+				previous_rect: clsRect(shift.rect?.previous),
+				current_rect: clsRect(shift.rect?.current),
 			});
 		}
 	}
@@ -276,12 +320,84 @@ function validFacts(facts) {
 	return true;
 }
 
+function hasOnlyKeys(value, allowedKeys) {
+	return Object.keys(value).every((key) => allowedKeys.has(key));
+}
+
+function validNullableNumber(value, allowNegative = false) {
+	return value === null || value === undefined || (isFiniteNumber(value) && (allowNegative || value >= 0));
+}
+
+function validFontEvidence(font) {
+	if (font === null || font === undefined) return true;
+	if (!font || typeof font !== "object" || Array.isArray(font)) return false;
+	if (!hasOnlyKeys(font, new Set(["family", "weight", "size", "url", "transfer_bytes"]))) return false;
+	for (const key of ["family", "weight", "size", "url"]) {
+		if (font[key] !== null && font[key] !== undefined && typeof font[key] !== "string") return false;
+	}
+	return validNullableNumber(font.transfer_bytes);
+}
+
+function validRect(rect) {
+	if (rect === null || rect === undefined) return true;
+	if (!rect || typeof rect !== "object" || Array.isArray(rect)) return false;
+	if (!hasOnlyKeys(rect, new Set(["x", "y", "width", "height"]))) return false;
+	return validNullableNumber(rect.x, true)
+		&& validNullableNumber(rect.y, true)
+		&& validNullableNumber(rect.width)
+		&& validNullableNumber(rect.height);
+}
+
+function validLcpEvidence(items) {
+	return items.every((item) => {
+		if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+		if (!hasOnlyKeys(item, new Set([
+			"url", "target", "resource_load_delay_ms", "resource_load_duration_ms",
+			"element_render_delay_ms", "candidate_ttfb_ms", "transfer_bytes", "decoded_bytes",
+			"image_width", "image_height", "is_lazy", "fetch_priority", "font",
+		]))) return false;
+		for (const key of ["url", "target", "fetch_priority"]) {
+			if (item[key] !== null && item[key] !== undefined && typeof item[key] !== "string") return false;
+		}
+		for (const key of [
+			"resource_load_delay_ms", "resource_load_duration_ms", "element_render_delay_ms",
+			"candidate_ttfb_ms", "transfer_bytes", "decoded_bytes", "image_width", "image_height",
+		]) {
+			if (!validNullableNumber(item[key])) return false;
+		}
+		if (item.is_lazy !== null && item.is_lazy !== undefined && typeof item.is_lazy !== "boolean") return false;
+		return validFontEvidence(item.font);
+	});
+}
+
+function validClsEvidence(items) {
+	return items.every((item) => {
+		if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+		if (!hasOnlyKeys(item, new Set([
+			"target", "involved_elements", "value", "viewport_ratio", "time_ms", "load_state",
+			"area_delta", "distance_moved", "dx", "dy", "previous_rect", "current_rect",
+		]))) return false;
+		if (typeof item.target !== "string") return false;
+		if (!Array.isArray(item.involved_elements) || item.involved_elements.some((element) => typeof element !== "string")) return false;
+		if (typeof item.load_state !== "string" && item.load_state !== null) return false;
+		for (const key of ["value", "viewport_ratio", "time_ms", "distance_moved"]) {
+			if (!validNullableNumber(item[key])) return false;
+		}
+		for (const key of ["area_delta", "dx", "dy"]) {
+			if (!validNullableNumber(item[key], true)) return false;
+		}
+		return validRect(item.previous_rect) && validRect(item.current_rect);
+	});
+}
+
 function validEvidence(evidence) {
 	if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)) return false;
 	for (const key of Object.keys(evidence)) {
 		if (!V2_EVIDENCE_KEYS.has(key)) return false;
 		if (["lcp", "render_blockers", "slow_resources", "cls_shifts", "errors"].includes(key) && !Array.isArray(evidence[key])) return false;
 	}
+	if (evidence.lcp && !validLcpEvidence(evidence.lcp)) return false;
+	if (evidence.cls_shifts && !validClsEvidence(evidence.cls_shifts)) return false;
 	return true;
 }
 

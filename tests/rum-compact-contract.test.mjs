@@ -116,6 +116,57 @@ describe("compact RUM v2 collector contract", () => {
 		assert.equal("stack" in payload.evidence.errors[0], false);
 	});
 
+	it("preserves bounded LCP image and font diagnostics", () => {
+		const imagePayload = toV2("slow-page.json");
+		const image = imagePayload.evidence.lcp[0];
+		assert.equal(image.candidate_ttfb_ms, 2100);
+		assert.equal(image.image_width, 1920);
+		assert.equal(image.image_height, 1080);
+		assert.equal(image.is_lazy, false);
+		assert.equal(image.fetch_priority, "high");
+		assert.equal(image.font, null);
+
+		const fontPayload = legacyEventsToV2([
+			{
+				type: "web-vital",
+				name: "LCP",
+				value: 2400,
+				attribution: {
+					target: "h1.hero-title",
+					url: "https://example.com/wp-content/themes/site/style.css",
+					font: {
+						family: "Inter",
+						weight: "700",
+						size: "48px",
+						fontData: [
+							{ url: "https://example.com/wp-content/fonts/inter.woff2?token=secret", transferSize: 42000 },
+						],
+					},
+				},
+			},
+		], { pageviewId: "pv-font", sessionId: "session-font", currentPage: "/" });
+		const font = fontPayload.evidence.lcp[0].font;
+		assert.equal(font.family, "Inter");
+		assert.equal(font.weight, "700");
+		assert.equal(font.size, "48px");
+		assert.equal(font.url, "/wp-content/fonts/inter.woff2");
+		assert.equal(font.transfer_bytes, 42000);
+		assert.equal(validateV2Payload(fontPayload).valid, true);
+	});
+
+	it("preserves bounded CLS movement, timing, and geometry", () => {
+		const shift = toV2("slow-page.json").evidence.cls_shifts[0];
+		assert.deepEqual(shift.involved_elements, ["section#content", "div.ad-slot"]);
+		assert.equal(shift.time_ms, 3500);
+		assert.equal(shift.load_state, "complete");
+		assert.equal(shift.area_delta, 0);
+		assert.equal(shift.distance_moved, 260);
+		assert.equal(shift.dx, 0);
+		assert.equal(shift.dy, 260);
+		assert.deepEqual(shift.previous_rect, { x: 0, y: 700, width: 390, height: 500 });
+		assert.deepEqual(shift.current_rect, { x: 0, y: 960, width: 390, height: 500 });
+	});
+
 	it("validates unknown versions and unknown canonical fields", () => {
 		const payload = toV2("passive-desktop.json");
 		assert.equal(validateV2Payload(payload).valid, true);
@@ -138,6 +189,32 @@ describe("compact RUM v2 collector contract", () => {
 		};
 		const bounded = boundDiagnosticEvidence(evidence);
 		assert.ok(Buffer.byteLength(JSON.stringify(bounded)) < 4096);
+	});
+
+	it("keeps expanded LCP and CLS evidence below the Worker limit", () => {
+		const payload = toV2("slow-page.json");
+		const bounded = boundDiagnosticEvidence(payload.evidence);
+		const bytes = Buffer.byteLength(JSON.stringify(bounded));
+		assert.ok(bytes <= 3800, `bounded evidence was ${bytes} bytes`);
+		assert.ok(bounded.lcp.length >= 1);
+		assert.ok(bounded.cls_shifts.length >= 1);
+		assert.equal(bounded.lcp[0].candidate_ttfb_ms, 2100);
+		assert.equal(bounded.cls_shifts[0].dy, 260);
+	});
+
+	it("rejects malformed nested LCP and CLS evidence", () => {
+		const payload = toV2("slow-page.json");
+		const invalidLcp = structuredClone(payload);
+		invalidLcp.evidence.lcp[0].is_lazy = "yes";
+		assert.equal(validateV2Payload(invalidLcp).valid, false);
+
+		const invalidCls = structuredClone(payload);
+		invalidCls.evidence.cls_shifts[0].previous_rect.width = "390";
+		assert.equal(validateV2Payload(invalidCls).valid, false);
+
+		const unknownField = structuredClone(payload);
+		unknownField.evidence.cls_shifts[0].unexpected = true;
+		assert.equal(validateV2Payload(unknownField).valid, false);
 	});
 
 	it("bounds a single oversized evidence field", () => {

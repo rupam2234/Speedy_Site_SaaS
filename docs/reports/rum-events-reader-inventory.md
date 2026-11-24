@@ -72,3 +72,50 @@ Application callers: **16**
 - **optional**: read by a reader but not emitted by the current collector, or emitted only for a specialized branch.
 - **legacy-only**: historical shape that the current collector does not emit, including event-level `sessionId`, `pageAddress`, and `origin-info`.
 - **unused**: collector event type with no detected SQL reader.
+
+## Product-boundary classification (ADR-0005)
+
+This section classifies the generated inventory by the product boundary accepted in ADR-0005. It does not replace the generated tables above.
+
+### Retained and migrate to canonical v2
+
+| Function | Reader type |
+| :--- | :--- |
+| `analyze_fcp_by_device` | Typed aggregate and filter |
+| `analyze_lcp_by_device` | LCP element evidence |
+| `cls_elements` | CLS element evidence |
+| `cwv_dist_by_connection` | Typed aggregate and filter |
+| `font_analysis` | LCP font evidence |
+| `get_lcp_image_metrics` | LCP image evidence |
+| `get_rum_web_vitals_metrics` | Typed aggregate and filter |
+| `get_web_vital_counts_by_url` | Typed aggregate and filter |
+| `inp_elements` | INP element evidence |
+| `page_performance_analysis` | Typed facts and canonical evidence |
+| `ttfb_contributors` | Typed navigation, geography, and network facts |
+
+### Retired with their product surfaces
+
+| Function | Retired surface |
+| :--- | :--- |
+| `recent_requests` | Trace |
+| `traffic_source` | Generic Analytics |
+| `get_daily_web_metrics` | Generic Analytics |
+| `user_happiness_dist` | Generic Analytics |
+| `ux_map_data` | Global UX |
+
+### Review before removal
+
+These functions have no current application caller in the generated inventory, but their SQL definitions or names may support shared or future behavior. They require an explicit dependency audit during the removal phase.
+
+- `analyze_web_vitals_by_page`
+- `cache_analysis`
+- `get_ai_citation`
+- `get_analytics_by_device_and_country`
+- `get_web_vitals_metrics`
+- `lcp_attribution_by_device`
+- `refresh_rum_daily_distributions`
+- `third_party_domains`
+- `user_happiness`
+- `web_vitals`
+
+Historical compatibility is not a reason to retain a retired UI or infrastructure path. It is a reason to keep historical rows and add temporary reader fallbacks where a retained surface still needs them.

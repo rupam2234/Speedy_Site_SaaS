@@ -256,6 +256,13 @@ A continuation beacon uses the same `pageview_id` and may contain only newly obs
 
 Every retained evidence item must have a compact URL or selector, a timing or impact value, and the minimum fields needed to explain the issue. Full phase detail is retained only for ranked resource candidates.
 
+ADR-0005 narrows the retained product contract to Web Vitals, Page Groups, Images, and Fonts. The following evidence fields are required for those surfaces:
+
+- LCP: target, URL, resource delay and duration, render delay, candidate TTFB, transfer bytes, decoded bytes, image width, image height, lazy state, fetch priority, and font family, weight, size, URL, and transfer size when applicable.
+- CLS: target, bounded involved elements, shift value, viewport ratio, time, load state, area delta, distance moved, dx, dy, previous rectangle, and current rectangle.
+
+The Worker must normalize these fields and keep serialized diagnostic evidence below 3.8 KB. PostgreSQL retains a 4 KiB limit as the final storage guard. URLs and selectors remain subject to the redaction rules in section 5.5. The legacy `events` projection remains part of the wire-to-storage compatibility flow until retained reader parity is complete.
+
 ### 5.7 Payload size test cases
 
 The v2 implementation must include these deterministic cases:

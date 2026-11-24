@@ -252,6 +252,21 @@ Worker also creates a compact legacy `events` projection so current dashboards
 continue to work. A continuation beacon contains only newly observed INP facts
 and evidence; the existing RPC merges it into the same pageview row.
 
+### Focused reader cutover and retirement flow
+
+ADR-0005 limits the retained customer product surfaces to Web Vitals, Page
+Groups, Images, and Fonts. Retained aggregate and filter readers will use typed
+canonical columns. Retained element and asset readers will use bounded
+`diagnostic_evidence`. LCP evidence must preserve image and font diagnostics,
+and CLS evidence must preserve movement and bounded involved-element context.
+
+The legacy `events` projection is a temporary compatibility output, not a
+permanent second source of truth. Trace, generic Analytics, Global UX, and
+Cloudflare Enhancements may be removed only after retained readers pass legacy
+versus canonical parity checks. New version 2 rows will stop receiving the
+projection after that gate. Historical `events` values remain unchanged until a
+separate destructive migration is approved and tested.
+
 3. **Realtime broadcast cost**: at low traffic every collect triggers a Hub DO
    request even with zero dashboard viewers. Fix: per-shard broadcast cap
    (max 1 per second) and skip when the hub has no viewers

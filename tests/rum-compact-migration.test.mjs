@@ -29,6 +29,24 @@ const dedupeMigration = fs.readFileSync(
   ),
   "utf8"
 );
+const focusedEvidenceMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124055952_focused_rum_evidence_contract.sql"
+  ),
+  "utf8"
+);
+const aggregateReadersMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124060651_canonical_retained_aggregate_readers.sql"
+  ),
+  "utf8"
+);
 
 describe("compact RUM migration contract", () => {
   it("keeps the migration additive and preserves legacy events", () => {
@@ -121,6 +139,117 @@ describe("compact RUM migration contract", () => {
     assert.match(
       dedupeMigration,
       /GRANT EXECUTE ON FUNCTION public\.upsert_rum_metrics_batch_single\(jsonb\) TO service_role/
+    );
+  });
+
+  it("validates canonical LCP and CLS evidence fields", () => {
+    for (const field of [
+      "candidate_ttfb_ms",
+      "image_width",
+      "image_height",
+      "is_lazy",
+      "fetch_priority",
+      "font",
+      "involved_elements",
+      "time_ms",
+      "load_state",
+      "area_delta",
+      "distance_moved",
+      "dx",
+      "dy",
+      "previous_rect",
+      "current_rect",
+    ]) {
+      assert.match(focusedEvidenceMigration, new RegExp(field));
+    }
+    assert.match(focusedEvidenceMigration, /jsonb_array_length\(item -> 'involved_elements'\) > 5/);
+    assert.match(focusedEvidenceMigration, /jsonb_array_length\(p_evidence -> 'lcp'\) > 3/);
+    assert.match(focusedEvidenceMigration, /jsonb_array_length\(p_evidence -> 'cls_shifts'\) > 3/);
+  });
+
+  it("keeps the database evidence bound at 4 KiB", () => {
+    assert.match(focusedEvidenceMigration, /octet_length\(p_evidence::text\) > 4096/);
+    assert.match(focusedEvidenceMigration, /CHECK \(public\.rum_diagnostic_evidence_is_valid\(diagnostic_evidence\)\)/);
+  });
+
+  it("preserves historical rows while enforcing new evidence writes", () => {
+    assert.match(focusedEvidenceMigration, /NOT VALID/);
+    assert.doesNotMatch(focusedEvidenceMigration, /DROP COLUMN/);
+    assert.doesNotMatch(focusedEvidenceMigration, /DELETE FROM public\.rum_metrics/);
+  });
+
+  it("keeps the evidence helper unavailable to public roles", () => {
+    assert.match(
+      focusedEvidenceMigration,
+      /REVOKE ALL ON FUNCTION public\.rum_diagnostic_evidence_is_valid\(jsonb\) FROM PUBLIC/
+    );
+    assert.match(
+      focusedEvidenceMigration,
+      /REVOKE ALL ON FUNCTION public\.rum_diagnostic_evidence_is_valid\(jsonb\) FROM anon/
+    );
+    assert.match(
+      focusedEvidenceMigration,
+      /REVOKE ALL ON FUNCTION public\.rum_diagnostic_evidence_is_valid\(jsonb\) FROM authenticated/
+    );
+    assert.match(
+      focusedEvidenceMigration,
+      /GRANT EXECUTE ON FUNCTION public\.rum_diagnostic_evidence_is_valid\(jsonb\) TO service_role/
+    );
+  });
+
+  it("migrates all retained aggregate and filter readers", () => {
+    for (const functionName of [
+      "rum_metric_readings",
+      "cwv_dist_by_connection",
+      "get_web_vital_counts_by_url",
+      "analyze_fcp_by_device",
+      "get_rum_web_vitals_metrics",
+    ]) {
+      assert.match(aggregateReadersMigration, new RegExp(`CREATE OR REPLACE FUNCTION public\\.${functionName}`));
+    }
+    assert.match(aggregateReadersMigration, /CREATE OR REPLACE FUNCTION public\.get_web_vital_counts_by_url\(\s*p_domain text,\s*p_metric text,\s*p_limit integer DEFAULT 15/s);
+    assert.match(aggregateReadersMigration, /CREATE OR REPLACE FUNCTION public\.get_web_vital_counts_by_url\(\s*p_domain text,\s*p_metric text,\s*p_device_type text DEFAULT NULL/s);
+  });
+
+  it("separates canonical v2 typed reads from historical event fallback", () => {
+    const helper = aggregateReadersMigration.slice(
+      aggregateReadersMigration.indexOf("CREATE OR REPLACE FUNCTION public.rum_metric_readings"),
+      aggregateReadersMigration.indexOf("CREATE OR REPLACE FUNCTION public.cwv_dist_by_connection")
+    );
+    const v2Branch = helper.slice(0, helper.indexOf("UNION ALL"));
+    const legacyBranch = helper.slice(helper.indexOf("UNION ALL"));
+    assert.match(v2Branch, /rm\.schema_version >= 2/);
+    assert.match(v2Branch, /rm\.fcp_ms/);
+    assert.match(v2Branch, /rm\.lcp_ms/);
+    assert.doesNotMatch(v2Branch, /rm\.events/);
+    assert.match(legacyBranch, /rm\.schema_version IS NULL OR rm\.schema_version < 2/);
+    assert.match(legacyBranch, /jsonb_array_elements\(COALESCE\(rm\.events/);
+    assert.match(legacyBranch, /SELECT DISTINCT ON \(web_vital->>'name'\)/);
+  });
+
+  it("counts canonical pageviews once and keeps null domains unfiltered", () => {
+    assert.match(aggregateReadersMigration, /count\(DISTINCT row_id\) AS visits/);
+    assert.match(aggregateReadersMigration, /SELECT DISTINCT ON \(row_id\)/);
+    assert.match(aggregateReadersMigration, /p_domain IS NULL/);
+    assert.match(aggregateReadersMigration, /REPLACE\(COALESCE\(metric\.rating, ''\), '-', ' '\)/);
+  });
+
+  it("keeps the normalized metric helper restricted to service_role", () => {
+    assert.match(
+      aggregateReadersMigration,
+      /REVOKE ALL ON FUNCTION public\.rum_metric_readings\(text, timestamptz, timestamptz\) FROM PUBLIC/
+    );
+    assert.match(
+      aggregateReadersMigration,
+      /REVOKE ALL ON FUNCTION public\.rum_metric_readings\(text, timestamptz, timestamptz\) FROM anon/
+    );
+    assert.match(
+      aggregateReadersMigration,
+      /REVOKE ALL ON FUNCTION public\.rum_metric_readings\(text, timestamptz, timestamptz\) FROM authenticated/
+    );
+    assert.match(
+      aggregateReadersMigration,
+      /GRANT EXECUTE ON FUNCTION public\.rum_metric_readings\(text, timestamptz, timestamptz\) TO service_role/
     );
   });
 });

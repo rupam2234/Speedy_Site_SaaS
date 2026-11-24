@@ -19,6 +19,16 @@ function boundedPhases(phases) {
 	};
 }
 
+function boundedRect(rect) {
+	if (!rect || typeof rect !== "object" || Array.isArray(rect)) return null;
+	return {
+		x: boundedSignedNumber(rect.x),
+		y: boundedSignedNumber(rect.y),
+		width: boundedInteger(rect.width),
+		height: boundedInteger(rect.height),
+	};
+}
+
 export function boundDiagnosticEvidence(evidence) {
 	const bounded = {
 		lcp: (evidence.lcp || []).slice(0, 3).map((item) => ({
@@ -27,8 +37,22 @@ export function boundDiagnosticEvidence(evidence) {
 			resource_load_delay_ms: boundedInteger(item.resource_load_delay_ms),
 			resource_load_duration_ms: boundedInteger(item.resource_load_duration_ms),
 			element_render_delay_ms: boundedInteger(item.element_render_delay_ms),
+			candidate_ttfb_ms: boundedInteger(item.candidate_ttfb_ms),
 			transfer_bytes: boundedInteger(item.transfer_bytes),
 			decoded_bytes: boundedInteger(item.decoded_bytes),
+			image_width: boundedInteger(item.image_width),
+			image_height: boundedInteger(item.image_height),
+			is_lazy: typeof item.is_lazy === "boolean" ? item.is_lazy : null,
+			fetch_priority: evidenceString(item.fetch_priority, 16),
+			font: item.font
+				? {
+						family: evidenceString(item.font.family, 120),
+						weight: evidenceString(item.font.weight, 32),
+						size: evidenceString(item.font.size, 32),
+						url: normalizeEvidenceUrl(item.font.url),
+						transfer_bytes: boundedInteger(item.font.transfer_bytes),
+					}
+				: null,
 		})),
 		render_blockers: (evidence.render_blockers || []).slice(0, 3).map((item) => ({
 			url: normalizeEvidenceUrl(item.url),
@@ -46,8 +70,17 @@ export function boundDiagnosticEvidence(evidence) {
 		})),
 		cls_shifts: (evidence.cls_shifts || []).slice(0, 3).map((item) => ({
 			target: evidenceString(item.target, 120),
+			involved_elements: (item.involved_elements || []).slice(0, 5).map((element) => evidenceString(element, 120)),
 			value: boundedNumber(item.value),
 			viewport_ratio: boundedNumber(item.viewport_ratio),
+			time_ms: boundedInteger(item.time_ms),
+			load_state: evidenceString(item.load_state, 32),
+			area_delta: boundedSignedNumber(item.area_delta),
+			distance_moved: boundedNumber(item.distance_moved),
+			dx: boundedSignedNumber(item.dx),
+			dy: boundedSignedNumber(item.dy),
+			previous_rect: boundedRect(item.previous_rect),
+			current_rect: boundedRect(item.current_rect),
 		})),
 		inp: evidence.inp
 			? {
@@ -192,6 +225,13 @@ function boundedNumber(value, decimals = 4) {
 	if (!Number.isFinite(number)) return null;
 	const factor = 10 ** decimals;
 	return Math.max(0, Math.round(number * factor) / factor);
+}
+
+function boundedSignedNumber(value, decimals = 4) {
+	const number = Number(value);
+	if (!Number.isFinite(number)) return null;
+	const factor = 10 ** decimals;
+	return Math.round(number * factor) / factor;
 }
 
 function canonicalClient(client) {

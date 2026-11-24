@@ -694,14 +694,21 @@ function handleLCP(metric) {
       .getEntriesByType("resource")
       .filter((x) => normalize(x.name).includes(normalize(fontFamily)));
 
+    const primaryFontResource = fontResource.sort(
+      (a, b) => (b.transferSize || 0) - (a.transferSize || 0),
+    )[0];
     fontAttribution = {
       family: fontFamily,
       weight: styles.fontWeight,
       size: styles.fontSize,
-      fontData: fontResource.map((x) => ({
-        url: x.name ?? null,
-        transferSize: x.transferSize ?? null,
-      })),
+      fontData: primaryFontResource
+        ? [
+            {
+              url: primaryFontResource.name ?? null,
+              transferSize: primaryFontResource.transferSize ?? null,
+            },
+          ]
+        : [],
     };
   }
 
@@ -727,8 +734,10 @@ function handleLCP(metric) {
           width: findImage?.width ?? null,
           height: findImage?.height ?? null,
           isLazy:
+            findImage?.getAttribute("loading") === "lazy" ||
             findImage?.classList.contains("lazyloaded") ||
             findImage?.classList.contains("lazyload"),
+          fetchPriority: findImage?.fetchPriority ?? null,
         }),
 
         ...(fontAttribution && {

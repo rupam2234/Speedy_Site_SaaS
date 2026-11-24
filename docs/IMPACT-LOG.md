@@ -9,6 +9,20 @@
 > **Last updated:** 2026-11-24
 ---
 
+## 2026-11-24: Focused RUM Dashboard and Legacy Data Retirement Plan
+
+**Problem:** The RUM dashboard still includes Trace, generic Analytics, Global UX, and Cloudflare Enhancements. Those surfaces preserve legacy event parsing, duplicated telemetry projections, and recurring analytics infrastructure that do not support the focused WordPress performance optimization product. Retained surfaces also lack a defined canonical v2 reader cutover, including the LCP and CLS evidence needed for image, font, and layout-shift explanations.
+
+**Changes:** ADR-0005 defines Web Vitals, Page Groups, Images, and Fonts as the retained product surfaces. The tracked implementation plan expands bounded LCP and CLS evidence, migrates retained readers in aggregate and element batches, runs legacy-versus-canonical parity checks, removes retired surfaces and exclusive infrastructure, stops legacy event dual-writing after parity, and defers physical `rum_metrics.events` removal to a separate final destructive migration.
+
+**Impact:** The change preserves historical rows and retained dashboard behavior while creating a measured path to remove generic monitoring costs and duplicate telemetry. The migration order prevents reader regressions and makes every phase independently auditable.
+
+**Where to verify:** `docs/adr/0005-focused-rum-dashboard-and-data-retirement.md`, `docs/plans/2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md`, `docs/reports/rum-events-reader-inventory.md`.
+
+**Interview one-liner:** "Focused the real-user monitoring product around WordPress performance evidence, with a staged path from legacy event parsing to canonical, bounded diagnostics."
+
+---
+
 ## 2026-11-24: Compact RUM v2 Deployed and Duplicate-Safe in Production
 
 **Problem:** The committed compact RUM v2 implementation was not active in production. After deploying the event-buffer and collector Workers, a duplicate-pageview flush batch exposed a PostgreSQL cardinality error (`21000`) because one `ON CONFLICT DO UPDATE` statement proposed the same `pageview_id` more than once. The affected Durable Object could retain the failed buffer and retry it.
