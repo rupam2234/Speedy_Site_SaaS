@@ -47,6 +47,15 @@ const aggregateReadersMigration = fs.readFileSync(
   ),
   "utf8"
 );
+const lcpReadersMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124062156_canonical_retained_lcp_readers.sql"
+  ),
+  "utf8"
+);
 
 describe("compact RUM migration contract", () => {
   it("keeps the migration additive and preserves legacy events", () => {
@@ -250,6 +259,66 @@ describe("compact RUM migration contract", () => {
     assert.match(
       aggregateReadersMigration,
       /GRANT EXECUTE ON FUNCTION public\.rum_metric_readings\(text, timestamptz, timestamptz\) TO service_role/
+    );
+  });
+
+  it("migrates the retained LCP element readers", () => {
+    for (const functionName of [
+      "rum_lcp_candidates",
+      "analyze_lcp_by_device",
+      "get_lcp_image_metrics",
+      "font_analysis",
+    ]) {
+      assert.match(lcpReadersMigration, new RegExp(`CREATE OR REPLACE FUNCTION public\\.${functionName}`));
+    }
+    assert.match(lcpReadersMigration, /rm\.diagnostic_evidence->'lcp'/);
+    assert.match(lcpReadersMigration, /candidate_ttfb_ms/);
+    assert.match(lcpReadersMigration, /image_width/);
+    assert.match(lcpReadersMigration, /image_height/);
+    assert.match(lcpReadersMigration, /is_lazy/);
+    assert.match(lcpReadersMigration, /fetch_priority/);
+    assert.match(lcpReadersMigration, /font_family/);
+    assert.match(lcpReadersMigration, /font_transfer_bytes/);
+  });
+
+  it("keeps one normalized LCP candidate per pageview", () => {
+    const helper = lcpReadersMigration.slice(
+      lcpReadersMigration.indexOf("CREATE OR REPLACE FUNCTION public.rum_lcp_candidates"),
+      lcpReadersMigration.indexOf("CREATE OR REPLACE FUNCTION public.analyze_lcp_by_device")
+    );
+    assert.match(helper, /WITH ORDINALITY candidate\(value, ordinal\)/);
+    assert.match(helper, /ORDER BY candidate\.ordinal/);
+    assert.match(helper, /LIMIT 1/);
+    assert.match(helper, /rm\.schema_version >= 2/);
+    assert.match(helper, /rm\.schema_version IS NULL OR rm\.schema_version < 2/);
+  });
+
+  it("preserves retained LCP reader thresholds and response fields", () => {
+    assert.match(lcpReadersMigration, /aggregated\.occurrence_count >= 5/);
+    assert.match(lcpReadersMigration, /LIMIT 30/);
+    assert.match(lcpReadersMigration, /WHERE rank <= 10/);
+    assert.match(lcpReadersMigration, /\(array_agg\(current_page ORDER BY frequency DESC\)\)\[1:5\]/);
+    assert.match(lcpReadersMigration, /top_3_render_blockers/);
+    assert.match(lcpReadersMigration, /pct_exceeding_cwv/);
+    assert.match(lcpReadersMigration, /pct_lazy/);
+  });
+
+  it("keeps the LCP helper restricted to service_role", () => {
+    assert.match(
+      lcpReadersMigration,
+      /REVOKE ALL ON FUNCTION public\.rum_lcp_candidates\(text, timestamptz, timestamptz\) FROM PUBLIC/
+    );
+    assert.match(
+      lcpReadersMigration,
+      /REVOKE ALL ON FUNCTION public\.rum_lcp_candidates\(text, timestamptz, timestamptz\) FROM anon/
+    );
+    assert.match(
+      lcpReadersMigration,
+      /REVOKE ALL ON FUNCTION public\.rum_lcp_candidates\(text, timestamptz, timestamptz\) FROM authenticated/
+    );
+    assert.match(
+      lcpReadersMigration,
+      /GRANT EXECUTE ON FUNCTION public\.rum_lcp_candidates\(text, timestamptz, timestamptz\) TO service_role/
     );
   });
 });

@@ -88,9 +88,9 @@ Required retained fields: target, bounded involved elements, shift value, viewpo
 
 ### Phase 5: Migrate retained element and enhancement readers
 
-- [ ] Migrate `analyze_lcp_by_device` to canonical LCP evidence.
-- [ ] Migrate `get_lcp_image_metrics` to canonical LCP evidence.
-- [ ] Migrate `font_analysis` to canonical LCP font evidence.
+- [x] Migrate `analyze_lcp_by_device` to canonical LCP evidence.
+- [x] Migrate `get_lcp_image_metrics` to canonical LCP evidence.
+- [x] Migrate `font_analysis` to canonical LCP font evidence.
 - [ ] Migrate `cls_elements` to canonical CLS evidence.
 - [ ] Migrate `inp_elements` to canonical INP evidence.
 - [ ] Migrate `ttfb_contributors` to typed navigation, geography, and network facts.
@@ -166,3 +166,4 @@ Additional database, fixture, production parity, privacy, size, and latency chec
 - Phase 2 completed: expanded LCP and CLS evidence, nested payload validation, deterministic storage bounds, 19 focused contract tests, rebuilt collector artifacts, 44/44 repository tests, and typecheck passed. `pnpm run lint` completed with only pre-existing React hook warnings.
 - Phase 3 completed: added monotonic migration `20261124055952_focused_rum_evidence_contract.sql` with a `NOT VALID` future-write evidence constraint, 4 KiB limit, shape validation, and restricted helper grants. Static migration tests passed. Local SQL lint was blocked because Docker Desktop is not running.
 - Phase 4 completed: added monotonic migration `20261124060651_canonical_retained_aggregate_readers.sql` for the four retained aggregate and filter RPC families. A restricted normalized helper uses typed v2 facts and a deduplicated historical event fallback. Both `get_web_vital_counts_by_url` overloads are migrated. Static migration tests and the full 52-test repository suite passed. Runtime SQL validation and production parity remain pending because Docker Desktop is unavailable and migrations were not applied to production.
+- Phase 5A completed: added monotonic migration `20261124062156_canonical_retained_lcp_readers.sql` with one normalized LCP candidate per pageview, canonical image and font evidence, and historical fallback. The LCP device, image, and font reader response contracts and thresholds are preserved. Static migration tests and the full 56-test repository suite passed.
