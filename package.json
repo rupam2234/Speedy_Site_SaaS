@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit --skipLibCheck",
     "db:new": "supabase migration new",
     "test": "node --import ./tests/register.mjs --test tests/*.test.mjs",
+    "rum:phase0": "node scripts/rum-phase0-inventory.mjs && node scripts/rum-phase0-payload.mjs && node scripts/rum-phase0-baseline.mjs",
     "build:extended-vitals": "esbuild scripts/extended-rum.js --bundle --minify --format=iife --outfile=cloudflare-workers/rum/src/rum.txt && esbuild scripts/extended-rum.js --bundle --minify --format=esm --outfile=public/rum.js",
     "build:journey": "npx esbuild scripts/journey.js --bundle --minify --format=iife --outfile=public/journey.min.js"
   },

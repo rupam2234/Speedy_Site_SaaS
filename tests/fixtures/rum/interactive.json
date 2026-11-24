@@ -1,0 +1,86 @@
+{
+  "pageview_id": "pv-phase0-interactive",
+  "sessionId": "session-phase0",
+  "siteDomain": "example.com",
+  "currentPage": "/checkout",
+  "previousPage": "/cart",
+  "data": [
+    {
+      "type": "client-info",
+      "deviceType": "desktop",
+      "deviceMemory": 8,
+      "hardwareConcurrency": 16,
+      "connection": {
+        "effectiveType": "4g",
+        "downlink": 10,
+        "rtt": 50
+      },
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+      "language": "en-US"
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "FCP",
+      "value": 1200,
+      "rating": "good",
+      "attribution": {}
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "TTFB",
+      "value": 500,
+      "rating": "good",
+      "attribution": {
+        "dnsLookup": 15,
+        "tcpConnection": 40,
+        "responseStart": 550,
+        "requestStart": 500
+      }
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "INP",
+      "value": 380,
+      "rating": "needs-improvement",
+      "attribution": {
+        "target": "button#pay",
+        "eventType": "click",
+        "inputDelay": 40,
+        "processingDuration": 240,
+        "presentationDelay": 100,
+        "mainThreadFunctions": [
+          { "task": "main-thread-block", "duration": 260, "start": 4100 }
+        ],
+        "loaf": {
+          "sourceURL": "https://example.com/wp-content/plugins/checkout.js",
+          "duration": 260,
+          "invoker": "BUTTON#pay",
+          "type": "event",
+          "sourceCharPosition": 1200,
+          "layoutImpact": 40,
+          "isFirstParty": true
+        }
+      }
+    },
+    {
+      "type": "navigation-timings",
+      "timeToFirstByte": 500,
+      "backendResponseTime": 380,
+      "dnsLookup": 15,
+      "tcpConnectionTime": 40,
+      "tlsHandshakeTime": 20,
+      "requestQueueTime": 0,
+      "redirectDuration": 0,
+      "userConnectionTime": 75,
+      "cacheStatus": "disk-cache",
+      "serverTiming": [],
+      "experienceCategory": "good",
+      "transferSize": 31000,
+      "encodedBodySize": 210000,
+      "decodedBodySize": 280000
+    }
+  ]
+}

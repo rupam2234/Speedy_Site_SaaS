@@ -1,0 +1,1450 @@
+{
+  "generatedAt": "2026-11-23T23:20:26.471Z",
+  "source": "supabase/migrations and production application callers",
+  "readers": [
+    {
+      "function": "analyze_fcp_by_device",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 10,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "connection",
+          "classification": "optional"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "downlink",
+          "classification": "optional"
+        },
+        {
+          "field": "effectiveType",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "sessionId",
+          "classification": "legacy-only"
+        },
+        {
+          "field": "siteDomain",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "analyze_lcp_by_device",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 132,
+      "eventTypes": [
+        "client-info",
+        "render-blocking-scripts",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "Finish Time",
+          "classification": "optional"
+        },
+        {
+          "field": "URL",
+          "classification": "optional"
+        },
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "decodedBodySize",
+          "classification": "required"
+        },
+        {
+          "field": "device",
+          "classification": "optional"
+        },
+        {
+          "field": "deviceMemory",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "elementRenderDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "family",
+          "classification": "optional"
+        },
+        {
+          "field": "fetchPriority",
+          "classification": "legacy-only"
+        },
+        {
+          "field": "font",
+          "classification": "optional"
+        },
+        {
+          "field": "fontData",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "resourceLoadDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "resourceLoadDuration",
+          "classification": "optional"
+        },
+        {
+          "field": "size",
+          "classification": "optional"
+        },
+        {
+          "field": "target",
+          "classification": "optional"
+        },
+        {
+          "field": "timeToFirstByte",
+          "classification": "required"
+        },
+        {
+          "field": "transferSize",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "url",
+          "classification": "optional"
+        },
+        {
+          "field": "userAgent",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        },
+        {
+          "field": "weight",
+          "classification": "optional"
+        }
+      ]
+    },
+    {
+      "function": "analyze_web_vitals_by_page",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 275,
+      "eventTypes": [],
+      "fields": [
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "pageAddress",
+          "classification": "legacy-only"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "sessionId",
+          "classification": "legacy-only"
+        },
+        {
+          "field": "siteDomain",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "userAgent",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "cache_analysis",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 564,
+      "eventTypes": [
+        "client-info",
+        "geo-info",
+        "origin-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "cacheStatus",
+          "classification": "required"
+        },
+        {
+          "field": "city",
+          "classification": "required"
+        },
+        {
+          "field": "connection",
+          "classification": "optional"
+        },
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "dnsLookup",
+          "classification": "required"
+        },
+        {
+          "field": "effectiveType",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "originHit",
+          "classification": "required"
+        },
+        {
+          "field": "provider",
+          "classification": "required"
+        },
+        {
+          "field": "requestStart",
+          "classification": "optional"
+        },
+        {
+          "field": "rtt",
+          "classification": "optional"
+        },
+        {
+          "field": "tcpConnection",
+          "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "cls_elements",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 605,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "areaDelta",
+          "classification": "optional"
+        },
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "current",
+          "classification": "optional"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "distanceMoved",
+          "classification": "optional"
+        },
+        {
+          "field": "dx",
+          "classification": "optional"
+        },
+        {
+          "field": "dy",
+          "classification": "optional"
+        },
+        {
+          "field": "elements",
+          "classification": "optional"
+        },
+        {
+          "field": "height",
+          "classification": "optional"
+        },
+        {
+          "field": "impact",
+          "classification": "optional"
+        },
+        {
+          "field": "largestShiftTarget",
+          "classification": "optional"
+        },
+        {
+          "field": "loadState",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "previous",
+          "classification": "optional"
+        },
+        {
+          "field": "rect",
+          "classification": "optional"
+        },
+        {
+          "field": "shift",
+          "classification": "optional"
+        },
+        {
+          "field": "shifts",
+          "classification": "optional"
+        },
+        {
+          "field": "time",
+          "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        },
+        {
+          "field": "viewportRatio",
+          "classification": "optional"
+        },
+        {
+          "field": "width",
+          "classification": "optional"
+        },
+        {
+          "field": "x",
+          "classification": "optional"
+        },
+        {
+          "field": "y",
+          "classification": "optional"
+        }
+      ]
+    },
+    {
+      "function": "cwv_dist_by_connection",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 714,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "connection",
+          "classification": "optional"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "device_type",
+          "classification": "optional"
+        },
+        {
+          "field": "effectiveType",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "font_analysis",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 843,
+      "eventTypes": [],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "elementRenderDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "family",
+          "classification": "optional"
+        },
+        {
+          "field": "font",
+          "classification": "optional"
+        },
+        {
+          "field": "fontData",
+          "classification": "optional"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "transferSize",
+          "classification": "required"
+        },
+        {
+          "field": "url",
+          "classification": "optional"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        },
+        {
+          "field": "weight",
+          "classification": "optional"
+        }
+      ]
+    },
+    {
+      "function": "get_ai_citation",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 913,
+      "eventTypes": [
+        "ai-citation-ready",
+        "client-info"
+      ],
+      "fields": [
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "domContentLoaded",
+          "classification": "optional"
+        },
+        {
+          "field": "score",
+          "classification": "optional"
+        },
+        {
+          "field": "siteDomain",
+          "classification": "required"
+        },
+        {
+          "field": "ttfb",
+          "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "get_analytics_by_device_and_country",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 1112,
+      "eventTypes": [
+        "client-info",
+        "geo-info"
+      ],
+      "fields": [
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "language",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "get_daily_web_metrics",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 1343,
+      "eventTypes": [
+        "client-info",
+        "geo-info"
+      ],
+      "fields": [
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "get_lcp_image_metrics",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 1530,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "decodedBodySize",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "elementRenderDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "height",
+          "classification": "optional"
+        },
+        {
+          "field": "isLazy",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "resourceLoadDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "resourceLoadDuration",
+          "classification": "optional"
+        },
+        {
+          "field": "timeToFirstByte",
+          "classification": "required"
+        },
+        {
+          "field": "transferSize",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "url",
+          "classification": "optional"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        },
+        {
+          "field": "width",
+          "classification": "optional"
+        }
+      ]
+    },
+    {
+      "function": "get_rum_web_vitals_metrics",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 1729,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "sessionId",
+          "classification": "legacy-only"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "get_web_vital_counts_by_url",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 1906,
+      "eventTypes": [
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "get_web_vital_counts_by_url",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 1949,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "get_web_vitals_metrics",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 2012,
+      "eventTypes": [
+        "client-info"
+      ],
+      "fields": [
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "page",
+          "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "userAgent",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        },
+        {
+          "field": "viewport",
+          "classification": "optional"
+        },
+        {
+          "field": "width",
+          "classification": "optional"
+        }
+      ]
+    },
+    {
+      "function": "get_web_vitals_metrics",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 2279,
+      "eventTypes": [
+        "client-info"
+      ],
+      "fields": [
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "page",
+          "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "userAgent",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        },
+        {
+          "field": "viewport",
+          "classification": "optional"
+        },
+        {
+          "field": "width",
+          "classification": "optional"
+        }
+      ]
+    },
+    {
+      "function": "inp_elements",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 2546,
+      "eventTypes": [
+        "client-info"
+      ],
+      "fields": [
+        {
+          "field": "URL",
+          "classification": "optional"
+        },
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "eventType",
+          "classification": "optional"
+        },
+        {
+          "field": "inputDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "presentationDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "processingDuration",
+          "classification": "optional"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "target",
+          "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "lcp_attribution_by_device",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 2623,
+      "eventTypes": [],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "decodedBodySize",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "elementRenderDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "height",
+          "classification": "optional"
+        },
+        {
+          "field": "isLazy",
+          "classification": "optional"
+        },
+        {
+          "field": "resourceLoadDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "resourceLoadDuration",
+          "classification": "optional"
+        },
+        {
+          "field": "target",
+          "classification": "optional"
+        },
+        {
+          "field": "timeToFirstByte",
+          "classification": "required"
+        },
+        {
+          "field": "transferSize",
+          "classification": "required"
+        },
+        {
+          "field": "url",
+          "classification": "optional"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        },
+        {
+          "field": "width",
+          "classification": "optional"
+        }
+      ]
+    },
+    {
+      "function": "page_performance_analysis",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 2695,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "largestShiftTarget",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "target",
+          "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "recent_requests",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 2790,
+      "eventTypes": [
+        "client-info",
+        "geo-info",
+        "navigation-timings",
+        "resource-summary"
+      ],
+      "fields": [
+        {
+          "field": "backendResponseTime",
+          "classification": "required"
+        },
+        {
+          "field": "cacheStatus",
+          "classification": "required"
+        },
+        {
+          "field": "city",
+          "classification": "required"
+        },
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "decodedBodySize",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "experienceCategory",
+          "classification": "required"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "timeToFirstByte",
+          "classification": "required"
+        },
+        {
+          "field": "transferSize",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "refresh_rum_daily_distributions",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 2818,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "third_party_domains",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 2976,
+      "eventTypes": [
+        "client-info",
+        "third-party-asset-summary"
+      ],
+      "fields": [
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "domains",
+          "classification": "optional"
+        },
+        {
+          "field": "sessionId",
+          "classification": "legacy-only"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "traffic_source",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 3127,
+      "eventTypes": [
+        "client-info"
+      ],
+      "fields": [
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "ttfb_contributors",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 3161,
+      "eventTypes": [
+        "client-info",
+        "geo-info",
+        "origin-info"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "connection",
+          "classification": "optional"
+        },
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "dnsLookup",
+          "classification": "required"
+        },
+        {
+          "field": "downlink",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "org",
+          "classification": "required"
+        },
+        {
+          "field": "originHit",
+          "classification": "required"
+        },
+        {
+          "field": "requestStart",
+          "classification": "optional"
+        },
+        {
+          "field": "rtt",
+          "classification": "optional"
+        },
+        {
+          "field": "siteDomain",
+          "classification": "required"
+        },
+        {
+          "field": "tcpConnection",
+          "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "user_happiness",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 3238,
+      "eventTypes": [
+        "client-info",
+        "geo-info",
+        "slow-api-call",
+        "tracker-detected",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "user_happiness_dist",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 3587,
+      "eventTypes": [
+        "client-info",
+        "geo-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "client",
+          "classification": "optional"
+        },
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "device",
+          "classification": "optional"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "ux_map_data",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 3697,
+      "eventTypes": [
+        "client-info",
+        "geo-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "connection",
+          "classification": "optional"
+        },
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "effectiveType",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "web_vitals",
+      "source": "supabase/migrations/20240101000001_base_functions.sql",
+      "line": 3806,
+      "eventTypes": [
+        "client-info",
+        "geo-info"
+      ],
+      "fields": [
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "language",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        }
+      ]
+    }
+  ],
+  "callers": [
+    {
+      "function": "analyze_fcp_by_device",
+      "source": "src/app/api/rum/elements/fcp/route.ts",
+      "line": 73
+    },
+    {
+      "function": "analyze_lcp_by_device",
+      "source": "src/app/api/rum/elements/lcp/route.ts",
+      "line": 18
+    },
+    {
+      "function": "cls_elements",
+      "source": "src/app/api/rum/elements/cls/route.ts",
+      "line": 37
+    },
+    {
+      "function": "cwv_dist_by_connection",
+      "source": "src/app/api/rum/rum-web-vitals/group-by-connection/route.ts",
+      "line": 20
+    },
+    {
+      "function": "font_analysis",
+      "source": "src/app/api/rum/fonts/analysis/route.ts",
+      "line": 18
+    },
+    {
+      "function": "get_daily_web_metrics",
+      "source": "cloudflare-workers/analytics/analytics-cron/src/index.ts",
+      "line": 15
+    },
+    {
+      "function": "get_lcp_image_metrics",
+      "source": "src/app/api/rum/lcp-images/route.ts",
+      "line": 24
+    },
+    {
+      "function": "get_rum_web_vitals_metrics",
+      "source": "src/app/api/rum/rum-web-vitals/route.ts",
+      "line": 73
+    },
+    {
+      "function": "get_web_vital_counts_by_url",
+      "source": "src/app/api/rum/rum-web-vitals/group-by-page/route.ts",
+      "line": 29
+    },
+    {
+      "function": "inp_elements",
+      "source": "src/app/api/rum/elements/inp/route.ts",
+      "line": 32
+    },
+    {
+      "function": "page_performance_analysis",
+      "source": "src/app/api/rum/page_performance/route.ts",
+      "line": 18
+    },
+    {
+      "function": "recent_requests",
+      "source": "src/app/api/network-and-server/latest-requests/route.ts",
+      "line": 28
+    },
+    {
+      "function": "traffic_source",
+      "source": "cloudflare-workers/analytics/traffic-source-cron/src/index.ts",
+      "line": 16
+    },
+    {
+      "function": "ttfb_contributors",
+      "source": "src/app/api/rum/elements/ttfb/route.ts",
+      "line": 24
+    },
+    {
+      "function": "user_happiness_dist",
+      "source": "src/app/api/rum/analytics/happiness-geo/route.ts",
+      "line": 28
+    },
+    {
+      "function": "ux_map_data",
+      "source": "src/app/api/rum/analytics/ux-map-data/route.ts",
+      "line": 18
+    }
+  ],
+  "summary": {
+    "readerCount": 28,
+    "callerCount": 16,
+    "referencedFieldCount": 77,
+    "unusedCollectorTypes": [
+      "error",
+      "errors"
+    ]
+  }
+}

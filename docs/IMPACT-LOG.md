@@ -9,6 +9,34 @@
 > **Last updated:** 2026-11-23
 ---
 
+## 2026-11-24: Canonical RUM Collector and Edge Dual-Write
+
+**Problem:** The legacy collector sent a heterogeneous event array with raw user agents, duplicated domain fields, unbounded diagnostic detail, and no versioned canonical contract. The Worker could not reliably distinguish continuation facts from repeated first-party context, and malformed requests could bypass the declared body limit when `Content-Length` was absent.
+
+**Changes:** The browser collector now emits `schema_version: 2` from a stable `pageview_id`. Shared contract modules normalize page paths, external referrer hostnames, capability-based device class, coarse browser and OS families, navigation timings, Web Vitals, resource totals, and bounded diagnostic evidence. Raw user agents, hardware concurrency, URL credentials, fragments, unsafe query values, complete error stacks, and duplicated `siteDomain` fields no longer cross the Worker boundary. The event-buffer Worker accepts v1 and v2, derives tenant identity from authenticated Origin or Referer, checks actual body bytes, rejects unknown versions and malformed typed values, and writes typed canonical facts plus bounded evidence. It also generates a compact legacy `events` projection so current dashboards remain operational. Structured Worker logs expose payload version, accepted and rejected row counts, and Supabase latency without recording payloads.
+
+**Impact:** Representative v2 payloads remain below 8 KiB, privacy-sensitive fields are removed before transport, one pageview continues to merge into one row, and existing analytics can migrate to typed columns one reader at a time. INP continuation beacons now carry only newly observed metric and evidence fields.
+
+**Where to verify:** `scripts/extended-rum.js`, `src/lib/rum/`, `cloudflare-workers/event-buffer/src/index.js`, `tests/rum-compact-contract.test.mjs`, `docs/protocols/rum-beacon-transport.md`.
+
+**Interview one-liner:** "Replaced the RUM event blob with a validated, privacy-safe canonical contract while keeping every existing dashboard running through an automatic compatibility projection."
+
+---
+
+## 2026-11-23: Compact RUM Telemetry Schema
+
+**Problem:** The legacy `rum_metrics` model stored most facts inside a heterogeneous event array, which limited indexed analytics and made continuation merging depend on event shape.
+
+**Changes:** An additive migration adds nullable canonical columns for geography, device, network, navigation, Core Web Vitals, resource totals, and error counts, plus `schema_version`, normalized `referrer_domain`, and bounded 4 KiB diagnostic evidence. The upsert RPC now merges continuation beacons by the existing partial unique `pageview_id` target, preserves first-party context, allows later non-null metrics to supersede earlier values, appends legacy events, and shallow-merges diagnostic sections. A follow-up migration removes explicit `anon` and `authenticated` grants so only `service_role` can execute the RPC. Database types were regenerated from the live schema.
+
+**Impact:** Current dashboards and legacy rows remain readable without backfill, while future issue detection can query typed facts and retain bounded evidence for expert diagnosis. The migration was applied to the linked live Supabase database and verified with a reversible synthetic continuation test.
+
+**Where to verify:** `supabase/migrations/20261123233125_compact_rum_telemetry.sql`, `tests/rum-compact-migration.test.mjs`, `docs/systems/site-metadata-worker.md`.
+
+**Interview one-liner:** "Added a backward-compatible canonical RUM schema that makes pageview diagnostics queryable and evidence-efficient without disrupting legacy analytics."
+
+---
+
 ## 2026-11-23: Delayed Chat Email Notifications (15-Minute Grace Window & Digest)
 
 **Problem:** Immediate email alerts sent on every chat message flooded recipient inboxes during active back-and-forth conversations, generating dozens of redundant notifications for messages users had already viewed on their screens.

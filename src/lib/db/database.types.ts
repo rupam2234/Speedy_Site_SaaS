@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       cloudflare_auth: {
@@ -284,6 +309,96 @@ export type Database = {
           },
         ]
       }
+      order_conversations: {
+        Row: {
+          channel_type: string
+          created_at: string
+          id: string
+          last_message_at: string
+          order_id: string
+          updated_at: string
+        }
+        Insert: {
+          channel_type: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          order_id: string
+          updated_at?: string
+        }
+        Update: {
+          channel_type?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          order_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_cf_zone_per_site"
+            referencedColumns: ["order_id"]
+          },
+        ]
+      }
+      order_messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          email_notified_at: string | null
+          id: string
+          is_system: boolean
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          email_notified_at?: string | null
+          id?: string
+          is_system?: boolean
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          email_notified_at?: string | null
+          id?: string
+          is_system?: boolean
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "order_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           favicon_file: string | null
@@ -293,14 +408,14 @@ export type Database = {
           product_type: string | null
           report_email: string | null
           rum_connection: boolean | null
+          setup_completed_at: string | null
+          setup_step: number
+          tour: Json
           usage_by_site: number
           user_id: string
           website_address: string
           website_name: string
           weekly_report: boolean | null
-          setup_completed_at: string | null
-          setup_step: number
-          tour: Json
         }
         Insert: {
           favicon_file?: string | null
@@ -310,14 +425,14 @@ export type Database = {
           product_type?: string | null
           report_email?: string | null
           rum_connection?: boolean | null
+          setup_completed_at?: string | null
+          setup_step?: number
+          tour?: Json
           usage_by_site?: number
           user_id?: string
           website_address: string
           website_name: string
           weekly_report?: boolean | null
-          setup_completed_at?: string | null
-          setup_step?: number
-          tour?: Json
         }
         Update: {
           favicon_file?: string | null
@@ -327,14 +442,14 @@ export type Database = {
           product_type?: string | null
           report_email?: string | null
           rum_connection?: boolean | null
+          setup_completed_at?: string | null
+          setup_step?: number
+          tour?: Json
           usage_by_site?: number
           user_id?: string
           website_address?: string
           website_name?: string
           weekly_report?: boolean | null
-          setup_completed_at?: string | null
-          setup_step?: number
-          tour?: Json
         }
         Relationships: []
       }
@@ -468,34 +583,196 @@ export type Database = {
       }
       rum_metrics: {
         Row: {
+          backend_response_ms: number | null
+          browser_family: string | null
+          cache_status: string | null
+          city: string | null
+          cls_rating: string | null
+          cls_value: number | null
+          connect_ms: number | null
+          country: string | null
           created_at: string | null
           current_page: string | null
+          decoded_bytes: number | null
+          device_memory_gb: number | null
+          device_type: string | null
+          diagnostic_evidence: Json | null
+          dns_ms: number | null
           domain_name: string | null
+          error_count: number | null
           events: Json | null
+          failed_resource_count: number | null
+          fcp_ms: number | null
+          fcp_rating: string | null
           id: number
+          inp_ms: number | null
+          inp_rating: string | null
+          language: string | null
+          lcp_ms: number | null
+          lcp_rating: string | null
+          long_task_count: number | null
+          network_downlink_mbps: number | null
+          network_effective_type: string | null
+          network_rtt_ms: number | null
+          origin_hit: boolean | null
+          os_family: string | null
           pageview_id: string | null
+          poor_connection: boolean | null
           previous_page: string | null
+          provider: string | null
+          queue_ms: number | null
+          redirect_ms: number | null
+          referrer_domain: string | null
+          region: string | null
+          resource_css_bytes: number | null
+          resource_css_count: number | null
+          resource_css_duration_ms: number | null
+          resource_duration_ms: number | null
+          resource_image_bytes: number | null
+          resource_image_count: number | null
+          resource_image_duration_ms: number | null
+          resource_other_bytes: number | null
+          resource_other_count: number | null
+          resource_other_duration_ms: number | null
+          resource_request_count: number | null
+          resource_script_bytes: number | null
+          resource_script_count: number | null
+          resource_script_duration_ms: number | null
+          resource_transfer_bytes: number | null
+          schema_version: number | null
           session_id: string | null
+          tls_handshake_ms: number | null
+          transfer_bytes: number | null
+          ttfb_ms: number | null
+          ttfb_rating: string | null
         }
         Insert: {
+          backend_response_ms?: number | null
+          browser_family?: string | null
+          cache_status?: string | null
+          city?: string | null
+          cls_rating?: string | null
+          cls_value?: number | null
+          connect_ms?: number | null
+          country?: string | null
           created_at?: string | null
           current_page?: string | null
+          decoded_bytes?: number | null
+          device_memory_gb?: number | null
+          device_type?: string | null
+          diagnostic_evidence?: Json | null
+          dns_ms?: number | null
           domain_name?: string | null
+          error_count?: number | null
           events?: Json | null
+          failed_resource_count?: number | null
+          fcp_ms?: number | null
+          fcp_rating?: string | null
           id?: number
+          inp_ms?: number | null
+          inp_rating?: string | null
+          language?: string | null
+          lcp_ms?: number | null
+          lcp_rating?: string | null
+          long_task_count?: number | null
+          network_downlink_mbps?: number | null
+          network_effective_type?: string | null
+          network_rtt_ms?: number | null
+          origin_hit?: boolean | null
+          os_family?: string | null
           pageview_id?: string | null
+          poor_connection?: boolean | null
           previous_page?: string | null
+          provider?: string | null
+          queue_ms?: number | null
+          redirect_ms?: number | null
+          referrer_domain?: string | null
+          region?: string | null
+          resource_css_bytes?: number | null
+          resource_css_count?: number | null
+          resource_css_duration_ms?: number | null
+          resource_duration_ms?: number | null
+          resource_image_bytes?: number | null
+          resource_image_count?: number | null
+          resource_image_duration_ms?: number | null
+          resource_other_bytes?: number | null
+          resource_other_count?: number | null
+          resource_other_duration_ms?: number | null
+          resource_request_count?: number | null
+          resource_script_bytes?: number | null
+          resource_script_count?: number | null
+          resource_script_duration_ms?: number | null
+          resource_transfer_bytes?: number | null
+          schema_version?: number | null
           session_id?: string | null
+          tls_handshake_ms?: number | null
+          transfer_bytes?: number | null
+          ttfb_ms?: number | null
+          ttfb_rating?: string | null
         }
         Update: {
+          backend_response_ms?: number | null
+          browser_family?: string | null
+          cache_status?: string | null
+          city?: string | null
+          cls_rating?: string | null
+          cls_value?: number | null
+          connect_ms?: number | null
+          country?: string | null
           created_at?: string | null
           current_page?: string | null
+          decoded_bytes?: number | null
+          device_memory_gb?: number | null
+          device_type?: string | null
+          diagnostic_evidence?: Json | null
+          dns_ms?: number | null
           domain_name?: string | null
+          error_count?: number | null
           events?: Json | null
+          failed_resource_count?: number | null
+          fcp_ms?: number | null
+          fcp_rating?: string | null
           id?: number
+          inp_ms?: number | null
+          inp_rating?: string | null
+          language?: string | null
+          lcp_ms?: number | null
+          lcp_rating?: string | null
+          long_task_count?: number | null
+          network_downlink_mbps?: number | null
+          network_effective_type?: string | null
+          network_rtt_ms?: number | null
+          origin_hit?: boolean | null
+          os_family?: string | null
           pageview_id?: string | null
+          poor_connection?: boolean | null
           previous_page?: string | null
+          provider?: string | null
+          queue_ms?: number | null
+          redirect_ms?: number | null
+          referrer_domain?: string | null
+          region?: string | null
+          resource_css_bytes?: number | null
+          resource_css_count?: number | null
+          resource_css_duration_ms?: number | null
+          resource_duration_ms?: number | null
+          resource_image_bytes?: number | null
+          resource_image_count?: number | null
+          resource_image_duration_ms?: number | null
+          resource_other_bytes?: number | null
+          resource_other_count?: number | null
+          resource_other_duration_ms?: number | null
+          resource_request_count?: number | null
+          resource_script_bytes?: number | null
+          resource_script_count?: number | null
+          resource_script_duration_ms?: number | null
+          resource_transfer_bytes?: number | null
+          schema_version?: number | null
           session_id?: string | null
+          tls_handshake_ms?: number | null
+          transfer_bytes?: number | null
+          ttfb_ms?: number | null
+          ttfb_rating?: string | null
         }
         Relationships: []
       }
@@ -544,6 +821,27 @@ export type Database = {
             referencedColumns: ["website_name"]
           },
         ]
+      }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
       }
       ticket_messages: {
         Row: {
@@ -714,21 +1012,21 @@ export type Database = {
           {
             foreignKeyName: "wordpress_cred_order_id_fkey"
             columns: ["order_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "cloudflare_kv_tracking"
             referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "wordpress_cred_order_id_fkey"
             columns: ["order_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "orders"
             referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "wordpress_cred_order_id_fkey"
             columns: ["order_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "v_cf_zone_per_site"
             referencedColumns: ["order_id"]
           },
@@ -1123,6 +1421,10 @@ export type Database = {
       }
       delete_old_rum_hits: { Args: never; Returns: undefined }
       delete_old_rum_metrics: { Args: never; Returns: undefined }
+      ensure_order_conversations: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
       font_analysis: {
         Args: { p_domain: string }
         Returns: {
@@ -1166,6 +1468,7 @@ export type Database = {
           unique_visitors: number
         }[]
       }
+      get_current_user_role: { Args: never; Returns: string }
       get_daily_web_metrics: { Args: { target_date: string }; Returns: Json[] }
       get_filtered_rum_metrics: {
         Args: {
@@ -1496,6 +1799,8 @@ export type Database = {
           target_element: string
         }[]
       }
+      is_active_order_expert: { Args: { p_order_id: string }; Returns: boolean }
+      is_order_owner: { Args: { p_order_id: string }; Returns: boolean }
       lcp_attribution_by_device: {
         Args: {
           p_domain?: string
@@ -1859,6 +2164,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       email_verbosity: [

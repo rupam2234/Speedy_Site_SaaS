@@ -1,4 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
+import { validateV2Payload } from '../../../src/lib/rum/contract.js';
+import { v2ToStoragePayload } from '../../../src/lib/rum/storage.js';
 
 const MAX_BODY_BYTES = 65536;
 const MAX_EVENTS_PER_REQUEST = 200;
@@ -85,6 +87,7 @@ export class MyDurableObject extends DurableObject {
 		this.env = env;
 		this.recentTimestamps = [];
 		this.lastBroadcastAt = 0;
+		this.rejectedPayloadCount = 0;
 	}
 
 	async fetch(request) {
@@ -96,20 +99,37 @@ export class MyDurableObject extends DurableObject {
 			return corsResponse('Method Not Allowed', request, 405);
 		}
 
-		// 64KB matches the browser beacon limit; larger bodies are malformed or abusive
+		// 64KB matches the browser beacon limit; check actual bytes, not only Content-Length
 		const contentLength = Number(request.headers.get('Content-Length') || 0);
 		if (contentLength > MAX_BODY_BYTES) {
-			return corsResponse('Payload too large', request, 413);
+			return this.rejectPayload(request, 'payload_too_large', null, 413);
 		}
 
 		try {
-			const data = await request.json();
+			const body = await request.text();
+			if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
+				return this.rejectPayload(request, 'payload_too_large', null, 413);
+			}
+			const data = JSON.parse(body);
+			const isV2 = data?.schema_version === 2;
 
 			// Identity comes from the request itself, never from the payload
 			const domain = normalizeDomain(originHost(request));
 			const { valid, reason } = await this.validateDomain(domain);
 			if (!valid) {
-				return corsResponse(reason, request, 403);
+				const schemaVersion = data?.schema_version ?? null;
+				return this.rejectPayload(request, 'domain_not_authorized', schemaVersion, 403, reason);
+			}
+
+			if (isV2) {
+				const validation = validateV2Payload(data);
+				if (!validation.valid) {
+					return this.rejectPayload(request, 'invalid_v2_payload', data?.schema_version ?? null, 400, validation.reason);
+				}
+			} else if (data?.schema_version !== undefined) {
+				return this.rejectPayload(request, 'unsupported_schema_version', data?.schema_version ?? null, 400, 'Unsupported schema version');
+			} else if (!data || !Array.isArray(data.data)) {
+				return this.rejectPayload(request, 'invalid_legacy_payload', null, 400, 'Invalid data');
 			}
 
 			const events = Array.isArray(data.data) ? data.data.slice(0, MAX_EVENTS_PER_REQUEST) : [];
@@ -119,13 +139,36 @@ export class MyDurableObject extends DurableObject {
 			const requestsLastMinute = this.recentTimestamps.length;
 
 			const geo = buildGeo(request.cf);
-			this.broadcastSampled(data, domain, geo, realtimeExtract(events), requestsLastMinute, request.cf, now);
+			const realtimeData = isV2 ? realtimeExtractV2(data) : realtimeExtract(events);
+			this.broadcastSampled(data, domain, geo, realtimeData, requestsLastMinute, request.cf, now);
 
-			return this.bufferOrFlush(buildPayload(data, events, domain, geo), request, requestsLastMinute);
+			const payload = isV2
+				? v2ToStoragePayload(data, { domain, geo, provider: normalizeProvider(request.cf) })
+				: buildPayload(data, events, domain, geo);
+			this.logStructured('rum_payload_accepted', {
+				schema_version: isV2 ? 2 : 1,
+				row_count: 1,
+			});
+			return this.bufferOrFlush(payload, request, requestsLastMinute);
 		} catch (err) {
 			console.error('Handler error:', err);
-			return corsResponse('Invalid data', request, 400);
+			return this.rejectPayload(request, 'invalid_payload', null, 400);
 		}
+	}
+
+	rejectPayload(request, reason, schemaVersion, status, detail) {
+		this.rejectedPayloadCount += 1;
+		this.logStructured('rum_payload_rejected', {
+			schema_version: schemaVersion,
+			rejected_payload_count: this.rejectedPayloadCount,
+			reason,
+			detail: detail || null,
+		});
+		return corsResponse(detail || reason, request, status);
+	}
+
+	logStructured(event, fields) {
+		console.log(JSON.stringify({ event, ...fields }));
 	}
 
 	// Time-based flush: drains partial buffers that low traffic would starve
@@ -178,13 +221,17 @@ export class MyDurableObject extends DurableObject {
 	}
 
 	async flushToSupabase(buffer) {
+		const startedAt = Date.now();
 		try {
 			const cleanBuffer = buffer.map((item) => ({
+				...item,
 				pageview_id: item.pageview_id ?? null,
 				session_id: item.session_id ?? null,
 				domain_name: item.domain_name ?? null,
 				current_page: item.current_page ?? null,
 				previous_page: item.previous_page ?? null,
+				referrer_domain: item.referrer_domain ?? null,
+				schema_version: item.schema_version ?? null,
 				events: item.events ?? [],
 				created_at: item.created_at ?? new Date().toISOString(),
 			}));
@@ -201,11 +248,26 @@ export class MyDurableObject extends DurableObject {
 
 			if (!res.ok) {
 				console.error('Supabase upsert failed:', res.status, await res.text());
+				this.logStructured('rum_supabase_flush', {
+					row_count: cleanBuffer.length,
+					supabase_latency_ms: Date.now() - startedAt,
+					status: 'failed',
+				});
 				return { ok: false };
 			}
+			this.logStructured('rum_supabase_flush', {
+				row_count: cleanBuffer.length,
+				supabase_latency_ms: Date.now() - startedAt,
+				status: 'ok',
+			});
 			return { ok: true };
 		} catch (err) {
 			console.error('Supabase flush exception:', err);
+			this.logStructured('rum_supabase_flush', {
+				row_count: buffer.length,
+				supabase_latency_ms: Date.now() - startedAt,
+				status: 'error',
+			});
 			return { ok: false };
 		}
 	}
@@ -243,16 +305,19 @@ export class MyDurableObject extends DurableObject {
 		this.lastBroadcastAt = now;
 
 		const hub = this.env.REALTIME_HUB.get(this.env.REALTIME_HUB.idFromName('global-hub'));
+		const session = data.schema_version === 2 ? data.session_id : data.sessionId;
+		const currentPage = data.schema_version === 2 ? data.current_page : data.currentPage;
+		const previousPage = data.schema_version === 2 ? data.previous_page : data.previousPage;
 		this.state.waitUntil(
 			hub.fetch('http://hub/broadcast', {
 				method: 'POST',
 				body: JSON.stringify({
 					type: 'visitor',
-					id: (data.sessionId || 'anon') + now,
+					id: (session || 'anon') + now,
 					domain,
-					session: data.sessionId,
-					currentPage: data.currentPage,
-					previousPage: data.previousPage,
+					session,
+					currentPage,
+					previousPage,
 					...geo,
 					latitude: cf.latitude ?? null,
 					longitude: cf.longitude ?? null,
@@ -284,8 +349,19 @@ function buildGeo(cf) {
 		city: source.city ?? null,
 		timezone: source.timezone ?? null,
 		continent: source.continent ?? null,
-		org: source.asOrganization ?? null,
 	};
+}
+
+function normalizeProvider(cf) {
+	const organization = String(cf?.asOrganization || '').trim().toLowerCase();
+	if (!organization) return null;
+	if (/google/.test(organization)) return 'google';
+	if (/amazon|aws/.test(organization)) return 'amazon';
+	if (/meta|facebook/.test(organization)) return 'meta';
+	if (/microsoft|azure/.test(organization)) return 'microsoft';
+	if (/apple/.test(organization)) return 'apple';
+	if (/cloudflare/.test(organization)) return 'cloudflare';
+	return null;
 }
 
 function realtimeExtract(events) {
@@ -298,6 +374,17 @@ function realtimeExtract(events) {
 		}
 	}
 	return realtimeData;
+}
+
+function realtimeExtractV2(data) {
+	const vitals = data.facts?.vitals || {};
+	return {
+		device: data.facts?.client?.device_type || 'unknown',
+		LCP: vitals.lcp?.value_ms ?? null,
+		CLS: vitals.cls?.value ?? null,
+		INP: vitals.inp?.value_ms ?? null,
+		TTFB: vitals.ttfb?.value_ms ?? null,
+	};
 }
 
 function buildPayload(data, events, domain, geo) {

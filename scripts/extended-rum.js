@@ -8,6 +8,12 @@ import {
   INPThresholds,
   LCPThresholds,
 } from "web-vitals/attribution";
+import { legacyEventsToV2 } from "../src/lib/rum/contract.js";
+import {
+  classifyDevice,
+  parseBrowserFamily,
+  parseOsFamily,
+} from "../src/lib/rum/normalize.js";
 
 const CONFIG = {
   API_URL: "https://buffer.speedy.site/collect",
@@ -18,7 +24,7 @@ const CONFIG = {
 
   // Resource waterfall + error compaction
   MAX_RESOURCES_TRACKED: 600, // raw buffer cap, not what gets sent
-  RESOURCE_SLOW_THRESHOLD: 100, // ms — only individually report resources slower than this
+  RESOURCE_SLOW_THRESHOLD: 100, // ms, only individually report resources slower than this
   MAX_DISTINCT_ERRORS: 20, // distinct error buckets kept per session (storms get counted, not duplicated)
 };
 
@@ -26,7 +32,7 @@ const FCPThresholds = CONFIG.FCP_THRESHOLDS;
 const TTFBThresholds = CONFIG.TTFB_THRESHOLDS;
 const siteDomain = location.hostname;
 
-let previousPage = document.referrer || null;
+let previousPage = null;
 let currentPage = location.pathname + location.search;
 
 const batchedData = [];
@@ -162,7 +168,7 @@ function createResourceTracker() {
 const resourceTracker = createResourceTracker();
 
 // ---- Error tracking (JS errors, unhandled rejections, failed resource loads) ----
-// Deduped into buckets so a throwing loop or a flaky CDN can't blow up the payload —
+// Deduped into buckets so a throwing loop or a flaky CDN can't blow up the payload:
 // repeats increment `count` on the existing bucket instead of creating new entries.
 
 const errorBuckets = new Map();
@@ -195,7 +201,7 @@ function handleGlobalError(event) {
   const target = event.target;
 
   // Resource load failures (img/script/link/etc.) fire 'error' too, but with
-  // event.target set to the failing element instead of window — they don't
+  // event.target set to the failing element instead of window, they don't
   // bubble, which is why this listener is registered with capture: true.
   if (target && target !== window && target.tagName) {
     const tag = target.tagName.toLowerCase();
@@ -544,8 +550,6 @@ function handleCLS(metric) {
     // })),
   };
 
-  const topShift = enrichedShifts[0];
-
   worstCLS = {
     type: "web-vital",
     siteDomain,
@@ -766,8 +770,12 @@ function handleTTFB(metric) {
 }
 
 function getDeviceType() {
-  const w = window.innerWidth;
-  return w <= 768 ? "mobile" : w <= 1024 ? "tablet" : "desktop";
+  return classifyDevice({
+    userAgent: navigator.userAgent,
+    userAgentData: navigator.userAgentData,
+    maxTouchPoints: navigator.maxTouchPoints,
+    viewportWidth: window.innerWidth,
+  });
 }
 
 function detectCacheStatus(nav) {
@@ -882,7 +890,7 @@ function collectPerformanceMetrics() {
 
 // ---- Resource waterfall (compact HAR-like summary) ----
 // Real HAR exports are huge because they carry full headers, cookies, and
-// sometimes response bodies. None of that is available to page JS anyway —
+// sometimes response bodies. None of that is available to page JS anyway:
 // PerformanceResourceTiming is the browser's own compact substitute, and the
 // functions below shrink it further: bucket-by-type for the overall shape,
 // itemize only the slow outliers, round everything to integer ms.
@@ -934,7 +942,7 @@ function summarizeResource(entry) {
     decodedSize: entry.decodedBodySize || 0,
     cached: entry.transferSize === 0 && entry.decodedBodySize > 0,
     protocol: entry.nextHopProtocol || null,
-    // Resource Timing L3 field — HTTP status of the request. Not yet
+    // Resource Timing L3 field: HTTP status of the request. Not yet
     // universally supported; comes through as null where the browser lacks it.
     status: entry.responseStatus ?? null,
     phases: getResourcePhases(entry),
@@ -1048,21 +1056,28 @@ function getRenderBlockers() {
   }
 }
 
+const clientContext = {
+  deviceType: getDeviceType(),
+  deviceMemory: navigator.deviceMemory || null,
+  connection: navigator.connection
+    ? {
+        effectiveType: navigator.connection.effectiveType,
+        downlink: navigator.connection.downlink,
+        rtt: navigator.connection.rtt,
+      }
+    : null,
+  browserFamily: parseBrowserFamily(navigator.userAgent),
+  osFamily: parseOsFamily(navigator.userAgent),
+  language: navigator.language,
+};
+
 (function collectClientMeta() {
   queueEvent({
     type: "client-info",
-    deviceType: getDeviceType(),
-    deviceMemory: navigator.deviceMemory || "unknown",
-    hardwareConcurrency: navigator.hardwareConcurrency || "unknown",
-    connection: navigator.connection
-      ? {
-          effectiveType: navigator.connection.effectiveType,
-          downlink: navigator.connection.downlink,
-          rtt: navigator.connection.rtt,
-        }
-      : null,
-    userAgent: navigator.userAgent,
-    language: navigator.language,
+    deviceType: clientContext.deviceType,
+    deviceMemory: clientContext.deviceMemory || "unknown",
+    connection: clientContext.connection,
+    language: clientContext.language,
   });
 })();
 
@@ -1124,17 +1139,51 @@ function buildINPEvent() {
   };
 }
 
-function sendMetricsPayload(data) {
-  if (!data.length) return;
-
-  const payload = JSON.stringify({
-    pageview_id: pageviewId,
+function buildV2Payload(data, continuation = false) {
+  const payload = legacyEventsToV2(data, {
+    pageviewId,
     sessionId,
-    siteDomain,
     currentPage,
     previousPage,
-    data,
+    referrer: document.referrer,
+    currentHostname: location.hostname,
+    userAgent: navigator.userAgent,
+    deviceType: clientContext.deviceType,
+    deviceMemory: clientContext.deviceMemory,
+    connection: clientContext.connection,
+    browserFamily: clientContext.browserFamily,
+    osFamily: clientContext.osFamily,
+    language: clientContext.language,
+    longTaskCount: longTaskTracker.get().length,
+    failedResourceCount: [...errorBuckets.values()].filter((error) => error.kind === "resource-error").length,
   });
+
+  if (!continuation) return payload;
+  return {
+    ...payload,
+    facts: {
+      ...payload.facts,
+      client: {},
+      navigation: {},
+      vitals: payload.facts.vitals.inp ? { inp: payload.facts.vitals.inp } : {},
+      resources: {},
+      diagnostics: {},
+    },
+    evidence: {
+      lcp: [],
+      render_blockers: [],
+      slow_resources: [],
+      cls_shifts: [],
+      inp: payload.evidence.inp,
+      errors: [],
+    },
+  };
+}
+
+function sendMetricsPayload(data, continuation = false) {
+  if (!data.length) return;
+
+  const payload = JSON.stringify(buildV2Payload(data, continuation));
 
   if (navigator.sendBeacon) {
     navigator.sendBeacon(
@@ -1201,7 +1250,7 @@ function flushINPContinuation() {
   if (!inpEvent || inpEvent.value <= (lastSentINPValue ?? 0)) return;
 
   lastSentINPValue = inpEvent.value;
-  sendMetricsPayload([inpEvent]);
+  sendMetricsPayload([inpEvent], true);
 }
 
 setTimeout(() => {

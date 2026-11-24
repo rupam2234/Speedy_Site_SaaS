@@ -85,6 +85,8 @@ Single responsibility: mirror RUM entitlements from Supabase into KV.
 - the validated domain is derived from the request Origin/Referer at the edge;
   the collector's `id` query param and any payload-supplied domain are
   informational only, never authorization
+- structured ingestion logs record schema version, accepted and rejected row
+  counts, and Supabase latency without recording collector payloads
 - Subscription-era fields (`period_starts_at`, `degradation_policy`,
   `current_usage`, `usage_limit`) are dropped; pageview limits return with the
   metering rebuild
@@ -206,6 +208,45 @@ on conflict (pageview_id) where pageview_id is not null do update
 
 Existing rows keep `pageview_id` null and are untouched. This replaces the
 plain `POST /rest/v1/rum_metrics` insert in `flushToSupabase`.
+
+### Storage change: compact canonical facts (Phase 1 migration)
+
+The compact telemetry migration adds nullable canonical columns for geography,
+device, network, navigation, Core Web Vitals, resource totals, and error
+counts. It also adds `schema_version`, normalized `referrer_domain`, and a
+`diagnostic_evidence` JSONB object constrained to 4 KiB. Legacy `events`
+remain readable and append across continuations.
+
+The `upsert_rum_metrics_batch(jsonb)` RPC merges by the existing partial unique
+`pageview_id` index. It retains the first non-null first-party context, allows
+later non-null metric observations to supersede earlier values, appends legacy
+events, and shallow-merges diagnostic evidence by top-level section. A null
+canonical value means the fact was not observed or is unavailable, not zero.
+The migration and a follow-up grant hardening migration were applied to the linked
+live database on 2026-11-23. The public-key probe was denied with HTTP 401;
+service-role execution passed.
+
+### Collector and Worker canonicalization (Phase 2)
+
+The browser collector now emits `schema_version: 2` from a stable `pageview_id`.
+Shared pure modules under `src/lib/rum/` normalize page paths, external referrer
+hostnames, capability-based device class, coarse browser and OS families,
+navigation timings, Web Vitals, resource totals, and bounded diagnostic evidence.
+Raw user agents, hardware concurrency, URL credentials, fragments, unsafe query
+values, and complete error stacks never cross the Worker boundary.
+
+The event-buffer Worker accepts version 1 and version 2 during rollout. It
+derives `domain_name` from the authenticated Origin or Referer, checks actual
+request bytes against the 64 KiB limit, rejects unknown versions and malformed
+typed values, and normalizes version 2 before persistence. Cloudflare's raw
+organization string is discarded and replaced only by a known coarse provider
+label.
+
+Version 2 writes typed canonical columns and bounded `diagnostic_evidence`. The
+Worker also creates a compact legacy `events` projection so current dashboards
+continue to work. A continuation beacon contains only newly observed INP facts
+and evidence; the existing RPC merges it into the same pageview row.
+
 3. **Realtime broadcast cost**: at low traffic every collect triggers a Hub DO
    request even with zero dashboard viewers. Fix: per-shard broadcast cap
    (max 1 per second) and skip when the hub has no viewers

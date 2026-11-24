@@ -1,0 +1,149 @@
+{
+  "pageview_id": "pv-phase0-slow-page",
+  "sessionId": "session-phase0",
+  "siteDomain": "example.com",
+  "currentPage": "/landing-page",
+  "previousPage": "/",
+  "data": [
+    {
+      "type": "client-info",
+      "deviceType": "mobile",
+      "deviceMemory": 4,
+      "hardwareConcurrency": 8,
+      "connection": {
+        "effectiveType": "3g",
+        "downlink": 1.5,
+        "rtt": 300
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36",
+      "language": "en-US"
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "FCP",
+      "value": 3200,
+      "rating": "poor",
+      "attribution": {}
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "TTFB",
+      "value": 2100,
+      "rating": "poor",
+      "attribution": {
+        "dnsLookup": 80,
+        "tcpConnection": 300,
+        "responseStart": 2200,
+        "requestStart": 2100
+      }
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "LCP",
+      "value": 5600,
+      "rating": "poor",
+      "attribution": {
+        "target": "img.hero-image",
+        "resourceLoadDelay": 700,
+        "resourceLoadDuration": 1800,
+        "elementRenderDelay": 3100,
+        "timeToFirstByte": 2100,
+        "url": "/wp-content/uploads/hero-large.jpg",
+        "decodedBodySize": 1900000,
+        "transferSize": 900000,
+        "width": 1920,
+        "height": 1080,
+        "isLazy": false
+      }
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "CLS",
+      "value": 0.18,
+      "rating": "poor",
+      "attribution": {
+        "largestShiftTarget": "section#content",
+        "largestShiftTime": 3500,
+        "loadState": "complete",
+        "shifts": [
+          {
+            "element": "section#content",
+            "elements": ["section#content", "div.ad-slot"],
+            "shift": { "dx": 0, "dy": 260, "direction": { "horizontal": "none", "vertical": "down" } },
+            "rect": { "previous": { "x": 0, "y": 700, "width": 390, "height": 500 }, "current": { "x": 0, "y": 960, "width": 390, "height": 500 } },
+            "impact": { "areaBefore": 195000, "distanceMoved": 260, "areaAfter": 195000, "areaDelta": 0, "viewportRatio": 0.65 },
+            "value": 0.18,
+            "time": 3500,
+            "sourcesCount": 2
+          }
+        ]
+      },
+      "debug": { "totalShifts": 3, "webVitalsValue": 0.18 }
+    },
+    {
+      "type": "navigation-timings",
+      "timeToFirstByte": 2100,
+      "backendResponseTime": 1800,
+      "dnsLookup": 80,
+      "tcpConnectionTime": 300,
+      "tlsHandshakeTime": 100,
+      "requestQueueTime": 0,
+      "redirectDuration": 0,
+      "userConnectionTime": 480,
+      "cacheStatus": "unknown",
+      "serverTiming": [],
+      "experienceCategory": "poor_connection",
+      "transferSize": 950000,
+      "encodedBodySize": 2400000,
+      "decodedBodySize": 3200000
+    },
+    [
+      {
+        "type": "render-blocking-scripts",
+        "URL": "/wp-content/plugins/theme.js",
+        "Finish Time": "1700.00ms",
+        "FCP Delay": "1500.00ms"
+      },
+      {
+        "type": "render-blocking-scripts",
+        "URL": "/wp-content/plugins/carousel.js",
+        "Finish Time": "1600.00ms",
+        "FCP Delay": "1600.00ms"
+      },
+      {
+        "type": "render-blocking-scripts",
+        "URL": "/wp-content/themes/site/style.css",
+        "Finish Time": "1400.00ms",
+        "FCP Delay": "1800.00ms"
+      }
+    ],
+    {
+      "type": "resource-summary",
+      "siteDomain": "example.com",
+      "totalRequests": 31,
+      "totalTransferSize": 1450000,
+      "byType": {
+        "script": { "count": 12, "totalTransferSize": 650000, "totalDuration": 9500 },
+        "img": { "count": 10, "totalTransferSize": 700000, "totalDuration": 6200 },
+        "css": { "count": 3, "totalTransferSize": 70000, "totalDuration": 2200 },
+        "other": { "count": 6, "totalTransferSize": 30000, "totalDuration": 900 }
+      },
+      "slowest": [
+        { "url": "/wp-content/uploads/hero-large.jpg", "type": "img", "start": 2100, "duration": 1800, "transferSize": 900000, "decodedSize": 1900000, "cached": false, "protocol": "h2", "status": 200, "phases": { "redirect": 0, "dns": 0, "connect": 0, "ssl": 0, "ttfb": 400, "download": 1400 } },
+        { "url": "/wp-content/plugins/theme.js", "type": "script", "start": 300, "duration": 1400, "transferSize": 120000, "decodedSize": 350000, "cached": false, "protocol": "h2", "status": 200, "phases": { "redirect": 0, "dns": 0, "connect": 0, "ssl": 0, "ttfb": 250, "download": 1150 } },
+        { "url": "/wp-content/plugins/carousel.js", "type": "script", "start": 350, "duration": 1250, "transferSize": 95000, "decodedSize": 280000, "cached": false, "protocol": "h2", "status": 200, "phases": { "redirect": 0, "dns": 0, "connect": 0, "ssl": 0, "ttfb": 230, "download": 1020 } }
+      ]
+    },
+    {
+      "type": "errors",
+      "siteDomain": "example.com",
+      "errors": [
+        { "kind": "js-error", "message": "TypeError: undefined is not a function", "source": "/wp-content/plugins/carousel.js", "line": 42, "col": 8, "stack": "TypeError: undefined is not a function | at init (carousel.js:42:8) | at HTMLScriptElement.onload", "count": 3, "firstSeen": 3800 }
+      ]
+    }
+  ]
+}
