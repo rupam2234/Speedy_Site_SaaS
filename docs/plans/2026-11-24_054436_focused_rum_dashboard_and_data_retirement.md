@@ -91,11 +91,11 @@ Required retained fields: target, bounded involved elements, shift value, viewpo
 - [x] Migrate `analyze_lcp_by_device` to canonical LCP evidence.
 - [x] Migrate `get_lcp_image_metrics` to canonical LCP evidence.
 - [x] Migrate `font_analysis` to canonical LCP font evidence.
-- [ ] Migrate `cls_elements` to canonical CLS evidence.
-- [ ] Migrate `inp_elements` to canonical INP evidence.
-- [ ] Migrate `ttfb_contributors` to typed navigation, geography, and network facts.
-- [ ] Migrate `page_performance_analysis` to typed facts and canonical evidence.
-- [ ] Add fixture parity and UI response-shape tests.
+- [x] Migrate `cls_elements` to canonical CLS evidence.
+- [x] Migrate `inp_elements` to canonical INP evidence.
+- [x] Migrate `ttfb_contributors` to typed navigation, geography, and network facts.
+- [x] Migrate `page_performance_analysis` to typed facts and canonical evidence.
+- [x] Add fixture parity and UI response-shape tests.
 
 **Gate:** Web Vitals drilldowns, Page Groups, Images, and Fonts remain stable for canonical rows and preserve legacy fallback for historical rows.
 
@@ -167,3 +167,4 @@ Additional database, fixture, production parity, privacy, size, and latency chec
 - Phase 3 completed: added monotonic migration `20261124055952_focused_rum_evidence_contract.sql` with a `NOT VALID` future-write evidence constraint, 4 KiB limit, shape validation, and restricted helper grants. Static migration tests passed. Local SQL lint was blocked because Docker Desktop is not running.
 - Phase 4 completed: added monotonic migration `20261124060651_canonical_retained_aggregate_readers.sql` for the four retained aggregate and filter RPC families. A restricted normalized helper uses typed v2 facts and a deduplicated historical event fallback. Both `get_web_vital_counts_by_url` overloads are migrated. Static migration tests and the full 52-test repository suite passed. Runtime SQL validation and production parity remain pending because Docker Desktop is unavailable and migrations were not applied to production.
 - Phase 5A completed: added monotonic migration `20261124062156_canonical_retained_lcp_readers.sql` with one normalized LCP candidate per pageview, canonical image and font evidence, and historical fallback. The LCP device, image, and font reader response contracts and thresholds are preserved. Static migration tests and the full 56-test repository suite passed.
+- Phase 5B completed: added monotonic migration `20261124062734_canonical_retained_diagnostic_readers.sql` for CLS, INP, TTFB, and page-performance readers. Canonical v2 rows use diagnostic evidence and typed facts, while historical rows retain event fallback. Response fields, thresholds, and performance classifications are preserved. Static migration tests and the full 60-test repository suite passed.

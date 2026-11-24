@@ -56,6 +56,15 @@ const lcpReadersMigration = fs.readFileSync(
   ),
   "utf8"
 );
+const diagnosticReadersMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124062734_canonical_retained_diagnostic_readers.sql"
+  ),
+  "utf8"
+);
 
 describe("compact RUM migration contract", () => {
   it("keeps the migration additive and preserves legacy events", () => {
@@ -320,5 +329,62 @@ describe("compact RUM migration contract", () => {
       lcpReadersMigration,
       /GRANT EXECUTE ON FUNCTION public\.rum_lcp_candidates\(text, timestamptz, timestamptz\) TO service_role/
     );
+  });
+
+  it("migrates the remaining retained diagnostic readers", () => {
+    for (const functionName of [
+      "rum_cls_shifts",
+      "rum_inp_interactions",
+      "cls_elements",
+      "inp_elements",
+      "ttfb_contributors",
+      "page_performance_analysis",
+    ]) {
+      assert.match(diagnosticReadersMigration, new RegExp(`CREATE OR REPLACE FUNCTION public\\.${functionName}`));
+    }
+    assert.match(diagnosticReadersMigration, /rm\.diagnostic_evidence->'cls_shifts'/);
+    assert.match(diagnosticReadersMigration, /rm\.diagnostic_evidence->'inp'/);
+    assert.match(diagnosticReadersMigration, /rm\.ttfb_ms/);
+    assert.match(diagnosticReadersMigration, /rm\.dns_ms/);
+    assert.match(diagnosticReadersMigration, /rm\.connect_ms/);
+    assert.match(diagnosticReadersMigration, /rm\.backend_response_ms/);
+  });
+
+  it("preserves CLS and INP response fields and evidence", () => {
+    assert.match(diagnosticReadersMigration, /involved_elems/);
+    assert.match(diagnosticReadersMigration, /'areaDelta'/);
+    assert.match(diagnosticReadersMigration, /'distanceMoved'/);
+    assert.match(diagnosticReadersMigration, /'viewportRatio'/);
+    assert.match(diagnosticReadersMigration, /previous_rect/);
+    assert.match(diagnosticReadersMigration, /current_rect/);
+    assert.match(diagnosticReadersMigration, /responsible_scripts/);
+    assert.match(diagnosticReadersMigration, /input_delay/);
+    assert.match(diagnosticReadersMigration, /processing_duration/);
+    assert.match(diagnosticReadersMigration, /presentation_delay/);
+  });
+
+  it("keeps TTFB and page performance thresholds and classifications", () => {
+    assert.match(diagnosticReadersMigration, /percentile_cont\(0\.75\).*ttfb_ms.*> 800/s);
+    assert.match(diagnosticReadersMigration, /origin_hit_rate/);
+    assert.match(diagnosticReadersMigration, /top_country/);
+    assert.match(diagnosticReadersMigration, /top_isp/);
+    assert.match(diagnosticReadersMigration, /WHERE page_rank <= 20/);
+    assert.match(diagnosticReadersMigration, /WHERE element_rank <= 3/);
+    assert.match(diagnosticReadersMigration, /THEN 'Good'/);
+    assert.match(diagnosticReadersMigration, /THEN 'Poor'/);
+    assert.match(diagnosticReadersMigration, /ELSE 'Average'/);
+  });
+
+  it("keeps diagnostic helpers restricted to service_role", () => {
+    for (const functionName of ["rum_cls_shifts", "rum_inp_interactions"]) {
+      assert.match(
+        diagnosticReadersMigration,
+        new RegExp(`REVOKE ALL ON FUNCTION public\\.${functionName}\\(text\\) FROM PUBLIC`)
+      );
+      assert.match(
+        diagnosticReadersMigration,
+        new RegExp(`GRANT EXECUTE ON FUNCTION public\\.${functionName}\\(text\\) TO service_role`)
+      );
+    }
   });
 });
