@@ -70,15 +70,15 @@ AS $$
             ORDER BY client->>'deviceType' NULLS LAST
             LIMIT 1
         ) AS network_effective_type,
-        event->>'name' AS metric_name,
-        (event->>'value')::numeric AS metric_value,
-        REPLACE(COALESCE(event->>'rating', ''), '-', ' ') AS rating
+        event.metric_name,
+        event.metric_value::numeric,
+        REPLACE(COALESCE(event.metric_rating, ''), '-', ' ') AS rating
     FROM public.rum_metrics rm
     CROSS JOIN LATERAL (
         SELECT DISTINCT ON (web_vital->>'name')
-            web_vital->>'name' AS name,
-            web_vital->>'value' AS value,
-            web_vital->>'rating' AS rating
+            web_vital->>'name' AS metric_name,
+            web_vital->>'value' AS metric_value,
+            web_vital->>'rating' AS metric_rating
         FROM jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) web_vital
         WHERE web_vital->>'type' = 'web-vital'
           AND web_vital->>'name' IN ('FCP', 'LCP', 'CLS', 'INP', 'TTFB')
@@ -367,10 +367,7 @@ BEGIN
             metric_name,
             metric_value
         FROM public.rum_metric_readings(
-            CASE
-                WHEN v_normalized_domain = '' THEN NULL
-                ELSE v_normalized_domain
-            END,
+            v_normalized_domain,
             v_start_date::timestamptz,
             (v_end_date + 1)::timestamptz
         )

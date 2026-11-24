@@ -111,103 +111,6 @@ export function boundDiagnosticEvidence(evidence) {
 	return bounded;
 }
 
-function legacyWebVitalEvents(vitals, evidence) {
-	const events = [];
-	for (const [name, metric] of Object.entries(vitals || {})) {
-		if (!metric || (metric.value === undefined && metric.value_ms === undefined)) continue;
-		const attribution = name === "inp" && evidence.inp
-			? {
-					target: evidence.inp.target,
-					eventType: evidence.inp.event_type,
-					inputDelay: evidence.inp.input_delay_ms,
-					processingDuration: evidence.inp.processing_ms,
-					presentationDelay: evidence.inp.presentation_ms,
-					loaf: evidence.inp.scripts?.[0]
-						? {
-								sourceURL: evidence.inp.scripts[0].url,
-								duration: evidence.inp.scripts[0].duration_ms,
-								invoker: evidence.inp.scripts[0].invoker,
-							}
-						: null,
-				}
-			: {};
-		events.push({
-			type: "web-vital",
-			name: name.toUpperCase(),
-			value: metric.value ?? metric.value_ms,
-			rating: metric.rating,
-			attribution,
-		});
-	}
-	return events;
-}
-
-export function v2ToLegacyEvents(payload) {
-	const facts = payload.facts || {};
-	const events = [];
-	if (facts.client && Object.keys(facts.client).length > 0) {
-		events.push({
-			type: "client-info",
-			deviceType: facts.client.device_type || "unknown",
-			deviceMemory: facts.client.device_memory_gb ?? "unknown",
-			connection: facts.client.network
-				? {
-					effectiveType: facts.client.network.effective_type,
-					downlink: facts.client.network.downlink_mbps,
-					rtt: facts.client.network.rtt_ms,
-				}
-				: null,
-			language: facts.client.language || null,
-		});
-	}
-	events.push(...legacyWebVitalEvents(facts.vitals, payload.evidence || {}));
-	if (facts.navigation && Object.keys(facts.navigation).length > 0) {
-		const navigation = facts.navigation;
-		events.push({
-			type: "navigation-timings",
-			timeToFirstByte: navigation.ttfb_ms,
-			backendResponseTime: navigation.backend_ms,
-			dnsLookup: navigation.dns_ms,
-			tcpConnectionTime: navigation.connect_ms,
-			tlsHandshakeTime: navigation.tls_handshake_ms,
-			requestQueueTime: navigation.queue_ms,
-			redirectDuration: navigation.redirect_ms,
-			cacheStatus: navigation.cache_status,
-			experienceCategory: navigation.origin_hit ? "cache-hit" : "good",
-			transferSize: navigation.transfer_bytes,
-			decodedBodySize: navigation.decoded_bytes,
-		});
-	}
-	if (facts.resources && Object.keys(facts.resources).length > 0) {
-		const resources = facts.resources;
-		const byType = {};
-		for (const [type, value] of Object.entries(resources.by_type || {})) {
-			byType[type] = { count: value.count, totalTransferSize: value.bytes, totalDuration: value.duration_ms };
-		}
-		events.push({
-			type: "resource-summary",
-			totalRequests: resources.request_count,
-			totalTransferSize: resources.transfer_bytes,
-			totalDuration: resources.duration_ms,
-			byType,
-			slowest: payload.evidence.slow_resources || [],
-		});
-	}
-	if (payload.evidence.render_blockers?.length) {
-		events.push(
-			payload.evidence.render_blockers.map((item) => ({
-				type: "render-blocking-scripts",
-				URL: item.url,
-				"Finish Time": `${item.finish_time_ms || 0}ms`,
-				"FCP Delay": `${item.fcp_delay_ms || 0}ms`,
-			})),
-		);
-	}
-	if (payload.evidence.errors?.length) {
-		events.push({ type: "errors", errors: payload.evidence.errors });
-	}
-	return events;
-}
 
 function boundedString(value, maxLength) {
 	if (value === null || value === undefined) return null;
@@ -332,7 +235,7 @@ export function v2ToStoragePayload(payload, context = {}) {
 		previous_page: payload.previous_page ? normalizePagePath(payload.previous_page) : null,
 		referrer_domain: payload.referrer_domain ? normalizeHostname(payload.referrer_domain) : null,
 		schema_version: 2,
-		events: v2ToLegacyEvents({ ...payload, facts: { client, navigation, vitals, resources }, evidence }),
+		events: [],
 		created_at: context.createdAt || new Date().toISOString(),
 		country: context.geo?.country ?? null,
 		region: context.geo?.region ?? null,

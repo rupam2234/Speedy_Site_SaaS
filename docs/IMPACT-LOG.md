@@ -9,17 +9,17 @@
 > **Last updated:** 2026-11-24
 ---
 
-## 2026-11-24: Focused RUM Dashboard and Legacy Data Retirement Plan
+## 2026-11-24: Focused RUM Dashboard and Generic Analytics Retirement
 
-**Problem:** The RUM dashboard still includes Trace, generic Analytics, Global UX, and Cloudflare Enhancements. Those surfaces preserve legacy event parsing, duplicated telemetry projections, and recurring analytics infrastructure that do not support the focused WordPress performance optimization product. Retained surfaces also lack a defined canonical v2 reader cutover, including the LCP and CLS evidence needed for image, font, and layout-shift explanations.
+**Problem:** The RUM dashboard included Trace, generic Analytics, Global UX, and Cloudflare Enhancements. Those surfaces preserved legacy event parsing, duplicated telemetry projections, generic D1 analytics, and recurring Workers that did not support the focused WordPress performance optimization product. Retained surfaces also lacked a canonical v2 reader cutover, including the LCP and CLS evidence needed for image, font, and layout-shift explanations.
 
-**Changes:** ADR-0005 defines Web Vitals, Page Groups, Images, and Fonts as the retained product surfaces. The tracked implementation plan expands bounded LCP and CLS evidence, migrates retained readers in aggregate and element batches, runs legacy-versus-canonical parity checks, removes retired surfaces and exclusive infrastructure, stops legacy event dual-writing after parity, and defers physical `rum_metrics.events` removal to a separate final destructive migration.
+**Changes:** ADR-0005 defines Web Vitals, Page Groups, Images, and Fonts as the retained product surfaces. The implementation expands bounded LCP and CLS evidence, migrates retained readers to typed facts and canonical evidence with historical fallbacks, removes the retired UI and APIs, drops removal-only RPCs, stops the deployed generic analytics cron Workers, and stops producing legacy `events` for new v2 rows. Corrective migrations `20261124123405_fix_retained_reader_production_errors.sql` and `20261124125351_fix_remaining_retained_reader_errors.sql` resolve production-only output-name and historical-shape failures found during parity verification.
 
-**Impact:** The change preserves historical rows and retained dashboard behavior while creating a measured path to remove generic monitoring costs and duplicate telemetry. The migration order prevents reader regressions and makes every phase independently auditable.
+**Impact:** The retired product now has only Web Vitals, Page Groups, Images, and Fonts. Two scheduled Cloudflare Workers and their D1 read/write path were removed from source and deployment, eliminating recurring generic analytics work while preserving Supabase telemetry and retained diagnostic behavior. Production verification executed all 12 retained reader RPCs successfully, confirmed all 5 retired RPCs were absent, and found zero value or normalized-rating mismatches across 60 typed-versus-legacy metric comparisons on 17 v2 rows. Event-buffer Worker version `c9fad319-df44-41ab-9e3b-63c8aec63e0c` now stores new v2 rows without the legacy event projection; a controlled live beacon confirmed canonical facts with `events = []`. The physical `events` column drop remains a separately approved destructive migration.
 
-**Where to verify:** `docs/adr/0005-focused-rum-dashboard-and-data-retirement.md`, `docs/plans/2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md`, `docs/reports/rum-events-reader-inventory.md`.
+**Where to verify:** `docs/adr/0005-focused-rum-dashboard-and-data-retirement.md`, `docs/plans/2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md`, `docs/reports/rum-events-reader-inventory.md`, `docs/systems/analytics-pipeline.md`.
 
-**Interview one-liner:** "Focused the real-user monitoring product around WordPress performance evidence, with a staged path from legacy event parsing to canonical, bounded diagnostics."
+**Interview one-liner:** "Focused real-user monitoring on WordPress performance evidence, migrated the retained dashboards to bounded canonical diagnostics, and retired the generic analytics infrastructure."
 
 ---
 

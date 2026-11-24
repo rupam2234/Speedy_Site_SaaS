@@ -29,20 +29,22 @@ AS $$
         rm.current_page,
         COALESCE(rm.device_type, 'unknown') AS device_type,
         rm.cls_value::numeric AS total_cls_value,
-        shift->>'target' AS target,
-        shift->'involved_elements' AS involved_elements,
-        (shift->>'value')::numeric AS value,
-        (shift->>'viewport_ratio')::numeric AS viewport_ratio,
-        (shift->>'time_ms')::numeric AS time_ms,
-        shift->>'load_state' AS load_state,
-        (shift->>'area_delta')::numeric AS area_delta,
-        (shift->>'distance_moved')::numeric AS distance_moved,
-        (shift->>'dx')::numeric AS dx,
-        (shift->>'dy')::numeric AS dy,
-        shift->'previous_rect' AS previous_rect,
-        shift->'current_rect' AS current_rect
+        shift.shift_doc->>'target' AS target,
+        shift.shift_doc->'involved_elements' AS involved_elements,
+        (shift.shift_doc->>'value')::numeric AS value,
+        (shift.shift_doc->>'viewport_ratio')::numeric AS viewport_ratio,
+        (shift.shift_doc->>'time_ms')::numeric AS time_ms,
+        shift.shift_doc->>'load_state' AS load_state,
+        (shift.shift_doc->>'area_delta')::numeric AS area_delta,
+        (shift.shift_doc->>'distance_moved')::numeric AS distance_moved,
+        (shift.shift_doc->>'dx')::numeric AS dx,
+        (shift.shift_doc->>'dy')::numeric AS dy,
+        shift.shift_doc->'previous_rect' AS previous_rect,
+        shift.shift_doc->'current_rect' AS current_rect
     FROM public.rum_metrics rm
-    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(rm.diagnostic_evidence->'cls_shifts', '[]'::jsonb)) shift
+    CROSS JOIN LATERAL (
+        SELECT jsonb_array_elements(COALESCE(rm.diagnostic_evidence->'cls_shifts', '[]'::jsonb)) AS shift_doc
+    ) shift
     WHERE (p_domain IS NULL OR rm.domain_name = p_domain)
       AND rm.schema_version >= 2
       AND rm.created_at >= now() - interval '7 days'
@@ -60,26 +62,30 @@ AS $$
             LIMIT 1
         ), 'unknown') AS device_type,
         (event->>'value')::numeric AS total_cls_value,
-        COALESCE(shift->>'element', event->'attribution'->>'largestShiftTarget') AS target,
-        COALESCE(shift->'elements', '[]'::jsonb) AS involved_elements,
-        (shift->>'value')::numeric AS value,
-        (shift->'impact'->>'viewportRatio')::numeric AS viewport_ratio,
-        (shift->>'time')::numeric AS time_ms,
+        COALESCE(shift.shift_doc->>'element', event->'attribution'->>'largestShiftTarget') AS target,
+        COALESCE(shift.shift_doc->'elements', '[]'::jsonb) AS involved_elements,
+        (shift.shift_doc->>'value')::numeric AS value,
+        (shift.shift_doc->'impact'->>'viewportRatio')::numeric AS viewport_ratio,
+        (shift.shift_doc->>'time')::numeric AS time_ms,
         event->'attribution'->>'loadState' AS load_state,
-        (shift->'impact'->>'areaDelta')::numeric AS area_delta,
-        (shift->'impact'->>'distanceMoved')::numeric AS distance_moved,
-        (shift->'shift'->>'dx')::numeric AS dx,
-        (shift->'shift'->>'dy')::numeric AS dy,
-        shift->'rect'->'previous' AS previous_rect,
-        shift->'rect'->'current' AS current_rect
+        (shift.shift_doc->'impact'->>'areaDelta')::numeric AS area_delta,
+        (shift.shift_doc->'impact'->>'distanceMoved')::numeric AS distance_moved,
+        (shift.shift_doc->'shift'->>'dx')::numeric AS dx,
+        (shift.shift_doc->'shift'->>'dy')::numeric AS dy,
+        shift.shift_doc->'rect'->'previous' AS previous_rect,
+        shift.shift_doc->'rect'->'current' AS current_rect
     FROM public.rum_metrics rm
     CROSS JOIN LATERAL (
-        SELECT DISTINCT ON (web_vital->>'name') web_vital AS event
-        FROM jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) web_vital
-        WHERE web_vital->>'type' = 'web-vital' AND web_vital->>'name' = 'CLS'
-        ORDER BY web_vital->>'name', COALESCE(web_vital->>'timestamp', '0')::numeric DESC
+        SELECT DISTINCT ON (web_vital.web_vital_doc->>'name') web_vital.web_vital_doc AS event
+        FROM (
+            SELECT jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) AS web_vital_doc
+        ) web_vital
+        WHERE web_vital.web_vital_doc->>'type' = 'web-vital' AND web_vital.web_vital_doc->>'name' = 'CLS'
+        ORDER BY web_vital.web_vital_doc->>'name', COALESCE(web_vital.web_vital_doc->>'timestamp', '0')::numeric DESC
     ) event
-    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(event->'attribution'->'shifts', '[]'::jsonb)) shift
+    CROSS JOIN LATERAL (
+        SELECT jsonb_array_elements(COALESCE(event->'attribution'->'shifts', '[]'::jsonb)) AS shift_doc
+    ) shift
     WHERE (p_domain IS NULL OR rm.domain_name = p_domain)
       AND (rm.schema_version IS NULL OR rm.schema_version < 2)
       AND rm.created_at >= now() - interval '7 days'
@@ -153,17 +159,27 @@ AS $$
         (event->'attribution'->>'processingDuration')::numeric AS processing_duration,
         (event->'attribution'->>'presentationDelay')::numeric AS presentation_delay,
         (
-            SELECT string_agg(nested->>'URL', ', ')
-            FROM jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) top_event
-            CROSS JOIN LATERAL jsonb_array_elements(CASE WHEN jsonb_typeof(top_event) = 'array' THEN top_event ELSE '[]'::jsonb END) nested
-            WHERE nested->>'URL' IS NOT NULL
+            SELECT string_agg(
+                script->>'sourceURL',
+                ', '
+            )
+            FROM jsonb_array_elements(
+                CASE
+                    WHEN jsonb_typeof(event->'attribution'->'loaf'->'scripts') = 'array'
+                        THEN event->'attribution'->'loaf'->'scripts'
+                    ELSE '[]'::jsonb
+                END
+            ) script
+            WHERE script->>'sourceURL' IS NOT NULL
         ) AS responsible_scripts
     FROM public.rum_metrics rm
     CROSS JOIN LATERAL (
-        SELECT DISTINCT ON (web_vital->>'name') web_vital AS event
-        FROM jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) web_vital
-        WHERE web_vital->>'type' = 'web-vital' AND web_vital->>'name' = 'INP'
-        ORDER BY web_vital->>'name', COALESCE(web_vital->>'timestamp', '0')::numeric DESC
+        SELECT DISTINCT ON (web_vital.web_vital_doc->>'name') web_vital.web_vital_doc AS event
+        FROM (
+            SELECT jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) AS web_vital_doc
+        ) web_vital
+        WHERE web_vital.web_vital_doc->>'type' = 'web-vital' AND web_vital.web_vital_doc->>'name' = 'INP'
+        ORDER BY web_vital.web_vital_doc->>'name', COALESCE(web_vital.web_vital_doc->>'timestamp', '0')::numeric DESC
     ) event
     WHERE (p_domain IS NULL OR rm.domain_name = p_domain)
       AND (rm.schema_version IS NULL OR rm.schema_version < 2)
@@ -232,11 +248,8 @@ BEGIN
             ) AS shift_json,
             (
                 SELECT jsonb_agg(DISTINCT element)
-                FROM shifts other_shift
-                CROSS JOIN LATERAL jsonb_array_elements_text(other_shift.involved_elements) element
-                WHERE other_shift.current_page = shifts.current_page
-                  AND other_shift.device_type = shifts.device_type
-                  AND element <> '(unknown)'
+                FROM jsonb_array_elements_text(shifts.involved_elements) element
+                WHERE element <> '(unknown)'
             ) AS involved_elems
         FROM shifts
         GROUP BY current_page, device_type
@@ -352,10 +365,12 @@ BEGIN
             (SELECT geo->>'provider' FROM jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) geo WHERE geo->>'type' = 'geo-info' LIMIT 1)
         FROM public.rum_metrics rm
         CROSS JOIN LATERAL (
-            SELECT DISTINCT ON (web_vital->>'name') web_vital AS event
-            FROM jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) web_vital
-            WHERE web_vital->>'type' = 'web-vital' AND web_vital->>'name' = 'TTFB'
-            ORDER BY web_vital->>'name', COALESCE(web_vital->>'timestamp', '0')::numeric DESC
+            SELECT DISTINCT ON (web_vital.web_vital_doc->>'name') web_vital.web_vital_doc AS event
+            FROM (
+                SELECT jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) AS web_vital_doc
+            ) web_vital
+            WHERE web_vital.web_vital_doc->>'type' = 'web-vital' AND web_vital.web_vital_doc->>'name' = 'TTFB'
+            ORDER BY web_vital.web_vital_doc->>'name', COALESCE(web_vital.web_vital_doc->>'timestamp', '0')::numeric DESC
         ) event
         WHERE rm.domain_name = p_domain
           AND (rm.schema_version IS NULL OR rm.schema_version < 2)
@@ -437,11 +452,13 @@ BEGIN
             CASE WHEN event->>'name' = 'INP' THEN event->'attribution'->>'target' END
         FROM public.rum_metrics rm
         CROSS JOIN LATERAL (
-            SELECT DISTINCT ON (web_vital->>'name') web_vital AS event
-            FROM jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) web_vital
-            WHERE web_vital->>'type' = 'web-vital'
-              AND web_vital->>'name' IN ('LCP', 'CLS', 'INP')
-            ORDER BY web_vital->>'name', COALESCE(web_vital->>'timestamp', '0')::numeric DESC
+            SELECT DISTINCT ON (web_vital.web_vital_doc->>'name') web_vital.web_vital_doc AS event
+            FROM (
+                SELECT jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) AS web_vital_doc
+            ) web_vital
+            WHERE web_vital.web_vital_doc->>'type' = 'web-vital'
+              AND web_vital.web_vital_doc->>'name' IN ('LCP', 'CLS', 'INP')
+            ORDER BY web_vital.web_vital_doc->>'name', COALESCE(web_vital.web_vital_doc->>'timestamp', '0')::numeric DESC
         ) event
         WHERE (rm.schema_version IS NULL OR rm.schema_version < 2)
           AND rm.created_at >= current_date - interval '7 days'

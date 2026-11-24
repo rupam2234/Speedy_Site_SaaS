@@ -6,7 +6,6 @@ import path from "node:path";
 import { legacyEventsToV2, validateV2Payload } from "../src/lib/rum/contract.js";
 import {
 	boundDiagnosticEvidence,
-	v2ToLegacyEvents,
 	v2ToStoragePayload,
 } from "../src/lib/rum/storage.js";
 import {
@@ -231,7 +230,7 @@ describe("compact RUM v2 collector contract", () => {
 		assert.ok(bounded.inp.target.length <= 120);
 	});
 
-	it("dual-writes canonical facts and compatible legacy events", () => {
+	it("stores canonical v2 facts without legacy event dual-writing", () => {
 		const payload = toV2("slow-page.json", { referrer: "https://www.google.com/search?q=private" });
 		const storage = v2ToStoragePayload(payload, {
 			domain: "example.com",
@@ -246,22 +245,10 @@ describe("compact RUM v2 collector contract", () => {
 		assert.equal(storage.os_family, "android");
 		assert.equal(storage.lcp_ms, 5600);
 		assert.equal(storage.inp_ms, null);
-		assert.ok(storage.events.some((event) => event.type === "client-info"));
-		assert.ok(storage.events.some((event) => event.type === "web-vital" && event.name === "LCP"));
-		assert.ok(storage.events.some((event) => event.type === "navigation-timings"));
-		assert.ok(storage.events.some((event) => event.type === "resource-summary"));
+		assert.deepEqual(storage.events, []);
 	});
 
-	it("preserves v1 events in the legacy compatibility projection", () => {
-		const legacy = fixture("interactive.json").data;
-		const payload = toV2("interactive.json");
-		const events = v2ToLegacyEvents(payload);
-		assert.ok(events.length > 0);
-		assert.ok(events.some((event) => event.type === "client-info"));
-		assert.ok(legacy.some((event) => event.type === "web-vital" && event.name === "INP"));
-	});
-
-	it("projects continuation payloads to only the newly observed INP event", () => {
+	it("stores continuation observations in canonical facts and evidence only", () => {
 		const payload = toV2("interactive.json");
 		const continuation = {
 			...payload,
@@ -281,10 +268,11 @@ describe("compact RUM v2 collector contract", () => {
 				errors: [],
 			},
 		};
-		const events = v2ToLegacyEvents(continuation);
-		assert.equal(events.length, 1);
-		assert.equal(events[0].name, "INP");
-		assert.equal(events[0].attribution.target, "button#pay");
+		const storage = v2ToStoragePayload(continuation, { domain: "example.com" });
+		assert.equal(storage.inp_ms, payload.facts.vitals.inp.value_ms);
+		assert.equal(storage.inp_rating, payload.facts.vitals.inp.rating);
+		assert.equal(storage.diagnostic_evidence.inp.target, "button#pay");
+		assert.deepEqual(storage.events, []);
 	});
 
 	it("strips unsafe page queries and rejects malformed typed metrics", () => {

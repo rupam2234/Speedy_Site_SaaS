@@ -115,17 +115,10 @@ BEGIN
         ) THEN
             RETURN false;
         END IF;
-        FOR field IN SELECT value FROM jsonb_each(item) LOOP
-            IF jsonb_typeof(field) = 'number' AND field::text::numeric < 0
-                AND NOT (
-                    (item ? 'value' AND field = item -> 'value')
-                    OR (item ? 'viewport_ratio' AND field = item -> 'viewport_ratio')
-                    OR (item ? 'time_ms' AND field = item -> 'time_ms')
-                    OR (item ? 'distance_moved' AND field = item -> 'distance_moved')
-                    OR (item ? 'area_delta' AND field = item -> 'area_delta')
-                    OR (item ? 'dx' AND field = item -> 'dx')
-                    OR (item ? 'dy' AND field = item -> 'dy')
-                ) THEN
+        FOR field IN SELECT key, value FROM jsonb_each(item) LOOP
+            IF field.key IN ('value', 'viewport_ratio', 'time_ms', 'distance_moved')
+                AND jsonb_typeof(field.value) = 'number'
+                AND field.value::text::numeric < 0 THEN
                 RETURN false;
             END IF;
         END LOOP;
@@ -139,6 +132,16 @@ BEGIN
                     FROM jsonb_object_keys(rect) AS key(name)
                     WHERE name NOT IN ('x', 'y', 'width', 'height')
                 ) THEN
+                    RETURN false;
+                END IF;
+                IF (rect -> 'width') IS NOT NULL
+                    AND jsonb_typeof(rect -> 'width') = 'number'
+                    AND (rect -> 'width')::text::numeric < 0 THEN
+                    RETURN false;
+                END IF;
+                IF (rect -> 'height') IS NOT NULL
+                    AND jsonb_typeof(rect -> 'height') = 'number'
+                    AND (rect -> 'height')::text::numeric < 0 THEN
                     RETURN false;
                 END IF;
             END IF;

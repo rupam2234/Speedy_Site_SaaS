@@ -247,10 +247,13 @@ typed values, and normalizes version 2 before persistence. Cloudflare's raw
 organization string is discarded and replaced only by a known coarse provider
 label.
 
-Version 2 writes typed canonical columns and bounded `diagnostic_evidence`. The
-Worker also creates a compact legacy `events` projection so current dashboards
-continue to work. A continuation beacon contains only newly observed INP facts
-and evidence; the existing RPC merges it into the same pageview row.
+Version 2 writes typed canonical columns and bounded `diagnostic_evidence`. It
+does not create a legacy `events` projection for version 2 rows. A continuation
+beacon contains only newly observed INP facts and evidence; the existing RPC
+merges it into the same pageview row. The canonical-only cutover is live in
+event-buffer Worker version `c9fad319-df44-41ab-9e3b-63c8aec63e0c`. A
+controlled production beacon flushed a v2 row with canonical facts and an empty
+`events` array, after which the synthetic row was deleted.
 
 ### Focused reader cutover and retirement flow
 
@@ -260,12 +263,12 @@ canonical columns. Retained element and asset readers will use bounded
 `diagnostic_evidence`. LCP evidence must preserve image and font diagnostics,
 and CLS evidence must preserve movement and bounded involved-element context.
 
-The legacy `events` projection is a temporary compatibility output, not a
+The legacy `events` projection was a temporary compatibility output, not a
 permanent second source of truth. Trace, generic Analytics, Global UX, and
-Cloudflare Enhancements may be removed only after retained readers pass legacy
-versus canonical parity checks. New version 2 rows will stop receiving the
-projection after that gate. Historical `events` values remain unchanged until a
-separate destructive migration is approved and tested.
+Cloudflare Enhancements have been removed after retained readers passed their
+migration contract. New version 2 rows no longer receive the projection after
+production parity was verified. Historical `events` values remain unchanged
+until a separate destructive migration is approved and tested.
 
 3. **Realtime broadcast cost**: at low traffic every collect triggers a Hub DO
    request even with zero dashboard viewers. Fix: per-shard broadcast cap

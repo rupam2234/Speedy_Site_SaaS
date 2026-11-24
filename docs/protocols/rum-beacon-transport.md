@@ -203,7 +203,7 @@ A continuation beacon uses the same `pageview_id` and may contain only newly obs
 ### 5.3 Compatibility rules
 
 - The browser collector emits version 2. Version 1 and version 2 beacons are accepted during rollout.
-- The Worker creates the legacy `events` projection from version 2 after canonical normalization. Legacy dashboards continue reading that array while typed columns become the primary source for migrated readers.
+- The Worker stores version 2 as typed canonical facts and bounded evidence. It does not create a legacy `events` projection for version 2 rows.
 - The Worker derives the tenant domain from Origin or Referer and never from collector data.
 - A missing `schema_version` means version 1.
 - Version 2 rejects unknown top-level sections and malformed typed values.
@@ -211,7 +211,7 @@ A continuation beacon uses the same `pageview_id` and may contain only newly obs
 - Continuation beacons merge by `pageview_id` and may be delivered in any order.
 - A flush batch may contain the same `pageview_id` more than once. The database RPC applies each payload as a separate upsert so retries and continuations merge safely without a duplicate-row conflict.
 - Stored canonical columns are nullable. Null means the fact was not observed or is unavailable, never that the value was zero.
-- The database retains the first non-null first-party context. Later non-null metric observations may supersede earlier metrics. Legacy event arrays append, and diagnostic evidence merges shallowly by top-level section.
+- The database retains the first non-null first-party context. Later non-null metric observations may supersede earlier metrics. Version 1 event arrays append, version 2 does not create a legacy event array, and diagnostic evidence merges shallowly by top-level section.
 - The Worker rejects malformed or oversized payloads before buffering.
 
 ### 5.4 Normalization rules
@@ -261,7 +261,7 @@ ADR-0005 narrows the retained product contract to Web Vitals, Page Groups, Image
 - LCP: target, URL, resource delay and duration, render delay, candidate TTFB, transfer bytes, decoded bytes, image width, image height, lazy state, fetch priority, and font family, weight, size, URL, and transfer size when applicable.
 - CLS: target, bounded involved elements, shift value, viewport ratio, time, load state, area delta, distance moved, dx, dy, previous rectangle, and current rectangle.
 
-The Worker must normalize these fields and keep serialized diagnostic evidence below 3.8 KB. PostgreSQL retains a 4 KiB limit as the final storage guard. URLs and selectors remain subject to the redaction rules in section 5.5. The legacy `events` projection remains part of the wire-to-storage compatibility flow until retained reader parity is complete.
+The Worker must normalize these fields and keep serialized diagnostic evidence below 3.8 KB. PostgreSQL retains a 4 KiB limit as the final storage guard. URLs and selectors remain subject to the redaction rules in section 5.5. New version 2 rows use canonical storage only; historical `events` values remain readable for legacy fallback.
 
 ### 5.7 Payload size test cases
 

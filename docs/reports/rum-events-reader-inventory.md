@@ -1,11 +1,11 @@
 # RUM Events Reader Inventory
 
-Generated at: 2026-11-23T23:20:26.471Z
+Generated at: 2026-11-24T13:13:59.161Z
 
 This inventory is generated from `scripts/rum-phase0-inventory.mjs`. It lists SQL functions that read `rum_metrics.events` and application callers of those functions.
 
-Readers: **28**
-Application callers: **16**
+Readers: **38**
+Application callers: **11**
 
 ## SQL readers
 
@@ -30,11 +30,21 @@ Application callers: **16**
 | `inp_elements` | `client-info` | `URL` (optional), `attribution` (required), `deviceType` (required), `eventType` (optional), `inputDelay` (optional), `name` (required), `presentationDelay` (optional), `processingDuration` (optional), `rating` (required), `target` (optional), `type` (required), `value` (required) | `supabase/migrations/20240101000001_base_functions.sql:2546` |
 | `lcp_attribution_by_device` | shape-dependent | `attribution` (required), `decodedBodySize` (required), `deviceType` (required), `elementRenderDelay` (optional), `height` (optional), `isLazy` (optional), `resourceLoadDelay` (optional), `resourceLoadDuration` (optional), `target` (optional), `timeToFirstByte` (required), `transferSize` (required), `url` (optional), `value` (required), `width` (optional) | `supabase/migrations/20240101000001_base_functions.sql:2623` |
 | `page_performance_analysis` | `client-info`, `web-vital` | `attribution` (required), `deviceType` (required), `largestShiftTarget` (optional), `name` (required), `target` (optional), `type` (required), `value` (required) | `supabase/migrations/20240101000001_base_functions.sql:2695` |
+| `page_performance_analysis` | `client-info`, `web-vital` | `attribution` (required), `cls_shifts` (optional), `deviceType` (required), `inp` (optional), `largestShiftTarget` (optional), `lcp` (optional), `name` (required), `target` (optional), `timestamp` (required), `type` (required), `value` (required) | `supabase/migrations/20261124062734_canonical_retained_diagnostic_readers.sql:402` |
+| `page_performance_analysis` | `client-info`, `web-vital` | `attribution` (required), `cls_shifts` (optional), `deviceType` (required), `inp` (optional), `largestShiftTarget` (optional), `lcp` (optional), `name` (required), `target` (optional), `timestamp` (required), `type` (required), `value` (required) | `supabase/migrations/20261124123405_fix_retained_reader_production_errors.sql:494` |
 | `recent_requests` | `client-info`, `geo-info`, `navigation-timings`, `resource-summary` | `backendResponseTime` (required), `cacheStatus` (required), `city` (required), `country` (required), `decodedBodySize` (required), `deviceType` (required), `experienceCategory` (required), `name` (required), `rating` (required), `timeToFirstByte` (required), `transferSize` (required), `type` (required), `value` (required) | `supabase/migrations/20240101000001_base_functions.sql:2790` |
 | `refresh_rum_daily_distributions` | `client-info`, `web-vital` | `deviceType` (required), `name` (required), `rating` (required), `type` (required) | `supabase/migrations/20240101000001_base_functions.sql:2818` |
+| `rum_cls_shifts` | `client-info`, `web-vital` | `areaDelta` (optional), `area_delta` (optional), `attribution` (required), `cls_shifts` (optional), `current` (optional), `current_rect` (optional), `deviceType` (required), `distanceMoved` (optional), `distance_moved` (optional), `dx` (optional), `dy` (optional), `element` (optional), `elements` (optional), `impact` (optional), `involved_elements` (optional), `largestShiftTarget` (optional), `loadState` (optional), `load_state` (optional), `name` (required), `previous` (optional), `previous_rect` (optional), `rect` (optional), `shift` (optional), `shifts` (optional), `target` (optional), `time` (optional), `time_ms` (optional), `timestamp` (required), `type` (required), `value` (required), `viewportRatio` (optional), `viewport_ratio` (optional) | `supabase/migrations/20261124062734_canonical_retained_diagnostic_readers.sql:3` |
+| `rum_inp_interactions` | `client-info`, `web-vital` | `attribution` (required), `deviceType` (required), `eventType` (optional), `event_type` (optional), `inp` (optional), `inputDelay` (optional), `input_delay_ms` (optional), `loaf` (optional), `name` (required), `presentationDelay` (optional), `presentation_ms` (optional), `processingDuration` (optional), `processing_ms` (optional), `rating` (required), `scripts` (optional), `sourceURL` (optional), `target` (optional), `timestamp` (required), `type` (required), `url` (optional), `value` (required) | `supabase/migrations/20261124062734_canonical_retained_diagnostic_readers.sql:101` |
+| `rum_lcp_candidates` | `client-info` | `attribution` (required), `decodedBodySize` (required), `deviceMemory` (required), `deviceType` (required), `elementRenderDelay` (optional), `family` (optional), `fetchPriority` (legacy-only), `font` (optional), `fontData` (optional), `height` (optional), `isLazy` (optional), `lcp` (optional), `rating` (required), `render_blockers` (optional), `resourceLoadDelay` (optional), `resourceLoadDuration` (optional), `size` (optional), `target` (optional), `timeToFirstByte` (required), `transferSize` (required), `transfer_bytes` (optional), `type` (required), `url` (optional), `value` (required), `weight` (optional), `width` (optional) | `supabase/migrations/20261124062156_canonical_retained_lcp_readers.sql:4` |
+| `rum_lcp_candidates` | `client-info`, `web-vital` | `attribution` (required), `decodedBodySize` (required), `deviceMemory` (required), `deviceType` (required), `elementRenderDelay` (optional), `family` (optional), `fetchPriority` (legacy-only), `font` (optional), `fontData` (optional), `height` (optional), `isLazy` (optional), `lcp` (optional), `name` (required), `rating` (required), `render_blockers` (optional), `resourceLoadDelay` (optional), `resourceLoadDuration` (optional), `size` (optional), `target` (optional), `timeToFirstByte` (required), `timestamp` (required), `transferSize` (required), `transfer_bytes` (optional), `type` (required), `url` (optional), `value` (required), `weight` (optional), `width` (optional) | `supabase/migrations/20261124123405_fix_retained_reader_production_errors.sql:655` |
+| `rum_metric_readings` | `client-info`, `web-vital` | `connection` (optional), `deviceType` (required), `effectiveType` (optional), `name` (required), `rating` (required), `timestamp` (required), `type` (required), `value` (required) | `supabase/migrations/20261124060651_canonical_retained_aggregate_readers.sql:5` |
 | `third_party_domains` | `client-info`, `third-party-asset-summary` | `deviceType` (required), `domains` (optional), `sessionId` (legacy-only), `type` (required) | `supabase/migrations/20240101000001_base_functions.sql:2976` |
 | `traffic_source` | `client-info` | `deviceType` (required), `type` (required) | `supabase/migrations/20240101000001_base_functions.sql:3127` |
 | `ttfb_contributors` | `client-info`, `geo-info`, `origin-info` | `attribution` (required), `connection` (optional), `country` (required), `deviceType` (required), `dnsLookup` (required), `downlink` (optional), `name` (required), `org` (required), `originHit` (required), `requestStart` (optional), `rtt` (optional), `siteDomain` (required), `tcpConnection` (optional), `type` (required), `value` (required) | `supabase/migrations/20240101000001_base_functions.sql:3161` |
+| `ttfb_contributors` | `client-info`, `geo-info`, `origin-info`, `web-vital` | `attribution` (required), `connection` (optional), `country` (required), `deviceType` (required), `dnsLookup` (required), `downlink` (optional), `name` (required), `originHit` (required), `provider` (required), `requestStart` (optional), `rtt` (optional), `tcpConnection` (optional), `timestamp` (required), `type` (required), `value` (required) | `supabase/migrations/20261124062734_canonical_retained_diagnostic_readers.sql:309` |
+| `ttfb_contributors` | `client-info`, `geo-info`, `origin-info`, `web-vital` | `attribution` (required), `connection` (optional), `country` (required), `deviceType` (required), `dnsLookup` (required), `downlink` (optional), `name` (required), `originHit` (required), `provider` (required), `requestStart` (optional), `rtt` (optional), `tcpConnection` (optional), `timestamp` (required), `type` (required), `value` (required) | `supabase/migrations/20261124123405_fix_retained_reader_production_errors.sql:839` |
+| `ttfb_contributors` | `client-info`, `geo-info`, `origin-info`, `web-vital` | `attribution` (required), `connection` (optional), `country` (required), `deviceType` (required), `dnsLookup` (required), `downlink` (optional), `name` (required), `originHit` (required), `provider` (required), `requestStart` (optional), `rtt` (optional), `tcpConnection` (optional), `timestamp` (required), `type` (required), `value` (required) | `supabase/migrations/20261124125351_fix_remaining_retained_reader_errors.sql:193` |
 | `user_happiness` | `client-info`, `geo-info`, `slow-api-call`, `tracker-detected`, `web-vital` | `country` (required), `deviceType` (required), `name` (required), `rating` (required), `timestamp` (required), `type` (required), `value` (required) | `supabase/migrations/20240101000001_base_functions.sql:3238` |
 | `user_happiness_dist` | `client-info`, `geo-info`, `web-vital` | `client` (optional), `country` (required), `device` (optional), `deviceType` (required), `name` (required), `rating` (required), `timestamp` (required), `type` (required), `value` (required) | `supabase/migrations/20240101000001_base_functions.sql:3587` |
 | `ux_map_data` | `client-info`, `geo-info`, `web-vital` | `connection` (optional), `country` (required), `deviceType` (required), `effectiveType` (optional), `name` (required), `type` (required), `value` (required) | `supabase/migrations/20240101000001_base_functions.sql:3697` |
@@ -49,17 +59,12 @@ Application callers: **16**
 | `cls_elements` | `src/app/api/rum/elements/cls/route.ts:37` |
 | `cwv_dist_by_connection` | `src/app/api/rum/rum-web-vitals/group-by-connection/route.ts:20` |
 | `font_analysis` | `src/app/api/rum/fonts/analysis/route.ts:18` |
-| `get_daily_web_metrics` | `cloudflare-workers/analytics/analytics-cron/src/index.ts:15` |
 | `get_lcp_image_metrics` | `src/app/api/rum/lcp-images/route.ts:24` |
 | `get_rum_web_vitals_metrics` | `src/app/api/rum/rum-web-vitals/route.ts:73` |
 | `get_web_vital_counts_by_url` | `src/app/api/rum/rum-web-vitals/group-by-page/route.ts:29` |
 | `inp_elements` | `src/app/api/rum/elements/inp/route.ts:32` |
 | `page_performance_analysis` | `src/app/api/rum/page_performance/route.ts:18` |
-| `recent_requests` | `src/app/api/network-and-server/latest-requests/route.ts:28` |
-| `traffic_source` | `cloudflare-workers/analytics/traffic-source-cron/src/index.ts:16` |
 | `ttfb_contributors` | `src/app/api/rum/elements/ttfb/route.ts:24` |
-| `user_happiness_dist` | `src/app/api/rum/analytics/happiness-geo/route.ts:28` |
-| `ux_map_data` | `src/app/api/rum/analytics/ux-map-data/route.ts:18` |
 
 ## Collector event types not found in SQL readers
 
@@ -74,8 +79,6 @@ Application callers: **16**
 - **unused**: collector event type with no detected SQL reader.
 
 ## Product-boundary classification (ADR-0005)
-
-This section classifies the generated inventory by the product boundary accepted in ADR-0005. It does not replace the generated tables above.
 
 ### Retained and migrate to canonical v2
 
@@ -103,19 +106,4 @@ This section classifies the generated inventory by the product boundary accepted
 | `user_happiness_dist` | Generic Analytics |
 | `ux_map_data` | Global UX |
 
-### Review before removal
-
-These functions have no current application caller in the generated inventory, but their SQL definitions or names may support shared or future behavior. They require an explicit dependency audit during the removal phase.
-
-- `analyze_web_vitals_by_page`
-- `cache_analysis`
-- `get_ai_citation`
-- `get_analytics_by_device_and_country`
-- `get_web_vitals_metrics`
-- `lcp_attribution_by_device`
-- `refresh_rum_daily_distributions`
-- `third_party_domains`
-- `user_happiness`
-- `web_vitals`
-
-Historical compatibility is not a reason to retain a retired UI or infrastructure path. It is a reason to keep historical rows and add temporary reader fallbacks where a retained surface still needs them.
+Historical SQL definitions remain visible in this inventory because migrations are append-only. Application callers are the authoritative signal for whether a reader is still active.

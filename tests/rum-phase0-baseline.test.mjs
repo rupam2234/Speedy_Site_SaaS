@@ -18,11 +18,25 @@ describe("RUM Phase 0 baseline", () => {
     assert.ok(readerNames.includes("recent_requests"));
     assert.ok(readerNames.includes("user_happiness"));
     assert.ok(readerNames.includes("ux_map_data"));
-    assert.ok(callerNames.includes("recent_requests"));
     assert.ok(callerNames.includes("cls_elements"));
     assert.ok(callerNames.includes("inp_elements"));
+    assert.ok(callerNames.includes("get_rum_web_vitals_metrics"));
+    for (const retiredFunction of [
+      "recent_requests",
+      "traffic_source",
+      "get_daily_web_metrics",
+      "user_happiness_dist",
+      "ux_map_data",
+    ]) {
+      assert.equal(callerNames.includes(retiredFunction), false, `${retiredFunction} still has an application caller`);
+    }
     assert.ok(inventory.summary.readerCount >= 25);
-    assert.ok(inventory.summary.callerCount >= 15);
+    assert.ok(inventory.summary.callerCount >= 10);
+    assert.ok(readerNames.includes("rum_metric_readings"));
+    assert.ok(readerNames.includes("rum_lcp_candidates"));
+    assert.ok(readerNames.includes("rum_cls_shifts"));
+    assert.ok(readerNames.includes("rum_inp_interactions"));
+    assert.equal(readerNames.includes("public"), false);
   });
 
   it("classifies legacy-only event fields", () => {

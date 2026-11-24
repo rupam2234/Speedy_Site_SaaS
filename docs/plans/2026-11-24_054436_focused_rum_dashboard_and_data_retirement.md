@@ -2,7 +2,7 @@
 
 > **Status:** 🟡 **IN PROGRESS**  
 > **Created:** 2026-11-24 05:44:36 UTC  
-> **Updated:** 2026-11-24 05:44:36 UTC  
+> **Updated:** 2026-11-24 13:20:00 UTC
 > **Owner:** Speedy Site  
 > **Related ADR:** [ADR-0005](../adr/0005-focused-rum-dashboard-and-data-retirement.md)  
 > **Goal:** Preserve focused WordPress performance telemetry, migrate retained readers to compact RUM v2, and retire generic monitoring surfaces without losing historical data.
@@ -101,24 +101,24 @@ Required retained fields: target, bounded involved elements, shift value, viewpo
 
 ### Phase 6: Remove retired product surfaces
 
-- [ ] Remove Trace UI and exclusive APIs.
-- [ ] Remove Generic Analytics UI, proxy APIs, D1 mirror Workers, and cron schedules.
-- [ ] Remove Global UX UI and exclusive API.
-- [ ] Remove Cloudflare Enhancements UI and exclusive APIs and email flows after caller audit.
-- [ ] Remove retired navigation entries.
-- [ ] Remove removal-only SQL readers after confirming no application callers.
-- [ ] Update generated database types through the repository workflow.
-- [ ] Verify removed routes are unavailable and retired infrastructure is no longer deployed.
+- [x] Remove Trace UI and exclusive APIs.
+- [x] Remove Generic Analytics UI, proxy APIs, D1 mirror Workers, and cron schedules.
+- [x] Remove Global UX UI and exclusive API.
+- [x] Remove Cloudflare Enhancements UI and exclusive APIs and email flows after caller audit.
+- [x] Remove retired navigation entries.
+- [x] Remove removal-only SQL readers after confirming no application callers.
+- [x] Update generated database types through the repository workflow.
+- [x] Verify removed routes are unavailable and retired infrastructure is no longer deployed.
 
 **Gate:** only retained product surfaces and their shared dependencies remain.
 
 ### Phase 7: Stop dual-writing and retire the projection
 
-- [ ] Stop producing legacy `events` for new v2 rows.
-- [ ] Keep historical `events` values unchanged.
-- [ ] Verify retained readers do not read `events` for v2 rows.
+- [x] Stop producing legacy `events` for new v2 rows.
+- [x] Keep historical `events` values unchanged.
+- [x] Verify retained readers do not read `events` for v2 rows.
 - [ ] Compare v1 and v2 traffic, row counts, stored size, and RPC latency for a full traffic cycle.
-- [ ] Update the beacon protocol, system dossier, reader inventory, and impact log.
+- [x] Update the beacon protocol, system dossier, reader inventory, and impact log.
 
 **Gate:** new v2 rows use canonical data only, retained dashboards are stable, and historical rows remain readable.
 
@@ -168,3 +168,8 @@ Additional database, fixture, production parity, privacy, size, and latency chec
 - Phase 4 completed: added monotonic migration `20261124060651_canonical_retained_aggregate_readers.sql` for the four retained aggregate and filter RPC families. A restricted normalized helper uses typed v2 facts and a deduplicated historical event fallback. Both `get_web_vital_counts_by_url` overloads are migrated. Static migration tests and the full 52-test repository suite passed. Runtime SQL validation and production parity remain pending because Docker Desktop is unavailable and migrations were not applied to production.
 - Phase 5A completed: added monotonic migration `20261124062156_canonical_retained_lcp_readers.sql` with one normalized LCP candidate per pageview, canonical image and font evidence, and historical fallback. The LCP device, image, and font reader response contracts and thresholds are preserved. Static migration tests and the full 56-test repository suite passed.
 - Phase 5B completed: added monotonic migration `20261124062734_canonical_retained_diagnostic_readers.sql` for CLS, INP, TTFB, and page-performance readers. Canonical v2 rows use diagnostic evidence and typed facts, while historical rows retain event fallback. Response fields, thresholds, and performance classifications are preserved. Static migration tests and the full 60-test repository suite passed.
+- Phase 6 repository removal completed: removed Trace, generic Analytics, Global UX, Cloudflare Enhancements UI, exclusive APIs, analytics proxy code, both analytics Worker source trees, cache-rule email flow, and five removal-only SQL readers. Cloudflare account connection APIs remain for Settings. The deployed `analytics-cron` and `traffic-source-cron` Workers were deleted, removing their cron schedules; both health URLs now return 404. Production build and route manifest passed. Generated database types were regenerated from the linked production schema.
+- Phase 7 implementation completed: new v2 rows now persist an empty `events` array while canonical typed facts and bounded evidence remain unchanged. Historical `events` values remain intact, and canonical v2 branches of retained readers do not read the legacy projection.
+- Production parity completed on 2026-11-24: all 12 retained reader RPC probes succeeded, all 5 retired RPCs were absent with PostgREST `PGRST202`, and 60 typed-versus-legacy metric comparisons across 17 v2 production rows had zero value or normalized-rating mismatches. Production initially exposed PL/pgSQL output-name conflicts and malformed historical JSON/numeric shapes; corrective migrations `20261124123405_fix_retained_reader_production_errors.sql` and `20261124125351_fix_remaining_retained_reader_errors.sql` resolved them.
+- Phase 8 remains intentionally pending: physically dropping `rum_metrics.events` requires separate approval and a full traffic-cycle comparison after this branch is deployed.
+- Canonical-only v2 production cutover completed on 2026-11-24: deployed event-buffer Worker version `c9fad319-df44-41ab-9e3b-63c8aec63e0c`. Three controlled v2 beacons were accepted by the live Worker, and the flushed row contained canonical device and LCP facts with `events = []`. The synthetic row was deleted and confirmed absent.

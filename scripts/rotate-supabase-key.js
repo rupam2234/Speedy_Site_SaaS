@@ -31,19 +31,14 @@ function envValue(name) {
 const SUPABASE_URL = envValue("NEXT_PUBLIC_SUPABASE_URL");
 const SERVICE_KEY = envValue("SUPABASE_SERVICE_ROLE_KEY");
 const PUBLISHABLE_KEY = envValue("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
-const API_SECRET = envValue("ANALYTICS_API_SECRET");
 const CRON_SECRET = envValue("CRON_SECRET_TOKEN");
 
 const WORKERS = {
-  "analytics-cron": path.join(ROOT, "cloudflare-workers", "analytics", "analytics-cron"),
-  "traffic-source-cron": path.join(ROOT, "cloudflare-workers", "analytics", "traffic-source-cron"),
   "event-buffer": path.join(ROOT, "cloudflare-workers", "event-buffer"),
   "site-metadata": path.join(ROOT, "cloudflare-workers", "site-metadata"),
 };
 
 const WORKER_BASE = {
-  "analytics-cron": "https://analytics-cron.thespeedysite.workers.dev",
-  "traffic-source-cron": "https://traffic-source-cron.thespeedysite.workers.dev",
   "site-metadata": "https://site-metadata.thespeedysite.workers.dev",
 };
 
@@ -57,12 +52,11 @@ function checkPresence() {
     NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: PUBLISHABLE_KEY,
-    ANALYTICS_API_SECRET: API_SECRET,
     CRON_SECRET_TOKEN: CRON_SECRET,
   };
   const missing = Object.keys(values).filter((n) => !values[n]);
   if (missing.length) fail("missing in .env.local: " + missing.join(", "));
-  console.log("env: all 5 required keys present");
+  console.log("env: all 4 required keys present");
 }
 
 function readWorkerSupabaseUrl(dir) {
@@ -90,7 +84,7 @@ async function verifyKeys() {
       );
     }
   }
-  console.log("parity: all 4 workers point at the same Supabase project");
+  console.log("parity: all 2 workers point at the same Supabase project");
 
   const serviceStatus = await probe(SUPABASE_URL, SERVICE_KEY);
   console.log("service key probe: HTTP " + serviceStatus);
@@ -150,9 +144,6 @@ async function syncSecrets() {
     allOk = (await wranglerSecretPut(dir, "SUPABASE_SERVICE_ROLE_KEY", SERVICE_KEY)) && allOk;
   }
   allOk = (await wranglerSecretPut(WORKERS["site-metadata"], "CRON_SECRET", CRON_SECRET)) && allOk;
-  for (const n of ["analytics-cron", "traffic-source-cron"]) {
-    allOk = (await wranglerSecretPut(WORKERS[n], "API_SECRET", API_SECRET)) && allOk;
-  }
   if (!allOk) fail("one or more secret uploads failed");
 }
 
@@ -172,17 +163,6 @@ async function smoke(name, pathName, opts) {
 
 async function smokeTests() {
   console.log("\n-- Stage 3: live smoke tests --");
-  await smoke("analytics-cron", "/health", {});
-  await smoke("traffic-source-cron", "/health", {});
-
-  const runJob = await smoke("analytics-cron", "/run-job", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${API_SECRET}` },
-  });
-  if (runJob && runJob.status !== 200) {
-    console.warn("WARNING: /run-job returned " + runJob.status + "; secret may still be propagating, retry in a minute");
-  }
-
   const syncRes = await smoke("site-metadata", "/", {
     method: "POST",
     headers: { Authorization: `Bearer ${CRON_SECRET}` },
@@ -201,7 +181,7 @@ async function main() {
   await syncSecrets();
   await smokeTests();
   console.log(
-    "\nDone. Rotation propagated: service key on 4 workers, CRON_SECRET on site-metadata, API_SECRET on both analytics workers."
+    "\nDone. Rotation propagated: service key on 2 workers and CRON_SECRET on site-metadata."
   );
 }
 

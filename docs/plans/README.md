@@ -13,7 +13,7 @@ This directory serves as the structured development roadmap and chronological mi
 | 2026-11-21 | [`2026-11-21_205705_order_communication_channels.md`](file:///home/victor/Projects/Speedy_Site_SaaS/docs/plans/2026-11-21_205705_order_communication_channels.md) | 🟢 **COMPLETED** | Plan: Order Communication Channels (Customer-Expert with Admin Oversight) (26/26 tasks) |
 | 2026-11-23 | [`2026-11-23_120259_delayed_chat_email_notifications.md`](file:///home/victor/Projects/Speedy_Site_SaaS/docs/plans/2026-11-23_120259_delayed_chat_email_notifications.md) | 🟢 **COMPLETED** | Delayed Chat Email Notifications (15-Minute Grace Window & Digest) (20/20 tasks) |
 | 2026-11-23 | [`2026-11-23_223431_compact_rum_telemetry_and_rag_readiness.md`](2026-11-23_223431_compact_rum_telemetry_and_rag_readiness.md) | 🟡 **IN PROGRESS** | Compact RUM Telemetry and RAG Readiness (compact v2 deployed and production-verified; reader migration, RAG, and production-scale baseline remain) |
-| 2026-11-24 | [`2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md`](2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md) | 🟡 **IN PROGRESS** | Focused RUM Dashboard and Data Retirement (Phase 1 documentation complete; evidence and retained reader migration pending) |
+| 2026-11-24 | [`2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md`](2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md) | 🟡 **IN PROGRESS** | Focused RUM Dashboard and Data Retirement (Phases 1-7 and production parity complete; separately approved destructive `events` drop pending) |
 
 
 

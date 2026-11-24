@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-23T23:20:26.471Z",
+  "generatedAt": "2026-11-24T13:13:59.161Z",
   "source": "supabase/migrations and production application callers",
   "readers": [
     {
@@ -990,6 +990,116 @@
       ]
     },
     {
+      "function": "page_performance_analysis",
+      "source": "supabase/migrations/20261124062734_canonical_retained_diagnostic_readers.sql",
+      "line": 402,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "cls_shifts",
+          "classification": "optional"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "inp",
+          "classification": "optional"
+        },
+        {
+          "field": "largestShiftTarget",
+          "classification": "optional"
+        },
+        {
+          "field": "lcp",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "target",
+          "classification": "optional"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "page_performance_analysis",
+      "source": "supabase/migrations/20261124123405_fix_retained_reader_production_errors.sql",
+      "line": 494,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "cls_shifts",
+          "classification": "optional"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "inp",
+          "classification": "optional"
+        },
+        {
+          "field": "largestShiftTarget",
+          "classification": "optional"
+        },
+        {
+          "field": "lcp",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "target",
+          "classification": "optional"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
       "function": "recent_requests",
       "source": "supabase/migrations/20240101000001_base_functions.sql",
       "line": 2790,
@@ -1077,6 +1187,520 @@
         },
         {
           "field": "type",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "rum_cls_shifts",
+      "source": "supabase/migrations/20261124062734_canonical_retained_diagnostic_readers.sql",
+      "line": 3,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "areaDelta",
+          "classification": "optional"
+        },
+        {
+          "field": "area_delta",
+          "classification": "optional"
+        },
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "cls_shifts",
+          "classification": "optional"
+        },
+        {
+          "field": "current",
+          "classification": "optional"
+        },
+        {
+          "field": "current_rect",
+          "classification": "optional"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "distanceMoved",
+          "classification": "optional"
+        },
+        {
+          "field": "distance_moved",
+          "classification": "optional"
+        },
+        {
+          "field": "dx",
+          "classification": "optional"
+        },
+        {
+          "field": "dy",
+          "classification": "optional"
+        },
+        {
+          "field": "element",
+          "classification": "optional"
+        },
+        {
+          "field": "elements",
+          "classification": "optional"
+        },
+        {
+          "field": "impact",
+          "classification": "optional"
+        },
+        {
+          "field": "involved_elements",
+          "classification": "optional"
+        },
+        {
+          "field": "largestShiftTarget",
+          "classification": "optional"
+        },
+        {
+          "field": "loadState",
+          "classification": "optional"
+        },
+        {
+          "field": "load_state",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "previous",
+          "classification": "optional"
+        },
+        {
+          "field": "previous_rect",
+          "classification": "optional"
+        },
+        {
+          "field": "rect",
+          "classification": "optional"
+        },
+        {
+          "field": "shift",
+          "classification": "optional"
+        },
+        {
+          "field": "shifts",
+          "classification": "optional"
+        },
+        {
+          "field": "target",
+          "classification": "optional"
+        },
+        {
+          "field": "time",
+          "classification": "optional"
+        },
+        {
+          "field": "time_ms",
+          "classification": "optional"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        },
+        {
+          "field": "viewportRatio",
+          "classification": "optional"
+        },
+        {
+          "field": "viewport_ratio",
+          "classification": "optional"
+        }
+      ]
+    },
+    {
+      "function": "rum_inp_interactions",
+      "source": "supabase/migrations/20261124062734_canonical_retained_diagnostic_readers.sql",
+      "line": 101,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "eventType",
+          "classification": "optional"
+        },
+        {
+          "field": "event_type",
+          "classification": "optional"
+        },
+        {
+          "field": "inp",
+          "classification": "optional"
+        },
+        {
+          "field": "inputDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "input_delay_ms",
+          "classification": "optional"
+        },
+        {
+          "field": "loaf",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "presentationDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "presentation_ms",
+          "classification": "optional"
+        },
+        {
+          "field": "processingDuration",
+          "classification": "optional"
+        },
+        {
+          "field": "processing_ms",
+          "classification": "optional"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "scripts",
+          "classification": "optional"
+        },
+        {
+          "field": "sourceURL",
+          "classification": "optional"
+        },
+        {
+          "field": "target",
+          "classification": "optional"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "url",
+          "classification": "optional"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "rum_lcp_candidates",
+      "source": "supabase/migrations/20261124062156_canonical_retained_lcp_readers.sql",
+      "line": 4,
+      "eventTypes": [
+        "client-info"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "decodedBodySize",
+          "classification": "required"
+        },
+        {
+          "field": "deviceMemory",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "elementRenderDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "family",
+          "classification": "optional"
+        },
+        {
+          "field": "fetchPriority",
+          "classification": "legacy-only"
+        },
+        {
+          "field": "font",
+          "classification": "optional"
+        },
+        {
+          "field": "fontData",
+          "classification": "optional"
+        },
+        {
+          "field": "height",
+          "classification": "optional"
+        },
+        {
+          "field": "isLazy",
+          "classification": "optional"
+        },
+        {
+          "field": "lcp",
+          "classification": "optional"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "render_blockers",
+          "classification": "optional"
+        },
+        {
+          "field": "resourceLoadDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "resourceLoadDuration",
+          "classification": "optional"
+        },
+        {
+          "field": "size",
+          "classification": "optional"
+        },
+        {
+          "field": "target",
+          "classification": "optional"
+        },
+        {
+          "field": "timeToFirstByte",
+          "classification": "required"
+        },
+        {
+          "field": "transferSize",
+          "classification": "required"
+        },
+        {
+          "field": "transfer_bytes",
+          "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "url",
+          "classification": "optional"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        },
+        {
+          "field": "weight",
+          "classification": "optional"
+        },
+        {
+          "field": "width",
+          "classification": "optional"
+        }
+      ]
+    },
+    {
+      "function": "rum_lcp_candidates",
+      "source": "supabase/migrations/20261124123405_fix_retained_reader_production_errors.sql",
+      "line": 655,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "decodedBodySize",
+          "classification": "required"
+        },
+        {
+          "field": "deviceMemory",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "elementRenderDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "family",
+          "classification": "optional"
+        },
+        {
+          "field": "fetchPriority",
+          "classification": "legacy-only"
+        },
+        {
+          "field": "font",
+          "classification": "optional"
+        },
+        {
+          "field": "fontData",
+          "classification": "optional"
+        },
+        {
+          "field": "height",
+          "classification": "optional"
+        },
+        {
+          "field": "isLazy",
+          "classification": "optional"
+        },
+        {
+          "field": "lcp",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "render_blockers",
+          "classification": "optional"
+        },
+        {
+          "field": "resourceLoadDelay",
+          "classification": "optional"
+        },
+        {
+          "field": "resourceLoadDuration",
+          "classification": "optional"
+        },
+        {
+          "field": "size",
+          "classification": "optional"
+        },
+        {
+          "field": "target",
+          "classification": "optional"
+        },
+        {
+          "field": "timeToFirstByte",
+          "classification": "required"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "transferSize",
+          "classification": "required"
+        },
+        {
+          "field": "transfer_bytes",
+          "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "url",
+          "classification": "optional"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        },
+        {
+          "field": "weight",
+          "classification": "optional"
+        },
+        {
+          "field": "width",
+          "classification": "optional"
+        }
+      ]
+    },
+    {
+      "function": "rum_metric_readings",
+      "source": "supabase/migrations/20261124060651_canonical_retained_aggregate_readers.sql",
+      "line": 5,
+      "eventTypes": [
+        "client-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "connection",
+          "classification": "optional"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "effectiveType",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "rating",
+          "classification": "required"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
           "classification": "required"
         }
       ]
@@ -1187,6 +1811,225 @@
         {
           "field": "tcpConnection",
           "classification": "optional"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "ttfb_contributors",
+      "source": "supabase/migrations/20261124062734_canonical_retained_diagnostic_readers.sql",
+      "line": 309,
+      "eventTypes": [
+        "client-info",
+        "geo-info",
+        "origin-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "connection",
+          "classification": "optional"
+        },
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "dnsLookup",
+          "classification": "required"
+        },
+        {
+          "field": "downlink",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "originHit",
+          "classification": "required"
+        },
+        {
+          "field": "provider",
+          "classification": "required"
+        },
+        {
+          "field": "requestStart",
+          "classification": "optional"
+        },
+        {
+          "field": "rtt",
+          "classification": "optional"
+        },
+        {
+          "field": "tcpConnection",
+          "classification": "optional"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "ttfb_contributors",
+      "source": "supabase/migrations/20261124123405_fix_retained_reader_production_errors.sql",
+      "line": 839,
+      "eventTypes": [
+        "client-info",
+        "geo-info",
+        "origin-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "connection",
+          "classification": "optional"
+        },
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "dnsLookup",
+          "classification": "required"
+        },
+        {
+          "field": "downlink",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "originHit",
+          "classification": "required"
+        },
+        {
+          "field": "provider",
+          "classification": "required"
+        },
+        {
+          "field": "requestStart",
+          "classification": "optional"
+        },
+        {
+          "field": "rtt",
+          "classification": "optional"
+        },
+        {
+          "field": "tcpConnection",
+          "classification": "optional"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
+        },
+        {
+          "field": "type",
+          "classification": "required"
+        },
+        {
+          "field": "value",
+          "classification": "required"
+        }
+      ]
+    },
+    {
+      "function": "ttfb_contributors",
+      "source": "supabase/migrations/20261124125351_fix_remaining_retained_reader_errors.sql",
+      "line": 193,
+      "eventTypes": [
+        "client-info",
+        "geo-info",
+        "origin-info",
+        "web-vital"
+      ],
+      "fields": [
+        {
+          "field": "attribution",
+          "classification": "required"
+        },
+        {
+          "field": "connection",
+          "classification": "optional"
+        },
+        {
+          "field": "country",
+          "classification": "required"
+        },
+        {
+          "field": "deviceType",
+          "classification": "required"
+        },
+        {
+          "field": "dnsLookup",
+          "classification": "required"
+        },
+        {
+          "field": "downlink",
+          "classification": "optional"
+        },
+        {
+          "field": "name",
+          "classification": "required"
+        },
+        {
+          "field": "originHit",
+          "classification": "required"
+        },
+        {
+          "field": "provider",
+          "classification": "required"
+        },
+        {
+          "field": "requestStart",
+          "classification": "optional"
+        },
+        {
+          "field": "rtt",
+          "classification": "optional"
+        },
+        {
+          "field": "tcpConnection",
+          "classification": "optional"
+        },
+        {
+          "field": "timestamp",
+          "classification": "required"
         },
         {
           "field": "type",
@@ -1383,11 +2226,6 @@
       "line": 18
     },
     {
-      "function": "get_daily_web_metrics",
-      "source": "cloudflare-workers/analytics/analytics-cron/src/index.ts",
-      "line": 15
-    },
-    {
       "function": "get_lcp_image_metrics",
       "source": "src/app/api/rum/lcp-images/route.ts",
       "line": 24
@@ -1413,35 +2251,15 @@
       "line": 18
     },
     {
-      "function": "recent_requests",
-      "source": "src/app/api/network-and-server/latest-requests/route.ts",
-      "line": 28
-    },
-    {
-      "function": "traffic_source",
-      "source": "cloudflare-workers/analytics/traffic-source-cron/src/index.ts",
-      "line": 16
-    },
-    {
       "function": "ttfb_contributors",
       "source": "src/app/api/rum/elements/ttfb/route.ts",
       "line": 24
-    },
-    {
-      "function": "user_happiness_dist",
-      "source": "src/app/api/rum/analytics/happiness-geo/route.ts",
-      "line": 28
-    },
-    {
-      "function": "ux_map_data",
-      "source": "src/app/api/rum/analytics/ux-map-data/route.ts",
-      "line": 18
     }
   ],
   "summary": {
-    "readerCount": 28,
-    "callerCount": 16,
-    "referencedFieldCount": 77,
+    "readerCount": 38,
+    "callerCount": 11,
+    "referencedFieldCount": 98,
     "unusedCollectorTypes": [
       "error",
       "errors"

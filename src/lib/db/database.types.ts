@@ -1444,7 +1444,6 @@ export type Database = {
         }[]
       }
       get_current_user_role: { Args: never; Returns: string }
-      get_daily_web_metrics: { Args: { target_date: string }; Returns: Json[] }
       get_filtered_rum_metrics: {
         Args: {
           p_date_range: string
@@ -1827,32 +1826,34 @@ export type Database = {
           rows_inserted: number
         }[]
       }
-      recent_requests: {
-        Args: { p_domain: string; p_limit?: number }
-        Returns: {
-          backend_ms: number
-          cache_status: string
-          city: string
-          country: string
-          created_at: string
-          current_page: string
-          decoded_size: number
-          device_type: string
-          experience: string
-          har_data: Json
-          id: number
-          inp_rating: string
-          inp_value: number
-          lcp_rating: string
-          lcp_value: number
-          session_id: string
-          transfer_size: number
-          ttfb: number
-        }[]
-      }
       refresh_rum_daily_distributions: {
         Args: { p_day?: string }
         Returns: undefined
+      }
+      rum_cls_shifts: {
+        Args: { p_domain: string }
+        Returns: {
+          area_delta: number
+          current_page: string
+          current_rect: Json
+          device_type: string
+          distance_moved: number
+          dx: number
+          dy: number
+          involved_elements: Json
+          load_state: string
+          previous_rect: Json
+          row_id: number
+          target: string
+          time_ms: number
+          total_cls_value: number
+          value: number
+          viewport_ratio: number
+        }[]
+      }
+      rum_diagnostic_evidence_is_valid: {
+        Args: { p_evidence: Json }
+        Returns: boolean
       }
       rum_distributions_all_metrics: {
         Args: { p_domain_name: string; p_end: string; p_start: string }
@@ -1862,6 +1863,66 @@ export type Database = {
           metric: string
           needs_improvement_count: number
           poor_count: number
+        }[]
+      }
+      rum_inp_interactions: {
+        Args: { p_domain: string }
+        Returns: {
+          created_at: string
+          current_page: string
+          device_type: string
+          inp_value: number
+          input_delay: number
+          interaction_type: string
+          presentation_delay: number
+          processing_duration: number
+          rating: string
+          responsible_scripts: string
+          row_id: number
+          target_element: string
+        }[]
+      }
+      rum_lcp_candidates: {
+        Args: { p_domain: string; p_end?: string; p_start?: string }
+        Returns: {
+          asset_url: string
+          candidate_ttfb_ms: number
+          current_page: string
+          decoded_bytes: number
+          device_memory_gb: string
+          device_type: string
+          domain_name: string
+          element_render_delay_ms: number
+          fetch_priority: string
+          font_family: string
+          font_size: string
+          font_transfer_bytes: number
+          font_url: string
+          font_weight: string
+          image_height: number
+          image_width: number
+          is_lazy: boolean
+          lcp_rating: string
+          lcp_value: number
+          render_blockers: string
+          resource_load_delay_ms: number
+          resource_load_duration_ms: number
+          row_id: number
+          target: string
+          transfer_bytes: number
+        }[]
+      }
+      rum_metric_readings: {
+        Args: { p_domain: string; p_end?: string; p_start: string }
+        Returns: {
+          current_page: string
+          device_type: string
+          metric_name: string
+          metric_value: number
+          network_effective_type: string
+          rating: string
+          report_date: string
+          row_id: number
         }[]
       }
       set_email_reporting: {
@@ -1883,16 +1944,6 @@ export type Database = {
           current_page: string
           hits: number
           previous_page: string
-        }[]
-      }
-      traffic_source: {
-        Args: never
-        Returns: {
-          count: number
-          day: string
-          device_type: string
-          domain: string
-          referral_domain: string
         }[]
       }
       ttfb_contributors: {
@@ -1948,33 +1999,6 @@ export type Database = {
           experience_quality: string
           percentage_in_device_type: number
           session_count: number
-        }[]
-      }
-      user_happiness_dist: {
-        Args: { domain_filter: string; end_date: string; start_date: string }
-        Returns: {
-          country_iso: string
-          device_type: string
-          happy_percentage: number
-          moderate_percentage: number
-          total_sessions: number
-          unhappy_percentage: number
-        }[]
-      }
-      ux_map_data: {
-        Args: { domain_url: string }
-        Returns: {
-          average_pct: number
-          bad_pct: number
-          country: string
-          device_type: string
-          good_pct: number
-          network: string
-          p75_cls: number
-          p75_inp: number
-          p75_lcp: number
-          p75_ttfb: number
-          total_sessions: number
         }[]
       }
       verify_website_user_match: {

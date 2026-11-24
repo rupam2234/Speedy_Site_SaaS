@@ -46,33 +46,48 @@ AS $$
         rm.device_memory_gb::text AS device_memory_gb,
         rm.lcp_ms::numeric AS lcp_value,
         REPLACE(COALESCE(rm.lcp_rating, ''), '-', ' ') AS lcp_rating,
-        candidate->>'target' AS target,
-        candidate->>'url' AS asset_url,
-        (candidate->>'transfer_bytes')::numeric AS transfer_bytes,
-        (candidate->>'decoded_bytes')::numeric AS decoded_bytes,
-        (candidate->>'candidate_ttfb_ms')::numeric AS candidate_ttfb_ms,
-        (candidate->>'image_width')::numeric AS image_width,
-        (candidate->>'image_height')::numeric AS image_height,
-        (candidate->>'is_lazy')::boolean AS is_lazy,
-        candidate->>'fetch_priority' AS fetch_priority,
-        candidate->'font'->>'family' AS font_family,
-        candidate->'font'->>'weight' AS font_weight,
-        candidate->'font'->>'size' AS font_size,
-        candidate->'font'->>'url' AS font_url,
-        (candidate->'font'->>'transfer_bytes')::numeric AS font_transfer_bytes,
-        (candidate->>'resource_load_delay_ms')::numeric AS resource_load_delay_ms,
-        (candidate->>'resource_load_duration_ms')::numeric AS resource_load_duration_ms,
-        (candidate->>'element_render_delay_ms')::numeric AS element_render_delay_ms,
+        lcp.target AS target,
+        lcp.url AS asset_url,
+        lcp.transfer_bytes AS transfer_bytes,
+        lcp.decoded_bytes AS decoded_bytes,
+        lcp.candidate_ttfb_ms AS candidate_ttfb_ms,
+        lcp.image_width AS image_width,
+        lcp.image_height AS image_height,
+        lcp.is_lazy AS is_lazy,
+        lcp.fetch_priority AS fetch_priority,
+        lcp.font->>'family' AS font_family,
+        lcp.font->>'weight' AS font_weight,
+        lcp.font->>'size' AS font_size,
+        lcp.font->>'url' AS font_url,
+        (lcp.font->>'transfer_bytes')::numeric AS font_transfer_bytes,
+        lcp.resource_load_delay_ms AS resource_load_delay_ms,
+        lcp.resource_load_duration_ms AS resource_load_duration_ms,
+        lcp.element_render_delay_ms AS element_render_delay_ms,
         (
-            SELECT string_agg(blocker->>'url' || ' (' || blocker->>'finish_time_ms' || 'ms)', E'\n' ORDER BY (blocker->>'finish_time_ms')::numeric DESC)
-            FROM jsonb_array_elements(COALESCE(rm.diagnostic_evidence->'render_blockers', '[]'::jsonb)) blocker
+            SELECT string_agg(blocker.url || ' (' || blocker.finish_time_ms || 'ms)', E'\n' ORDER BY blocker.finish_time_ms DESC)
+            FROM jsonb_to_recordset(COALESCE(rm.diagnostic_evidence->'render_blockers', '[]'::jsonb))
+                AS blocker(url text, finish_time_ms numeric)
         ) AS render_blockers
     FROM public.rum_metrics rm
     CROSS JOIN LATERAL (
-        SELECT candidate.value AS candidate
-        FROM jsonb_array_elements(COALESCE(rm.diagnostic_evidence->'lcp', '[]'::jsonb)) WITH ORDINALITY candidate(value, ordinal)
-        WHERE candidate.value->>'target' IS NOT NULL
-        ORDER BY candidate.ordinal
+        SELECT *
+        FROM jsonb_to_recordset(COALESCE(rm.diagnostic_evidence->'lcp', '[]'::jsonb))
+            AS candidate(
+                target text,
+                url text,
+                transfer_bytes numeric,
+                decoded_bytes numeric,
+                candidate_ttfb_ms numeric,
+                image_width numeric,
+                image_height numeric,
+                is_lazy boolean,
+                fetch_priority text,
+                font jsonb,
+                resource_load_delay_ms numeric,
+                resource_load_duration_ms numeric,
+                element_render_delay_ms numeric
+            )
+        WHERE candidate.target IS NOT NULL
         LIMIT 1
     ) lcp
     WHERE (p_domain IS NULL OR rm.domain_name = p_domain)
@@ -125,19 +140,36 @@ AS $$
         (event->'attribution'->>'resourceLoadDuration')::numeric AS resource_load_duration_ms,
         (event->'attribution'->>'elementRenderDelay')::numeric AS element_render_delay_ms,
         (
-            SELECT string_agg(nested->>'URL' || ' (' || regexp_replace(nested->>'Finish Time', 'ms$', '') || 'ms)', E'\n' ORDER BY regexp_replace(nested->>'Finish Time', 'ms$', '')::numeric DESC)
-            FROM jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) top_event
-            CROSS JOIN LATERAL jsonb_array_elements(CASE WHEN jsonb_typeof(top_event) = 'array' THEN top_event ELSE '[]'::jsonb END) nested
-            WHERE nested->>'type' = 'render-blocking-scripts'
+            SELECT string_agg(nested.url || ' (' || regexp_replace(nested.finish_time, 'ms$', '') || 'ms)', E'\n' ORDER BY regexp_replace(nested.finish_time, 'ms$', '')::numeric DESC)
+            FROM jsonb_to_recordset(COALESCE(rm.events, '[]'::jsonb))
+                AS top_event(nested_array jsonb)
+            CROSS JOIN LATERAL jsonb_to_recordset(
+                CASE WHEN jsonb_typeof(top_event.nested_array) = 'array' THEN top_event.nested_array ELSE '[]'::jsonb END
+            ) AS nested(url text, finish_time text, type text)
+            WHERE nested.type = 'render-blocking-scripts'
         ) AS render_blockers
     FROM public.rum_metrics rm
     CROSS JOIN LATERAL (
-        SELECT DISTINCT ON (web_vital->>'name')
-            web_vital AS event
-        FROM jsonb_array_elements(COALESCE(rm.events, '[]'::jsonb)) web_vital
-        WHERE web_vital->>'type' = 'web-vital'
-          AND web_vital->>'name' = 'LCP'
-        ORDER BY web_vital->>'name', COALESCE(web_vital->>'timestamp', '0')::numeric DESC
+        SELECT DISTINCT ON (web_vital.name)
+            jsonb_build_object(
+                'name', web_vital.name,
+                'value', web_vital.value,
+                'rating', web_vital.rating,
+                'timestamp', web_vital.timestamp,
+                'attribution', web_vital.attribution
+            ) AS event
+        FROM jsonb_to_recordset(COALESCE(rm.events, '[]'::jsonb))
+            AS web_vital(
+                type text,
+                name text,
+                value numeric,
+                rating text,
+                timestamp numeric,
+                attribution jsonb
+            )
+        WHERE web_vital.type = 'web-vital'
+          AND web_vital.name = 'LCP'
+        ORDER BY web_vital.name, COALESCE(web_vital.timestamp, 0) DESC
     ) lcp
     WHERE (p_domain IS NULL OR rm.domain_name = p_domain)
       AND (rm.schema_version IS NULL OR rm.schema_version < 2)
@@ -203,7 +235,7 @@ BEGIN
             current_page,
             max(asset_url) AS lcp_asset_url,
             max(font_family) AS font_family,
-            max(font_weight) AS font_weight,
+            max(COALESCE(font_weight, 'unknown')) AS font_weight,
             max(font_size) AS font_size,
             max(fetch_priority) AS loading_priority,
             max(device_memory_gb) AS device_memory_gb,
@@ -402,7 +434,7 @@ AS $$
         SELECT
             device_type,
             font_family,
-            font_weight,
+            COALESCE(font_weight, 'unknown') AS font_weight,
             current_page,
             count(*) AS frequency
         FROM candidates
@@ -420,7 +452,7 @@ AS $$
     SELECT
         candidates.device_type AS device,
         candidates.font_family,
-        candidates.font_weight,
+        COALESCE(candidates.font_weight, 'unknown') AS font_weight,
         max(candidates.font_url) AS font_file_url,
         round(avg(candidates.font_transfer_bytes), 2) AS avg_resource_size,
         top_pages.major_pages,
@@ -432,8 +464,8 @@ AS $$
     JOIN top_pages
       ON candidates.device_type = top_pages.device_type
       AND candidates.font_family = top_pages.font_family
-      AND candidates.font_weight = top_pages.font_weight
-    GROUP BY candidates.device_type, candidates.font_family, candidates.font_weight, top_pages.major_pages
+      AND COALESCE(candidates.font_weight, 'unknown') = top_pages.font_weight
+    GROUP BY candidates.device_type, candidates.font_family, COALESCE(candidates.font_weight, 'unknown'), top_pages.major_pages
     ORDER BY 9 DESC;
 $$;
 

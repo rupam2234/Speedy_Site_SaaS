@@ -65,6 +65,33 @@ const diagnosticReadersMigration = fs.readFileSync(
   ),
   "utf8"
 );
+const retiredReadersMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124063444_retire_generic_rum_readers.sql"
+  ),
+  "utf8"
+);
+const productionReadersFixMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124123405_fix_retained_reader_production_errors.sql"
+  ),
+  "utf8"
+);
+const remainingReadersFixMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124125351_fix_remaining_retained_reader_errors.sql"
+  ),
+  "utf8"
+);
 
 describe("compact RUM migration contract", () => {
   it("keeps the migration additive and preserves legacy events", () => {
@@ -295,8 +322,7 @@ describe("compact RUM migration contract", () => {
       lcpReadersMigration.indexOf("CREATE OR REPLACE FUNCTION public.rum_lcp_candidates"),
       lcpReadersMigration.indexOf("CREATE OR REPLACE FUNCTION public.analyze_lcp_by_device")
     );
-    assert.match(helper, /WITH ORDINALITY candidate\(value, ordinal\)/);
-    assert.match(helper, /ORDER BY candidate\.ordinal/);
+    assert.match(helper, /jsonb_to_recordset\(COALESCE\(rm\.diagnostic_evidence->'lcp'/);
     assert.match(helper, /LIMIT 1/);
     assert.match(helper, /rm\.schema_version >= 2/);
     assert.match(helper, /rm\.schema_version IS NULL OR rm\.schema_version < 2/);
@@ -386,5 +412,58 @@ describe("compact RUM migration contract", () => {
         new RegExp(`GRANT EXECUTE ON FUNCTION public\\.${functionName}\\(text\\) TO service_role`)
       );
     }
+  });
+
+  it("keeps production reader corrections conflict-safe and object-only", () => {
+    for (const functionName of [
+      "analyze_fcp_by_device",
+      "get_rum_web_vitals_metrics",
+      "analyze_lcp_by_device",
+      "get_lcp_image_metrics",
+      "cls_elements",
+      "ttfb_contributors",
+      "page_performance_analysis",
+    ]) {
+      assert.match(
+        productionReadersFixMigration,
+        new RegExp(`CREATE OR REPLACE FUNCTION public\\.${functionName}`)
+      );
+    }
+    assert.match(productionReadersFixMigration, /#variable_conflict use_column/);
+    assert.match(productionReadersFixMigration, /jsonb_typeof\(candidate_doc\) = 'object'/);
+    assert.match(productionReadersFixMigration, /jsonb_typeof\(blocker_doc\) = 'object'/);
+    assert.match(productionReadersFixMigration, /jsonb_typeof\(web_vital_doc\) = 'object'/);
+  });
+
+  it("keeps the final LCP, CLS, and TTFB reader fixes explicit", () => {
+    for (const functionName of ["analyze_lcp_by_device", "cls_elements", "ttfb_contributors"]) {
+      assert.match(
+        remainingReadersFixMigration,
+        new RegExp(`CREATE OR REPLACE FUNCTION public\\.${functionName}`)
+      );
+    }
+    assert.match(remainingReadersFixMigration, /LANGUAGE sql/);
+    assert.match(remainingReadersFixMigration, /WITH lcp_candidates AS/);
+    assert.match(remainingReadersFixMigration, /element_groups AS/);
+    assert.match(remainingReadersFixMigration, /jsonb_array_elements_text\(shifts\.involved_elements\)/);
+    assert.match(remainingReadersFixMigration, /client->'connection'->>'rtt' ~ /);
+    assert.match(remainingReadersFixMigration, /client->'connection'->>'downlink' ~ /);
+  });
+
+  it("retires only confirmed removal-only readers", () => {
+    for (const functionName of [
+      "recent_requests",
+      "traffic_source",
+      "get_daily_web_metrics",
+      "user_happiness_dist",
+      "ux_map_data",
+    ]) {
+      assert.match(retiredReadersMigration, new RegExp(`DROP FUNCTION IF EXISTS public\\.${functionName}`));
+    }
+    assert.doesNotMatch(retiredReadersMigration, /DROP COLUMN/);
+    assert.doesNotMatch(retiredReadersMigration, /DELETE FROM/);
+    assert.doesNotMatch(retiredReadersMigration, /analyze_lcp_by_device/);
+    assert.doesNotMatch(retiredReadersMigration, /cls_elements/);
+    assert.doesNotMatch(retiredReadersMigration, /page_performance_analysis/);
   });
 });

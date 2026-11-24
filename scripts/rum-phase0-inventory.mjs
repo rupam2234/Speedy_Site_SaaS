@@ -26,7 +26,7 @@ function splitFunctions(sql) {
     offset += line.length + 1;
     if (!line.toUpperCase().startsWith("CREATE OR REPLACE FUNCTION")) continue;
 
-    const nameMatch = line.match(/FUNCTION\s+(?:"public"\.)?"?([a-zA-Z0-9_]+)"?/i);
+    const nameMatch = line.match(/FUNCTION\s+(?:"public"\.|public\.)?"?([a-zA-Z0-9_]+)"?/i);
     if (!nameMatch) continue;
     const bodyStart = sql.indexOf("AS ", start);
     if (bodyStart === -1) continue;
@@ -182,6 +182,38 @@ function toMarkdown(inventory) {
     "- **optional**: read by a reader but not emitted by the current collector, or emitted only for a specialized branch.",
     "- **legacy-only**: historical shape that the current collector does not emit, including event-level `sessionId`, `pageAddress`, and `origin-info`.",
     "- **unused**: collector event type with no detected SQL reader.",
+  );
+  lines.push(
+    "",
+    "## Product-boundary classification (ADR-0005)",
+    "",
+    "### Retained and migrate to canonical v2",
+    "",
+    "| Function | Reader type |",
+    "| :--- | :--- |",
+    "| `analyze_fcp_by_device` | Typed aggregate and filter |",
+    "| `analyze_lcp_by_device` | LCP element evidence |",
+    "| `cls_elements` | CLS element evidence |",
+    "| `cwv_dist_by_connection` | Typed aggregate and filter |",
+    "| `font_analysis` | LCP font evidence |",
+    "| `get_lcp_image_metrics` | LCP image evidence |",
+    "| `get_rum_web_vitals_metrics` | Typed aggregate and filter |",
+    "| `get_web_vital_counts_by_url` | Typed aggregate and filter |",
+    "| `inp_elements` | INP element evidence |",
+    "| `page_performance_analysis` | Typed facts and canonical evidence |",
+    "| `ttfb_contributors` | Typed navigation, geography, and network facts |",
+    "",
+    "### Retired with their product surfaces",
+    "",
+    "| Function | Retired surface |",
+    "| :--- | :--- |",
+    "| `recent_requests` | Trace |",
+    "| `traffic_source` | Generic Analytics |",
+    "| `get_daily_web_metrics` | Generic Analytics |",
+    "| `user_happiness_dist` | Generic Analytics |",
+    "| `ux_map_data` | Global UX |",
+    "",
+    "Historical SQL definitions remain visible in this inventory because migrations are append-only. Application callers are the authoritative signal for whether a reader is still active.",
   );
   return `${lines.join("\n")}\n`;
 }
