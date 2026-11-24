@@ -209,6 +209,7 @@ A continuation beacon uses the same `pageview_id` and may contain only newly obs
 - Version 2 rejects unknown top-level sections and malformed typed values.
 - A version 2 beacon must contain `pageview_id`, `session_id`, `current_page`, `facts`, and `evidence`. `referrer_domain` is nullable and required only when an external referrer is known.
 - Continuation beacons merge by `pageview_id` and may be delivered in any order.
+- A flush batch may contain the same `pageview_id` more than once. The database RPC applies each payload as a separate upsert so retries and continuations merge safely without a duplicate-row conflict.
 - Stored canonical columns are nullable. Null means the fact was not observed or is unavailable, never that the value was zero.
 - The database retains the first non-null first-party context. Later non-null metric observations may supersede earlier metrics. Legacy event arrays append, and diagnostic evidence merges shallowly by top-level section.
 - The Worker rejects malformed or oversized payloads before buffering.

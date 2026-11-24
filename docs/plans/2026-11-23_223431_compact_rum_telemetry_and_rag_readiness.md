@@ -2,7 +2,7 @@
 
 > **Status:** 🟡 IN PROGRESS  
 > **Created:** 2026-11-23 22:34:31 UTC  
-> **Updated:** 2026-11-23 23:30:00 UTC  
+> **Updated:** 2026-11-24 01:15:00 UTC
 > **Related ADR:** [ADR-0004: Compact RUM Telemetry and RAG Knowledge Model](../adr/0004-compact-rum-telemetry-and-rag-knowledge-model.md)  
 > **Prerequisite:** Production passive RUM delivery is working and `pageview_id` continuation merging is verified.  
 > **Target:** Optimize the RUM backend for high-quality WordPress insights and prepare a safe Cloudflare RAG knowledge pipeline.
@@ -278,15 +278,17 @@ The Worker remains the security boundary. It derives the domain from Origin/Refe
 
 ### Phase 7: Production Cutover and Legacy Retirement
 
-- [ ] Deploy the collector, Worker, migration, readers, and issue pipeline in a coordinated, reversible sequence.
+- [ ] Deploy the collector, Worker, migration, readers, and issue pipeline in a coordinated, reversible sequence. The collector, Worker, and additive migrations are deployed and verified; reader migration and the issue pipeline remain.
 - [ ] Compare v1 and v2 traffic and row sizes for at least one full traffic cycle.
-- [ ] Verify v2 passive, interactive, continuation, and slow-page flows in production.
+- [x] Verify v2 passive, interactive, continuation, and slow-page flows in production.
 - [ ] Stop producing legacy events only after all readers pass parity checks.
 - [ ] Backfill only product-critical typed fields from legacy events, in bounded batches with dry-run counts.
 - [ ] Decide historical retention separately. Do not delete legacy data under this plan.
 - [ ] Enable RAG for internal experts first, then for customers if product direction permits it.
 
 **Gate:** payload and storage targets are met, dashboards are stable, passive visits persist, and no known reader depends on the removed event fields.
+
+**Production verification (2026-11-24):** Deployed the event-buffer Worker at version `42f0a870-3c4c-4db3-8abf-65497b7c8a33`, then the collector Worker at version `8a27927e-8d92-45d8-978b-c325f26a09c0`. The cache-busted live collector emits `schema_version: 2`, `facts`, and `evidence` without the legacy `data` envelope. A production v2 beacon was accepted, flushed to Supabase, and verified with `schema_version = 2`, populated canonical device and LCP columns, edge country, bounded diagnostic evidence, and a populated legacy `events` projection. A duplicate-pageview batch exposed PostgreSQL error `21000`; migration `20261124005400_dedupe_rum_upsert_batch.sql` was then applied so each payload is upserted separately. Direct RPC and four-shard Worker tests now return success with structured flush status `ok`. All synthetic rows were deleted and remained absent after an alarm window.
 
 ## 7. Verification Matrix
 

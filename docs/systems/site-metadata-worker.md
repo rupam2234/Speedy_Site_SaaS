@@ -222,9 +222,14 @@ The `upsert_rum_metrics_batch(jsonb)` RPC merges by the existing partial unique
 later non-null metric observations to supersede earlier values, appends legacy
 events, and shallow-merges diagnostic evidence by top-level section. A null
 canonical value means the fact was not observed or is unavailable, not zero.
-The migration and a follow-up grant hardening migration were applied to the linked
-live database on 2026-11-23. The public-key probe was denied with HTTP 401;
-service-role execution passed.
+The RPC applies each payload in a batch as a separate statement, so retries or
+continuations that share a `pageview_id` cannot trigger PostgreSQL's
+"ON CONFLICT DO UPDATE command cannot affect row a second time" error. The
+internal single-payload helper and public wrapper are both restricted to
+`service_role`. The migration and a follow-up grant hardening migration were
+applied to the linked live database on 2026-11-23. The public-key probe was
+denied with HTTP 401; service-role execution passed. The duplicate-safe RPC
+migration was applied and verified in production on 2026-11-24.
 
 ### Collector and Worker canonicalization (Phase 2)
 

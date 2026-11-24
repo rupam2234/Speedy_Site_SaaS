@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       cloudflare_auth: {
@@ -1938,6 +1913,10 @@ export type Database = {
         }[]
       }
       upsert_rum_metrics_batch: { Args: { payloads: Json }; Returns: undefined }
+      upsert_rum_metrics_batch_single: {
+        Args: { payloads: Json }
+        Returns: undefined
+      }
       urlencode:
         | { Args: { data: Json }; Returns: string }
         | {
@@ -2164,9 +2143,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       email_verbosity: [

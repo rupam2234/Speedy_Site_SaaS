@@ -6,7 +6,21 @@
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
-> **Last updated:** 2026-11-23
+> **Last updated:** 2026-11-24
+---
+
+## 2026-11-24: Compact RUM v2 Deployed and Duplicate-Safe in Production
+
+**Problem:** The committed compact RUM v2 implementation was not active in production. After deploying the event-buffer and collector Workers, a duplicate-pageview flush batch exposed a PostgreSQL cardinality error (`21000`) because one `ON CONFLICT DO UPDATE` statement proposed the same `pageview_id` more than once. The affected Durable Object could retain the failed buffer and retry it.
+
+**Changes:** Deployed the event-buffer Worker at version `42f0a870-3c4c-4db3-8abf-65497b7c8a33`, then the collector Worker at version `8a27927e-8d92-45d8-978b-c325f26a09c0`. The live cache-busted collector now emits the version 2 canonical envelope. Migration `20261124005400_dedupe_rum_upsert_batch.sql` changes the public batch RPC to apply each payload as a separate upsert through a service-role-only internal helper. This preserves first-party context, metric supersession, append-only legacy events, and shallow evidence merging.
+
+**Impact:** Version 2 telemetry now reaches Supabase canonical columns while legacy dashboards continue reading the compatibility projection. Retries and continuation beacons that share a `pageview_id` no longer fail the whole batch. Direct duplicate RPC tests and four-shard Worker tests now produce successful structured flush logs.
+
+**Where to verify:** `supabase/migrations/20261124005400_dedupe_rum_upsert_batch.sql`, `tests/rum-compact-migration.test.mjs`, `docs/protocols/rum-beacon-transport.md`, `docs/systems/site-metadata-worker.md`.
+
+**Interview one-liner:** "Deployed compact real-user telemetry end to end and hardened its continuation pipeline so retries merge safely instead of blocking a batch."
+
 ---
 
 ## 2026-11-24: Canonical RUM Collector and Edge Dual-Write

@@ -20,6 +20,15 @@ const grantsMigration = fs.readFileSync(
   ),
   "utf8"
 );
+const dedupeMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124005400_dedupe_rum_upsert_batch.sql"
+  ),
+  "utf8"
+);
 
 describe("compact RUM migration contract", () => {
   it("keeps the migration additive and preserves legacy events", () => {
@@ -93,6 +102,25 @@ describe("compact RUM migration contract", () => {
     assert.match(
       grantsMigration,
       /GRANT EXECUTE ON FUNCTION public\.upsert_rum_metrics_batch\(jsonb\) TO service_role/
+    );
+  });
+
+  it("upserts duplicate pageviews in a batch as separate statements", () => {
+    assert.match(
+      dedupeMigration,
+      /RENAME TO upsert_rum_metrics_batch_single/
+    );
+    assert.match(
+      dedupeMigration,
+      /PERFORM public\.upsert_rum_metrics_batch_single\(jsonb_build_array\(payload\)\)/
+    );
+    assert.match(
+      dedupeMigration,
+      /REVOKE ALL ON FUNCTION public\.upsert_rum_metrics_batch_single\(jsonb\) FROM PUBLIC/
+    );
+    assert.match(
+      dedupeMigration,
+      /GRANT EXECUTE ON FUNCTION public\.upsert_rum_metrics_batch_single\(jsonb\) TO service_role/
     );
   });
 });
