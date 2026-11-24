@@ -48,3 +48,8 @@ Images, and Fonts.
   typed-versus-legacy metric values across 17 v2 rows with zero mismatches.
 - The physical `rum_metrics.events` column drop remains a separately approved
   destructive migration after a full traffic-cycle comparison.
+- The initial traffic-cycle baseline is recorded in
+  `docs/reports/rum-traffic-cycle-baseline-2026-11-24.json`. The dataset covers
+  only two calendar dates and has no retained canonical-only row after the
+  cutover. Phase 7 therefore remains open pending at least seven complete UTC
+  days of representative production traffic.
