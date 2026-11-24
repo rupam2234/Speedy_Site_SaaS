@@ -92,6 +92,42 @@ const remainingReadersFixMigration = fs.readFileSync(
   ),
   "utf8"
 );
+const diagnosticEvidenceNullFixMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124162516_fix_rum_diagnostic_evidence_null_handling.sql"
+  ),
+  "utf8"
+);
+const diagnosticEvidenceGeometryFixMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124163711_fix_rum_diagnostic_evidence_geometry_key_conflict.sql"
+  ),
+  "utf8"
+);
+const diagnosticEvidenceTextArrayFixMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124163958_fix_rum_diagnostic_evidence_text_array_comparison.sql"
+  ),
+  "utf8"
+);
+const diagnosticEvidenceSqlValidatorMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261124164732_replace_rum_diagnostic_evidence_validator.sql"
+  ),
+  "utf8"
+);
 
 describe("compact RUM migration contract", () => {
   it("keeps the migration additive and preserves legacy events", () => {
@@ -215,6 +251,47 @@ describe("compact RUM migration contract", () => {
   it("keeps the database evidence bound at 4 KiB", () => {
     assert.match(focusedEvidenceMigration, /octet_length\(p_evidence::text\) > 4096/);
     assert.match(focusedEvidenceMigration, /CHECK \(public\.rum_diagnostic_evidence_is_valid\(diagnostic_evidence\)\)/);
+  });
+
+  it("accepts JSON null for optional nested diagnostic evidence", () => {
+    assert.match(
+      diagnosticEvidenceNullFixMigration,
+      /jsonb_typeof\(nested\) <> 'null'/
+    );
+    assert.match(
+      diagnosticEvidenceNullFixMigration,
+      /jsonb_typeof\(rect\) <> 'null'/
+    );
+    assert.doesNotMatch(diagnosticEvidenceNullFixMigration, /DROP COLUMN/);
+    assert.doesNotMatch(diagnosticEvidenceNullFixMigration, /DELETE FROM public\.rum_metrics/);
+  });
+
+  it("keeps CLS geometry field names as text keys", () => {
+    assert.match(
+      diagnosticEvidenceGeometryFixMigration,
+      /name::text NOT IN \([\s\S]*'dx', 'dy',[\s\S]*\)::text\[\]/
+    );
+    assert.doesNotMatch(diagnosticEvidenceGeometryFixMigration, /DROP COLUMN/);
+    assert.doesNotMatch(diagnosticEvidenceGeometryFixMigration, /DELETE FROM public\.rum_metrics/);
+  });
+
+  it("compares CLS evidence keys against an explicit text array", () => {
+    assert.match(
+      diagnosticEvidenceTextArrayFixMigration,
+      /name::text <> ALL \(ARRAY\[[\s\S]*'dx', 'dy',[\s\S]*\]::text\[\]\)/
+    );
+    assert.doesNotMatch(diagnosticEvidenceTextArrayFixMigration, /DROP COLUMN/);
+    assert.doesNotMatch(diagnosticEvidenceTextArrayFixMigration, /DELETE FROM public\.rum_metrics/);
+  });
+
+  it("uses explicit aliases in the SQL diagnostic evidence validator", () => {
+    assert.match(diagnosticEvidenceSqlValidatorMigration, /LANGUAGE sql/);
+    assert.match(diagnosticEvidenceSqlValidatorMigration, /AS lcp_item\(item\)/);
+    assert.match(diagnosticEvidenceSqlValidatorMigration, /AS cls_item\(item\)/);
+    assert.match(diagnosticEvidenceSqlValidatorMigration, /AS field\(key, value\)/);
+    assert.match(diagnosticEvidenceSqlValidatorMigration, /DROP FUNCTION IF EXISTS public\.diagnose_rum_diagnostic_evidence_function/);
+    assert.doesNotMatch(diagnosticEvidenceSqlValidatorMigration, /DROP COLUMN/);
+    assert.doesNotMatch(diagnosticEvidenceSqlValidatorMigration, /DELETE FROM public\.rum_metrics/);
   });
 
   it("preserves historical rows while enforcing new evidence writes", () => {

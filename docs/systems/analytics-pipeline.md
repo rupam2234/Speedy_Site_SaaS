@@ -53,3 +53,8 @@ Images, and Fonts.
   only two calendar dates and has no retained canonical-only row after the
   cutover. Phase 7 therefore remains open pending at least seven complete UTC
   days of representative production traffic.
+- The live collection path was revalidated end to end on 2026-11-24. The served
+  collector matches the current Worker artifact byte for byte, the entitlement
+  gate accepts the active managed domain and rejects an unknown domain, and a
+  controlled v2 beacon persisted canonical facts with `events = []`. The
+  synthetic verification row was deleted and confirmed absent.
