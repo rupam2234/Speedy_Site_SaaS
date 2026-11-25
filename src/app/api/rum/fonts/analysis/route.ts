@@ -1,5 +1,6 @@
 import { setupDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { authorizeRumDomain } from "@/lib/rum/siteAccess";
 
 interface Props {
   domain: string;
@@ -14,9 +15,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 
+  const access = await authorizeRumDomain(domain);
+  if (!access.ok) {
+    return NextResponse.json(
+      { error: access.error, message: access.message },
+      { status: access.status },
+    );
+  }
+
   try {
     const { error, data } = await worker.rpc("font_analysis", {
-      p_domain: domain,
+      p_domain: access.site.domainName,
     });
 
     if (error) {

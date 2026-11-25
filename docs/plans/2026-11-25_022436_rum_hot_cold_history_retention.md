@@ -3,8 +3,16 @@
 > **Status:** 🔴 INCOMPLETE / PLANNED
 > **Created:** 2026-11-25 02:24:36 UTC
 > **Updated:** 2026-11-25 02:24:36 UTC
-> **Related ADR:** [ADR-0006](../adr/0006-hot-cold-rum-history-retention.md)
+> **Related ADRs:** [ADR-0006](../adr/0006-hot-cold-rum-history-retention.md), [ADR-0007: Evidence-First Issue Diagnosis and Grounded Remediation](../adr/0007-evidence-first-issue-diagnosis-and-grounded-remediation.md)
 > **Prerequisite:** ADR-0005 focused RUM dashboard and data retirement
+
+---
+
+## Execution Dependency
+
+Before Phase 5 enables raw cleanup, the issue-document persistence contract must be available so long-lived diagnosed issues retain bounded evidence after raw pageviews are removed.
+
+This dependency does not block the cold snapshot schema, writer, or reader implementation. It blocks production deletion of raw diagnostic rows.
 
 ## 1. Objective
 

@@ -14,6 +14,7 @@ This directory maintains immutable records of architectural and technical decisi
 | **0004** | 2026-11-23 | [Compact RUM Telemetry and RAG Knowledge Model](0004-compact-rum-telemetry-and-rag-knowledge-model.md) | 🟢 Accepted | Canonical Pageview Facts, Bounded Evidence, and Derived RAG Documents |
 | **0005** | 2026-11-24 | [Focused RUM Dashboard and Data Retirement](0005-focused-rum-dashboard-and-data-retirement.md) | 🟢 Accepted | Migrate Retained Readers, Then Retire Generic Surfaces and Legacy Projection |
 | **0006** | 2026-11-25 | [Hot and Cold RUM History Retention](0006-hot-cold-rum-history-retention.md) | 🟢 Accepted | 7-Day Raw Hot Tier with Verified Daily Cold Snapshots |
+| **0007** | 2026-11-25 | [Evidence-First Issue Diagnosis and Grounded Remediation](0007-evidence-first-issue-diagnosis-and-grounded-remediation.md) | 🟢 Accepted | Deterministic Issue Detection with Supabase Grounding and Auxiliary Cloudflare RAG |
 
 ---
 

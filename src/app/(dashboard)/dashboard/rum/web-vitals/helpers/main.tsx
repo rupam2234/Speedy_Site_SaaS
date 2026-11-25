@@ -13,6 +13,7 @@ import {
   getSidebarTooltip,
   Metric as MetricNorms,
 } from ".";
+import DetectedIssues from "./detectedIssues";
 import { BadgeInfo, InfoIcon } from "lucide-react";
 import {
   cachedData,
@@ -73,7 +74,7 @@ const RUM_CAPS: Record<MetricKey, { min: number; max: number }> = {
 };
 
 export default function Main() {
-  const { selectedSite, selectedDevice, rumDistribution, startDate, endDate } =
+  const { selectedSite, selectedSiteId, selectedDevice, rumDistribution, startDate, endDate } =
     useSiteContext();
   const [historyData, setRumHistoryData] = useState<any>();
   const [distData, setDistData] = useState<any>();
@@ -532,7 +533,7 @@ export default function Main() {
         </div>
 
         {/* Main Content */}
-        <div className="md:col-span-10 border border-primary/10 rounded-sm bg-primary-foreground dark:bg-secondary-background md:ml-1 px-2 pb-4">
+        <div className="md:col-span-10 space-y-3 border border-primary/10 rounded-sm bg-primary-foreground dark:bg-secondary-background md:ml-1 px-2 pb-4">
           <div className="relative flex gap-2 min-w-0 max-h-fit">
             <div className="w-full space-y-2">
               <RumCwvChart
@@ -542,6 +543,10 @@ export default function Main() {
                 total_events={totalEvents}
               />
             </div>
+          </div>
+
+          <div className="px-2 pt-3">
+            <DetectedIssues siteId={selectedSiteId} />
           </div>
 
           {/* Breakdown/Details placeholder */}

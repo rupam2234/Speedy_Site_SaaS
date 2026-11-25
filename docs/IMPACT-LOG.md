@@ -9,6 +9,50 @@
 > **Last updated:** 2026-11-25
 ---
 
+---
+
+## 2026-11-25: Customer Issue Assistant and Tenant-Scoped RAG
+
+**Problem:** The evidence-first issue panel explained each published diagnosis, but customers could not ask how to apply the recommended fix or how to verify it. A model also needed approved remediation context without treating raw telemetry or browser input as authoritative evidence.
+
+**Changes:** Added an "Ask about this issue" panel to the customer Detected issues view and an authenticated `POST /api/rum/issues/<issue_id>/assistant` route. The route verifies canonical site authority, the site's live `managed_wp` entitlement, and publication state, then loads the current issue from Supabase before generation. Added the deployed `issue-knowledge` Cloudflare Worker, Workers AI embeddings with `@cf/baai/bge-small-en-v1.5`, and the `speedy-issue-knowledge` Vectorize index. Customer documents use tenant namespaces and `siteId` filters; curated remediation playbooks use a separate namespace. The model receives the current issue as authoritative facts and retrieved documents as untrusted reference material, with citations and limitations in the response.
+
+**Impact:** Customers can now request targeted fix and verification guidance inside a published issue without sending raw contributor data to an AI endpoint. Cross-tenant and cross-site retrieval is blocked before generation. Live validation rejected an unauthenticated Worker request with HTTP 401 and returned the WP Rocket LCP image playbook as the top result for a representative retrieval query. Four curated playbooks are indexed; no resolved customer issues are currently available to index.
+
+**Where to verify:** `src/app/api/rum/issues/[issueId]/assistant/route.ts`, `src/app/(dashboard)/dashboard/rum/web-vitals/helpers/issueAssistant.tsx`, `cloudflare-workers/issue-knowledge/`, `tests/evidence-first-issue-workflow.test.mjs`, `docs/protocols/rum-issue-api.md`.
+
+**Interview one-liner:** "Added a customer issue assistant that turns published, evidence-backed diagnoses into cited WordPress fix guidance through tenant-scoped Cloudflare RAG."
+
+---
+
+## 2026-11-25: Evidence-First RUM Issue Slice
+
+**Problem:** The Web Vitals drilldowns accepted browser-selected contributor rows for OpenRouter analysis, while privileged RUM readers accepted browser-supplied domains without proving site ownership. Diagnoses were neither tenant-scoped nor persistent, and repeated observations could not become a stable issue family.
+
+**Changes:** Added the additive `rum_issue_documents`, `rum_issue_evidence`, `wp_backend_tests`, and `rum_issue_history` migration with RLS, restricted grants, bounded evidence, stable fingerprints, and a service-role-only `detect_lcp_issues_v1` RPC. Added authenticated site authorization for every retained RUM reader, canonical `site_id` issue APIs, an admin-only shadow detector endpoint, and an issue-first Detected issues panel in RUM Analytics Web Vitals. The three contributor-analysis routes now return authenticated `410 Gone` responses and no longer call OpenRouter.
+
+**Impact:** Unauthenticated and cross-tenant RUM reads are blocked, browser input cannot inject issue facts, and recurring LCP observations upsert one stable issue per template, asset, target, and device cohort. The detector remains shadow-first by default and requires at least five pageviews and three sessions before creating an issue. The additive migration and a PostgreSQL compatibility follow-up were applied directly to the linked remote Supabase project without Docker, and `src/lib/db/database.types.ts` was regenerated from the live schema. Remote shadow validation confirmed the detector executes, rejects non-service-role execution, and creates no rows when thresholds are not met.
+
+**Where to verify:** `supabase/migrations/20261125073117_evidence_first_issue_documents.sql`, `src/lib/rum/siteAccess.ts`, `src/app/api/rum/issues/`, `tests/evidence-first-issue-workflow.test.mjs`, `docs/systems/analytics-pipeline.md`.
+
+**Interview one-liner:** "Replaced unauthenticated element analysis with a tenant-scoped, evidence-backed LCP issue workflow that can be validated before customer publication."
+
+---
+
+## 2026-11-25: Evidence-First Issue Diagnosis Architecture Decision
+
+**Problem:** The Web Vitals drilldowns could analyze individual elements through OpenRouter, but the flow accepted browser-supplied contributor rows, did not persist a tenant-scoped diagnosis, did not correlate real-user symptoms with WordPress backend evidence, and could not verify whether a recommended fix improved the affected metric. Applying RAG directly to elements would preserve these correctness, isolation, and auditability gaps.
+
+**Changes:** ADR-0007 establishes deterministic issue detection over canonical RUM facts and structured WordPress backend tests, with Supabase issue documents as the authoritative diagnosis and workflow record. It defines an issue-first dashboard, expert service-task workflow, comparable before-and-after verification, and Cloudflare Vectorize as an auxiliary retrieval index for approved issue knowledge and curated remediation playbooks. The timestamped execution plan separates schema, security, detector, backend-correlation, dashboard, service-channel, RAG-pilot, and production-rollout gates. Older RUM plans are retained as historical records, with unfinished issue and RAG scope explicitly transferred to the new plan.
+
+**Impact:** The accepted architecture prevents a language model from deciding whether an issue exists, calculating authoritative sample counts, changing tenant scope, or publishing unsupported causes. It creates one reviewable path from canonical evidence to a durable diagnosis, targeted fix, expert task, and measured RUM outcome. The decision is documented but the new schema, detectors, dashboard workflow, and retrieval service are not yet implemented.
+
+**Where to verify:** `docs/adr/0007-evidence-first-issue-diagnosis-and-grounded-remediation.md`, `docs/plans/2026-11-25_041449_evidence_first_issue_diagnosis_and_grounded_remediation.md`, `docs/systems/issue-knowledge-documents.md`, `docs/systems/analytics-pipeline.md`.
+
+**Interview one-liner:** "Chose a deterministic, tenant-safe issue workflow that keeps Supabase authoritative and uses RAG only to ground expert remediation."
+
+---
+
 ## 2026-11-25: RUM Reader Cleanup and Canonical Distribution Read
 
 **Problem:** The focused RUM dashboard still had repository-defined SQL readers for removed or unused generic analytics surfaces. The live Web Vitals distributions route also depended on `rum_daily_distributions`, a legacy projection populated by an event-only refresher. Canonical v2 rows use typed facts with `events = []`, so the projection path could omit current traffic.
@@ -172,7 +216,7 @@
 
 **Problem:** The previous `/dashboard/pricing` used a dropdown selector (pointless with one
 product), a giant 2xl/extrabold price block, 6 per-benefit icon tiles, 4 unlock
-pills, and a boxed `CurrentPlanBadge` — all adding visual weight but no signal.
+pills, and a boxed `CurrentPlanBadge` - all adding visual weight but no signal.
 
 **Changes:**
 - `src/app/(dashboard)/dashboard/pricing/page.tsx` (rewritten, ~429 → ~350
@@ -188,18 +232,18 @@ pills, and a boxed `CurrentPlanBadge` — all adding visual weight but no signal
 
 **Impact:** fewer DOM nodes, less color noise, faster scan-to-CTA. Adding a
 second product still requires only a `PRICE_MAP` entry + one `UPGRADE_SERVICES`
-object — no UI change.
+object - no UI change.
 
 **Where to verify:** `npx tsc --noEmit --skipLibCheck`, `npx eslint`, `npm run
 build` all exit 0; `/dashboard/pricing` emits at 5.58 kB (was 4.82 kB). A page
 reload clears any cached plan value.
 
 ---
-## 2026-10-24 · Plan now honours `status` / `expires_at` — cancelled and expired services no longer show as Managed WP
+## 2026-10-24 · Plan now honours `status` / `expires_at` - cancelled and expired services no longer show as Managed WP
 
 **Problem:** `/dashboard/pricing` rendered "Current plan: Managed WP" for
 accounts that no longer hold a live entitlement. Verified against production
-data — two accounts were affected:
+data - two accounts were affected:
 
 | account | service row | shown | should be |
 |---|---|---|---|
@@ -207,13 +251,13 @@ data — two accounts were affected:
 | pinchofbitemarina@gmail.com | `managed_wp` / **expired** / 2027-06-09 | Managed WP | Free |
 
 **Root cause:** `src/components/utils/planValidation/activePlan.ts` derived the
-plan from `service_type` alone — `data.some(s => s.service_type === "managed_wp")`
-— never checking `status` or `expires_at`, so a cancelled or expired row still
+plan from `service_type` alone - `data.some(s => s.service_type === "managed_wp")`
+- never checking `status` or `expires_at`, so a cancelled or expired row still
 counted as paid. Every other entitlement gate in the repo already applies the
 full predicate: `src/lib/wordpress/injection.ts` (`.eq("service_type", "managed_wp").eq("status", "active")` plus an `expires_at` future-or-null
 check) and the `site-metadata` worker (`docs/systems/site-metadata-worker.md`:
 paid = managed_wp + active + expires_at null-or-future). `activePlan.ts` was the
-only consumer that skipped it — and it is the one that drives the UI.
+only consumer that skipped it - and it is the one that drives the UI.
 
 **Changes:**
 - `activePlan.ts`: `fetchPlan` now selects `service_type, status, expires_at`
@@ -222,7 +266,7 @@ only consumer that skipped it — and it is the one that drives the UI.
   written before the fix are not reused; the key still sits under the
   `user-plan` prefix so `cleanExpiredCache` keeps sweeping it.
 - `src/app/(dashboard)/dashboard/pricing/page.tsx`: full-width page
-  (`w-full space-y-6 p-6` — the wrapper the sibling dashboard pages use)
+  (`w-full space-y-6 p-6` - the wrapper the sibling dashboard pages use)
   instead of the centred `max-w-5xl` marketing column.
 
 **Impact:** cancelled and expired accounts fall back to Free, so they see the
@@ -232,20 +276,20 @@ checkout CTA again instead of "Active on your account".
 mismatches before the change (script deleted afterwards, it printed user
 emails); `npx tsc --noEmit --skipLibCheck`, `npx eslint`, and `npm run build`
 all exit 0. A page reload is required to clear a wrong value already held in
-React state — the layout effect only fetches while `plan === null`, and the
+React state - the layout effect only fetches while `plan === null`, and the
 `:v2` key only helps on a fresh load.
 
 **Known, not fixed:** `src/app/api/orders/newOrder/route.ts:53` checks
 `service_type === "managed_wp" && status === "active"` but ignores `expires_at`,
 so an expired service still passes the paid site-limit branch. `free` accounts
-are unaffected — they get no `managed_wp` row at all.
+are unaffected - they get no `managed_wp` row at all.
 
 ---
 
 
 ## 2026-10-24 · Dashboard pricing redesigned into a service selector
 
-**Problem:** `/dashboard/pricing` rendered the marketing plan-card layout — Free
+**Problem:** `/dashboard/pricing` rendered the marketing plan-card layout - Free
 vs Managed side by side, gradient hero styling. Inside the dashboard that read
 wrong: the user is already signed in, already on a plan, and wants to upgrade,
 not compare tiers.
@@ -253,10 +297,10 @@ not compare tiers.
 **Changes:**
 - `src/app/(dashboard)/dashboard/pricing/page.tsx` (rewritten, 392 → 429 lines):
   the two-card comparison is now a **selector-driven upgrade panel**:
-  - A dropdown (`@/components/ui/select` — the Radix Select already used by the
+  - A dropdown (`@/components/ui/select` - the Radix Select already used by the
     RUM pages and toolbar) lists the available services to upgrade, each with
     price and terms.
-  - Picking a service reveals **Benefits** plus **"How to configure it"** — a
+  - Picking a service reveals **Benefits** plus **"How to configure it"** - a
     numbered setup path: one-time payment → confirm site details → connect your
     site → verification → first data. Steps 3 and 4 link out to
     `/dashboard/wordpress-plugin-analysis` and `/dashboard/managed-wp/status`.
@@ -266,16 +310,16 @@ not compare tiers.
   - `PricingCardContent` and `planCards` removed from this page, which also
     removes the `(home)/pricing.tsx` duplication flagged in the entry below.
     The homepage still owns `PricingCardContent`; nothing imported it here.
-  - `handleSubscribe` no longer sends `mode` — the model is one-time payment
+  - `handleSubscribe` no longer sends `mode` - the model is one-time payment
     only, and `/api/checkout` already ignored it.
   - `if (plan === null) return null;` guards the layout's plan resolution, so
     paid users never see a "Free" flash while `validatePlan` runs.
 - Services live in one `UPGRADE_SERVICES` array (`priceKey`, benefits, unlocks,
-  setup steps). There is one purchasable service today — `managed_wp`, the only
-  key in `PRICE_MAP` — so a second product is a `PRICE_MAP` entry plus one array
+  setup steps). There is one purchasable service today - `managed_wp`, the only
+  key in `PRICE_MAP` - so a second product is a `PRICE_MAP` entry plus one array
   object, with no UI change.
 
-**Copy note:** setup step 3 follows `docs/GOALS.md` principle 2 — "connect your
+**Copy note:** setup step 3 follows `docs/GOALS.md` principle 2 - "connect your
 site", never "install a plugin".
 
 **Where to verify:** `tsc --noEmit --skipLibCheck` and `eslint` clean (exit 0);

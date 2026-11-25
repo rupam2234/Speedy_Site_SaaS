@@ -556,6 +556,263 @@ export type Database = {
           },
         ]
       }
+      rum_issue_documents: {
+        Row: {
+          affected_scope: Json
+          confidence: number
+          created_at: string
+          domain_name: string
+          evidence_summary: Json
+          expected_impact: string
+          fingerprint: string
+          first_seen_at: string
+          id: string
+          is_published: boolean
+          issue_type: string
+          last_seen_at: string
+          metric_summary: Json
+          observation_period: Json
+          provenance: Json
+          recommended_fix: Json
+          resolved_at: string | null
+          root_cause: string
+          sample_count: number
+          schema_version: number
+          session_count: number
+          severity: string
+          site_id: string
+          status: string
+          symptom: string
+          tenant_id: string
+          title: string
+          updated_at: string
+          verification_plan: string
+        }
+        Insert: {
+          affected_scope?: Json
+          confidence: number
+          created_at?: string
+          domain_name: string
+          evidence_summary?: Json
+          expected_impact: string
+          fingerprint: string
+          first_seen_at?: string
+          id?: string
+          is_published?: boolean
+          issue_type: string
+          last_seen_at?: string
+          metric_summary?: Json
+          observation_period?: Json
+          provenance?: Json
+          recommended_fix?: Json
+          resolved_at?: string | null
+          root_cause: string
+          sample_count?: number
+          schema_version?: number
+          session_count?: number
+          severity: string
+          site_id: string
+          status?: string
+          symptom: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+          verification_plan: string
+        }
+        Update: {
+          affected_scope?: Json
+          confidence?: number
+          created_at?: string
+          domain_name?: string
+          evidence_summary?: Json
+          expected_impact?: string
+          fingerprint?: string
+          first_seen_at?: string
+          id?: string
+          is_published?: boolean
+          issue_type?: string
+          last_seen_at?: string
+          metric_summary?: Json
+          observation_period?: Json
+          provenance?: Json
+          recommended_fix?: Json
+          resolved_at?: string | null
+          root_cause?: string
+          sample_count?: number
+          schema_version?: number
+          session_count?: number
+          severity?: string
+          site_id?: string
+          status?: string
+          symptom?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          verification_plan?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rum_issue_documents_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "rum_issue_documents_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "rum_issue_documents_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "v_cf_zone_per_site"
+            referencedColumns: ["order_id"]
+          },
+        ]
+      }
+      rum_issue_evidence: {
+        Row: {
+          created_at: string
+          evidence_kind: string
+          evidence_weight: number
+          facts: Json
+          id: number
+          issue_id: string
+          observed_at: string
+          site_id: string
+          source_observation_ids: number[]
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          evidence_kind: string
+          evidence_weight?: number
+          facts?: Json
+          id?: number
+          issue_id: string
+          observed_at: string
+          site_id: string
+          source_observation_ids?: number[]
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          evidence_kind?: string
+          evidence_weight?: number
+          facts?: Json
+          id?: number
+          issue_id?: string
+          observed_at?: string
+          site_id?: string
+          source_observation_ids?: number[]
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rum_issue_evidence_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "rum_issue_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rum_issue_evidence_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "rum_issue_evidence_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "rum_issue_evidence_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "v_cf_zone_per_site"
+            referencedColumns: ["order_id"]
+          },
+        ]
+      }
+      rum_issue_history: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          details: Json
+          event_type: string
+          from_status: string | null
+          id: number
+          issue_id: string
+          reason: string | null
+          site_id: string
+          tenant_id: string
+          to_status: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          event_type: string
+          from_status?: string | null
+          id?: number
+          issue_id: string
+          reason?: string | null
+          site_id: string
+          tenant_id: string
+          to_status?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          event_type?: string
+          from_status?: string | null
+          id?: number
+          issue_id?: string
+          reason?: string | null
+          site_id?: string
+          tenant_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rum_issue_history_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "rum_issue_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rum_issue_history_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "rum_issue_history_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "rum_issue_history_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "v_cf_zone_per_site"
+            referencedColumns: ["order_id"]
+          },
+        ]
+      }
       rum_metrics: {
         Row: {
           backend_response_ms: number | null
@@ -1007,6 +1264,76 @@ export type Database = {
           },
         ]
       }
+      wp_backend_tests: {
+        Row: {
+          bounded_evidence: Json
+          created_at: string
+          environment: string
+          facts: Json
+          id: string
+          plugin_status: string
+          result: string
+          schema_version: number
+          site_id: string
+          tenant_id: string
+          test_type: string
+          test_version: string
+          tested_at: string
+        }
+        Insert: {
+          bounded_evidence?: Json
+          created_at?: string
+          environment: string
+          facts?: Json
+          id?: string
+          plugin_status?: string
+          result: string
+          schema_version?: number
+          site_id: string
+          tenant_id: string
+          test_type: string
+          test_version: string
+          tested_at: string
+        }
+        Update: {
+          bounded_evidence?: Json
+          created_at?: string
+          environment?: string
+          facts?: Json
+          id?: string
+          plugin_status?: string
+          result?: string
+          schema_version?: number
+          site_id?: string
+          tenant_id?: string
+          test_type?: string
+          test_version?: string
+          tested_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wp_backend_tests_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "wp_backend_tests_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "wp_backend_tests_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "v_cf_zone_per_site"
+            referencedColumns: ["order_id"]
+          },
+        ]
+      }
       wp_key: {
         Row: {
           created_at: string
@@ -1340,6 +1667,15 @@ export type Database = {
         }[]
       }
       delete_old_rum_metrics: { Args: never; Returns: undefined }
+      detect_lcp_issues_v1: {
+        Args: {
+          p_end?: string
+          p_publish?: boolean
+          p_site_id: string
+          p_start?: string
+        }
+        Returns: number
+      }
       ensure_order_conversations: {
         Args: { p_order_id: string }
         Returns: undefined

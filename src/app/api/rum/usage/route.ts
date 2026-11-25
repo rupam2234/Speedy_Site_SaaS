@@ -1,11 +1,8 @@
 import { setupDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { authorizeRumDomain } from "@/lib/rum/siteAccess";
 
 const worker = setupDB();
-
-function normalizeDomain(domain: string): string {
-  return domain.startsWith("www.") ? domain.slice(4) : domain;
-}
 
 export async function POST(req: NextRequest) {
   if (!req) {
@@ -23,8 +20,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Normalize domain (remove www if exists)
-    const normalizedDomain = normalizeDomain(domain_name);
+    const access = await authorizeRumDomain(domain_name);
+    if (!access.ok) {
+      return NextResponse.json(
+        { error: access.error, message: access.message },
+        { status: access.status },
+      );
+    }
+
+    const normalizedDomain = access.site.domainName;
 
     // First query without www
     let { count, error } = await worker

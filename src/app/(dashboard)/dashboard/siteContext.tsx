@@ -17,6 +17,7 @@ import { useSearchParams } from "next/navigation";
 type SiteContextType = {
   selectedSite: string;
   setSelectedSite: (site: string) => void;
+  selectedSiteId: string | null;
   orders: OrderData[] | null;
   isLoadingOrders: boolean;
   setOrders: (orders: OrderData[] | null) => void;
@@ -55,6 +56,7 @@ type SiteContextType = {
 export const SiteContext = createContext<SiteContextType>({
   selectedSite: "",
   setSelectedSite: () => {},
+  selectedSiteId: null,
   orders: null,
   isLoadingOrders: true,
   setOrders: () => {},
@@ -251,6 +253,9 @@ export default function SiteContextProvider({
     fetchOrders(siteFromUrl ?? "", user.id);
   }, [user?.id, fetchOrders]);
 
+  const selectedSiteId =
+    orders?.find((order) => order.website_name === selectedSite)?.order_id ?? null;
+
   return (
     <SiteContext.Provider
       value={{
@@ -258,6 +263,7 @@ export default function SiteContextProvider({
         isLoadingOrders,
         setOrders,
         selectedSite,
+        selectedSiteId,
         setSelectedSite,
         fetchOrders,
         ordersVersion,

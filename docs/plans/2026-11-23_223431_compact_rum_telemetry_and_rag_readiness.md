@@ -1,11 +1,30 @@
 # Plan: Compact RUM Telemetry and RAG Readiness
 
-> **Status:** 🟡 IN PROGRESS  
+> **Status:** 🟢 COMPLETED
 > **Created:** 2026-11-23 22:34:31 UTC  
-> **Updated:** 2026-11-24 01:15:00 UTC
+> **Updated:** 2026-11-25 04:14:49 UTC
 > **Related ADR:** [ADR-0004: Compact RUM Telemetry and RAG Knowledge Model](../adr/0004-compact-rum-telemetry-and-rag-knowledge-model.md)  
 > **Prerequisite:** Production passive RUM delivery is working and `pageview_id` continuation merging is verified.  
 > **Target:** Optimize the RUM backend for high-quality WordPress insights and prepare a safe Cloudflare RAG knowledge pipeline.
+
+---
+
+## Plan Disposition
+
+This plan is complete for the compact telemetry, canonical storage, and reader-migration scope.
+
+The following remaining scope was transferred to the [Evidence-First Issue Diagnosis and Grounded Remediation](2026-11-25_041449_evidence_first_issue_diagnosis_and_grounded_remediation.md) plan:
+
+- Issue-document schema and persistence.
+- Deterministic issue detection and confidence rules.
+- WordPress backend correlation.
+- Issue-first dashboard presentation.
+- Service-channel issue workflow.
+- Cloudflare Vectorize indexing and retrieval.
+
+Historical retention is governed by ADR-0006 and its execution plan. The physical removal of `rum_metrics.events` remains governed by the focused RUM dashboard and data retirement plan and requires separate destructive-change approval.
+
+The original checklist below is retained as the implementation record. Unchecked items under transferred phases are historical pointers, not active work items.
 
 ---
 

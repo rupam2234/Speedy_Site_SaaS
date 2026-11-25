@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { authorizeRumDomain } from "@/lib/rum/siteAccess";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +13,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "domain_name is required in the request body" },
         { status: 400 },
+      );
+    }
+
+    const access = await authorizeRumDomain(domain_name);
+    if (!access.ok) {
+      return NextResponse.json(
+        { error: access.error, message: access.message },
+        { status: access.status },
       );
     }
 
@@ -71,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     // Execute the query using our updated function
     const { data, error } = await supabase.rpc("get_rum_web_vitals_metrics", {
-      p_domain_name: domain_name,
+      p_domain_name: access.site.domainName,
       p_date_range: date_range,
     });
 

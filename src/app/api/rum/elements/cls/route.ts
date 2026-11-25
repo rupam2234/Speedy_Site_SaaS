@@ -1,5 +1,6 @@
 import { setupDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { authorizeRumDomain } from "@/lib/rum/siteAccess";
 
 const worker = setupDB();
 
@@ -33,9 +34,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const access = await authorizeRumDomain(domain);
+  if (!access.ok) {
+    return NextResponse.json(
+      { error: access.error, message: access.message },
+      { status: access.status },
+    );
+  }
+
   try {
     const { data, error } = await worker.rpc("cls_elements", {
-      p_domain_name: domain,
+      p_domain_name: access.site.domainName,
     });
 
     if (error) {

@@ -3,6 +3,7 @@
 > **Status:** Retired by ADR-0005
 > **Owner:** Speedy Site
 > **Last updated:** 2026-11-25
+> **Planned successor:** [ADR-0007 evidence-first issue diagnosis](../adr/0007-evidence-first-issue-diagnosis-and-grounded-remediation.md)
 
 The former generic Analytics pipeline mirrored `rum_metrics` aggregates into
 Cloudflare D1 through `analytics-cron` and `traffic-source-cron`. It served
@@ -90,3 +91,56 @@ are absent from the repository are also outside this cleanup migration.
   through November 25 across desktop, mobile, and tablet, including the current
   LCP, FCP, TTFB, CLS, and INP samples. URL-provided managed sites also take
   precedence over stale session state on the dashboard.
+
+## Implemented Issue Diagnosis Topology
+
+ADR-0007 defines the successor to the retired generic analytics topology. The
+first production slice keeps canonical telemetry and issue state in Supabase:
+
+```text
+Canonical RUM facts and bounded evidence
+              |
+              v
+Service-role-only LCP v1 detector
+              |
+              v
+Supabase issue documents and bounded evidence
+              |
+              +------> Customer Web Vitals panel
+              |             |
+              |             v
+              |        Grounded customer assistance
+              |             |
+              v             v
+Approved issue documents and curated fix playbooks
+              |
+              v
+Cloudflare Worker and Vectorize
+```
+
+Detection is asynchronous and idempotent. Supabase issue documents are the
+authoritative diagnosis and workflow record. Vectorize is an auxiliary
+retrieval index over approved issue knowledge, never the source of truth. Raw
+pageviews and contributor rows are not embedded.
+
+The user-facing issue assistant runs in the Next.js application server. It
+authorizes the canonical site, verifies the site's live `managed_wp`
+entitlement, loads the published issue from Supabase, and then calls the
+`issue-knowledge` Worker. The Worker embeds the question with Workers AI and
+queries a 384-dimension cosine Vectorize index. Customer documents use the
+tenant UUID as namespace and are filtered by `siteId`. Curated remediation
+playbooks use a separate global namespace. Retrieved text is treated as
+untrusted background and cannot override authoritative issue facts.
+
+
+The implemented slice includes `rum_issue_documents`, `rum_issue_evidence`,
+`wp_backend_tests`, and `rum_issue_history`. The `detect_lcp_issues_v1` RPC is
+restricted to `service_role`, runs in shadow mode by default, and requires at
+least five pageviews and three sessions for a recurring template, asset, target,
+and device cohort. Existing RUM readers require an authenticated user and
+resolve the submitted domain to an authoritative order before querying
+privileged RPCs. Customer-owned sites, admin access, and actively assigned
+expert sites are supported.
+
+The implementation plan is
+`docs/plans/2026-11-25_041449_evidence_first_issue_diagnosis_and_grounded_remediation.md`.

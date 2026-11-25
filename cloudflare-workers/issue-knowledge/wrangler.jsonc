@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "issue-knowledge",
+  "main": "src/index.js",
+  "compatibility_date": "2025-11-25",
+  "observability": {
+    "enabled": true
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "triggers": {
+    "crons": ["17 * * * *"]
+  },
+  "vars": {
+    "SUPABASE_URL": "https://tmpvygehhshrgsqxzaty.supabase.co"
+  },
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      "index_name": "speedy-issue-knowledge"
+    }
+  ]
+}

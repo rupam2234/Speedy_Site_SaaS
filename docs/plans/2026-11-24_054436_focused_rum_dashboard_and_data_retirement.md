@@ -9,6 +9,20 @@
 
 ---
 
+## Plan Disposition
+
+The dashboard and legacy-reader retirement scope is complete.
+
+The remaining active scope is limited to:
+
+1. The full canonical-only traffic-cycle parity gate.
+2. The final `rum_metrics.events` dependency audit.
+3. The separately approved destructive migration and rollback documentation.
+
+The issue-first dashboard, issue-document generation, and RAG workflow are governed by [ADR-0007](../adr/0007-evidence-first-issue-diagnosis-and-grounded-remediation.md) and its [execution plan](2026-11-25_041449_evidence_first_issue_diagnosis_and_grounded_remediation.md). They do not reopen the retired generic analytics surfaces.
+
+---
+
 ## 1. Scope
 
 ### Retain

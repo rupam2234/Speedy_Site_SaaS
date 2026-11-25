@@ -8,14 +8,16 @@ This directory serves as the structured development roadmap and chronological mi
 
 | Created | Plan Document | Status | Description |
 | :--- | :--- | :--- | :--- |
-| 2026-10-10 | [`2026-10-10_000000_restructure_plan.md`](file:///home/victor/Projects/Speedy_Site_SaaS/docs/plans/2026-10-10_000000_restructure_plan.md) | 🟡 **IN PROGRESS** | Restructure Plan: Reshaping speedy.site |
-| 2026-11-21 | [`2026-11-21_192616_00_initial_architecture_setup.md`](file:///home/victor/Projects/Speedy_Site_SaaS/docs/plans/2026-11-21_192616_00_initial_architecture_setup.md) | 🟢 **COMPLETED** | Phase 0: Initial Architecture & Baseline Setup (6/6 tasks) |
-| 2026-11-21 | [`2026-11-21_205705_order_communication_channels.md`](file:///home/victor/Projects/Speedy_Site_SaaS/docs/plans/2026-11-21_205705_order_communication_channels.md) | 🟢 **COMPLETED** | Plan: Order Communication Channels (Customer-Expert with Admin Oversight) (26/26 tasks) |
-| 2026-11-23 | [`2026-11-23_120259_delayed_chat_email_notifications.md`](file:///home/victor/Projects/Speedy_Site_SaaS/docs/plans/2026-11-23_120259_delayed_chat_email_notifications.md) | 🟢 **COMPLETED** | Delayed Chat Email Notifications (15-Minute Grace Window & Digest) (20/20 tasks) |
-| 2026-11-23 | [`2026-11-23_223431_compact_rum_telemetry_and_rag_readiness.md`](2026-11-23_223431_compact_rum_telemetry_and_rag_readiness.md) | 🟡 **IN PROGRESS** | Compact RUM Telemetry and RAG Readiness (compact v2 deployed and production-verified; reader migration, RAG, and production-scale baseline remain) |
-| 2026-11-24 | [`2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md`](2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md) | 🟡 **IN PROGRESS** | Focused RUM Dashboard and Data Retirement (Phases 1-7 and production parity complete; separately approved destructive `events` drop pending) |
-| 2026-11-25 | [`2026-11-25_022436_rum_hot_cold_history_retention.md`](2026-11-25_022436_rum_hot_cold_history_retention.md) | 🔴 **PLANNED** | RUM Hot and Cold History Retention (security and storage recovery complete; snapshot schema and reader pending) |
+| 2026-10-10 | [`2026-10-10_000000_restructure_plan.md`](2026-10-10_000000_restructure_plan.md) | 🟢 **COMPLETED** | Historical umbrella roadmap for the Speedy Site refocus; delivery continues under successor ADRs and plans. |
+| 2026-11-21 | [`2026-11-21_192616_00_initial_architecture_setup.md`](2026-11-21_192616_00_initial_architecture_setup.md) | 🟢 **COMPLETED** | Phase 0: Initial Architecture & Baseline Setup (6/6 tasks). |
+| 2026-11-21 | [`2026-11-21_205705_order_communication_channels.md`](2026-11-21_205705_order_communication_channels.md) | 🟢 **COMPLETED** | Plan: Order Communication Channels (Customer-Expert with Admin Oversight) (26/26 tasks). |
+| 2026-11-23 | [`2026-11-23_120259_delayed_chat_email_notifications.md`](2026-11-23_120259_delayed_chat_email_notifications.md) | 🟢 **COMPLETED** | Delayed Chat Email Notifications (15-Minute Grace Window & Digest) (20/20 tasks). |
+| 2026-11-23 | [`2026-11-23_223431_compact_rum_telemetry_and_rag_readiness.md`](2026-11-23_223431_compact_rum_telemetry_and_rag_readiness.md) | 🟢 **COMPLETED** | Compact RUM telemetry and reader migration complete; issue detection and RAG scope transferred to the evidence-first issue plan. |
+| 2026-11-24 | [`2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md`](2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md) | 🟡 **IN PROGRESS** | Dashboard and reader retirement complete; traffic-cycle parity and separately approved destructive `events` removal remain. |
+| 2026-11-25 | [`2026-11-25_022436_rum_hot_cold_history_retention.md`](2026-11-25_022436_rum_hot_cold_history_retention.md) | 🔴 **PLANNED** | RUM hot and cold history retention; security and storage recovery complete, snapshot schema and reader pending. |
+| 2026-11-25 | [`2026-11-25_041449_evidence_first_issue_diagnosis_and_grounded_remediation.md`](2026-11-25_041449_evidence_first_issue_diagnosis_and_grounded_remediation.md) | 🟡 **IN PROGRESS** | Secure RUM boundary, issue schema, LCP v1 detector, issue APIs, issue-first Web Vitals panel, customer issue assistant, and tenant-scoped Cloudflare RAG pilot implemented. Other detectors, backend correlation, workflow actions, evaluations, and rollout remain. |
 
+Historical plan files remain in this directory as the chronological implementation record. A plan marked completed may retain unchecked historical tasks when that scope was explicitly transferred to a successor plan.
 
 
 ---

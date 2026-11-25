@@ -12,7 +12,6 @@ import {
   ChevronDown,
   ChevronUp,
   ZapIcon,
-  StarsIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSiteContext } from "../../../siteContext";
@@ -42,8 +41,6 @@ export default function LCPelements({
   const { selectedSite } = useSiteContext();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
-  const [analyzing, setAnalyzing] = useState<number | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<string>("");
 
   useEffect(() => {
     if (contributors.length > 0) {
@@ -67,14 +64,6 @@ export default function LCPelements({
 
     return () => clearTimeout(timer);
   }, [copied]);
-
-  const parsedLines = useMemo(() => {
-    return analysisResult
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .map((l) => l.replace(/^•\s?/, ""));
-  }, [analysisResult]);
 
   const filtered = useMemo(
     () =>
@@ -607,41 +596,11 @@ export default function LCPelements({
                       />
                     )}
 
-                    <button
-                      onClick={() => {
-                        AnalyzeContributors({
-                          input: {
-                            metric: "LCP",
-                            data: item !== undefined && item,
-                          },
-                          index: i,
-                        });
-                      }}
-                      disabled={analysisResult.length > 0 && analyzing === i}
-                      className="rounded-sm bg-purple-600 text-xs px-3 py-0.5 cursor-pointer hover:bg-purple-800 text-primary-foreground font-medium flex gap-2 items-center"
-                    >
-                      <StarsIcon
-                        size={14}
-                        className={`fill-yellow-200 ${analyzing === i && analysisResult.length === 0 ? "animate-spin duration-500" : ""}`}
-                      />
-                      {analyzing === i && analysisResult.length === 0
-                        ? "Analyzing..."
-                        : "Analyze LCP"}
-                    </button>
+                    <div className="text-[10px] font-medium text-primary/55">
+                      Evidence-backed diagnosis is available in Detected issues.
+                    </div>
                   </div>
 
-                  {parsedLines.length > 0 && analyzing === i && (
-                    <div className="space-y-2 mt-3">
-                      {parsedLines.map((line, i) => (
-                        <div
-                          key={i}
-                          className="p-2 rounded-sm border border-primary/10 bg-primary/5 wrap-break-word text-xs text-primary/80"
-                        >
-                          {line}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -650,77 +609,6 @@ export default function LCPelements({
       </div>
     </div>
   );
-
-  async function AnalyzeContributors<T>({
-    input,
-    index,
-  }: {
-    input: AnalysisType<T>;
-    index: number;
-  }) {
-    setAnalyzing(index);
-    setAnalysisResult("");
-
-    try {
-      const res = await fetch("/api/analysis/lcp/contributors", {
-        method: "POST",
-        headers: {
-          "Content-Type": "apllication/json",
-        },
-        body: JSON.stringify({ metric: input.metric, data: input.data }),
-      });
-
-      if (!res.ok) {
-        const error: any = await res.json();
-        setAnalysisResult("");
-        // setAnalyzing(null);
-        throw new Error(error.message ?? "Error in analysis");
-      }
-
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-
-      let buffer = "";
-
-      while (true && reader) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          // setAnalyzing(null);
-          break;
-        }
-
-        buffer += decoder.decode(value, { stream: true });
-
-        const lines = buffer.split("\n");
-
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data:")) continue; // skip if does not have data: at front
-
-          const json = trimmed.replace("data:", "").trim();
-
-          if (json === "[DONE]") continue; // skip if [DONE]
-
-          const parsed = JSON.parse(json);
-
-          const content = parsed.choices?.[0]?.delta?.content ?? "";
-
-          if (!content) continue;
-
-          setAnalysisResult((prev) => prev + content);
-        }
-      }
-
-      // setAnalysisResult(body?.json?.fixes);
-    } catch (error: any) {
-      // setAnalyzing(null);
-      setAnalysisResult("");
-      console.error(error.message ?? "UNexpacted Error");
-    }
-  }
 }
 
 /**

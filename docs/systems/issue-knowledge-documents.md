@@ -1,8 +1,9 @@
 # System: Issue Knowledge Documents
 
-> **Status:** Phase 0 contract
-> **Related ADR:** [ADR-0004](../adr/0004-compact-rum-telemetry-and-rag-knowledge-model.md)
-> **Purpose:** Define stable, traceable issue documents before any vector indexing work.
+> **Status:** Approved implementation contract
+> **Related ADRs:** [ADR-0004](../adr/0004-compact-rum-telemetry-and-rag-knowledge-model.md), [ADR-0007](../adr/0007-evidence-first-issue-diagnosis-and-grounded-remediation.md)
+> **Related Plan:** [Evidence-First Issue Diagnosis and Grounded Remediation](../plans/2026-11-25_041449_evidence_first_issue_diagnosis_and_grounded_remediation.md)
+> **Purpose:** Define stable, traceable issue documents as the authoritative diagnosis and workflow record before any vector indexing work.
 
 ---
 
@@ -139,3 +140,46 @@ Every published issue contains a baked reason with this order:
 Example:
 
 > Poor mobile LCP is concentrated on product pages. Across 42 mobile pageviews from 31 sessions, LCP p75 was 4.2 seconds, 37 percent above the site p75. The recurring hero image was 1.9 MB decoded and showed 1.6 seconds of load delay. Compress and resize the hero image, then preload the responsive source.
+
+## 7. Detection and Workflow Boundary
+
+ADR-0007 establishes deterministic detection as the only path that publishes an
+issue. A detector aggregates canonical RUM facts and corroborated WordPress
+backend tests into a stable issue fingerprint. The fingerprint includes site,
+issue type, page template, target or asset, and material cohort. Publication
+requires the thresholds in Section 5.
+
+The issue workflow is:
+
+```text
+detected -> reviewed -> in_progress -> fixed -> verified -> resolved
+```
+
+`dismissed` is a separate terminal state and requires a reason. Issue documents
+retain the bounded evidence needed to understand the diagnosis after raw
+pageview retention expires. The service channel compares matching templates,
+metrics, and cohorts across comparable windows before verifying a fix.
+
+## 8. Retrieval Boundary
+
+Only approved issue documents and curated remediation knowledge are eligible for
+Cloudflare Vectorize indexing. Raw pageviews, contributor rows, raw RUM events,
+raw backend logs, and unbounded plugin descriptions are excluded.
+
+An authenticated request resolves tenant and site on the application server,
+filters Vectorize by tenant namespace and site, retrieves a small candidate
+set, then loads current issue documents and aggregates from Supabase before
+generation. Retrieved text is untrusted reference material and cannot change
+tool permissions, tenant scope, workflow state, or authoritative evidence.
+
+The implemented customer flow lives in `src/app/api/rum/issues/[issueId]/assistant/route.ts`.
+It loads one published issue from Supabase before calling the
+`cloudflare-workers/issue-knowledge` Worker. The Worker uses Workers AI with
+`@cf/baai/bge-small-en-v1.5` and the `speedy-issue-knowledge` Vectorize index.
+Tenant namespaces isolate customer documents, the `siteId` metadata filter
+restricts those documents to the authorized site, and curated playbooks use a
+separate namespace. The model receives the current issue as authoritative
+facts and retrieved material only as untrusted reference.
+
+The implementation plan is
+`docs/plans/2026-11-25_041449_evidence_first_issue_diagnosis_and_grounded_remediation.md`.

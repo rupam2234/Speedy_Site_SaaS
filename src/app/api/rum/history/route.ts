@@ -1,4 +1,5 @@
 import { setupDB } from "@/lib/db";
+import { authorizeRumDomain } from "@/lib/rum/siteAccess";
 
 const worker = setupDB();
 
@@ -19,9 +20,17 @@ export async function POST(req: Request) {
       );
     }
 
+    const access = await authorizeRumDomain(domain);
+    if (!access.ok) {
+      return Response.json(
+        { error: access.error, message: access.message },
+        { status: access.status },
+      );
+    }
+
     const { data: rum_history_data, error: rum_history_error } =
       await worker.rpc("get_rum_history", {
-        p_domain: domain,
+        p_domain: access.site.domainName,
         p_from: date_from,
         p_to: date_to,
       });

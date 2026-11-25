@@ -6,7 +6,6 @@ import {
   ExternalLink,
   Search,
   SortDesc,
-  StarsIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
@@ -25,17 +24,6 @@ export default function INPelements({
   const [dataLoaded, setDataLoaded] = useState<boolean>(false);
   const [activeItem, setActiveItem] = useState<InpElementType | null>(null);
   const [dropDownOpen, setDropDownOpen] = useState<boolean>(false);
-  const [analysing, setAnalysing] = useState<string | null>(null);
-
-  const [analysisResult, setAnalysisResult] = useState<string>("");
-
-  const parsedLines = useMemo(() => {
-    return analysisResult
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .map((l) => l.replace(/^•\s?/, ""));
-  }, [analysisResult]);
 
   useEffect(() => {
     // data loaded immediately
@@ -173,7 +161,6 @@ export default function INPelements({
                 key={`${x.current_page}-${x.target_element}`}
                 onClick={() => {
                   setActiveItem(x);
-                  setAnalysisResult("");
                 }}
                 className={`w-full p-3 cursor-pointer text-left text-[13px] transition-colors ${
                   activeItem?.current_page === x.current_page &&
@@ -336,34 +323,9 @@ export default function INPelements({
                   )}
                 </div>
               )}
-              <button
-                onClick={() => {
-                  setAnalysing(activeItem.current_page);
-                  AnalyzeInpElement(activeItem);
-                  setAnalysisResult("");
-                }}
-                className="rounded-sm cursor-pointer mt-6 bg-purple-600 text-xs px-3 py-1 hover:bg-purple-800 text-primary-foreground font-medium flex gap-2 items-center"
-              >
-                <StarsIcon
-                  size={14}
-                  className={`fill-yellow-200 ${analysing === activeItem.current_page ? "animate-spin duration-500" : ""}`}
-                />
-                {analysing === activeItem.current_page
-                  ? "Analyzing..."
-                  : "Analyze INP"}
-              </button>
-              {parsedLines.length > 0 && (
-                <div className="space-y-2 mt-3">
-                  {parsedLines.map((line, i) => (
-                    <div
-                      key={i}
-                      className="p-2 rounded-sm border border-primary/10 bg-primary/5 text-sm text-primary/80"
-                    >
-                      {line}
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="text-[10px] font-medium text-primary/55">
+                Evidence-backed diagnosis is available in Detected issues.
+              </div>
             </div>
           ) : (
             <div className="text-primary/60 text-sm">
@@ -374,64 +336,6 @@ export default function INPelements({
       </div>
     </div>
   );
-
-  async function AnalyzeInpElement(data: InpElementType) {
-    setAnalysing(data.current_page);
-
-    const res = await fetch("/api/analysis/inp/contributors", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        metric: "INP",
-        data,
-      }),
-    });
-
-    if (!res.body) {
-      setAnalysing(null);
-      return;
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-
-        if (!trimmed.startsWith("data:")) continue;
-
-        const json = trimmed.replace("data:", "").trim();
-
-        if (json === "[DONE]") continue;
-
-        try {
-          const parsed = JSON.parse(json);
-          const token = parsed.choices?.[0]?.delta?.content ?? "";
-
-          if (token) {
-            setAnalysisResult((prev) => prev + token);
-          }
-        } catch (err) {
-          console.error("PARSE ERROR", err);
-        }
-      }
-    }
-
-    setAnalysing(null);
-  }
 }
 
 const getClsColor = (

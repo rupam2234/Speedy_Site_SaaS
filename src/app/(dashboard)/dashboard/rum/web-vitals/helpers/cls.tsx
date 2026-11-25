@@ -14,15 +14,12 @@ import {
   ArrowLeft,
   Bug,
   ExternalLinkIcon,
-  StarsIcon,
   TabletIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSiteContext } from "../../../siteContext";
 import { CustomTooltip, LoadingAnimation, THEME } from "@/components/theme";
-import { clsAnalysisType } from "@/app/api/analysis/cls/contributors/route";
-
 export type CLSMetricEntry = {
   cls_score: number;
   current_page: string;
@@ -52,8 +49,6 @@ export default function CLSPageInsightsAdvanced({
   const [activeShiftIdx, setActiveShiftIdx] = useState(0);
   const [showInvolved, setShowInvolved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isAnalyzing, setAnalyzing] = useState<boolean>(false);
-  const [analysisResult, setAnalysisResult] = useState<string>("");
   const { selectedSite } = useSiteContext();
 
   const pageGroups = useMemo(() => {
@@ -107,14 +102,6 @@ export default function CLSPageInsightsAdvanced({
     return Object.keys(activeShift.involved_elems);
   }, [activeShift]);
 
-  const parsedLines = useMemo(() => {
-    return analysisResult
-      ?.split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .map((l) => l.replace(/^•\s?/, ""));
-  }, [analysisResult]);
-
   if (loading) return <LoadingAnimation />;
 
   return (
@@ -136,8 +123,6 @@ export default function CLSPageInsightsAdvanced({
                 onClick={() => {
                   setActiveUrl(group.url);
                   setActiveShiftIdx(0);
-                  setAnalyzing(false);
-                  setAnalysisResult("");
                   setShowInvolved(false);
                 }}
                 className={`w-full cursor-pointer text-left p-4 transition-all flex items-start gap-4}`}
@@ -291,7 +276,7 @@ export default function CLSPageInsightsAdvanced({
                             {shift.most_frequent_element}
                           </div>
                           <div className="text-[9px] text-neutral-400 font-bold uppercase mt-1">
-                            {shift.l_mode} • {shift.occ_count} Events
+                            {shift.l_mode} â€¢ {shift.occ_count} Events
                           </div>
                         </div>
                       </div>
@@ -424,35 +409,9 @@ export default function CLSPageInsightsAdvanced({
                 </div>
               )}
 
-              {/* Recommendation */}
-              <button
-                onClick={() => {
-                  analyzeClsElements(activeShift);
-                }}
-                disabled={analysisResult.length > 0}
-                className="rounded-sm bg-purple-600 text-xs px-3 py-1 cursor-pointer hover:bg-purple-800 text-primary-foreground font-medium flex gap-2 items-center"
-              >
-                <StarsIcon
-                  size={14}
-                  className={`fill-yellow-200 ${isAnalyzing ? "animate-spin duration-500" : ""}`}
-                />
-                {isAnalyzing && analysisResult.length === 0
-                  ? "Analyzing..."
-                  : "Analyze CLS data"}
-              </button>
-
-              {parsedLines.length > 0 && (
-                <div className="space-y-2 mt-3">
-                  {parsedLines.map((line, i) => (
-                    <div
-                      key={i}
-                      className="p-2 rounded-sm border border-primary/10 bg-primary/5 text-sm text-primary/80"
-                    >
-                      {line}
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="text-[10px] font-medium text-primary/55">
+                Evidence-backed diagnosis is available in Detected issues.
+              </div>
             </div>
           </div>
         ) : (
@@ -467,79 +426,6 @@ export default function CLSPageInsightsAdvanced({
     </div>
   );
 
-  async function analyzeClsElements<T>(data: CLSMetricEntry) {
-    if (!activeShift || isAnalyzing) {
-      return;
-    }
-
-    try {
-      setAnalyzing(true);
-
-      const res = await fetch("/api/analysis/cls/contributors", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          metric: "CLS",
-          data: data,
-        } as clsAnalysisType<T>),
-      });
-
-      if (!res.ok) {
-        throw new Error("Unable to get result");
-      }
-
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-
-      let buffer = "";
-
-      while (true) {
-        const x = await reader?.read();
-
-        if (x?.done) {
-          setAnalyzing(false);
-          break;
-        }
-
-        buffer += decoder.decode(x?.value, { stream: true });
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        // data comes as  ---
-        // data: {"choices":[{"delta":{"content":"Hello"}}]}
-        // data: {"choices":[{"delta":{"content":" world"}}]}
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data:")) continue;
-
-          const json = trimmed.replace("data:", "").trim();
-
-          if (json === "[DONE]") continue;
-
-          const parsed = JSON.parse(json);
-          const token = parsed.choices?.[0]?.delta?.content ?? "";
-
-          if (!token) {
-            // setAnalyzing(false);
-            // throw new Error("PARSE ERROR");
-            continue;
-          }
-
-          setAnalysisResult((prev) => (prev || "") + token);
-        }
-      }
-    } catch (error: any) {
-      setAnalysisResult("");
-      setAnalyzing(false);
-      console.error(error ?? "Unexpacted error");
-    }
-
-    // retry ? optional
-  }
 }
 
 const getBoxShadowColor = (score: number) => {

@@ -1,10 +1,23 @@
 # Restructure Plan: Reshaping speedy.site
 
-> **Status:** 🟡 **IN PROGRESS**
+> **Status:** 🟢 **COMPLETED**
 > **Created:** 2026-10-10
 > **Owner:** Speedy Site
 > **Goal:** Refocus speedy.site as a WordPress performance optimization service powered by real user data and WordPress backend tests.
 > Read `docs/GOALS.md` first; this plan implements it.
+
+---
+
+## Plan Disposition
+
+This plan is retained as the historical umbrella roadmap for the Speedy Site product refocus. It is closed as a planning effort. Individual delivery work continues under the authoritative ADRs and timestamped execution plans linked below:
+
+- ADR-0004: compact telemetry and issue-document model.
+- ADR-0005: focused RUM dashboard and legacy retirement.
+- ADR-0006: hot and cold RUM history retention.
+- ADR-0007 and its evidence-first issue diagnosis plan: deterministic issue detection, the issue-first dashboard, service-channel workflow, and grounded remediation.
+
+Where this plan conflicts with a later accepted ADR, the later ADR wins. Completion of this umbrella plan does not mean every product capability in its original roadmap has been implemented.
 
 ---
 

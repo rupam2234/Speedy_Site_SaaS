@@ -1,5 +1,6 @@
 import { setupDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { authorizeRumDomain } from "@/lib/rum/siteAccess";
 
 const worker = setupDB();
 
@@ -26,8 +27,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Bad Request" }, { status: 400 });
   }
 
+  const access = await authorizeRumDomain(domain_name);
+  if (!access.ok) {
+    return NextResponse.json(
+      { error: access.error, message: access.message },
+      { status: access.status },
+    );
+  }
+
   const { data, error } = await worker.rpc("get_web_vital_counts_by_url", {
-    p_domain: domain_name,
+    p_domain: access.site.domainName,
     p_metric: metric,
     p_device_type: device_type,
     p_start: start_date,

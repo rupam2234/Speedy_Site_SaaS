@@ -29,8 +29,8 @@ export type Contributor = {
   origin_hit_rate: number;
   avg_rtt: number;
   avg_downlink: number;
-  top_country: string;
-  top_isp: string;
+  top_country: string | null;
+  top_isp: string | null;
 };
 
 const THEME = {
@@ -312,10 +312,10 @@ export default function TTFBelements({
 
                   <div className="flex flex-col gap-2">
                     <span className="text-[10px] py-0.5 font-black text-neutral-500 uppercase">
-                      Country: {activePage.top_country}
+                      Country: {activePage.top_country ?? "Unknown"}
                     </span>
                     <span className="text-[10px] py-0.5 font-black text-neutral-500 uppercase">
-                      Network Provider: {activePage.top_isp.slice(0, 18)}
+                      Network Provider: {(activePage.top_isp ?? "Unknown").slice(0, 18)}
                     </span>
                   </div>
                 </div>
