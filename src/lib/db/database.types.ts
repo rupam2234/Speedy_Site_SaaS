@@ -1280,62 +1280,7 @@ export type Database = {
           ttfb_ms: number
         }[]
       }
-      analyze_web_vitals_by_page: {
-        Args: { domain_filter?: string; time_range?: string }
-        Returns: {
-          avg_cls: number
-          avg_fcp: number
-          avg_fid: number
-          avg_inp: number
-          avg_lcp: number
-          avg_ttfb: number
-          cls_good_pct: number
-          cls_needs_improvement_pct: number
-          cls_poor_pct: number
-          device_type: string
-          fcp_good_pct: number
-          fcp_needs_improvement_pct: number
-          fcp_poor_pct: number
-          fid_good_pct: number
-          fid_needs_improvement_pct: number
-          fid_poor_pct: number
-          inp_good_pct: number
-          inp_needs_improvement_pct: number
-          inp_poor_pct: number
-          lcp_good_pct: number
-          lcp_needs_improvement_pct: number
-          lcp_poor_pct: number
-          overall_score: number
-          page_address: string
-          page_url: string
-          page_view_count: number
-          performance_category: string
-          ttfb_good_pct: number
-          ttfb_needs_improvement_pct: number
-          ttfb_poor_pct: number
-        }[]
-      }
       bytea_to_text: { Args: { data: string }; Returns: string }
-      cache_analysis: {
-        Args: { domain_name_param: string }
-        Returns: {
-          cache_status: string
-          cdn_provider: string
-          city: string
-          country: string
-          created_at: string
-          current_page: string
-          device: string
-          dns_time: number
-          id: string
-          is_origin_hit: string
-          network_rtt: string
-          network_type: string
-          server_processing_time: number
-          tcp_time: number
-          ttfb_total: number
-        }[]
-      }
       cls_elements: {
         Args: { p_domain_name: string }
         Returns: {
@@ -1394,7 +1339,6 @@ export type Database = {
           ttfb_avg: number
         }[]
       }
-      delete_old_rum_hits: { Args: never; Returns: undefined }
       delete_old_rum_metrics: { Args: never; Returns: undefined }
       ensure_order_conversations: {
         Args: { p_order_id: string }
@@ -1413,34 +1357,6 @@ export type Database = {
           major_pages: string[]
           poor_lcp_percentage: number
           total_occurrences: number
-        }[]
-      }
-      get_ai_citation: {
-        Args: { p_domain_name: string }
-        Returns: {
-          ai_citation_possibility: string
-          avg_citation_score: number
-          avg_dom_content_loaded: number
-          avg_ttfb: number
-          device_type: string
-          domain: string
-          max_citation_score: number
-          min_citation_score: number
-          std_dev_citation_score: number
-          total_sessions: number
-        }[]
-      }
-      get_analytics_by_device_and_country: {
-        Args: { p_domain_name: string; p_time_range?: string }
-        Returns: {
-          avg_pages_per_session: number
-          bounce_rate_percentage: number
-          country: string
-          device_type: string
-          total_page_views: number
-          total_sessions: number
-          unique_languages: number
-          unique_visitors: number
         }[]
       }
       get_current_user_role: { Args: never; Returns: string }
@@ -1580,49 +1496,6 @@ export type Database = {
               needs_improvement: number
               poor: number
               url: string
-            }[]
-          }
-      get_web_vitals_metrics:
-        | {
-            Args: { p_domain: string }
-            Returns: {
-              avg_value: number
-              device_type: string
-              domain_name: string
-              good_percent: number
-              max_value: number
-              metric_name: string
-              min_value: number
-              needs_improvement_percent: number
-              p50: number
-              p75: number
-              p90: number
-              p95: number
-              p99: number
-              page: string
-              poor_percent: number
-              sample_count: number
-            }[]
-          }
-        | {
-            Args: { p_date_range?: string; p_domain: string }
-            Returns: {
-              avg_value: number
-              device_type: string
-              domain_name: string
-              good_percent: number
-              max_value: number
-              metric_name: string
-              min_value: number
-              needs_improvement_percent: number
-              p50: number
-              p75: number
-              p90: number
-              p95: number
-              p99: number
-              page: string
-              poor_percent: number
-              sample_count: number
             }[]
           }
       get_yesterday_usage_counts: {
@@ -1775,34 +1648,6 @@ export type Database = {
       }
       is_active_order_expert: { Args: { p_order_id: string }; Returns: boolean }
       is_order_owner: { Args: { p_order_id: string }; Returns: boolean }
-      lcp_attribution_by_device: {
-        Args: {
-          p_domain?: string
-          p_from?: string
-          p_min_lcp?: number
-          p_path_like?: string
-          p_to?: string
-        }
-        Returns: {
-          avg_lcp: number
-          decodedbodysize: number
-          device_type: string
-          elementrenderdelay: number
-          height: number
-          islazy: boolean
-          lcp_type: string
-          max_lcp: number
-          occurrences: number
-          resourceloaddelay: number
-          resourceloadduration: number
-          target: string
-          target_url: string
-          transfersize: number
-          ttfb: number
-          url: string
-          width: number
-        }[]
-      }
       page_performance_analysis: {
         Args: { p_domain?: string }
         Returns: {
@@ -1825,10 +1670,6 @@ export type Database = {
           process_date: string
           rows_inserted: number
         }[]
-      }
-      refresh_rum_daily_distributions: {
-        Args: { p_day?: string }
-        Returns: undefined
       }
       rum_cls_shifts: {
         Args: { p_domain: string }
@@ -1930,22 +1771,6 @@ export type Database = {
         Returns: undefined
       }
       text_to_bytea: { Args: { data: string }; Returns: string }
-      third_party_domains: {
-        Args: { site_filter?: string; time_range?: string }
-        Returns: {
-          device_type: string
-          site_domain: string
-          top_domains: Json
-        }[]
-      }
-      top_landing_page: {
-        Args: { p_date_range: string; p_domain_name: string }
-        Returns: {
-          current_page: string
-          hits: number
-          previous_page: string
-        }[]
-      }
       ttfb_contributors: {
         Args: { p_domain: string }
         Returns: {
@@ -1982,41 +1807,9 @@ export type Database = {
               error: true
             } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
-      user_happiness: {
-        Args: { p_date_range?: string; p_domain?: string }
-        Returns: {
-          avg_cls: number
-          avg_fcp: number
-          avg_inp: number
-          avg_lcp: number
-          avg_long_tasks: number
-          avg_performance_score: number
-          avg_slow_api_calls: number
-          avg_trackers: number
-          avg_ttfb: number
-          country_count: number
-          device_type: string
-          experience_quality: string
-          percentage_in_device_type: number
-          session_count: number
-        }[]
-      }
       verify_website_user_match: {
         Args: { user_id_arg: string; website_name_arg: string }
         Returns: boolean
-      }
-      web_vitals: {
-        Args: { p_domain_name: string; p_time_range: string }
-        Returns: {
-          avg_pages_per_session: number
-          bounce_rate_percentage: number
-          country: string
-          device_type: string
-          total_page_views: number
-          total_sessions: number
-          unique_languages: number
-          unique_visitors: number
-        }[]
       }
     }
     Enums: {

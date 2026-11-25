@@ -1,6 +1,6 @@
 # RUM Events Reader Inventory
 
-Generated at: 2026-11-24T13:13:59.161Z
+Generated at: 2026-11-25T02:58:05.582Z
 
 This inventory is generated from `scripts/rum-phase0-inventory.mjs`. It lists SQL functions that read `rum_metrics.events` and application callers of those functions.
 
@@ -105,5 +105,16 @@ Application callers: **11**
 | `get_daily_web_metrics` | Generic Analytics |
 | `user_happiness_dist` | Generic Analytics |
 | `ux_map_data` | Global UX |
+| `analyze_web_vitals_by_page` | Unused legacy reader |
+| `cache_analysis` | Unused legacy reader |
+| `get_ai_citation` | Unused legacy reader |
+| `get_analytics_by_device_and_country` | Unused legacy reader |
+| `get_web_vitals_metrics` | Unused legacy reader |
+| `lcp_attribution_by_device` | Unused legacy reader |
+| `third_party_domains` | Unused legacy reader |
+| `top_landing_page` | Unused legacy reader |
+| `user_happiness` | Unused legacy reader |
+| `web_vitals` | Unused legacy reader |
+| `refresh_rum_daily_distributions` | Replaced by canonical raw-fact distributions |
 
 Historical SQL definitions remain visible in this inventory because migrations are append-only. Application callers are the authoritative signal for whether a reader is still active.

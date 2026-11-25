@@ -27,6 +27,16 @@ describe("RUM Phase 0 baseline", () => {
       "get_daily_web_metrics",
       "user_happiness_dist",
       "ux_map_data",
+      "analyze_web_vitals_by_page",
+      "cache_analysis",
+      "get_ai_citation",
+      "get_analytics_by_device_and_country",
+      "get_web_vitals_metrics",
+      "lcp_attribution_by_device",
+      "third_party_domains",
+      "top_landing_page",
+      "user_happiness",
+      "web_vitals",
     ]) {
       assert.equal(callerNames.includes(retiredFunction), false, `${retiredFunction} still has an application caller`);
     }

@@ -9,6 +9,20 @@
 > **Last updated:** 2026-11-25
 ---
 
+## 2026-11-25: RUM Reader Cleanup and Canonical Distribution Read
+
+**Problem:** The focused RUM dashboard still had repository-defined SQL readers for removed or unused generic analytics surfaces. The live Web Vitals distributions route also depended on `rum_daily_distributions`, a legacy projection populated by an event-only refresher. Canonical v2 rows use typed facts with `events = []`, so the projection path could omit current traffic.
+
+**Changes:** Migration `20261125025407_retire_unused_rum_readers.sql` replaces `rum_distributions_all_metrics` with a canonical and historical raw-fact query over explicit UTC date boundaries, restricts it to `service_role`, and drops 13 legacy function signatures: 11 unused reader signatures, the obsolete origin-hit cleanup function, and the legacy distribution refresher. The migration does not drop tables, delete telemetry, or remove the `rum_metrics.events` column.
+
+**Impact:** The retained dashboard no longer depends on a stale legacy distribution projection for current traffic, while unused SQL readers and the origin-hit cleanup surface are removed. Stale tables and production-only RPCs remain for a separate dependency and retention audit.
+
+**Where to verify:** `supabase/migrations/20261125025407_retire_unused_rum_readers.sql`, `tests/rum-dashboard-live-reader.test.mjs`, `docs/reports/rum-events-reader-inventory.md`, `docs/systems/analytics-pipeline.md`.
+
+**Interview one-liner:** "Removed a legacy RUM SQL surface and replaced a stale materialized distribution path with canonical raw-fact aggregation."
+
+---
+
 ## 2026-11-25: RUM Retention Security and Storage Recovery
 
 **Problem:** The legacy `delete_old_rum_metrics()` cleanup function retained default public execution grants, allowing the anonymous PostgREST role to invoke raw-row deletion. Production also carried a 101 MB bloated GIN index on the legacy `events` JSON column even though retained canonical readers use typed facts and JSONPath fallbacks.

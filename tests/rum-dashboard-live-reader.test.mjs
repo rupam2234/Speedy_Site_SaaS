@@ -60,6 +60,15 @@ const cleanupGuardMigration = fs.readFileSync(
   ),
   "utf8"
 );
+const unusedReaderCleanupMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261125025407_retire_unused_rum_readers.sql"
+  ),
+  "utf8"
+);
 
 describe("live RUM dashboard reader contract", () => {
   it("reads history from canonical and historical metric facts", () => {
@@ -150,5 +159,47 @@ describe("live RUM dashboard reader contract", () => {
       indexCleanupMigration,
       /DROP INDEX IF EXISTS public\.idx_rum_resource_summary/
     );
+  });
+
+  it("reads distributions from canonical and historical raw facts", () => {
+    assert.match(
+      unusedReaderCleanupMigration,
+      /CREATE OR REPLACE FUNCTION public\.rum_distributions_all_metrics/
+    );
+    assert.match(
+      unusedReaderCleanupMigration,
+      /FROM public\.rum_metric_readings\(/
+    );
+    assert.match(unusedReaderCleanupMigration, /AT TIME ZONE 'UTC'/);
+    assert.doesNotMatch(unusedReaderCleanupMigration, /FROM public\.rum_daily_distributions/);
+    assert.match(
+      unusedReaderCleanupMigration,
+      /GRANT EXECUTE ON FUNCTION public\.rum_distributions_all_metrics\(text, date, date\) TO service_role/
+    );
+  });
+
+  it("drops only confirmed unused legacy RUM readers", () => {
+    for (const functionName of [
+      "analyze_web_vitals_by_page",
+      "cache_analysis",
+      "get_ai_citation",
+      "get_analytics_by_device_and_country",
+      "get_web_vitals_metrics",
+      "lcp_attribution_by_device",
+      "third_party_domains",
+      "top_landing_page",
+      "user_happiness",
+      "web_vitals",
+      "delete_old_rum_hits",
+      "refresh_rum_daily_distributions",
+    ]) {
+      assert.match(
+        unusedReaderCleanupMigration,
+        new RegExp(`DROP FUNCTION IF EXISTS public\\.${functionName}`)
+      );
+    }
+    assert.doesNotMatch(unusedReaderCleanupMigration, /DROP TABLE/);
+    assert.doesNotMatch(unusedReaderCleanupMigration, /DELETE FROM/);
+    assert.doesNotMatch(unusedReaderCleanupMigration, /DROP COLUMN/);
   });
 });

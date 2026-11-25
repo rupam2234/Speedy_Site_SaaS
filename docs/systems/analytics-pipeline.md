@@ -50,6 +50,19 @@ and 17 value mismatches against the live canonical aggregation. The current
 reader therefore bypasses it. Any future cold-history tier must be rebuilt
 from raw canonical facts with an explicit snapshot contract.
 
+The Web Vitals distributions reader also bypasses the legacy
+`rum_daily_distributions` projection. It reads the same canonical and
+historical raw metric facts as the history reader, using an explicit UTC
+date range. This prevents canonical rows with an empty `events` array from
+being omitted from distribution counts.
+
+Repository-defined legacy readers with no supported application caller are
+retired by `20261125025407_retire_unused_rum_readers.sql`. The stale
+`rum_history_new`, `rum_daily_distributions`, and `rum_origin_hits_agg`
+tables remain intact for now. Their physical removal requires a separate
+dependency and data-retention audit. Production-only RPCs whose definitions
+are absent from the repository are also outside this cleanup migration.
+
 ## Verification
 
 - `pnpm run build` confirms retired routes are absent from the Next.js route
