@@ -17,7 +17,7 @@
 
 **Impact:** Anonymous cleanup invocation now returns HTTP 401, and service-role cleanup refuses deletion until the cold snapshot pipeline is available. Removing the obsolete GIN index reduced the production `rum_metrics` footprint from about 111 MB to 10.2 MB while preserving all live rows. History, INP element, and LCP image readers returned HTTP 200 with their expected production rows after the change.
 
-**Where to verify:** `supabase/migrations/20261125021531_secure_and_batch_rum_retention.sql`, `supabase/migrations/20261125022142_drop_bloated_legacy_events_index.sql`, `tests/rum-dashboard-live-reader.test.mjs`, `docs/systems/analytics-pipeline.md`.
+**Where to verify:** [`docs/reports/rum-storage-optimization-2026-11-25.md`](reports/rum-storage-optimization-2026-11-25.md), `supabase/migrations/20261125021531_secure_and_batch_rum_retention.sql`, `supabase/migrations/20261125022142_drop_bloated_legacy_events_index.sql`, `tests/rum-dashboard-live-reader.test.mjs`, `docs/systems/analytics-pipeline.md`.
 
 **Interview one-liner:** "Closed an exposed raw-telemetry cleanup endpoint and recovered 101 MB of production storage by removing an obsolete legacy-events index."
 

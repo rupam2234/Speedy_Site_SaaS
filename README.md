@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Engineering achievements
+
+- [Production RUM Storage Optimization](docs/reports/rum-storage-optimization-2026-11-25.md): reduced the production `rum_metrics` footprint from approximately 111 MB to 10.2 MB by removing obsolete PostgreSQL index bloat, while preserving telemetry and validating supported readers against production.
+
 ## Getting Started
 
 First, run the development server:
