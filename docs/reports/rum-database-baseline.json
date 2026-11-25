@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-11-23T23:20:26.624Z",
+  "source": "Supabase REST read-only aggregate queries",
+  "storage": {
+    "datasetClassification": "small-development-or-low-traffic",
+    "totalRows": 3,
+    "rowsLastDay": 3,
+    "sampledRows": 3,
+    "eventBytes": {
+      "min": 7303,
+      "median": 7470,
+      "p95": 11496,
+      "max": 11496,
+      "mean": 8756
+    },
+    "sampledRowBytes": {
+      "min": 7359,
+      "median": 7526,
+      "p95": 11552,
+      "max": 11552,
+      "mean": 8812
+    }
+  },
+  "readVolume": {
+    "sampledRowsRead": 3,
+    "sampledRowBytes": 26436
+  },
+  "rpcLatency": [
+    {
+      "name": "recent_requests",
+      "ok": true,
+      "p50Ms": 561,
+      "p95Ms": 717
+    },
+    {
+      "name": "analyze_fcp_by_device",
+      "ok": true,
+      "p50Ms": 355,
+      "p95Ms": 559
+    },
+    {
+      "name": "analyze_lcp_by_device",
+      "ok": true,
+      "p50Ms": 382,
+      "p95Ms": 516
+    },
+    {
+      "name": "cls_elements",
+      "ok": true,
+      "p50Ms": 639,
+      "p95Ms": 649
+    },
+    {
+      "name": "inp_elements",
+      "ok": true,
+      "p50Ms": 575,
+      "p95Ms": 648
+    },
+    {
+      "name": "page_performance_analysis",
+      "ok": true,
+      "p50Ms": 639,
+      "p95Ms": 640
+    },
+    {
+      "name": "user_happiness_dist",
+      "ok": true,
+      "p50Ms": 639,
+      "p95Ms": 640
+    },
+    {
+      "name": "ux_map_data",
+      "ok": true,
+      "p50Ms": 639,
+      "p95Ms": 641
+    }
+  ],
+  "limitations": [
+    "REST responses cannot expose PostgreSQL heap size, index size, or pg_stat_statements read counters without a direct database connection.",
+    "RPC timings include network latency and use a sampled site, so they are directional baselines rather than database-only execution times."
+  ]
+}

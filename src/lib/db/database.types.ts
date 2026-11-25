@@ -284,6 +284,96 @@ export type Database = {
           },
         ]
       }
+      order_conversations: {
+        Row: {
+          channel_type: string
+          created_at: string
+          id: string
+          last_message_at: string
+          order_id: string
+          updated_at: string
+        }
+        Insert: {
+          channel_type: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          order_id: string
+          updated_at?: string
+        }
+        Update: {
+          channel_type?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          order_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "cloudflare_kv_tracking"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_cf_zone_per_site"
+            referencedColumns: ["order_id"]
+          },
+        ]
+      }
+      order_messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          email_notified_at: string | null
+          id: string
+          is_system: boolean
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          email_notified_at?: string | null
+          id?: string
+          is_system?: boolean
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          email_notified_at?: string | null
+          id?: string
+          is_system?: boolean
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "order_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           favicon_file: string | null
@@ -293,14 +383,14 @@ export type Database = {
           product_type: string | null
           report_email: string | null
           rum_connection: boolean | null
+          setup_completed_at: string | null
+          setup_step: number
+          tour: Json
           usage_by_site: number
           user_id: string
           website_address: string
           website_name: string
           weekly_report: boolean | null
-          setup_completed_at: string | null
-          setup_step: number
-          tour: Json
         }
         Insert: {
           favicon_file?: string | null
@@ -310,14 +400,14 @@ export type Database = {
           product_type?: string | null
           report_email?: string | null
           rum_connection?: boolean | null
+          setup_completed_at?: string | null
+          setup_step?: number
+          tour?: Json
           usage_by_site?: number
           user_id?: string
           website_address: string
           website_name: string
           weekly_report?: boolean | null
-          setup_completed_at?: string | null
-          setup_step?: number
-          tour?: Json
         }
         Update: {
           favicon_file?: string | null
@@ -327,14 +417,14 @@ export type Database = {
           product_type?: string | null
           report_email?: string | null
           rum_connection?: boolean | null
+          setup_completed_at?: string | null
+          setup_step?: number
+          tour?: Json
           usage_by_site?: number
           user_id?: string
           website_address?: string
           website_name?: string
           weekly_report?: boolean | null
-          setup_completed_at?: string | null
-          setup_step?: number
-          tour?: Json
         }
         Relationships: []
       }
@@ -468,34 +558,196 @@ export type Database = {
       }
       rum_metrics: {
         Row: {
+          backend_response_ms: number | null
+          browser_family: string | null
+          cache_status: string | null
+          city: string | null
+          cls_rating: string | null
+          cls_value: number | null
+          connect_ms: number | null
+          country: string | null
           created_at: string | null
           current_page: string | null
+          decoded_bytes: number | null
+          device_memory_gb: number | null
+          device_type: string | null
+          diagnostic_evidence: Json | null
+          dns_ms: number | null
           domain_name: string | null
+          error_count: number | null
           events: Json | null
+          failed_resource_count: number | null
+          fcp_ms: number | null
+          fcp_rating: string | null
           id: number
+          inp_ms: number | null
+          inp_rating: string | null
+          language: string | null
+          lcp_ms: number | null
+          lcp_rating: string | null
+          long_task_count: number | null
+          network_downlink_mbps: number | null
+          network_effective_type: string | null
+          network_rtt_ms: number | null
+          origin_hit: boolean | null
+          os_family: string | null
           pageview_id: string | null
+          poor_connection: boolean | null
           previous_page: string | null
+          provider: string | null
+          queue_ms: number | null
+          redirect_ms: number | null
+          referrer_domain: string | null
+          region: string | null
+          resource_css_bytes: number | null
+          resource_css_count: number | null
+          resource_css_duration_ms: number | null
+          resource_duration_ms: number | null
+          resource_image_bytes: number | null
+          resource_image_count: number | null
+          resource_image_duration_ms: number | null
+          resource_other_bytes: number | null
+          resource_other_count: number | null
+          resource_other_duration_ms: number | null
+          resource_request_count: number | null
+          resource_script_bytes: number | null
+          resource_script_count: number | null
+          resource_script_duration_ms: number | null
+          resource_transfer_bytes: number | null
+          schema_version: number | null
           session_id: string | null
+          tls_handshake_ms: number | null
+          transfer_bytes: number | null
+          ttfb_ms: number | null
+          ttfb_rating: string | null
         }
         Insert: {
+          backend_response_ms?: number | null
+          browser_family?: string | null
+          cache_status?: string | null
+          city?: string | null
+          cls_rating?: string | null
+          cls_value?: number | null
+          connect_ms?: number | null
+          country?: string | null
           created_at?: string | null
           current_page?: string | null
+          decoded_bytes?: number | null
+          device_memory_gb?: number | null
+          device_type?: string | null
+          diagnostic_evidence?: Json | null
+          dns_ms?: number | null
           domain_name?: string | null
+          error_count?: number | null
           events?: Json | null
+          failed_resource_count?: number | null
+          fcp_ms?: number | null
+          fcp_rating?: string | null
           id?: number
+          inp_ms?: number | null
+          inp_rating?: string | null
+          language?: string | null
+          lcp_ms?: number | null
+          lcp_rating?: string | null
+          long_task_count?: number | null
+          network_downlink_mbps?: number | null
+          network_effective_type?: string | null
+          network_rtt_ms?: number | null
+          origin_hit?: boolean | null
+          os_family?: string | null
           pageview_id?: string | null
+          poor_connection?: boolean | null
           previous_page?: string | null
+          provider?: string | null
+          queue_ms?: number | null
+          redirect_ms?: number | null
+          referrer_domain?: string | null
+          region?: string | null
+          resource_css_bytes?: number | null
+          resource_css_count?: number | null
+          resource_css_duration_ms?: number | null
+          resource_duration_ms?: number | null
+          resource_image_bytes?: number | null
+          resource_image_count?: number | null
+          resource_image_duration_ms?: number | null
+          resource_other_bytes?: number | null
+          resource_other_count?: number | null
+          resource_other_duration_ms?: number | null
+          resource_request_count?: number | null
+          resource_script_bytes?: number | null
+          resource_script_count?: number | null
+          resource_script_duration_ms?: number | null
+          resource_transfer_bytes?: number | null
+          schema_version?: number | null
           session_id?: string | null
+          tls_handshake_ms?: number | null
+          transfer_bytes?: number | null
+          ttfb_ms?: number | null
+          ttfb_rating?: string | null
         }
         Update: {
+          backend_response_ms?: number | null
+          browser_family?: string | null
+          cache_status?: string | null
+          city?: string | null
+          cls_rating?: string | null
+          cls_value?: number | null
+          connect_ms?: number | null
+          country?: string | null
           created_at?: string | null
           current_page?: string | null
+          decoded_bytes?: number | null
+          device_memory_gb?: number | null
+          device_type?: string | null
+          diagnostic_evidence?: Json | null
+          dns_ms?: number | null
           domain_name?: string | null
+          error_count?: number | null
           events?: Json | null
+          failed_resource_count?: number | null
+          fcp_ms?: number | null
+          fcp_rating?: string | null
           id?: number
+          inp_ms?: number | null
+          inp_rating?: string | null
+          language?: string | null
+          lcp_ms?: number | null
+          lcp_rating?: string | null
+          long_task_count?: number | null
+          network_downlink_mbps?: number | null
+          network_effective_type?: string | null
+          network_rtt_ms?: number | null
+          origin_hit?: boolean | null
+          os_family?: string | null
           pageview_id?: string | null
+          poor_connection?: boolean | null
           previous_page?: string | null
+          provider?: string | null
+          queue_ms?: number | null
+          redirect_ms?: number | null
+          referrer_domain?: string | null
+          region?: string | null
+          resource_css_bytes?: number | null
+          resource_css_count?: number | null
+          resource_css_duration_ms?: number | null
+          resource_duration_ms?: number | null
+          resource_image_bytes?: number | null
+          resource_image_count?: number | null
+          resource_image_duration_ms?: number | null
+          resource_other_bytes?: number | null
+          resource_other_count?: number | null
+          resource_other_duration_ms?: number | null
+          resource_request_count?: number | null
+          resource_script_bytes?: number | null
+          resource_script_count?: number | null
+          resource_script_duration_ms?: number | null
+          resource_transfer_bytes?: number | null
+          schema_version?: number | null
           session_id?: string | null
+          tls_handshake_ms?: number | null
+          transfer_bytes?: number | null
+          ttfb_ms?: number | null
+          ttfb_rating?: string | null
         }
         Relationships: []
       }
@@ -544,6 +796,27 @@ export type Database = {
             referencedColumns: ["website_name"]
           },
         ]
+      }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
       }
       ticket_messages: {
         Row: {
@@ -714,21 +987,21 @@ export type Database = {
           {
             foreignKeyName: "wordpress_cred_order_id_fkey"
             columns: ["order_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "cloudflare_kv_tracking"
             referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "wordpress_cred_order_id_fkey"
             columns: ["order_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "orders"
             referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "wordpress_cred_order_id_fkey"
             columns: ["order_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "v_cf_zone_per_site"
             referencedColumns: ["order_id"]
           },
@@ -1007,62 +1280,7 @@ export type Database = {
           ttfb_ms: number
         }[]
       }
-      analyze_web_vitals_by_page: {
-        Args: { domain_filter?: string; time_range?: string }
-        Returns: {
-          avg_cls: number
-          avg_fcp: number
-          avg_fid: number
-          avg_inp: number
-          avg_lcp: number
-          avg_ttfb: number
-          cls_good_pct: number
-          cls_needs_improvement_pct: number
-          cls_poor_pct: number
-          device_type: string
-          fcp_good_pct: number
-          fcp_needs_improvement_pct: number
-          fcp_poor_pct: number
-          fid_good_pct: number
-          fid_needs_improvement_pct: number
-          fid_poor_pct: number
-          inp_good_pct: number
-          inp_needs_improvement_pct: number
-          inp_poor_pct: number
-          lcp_good_pct: number
-          lcp_needs_improvement_pct: number
-          lcp_poor_pct: number
-          overall_score: number
-          page_address: string
-          page_url: string
-          page_view_count: number
-          performance_category: string
-          ttfb_good_pct: number
-          ttfb_needs_improvement_pct: number
-          ttfb_poor_pct: number
-        }[]
-      }
       bytea_to_text: { Args: { data: string }; Returns: string }
-      cache_analysis: {
-        Args: { domain_name_param: string }
-        Returns: {
-          cache_status: string
-          cdn_provider: string
-          city: string
-          country: string
-          created_at: string
-          current_page: string
-          device: string
-          dns_time: number
-          id: string
-          is_origin_hit: string
-          network_rtt: string
-          network_type: string
-          server_processing_time: number
-          tcp_time: number
-          ttfb_total: number
-        }[]
-      }
       cls_elements: {
         Args: { p_domain_name: string }
         Returns: {
@@ -1121,8 +1339,11 @@ export type Database = {
           ttfb_avg: number
         }[]
       }
-      delete_old_rum_hits: { Args: never; Returns: undefined }
       delete_old_rum_metrics: { Args: never; Returns: undefined }
+      ensure_order_conversations: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
       font_analysis: {
         Args: { p_domain: string }
         Returns: {
@@ -1138,35 +1359,7 @@ export type Database = {
           total_occurrences: number
         }[]
       }
-      get_ai_citation: {
-        Args: { p_domain_name: string }
-        Returns: {
-          ai_citation_possibility: string
-          avg_citation_score: number
-          avg_dom_content_loaded: number
-          avg_ttfb: number
-          device_type: string
-          domain: string
-          max_citation_score: number
-          min_citation_score: number
-          std_dev_citation_score: number
-          total_sessions: number
-        }[]
-      }
-      get_analytics_by_device_and_country: {
-        Args: { p_domain_name: string; p_time_range?: string }
-        Returns: {
-          avg_pages_per_session: number
-          bounce_rate_percentage: number
-          country: string
-          device_type: string
-          total_page_views: number
-          total_sessions: number
-          unique_languages: number
-          unique_visitors: number
-        }[]
-      }
-      get_daily_web_metrics: { Args: { target_date: string }; Returns: Json[] }
+      get_current_user_role: { Args: never; Returns: string }
       get_filtered_rum_metrics: {
         Args: {
           p_date_range: string
@@ -1303,49 +1496,6 @@ export type Database = {
               needs_improvement: number
               poor: number
               url: string
-            }[]
-          }
-      get_web_vitals_metrics:
-        | {
-            Args: { p_domain: string }
-            Returns: {
-              avg_value: number
-              device_type: string
-              domain_name: string
-              good_percent: number
-              max_value: number
-              metric_name: string
-              min_value: number
-              needs_improvement_percent: number
-              p50: number
-              p75: number
-              p90: number
-              p95: number
-              p99: number
-              page: string
-              poor_percent: number
-              sample_count: number
-            }[]
-          }
-        | {
-            Args: { p_date_range?: string; p_domain: string }
-            Returns: {
-              avg_value: number
-              device_type: string
-              domain_name: string
-              good_percent: number
-              max_value: number
-              metric_name: string
-              min_value: number
-              needs_improvement_percent: number
-              p50: number
-              p75: number
-              p90: number
-              p95: number
-              p99: number
-              page: string
-              poor_percent: number
-              sample_count: number
             }[]
           }
       get_yesterday_usage_counts: {
@@ -1496,34 +1646,8 @@ export type Database = {
           target_element: string
         }[]
       }
-      lcp_attribution_by_device: {
-        Args: {
-          p_domain?: string
-          p_from?: string
-          p_min_lcp?: number
-          p_path_like?: string
-          p_to?: string
-        }
-        Returns: {
-          avg_lcp: number
-          decodedbodysize: number
-          device_type: string
-          elementrenderdelay: number
-          height: number
-          islazy: boolean
-          lcp_type: string
-          max_lcp: number
-          occurrences: number
-          resourceloaddelay: number
-          resourceloadduration: number
-          target: string
-          target_url: string
-          transfersize: number
-          ttfb: number
-          url: string
-          width: number
-        }[]
-      }
+      is_active_order_expert: { Args: { p_order_id: string }; Returns: boolean }
+      is_order_owner: { Args: { p_order_id: string }; Returns: boolean }
       page_performance_analysis: {
         Args: { p_domain?: string }
         Returns: {
@@ -1547,32 +1671,30 @@ export type Database = {
           rows_inserted: number
         }[]
       }
-      recent_requests: {
-        Args: { p_domain: string; p_limit?: number }
+      rum_cls_shifts: {
+        Args: { p_domain: string }
         Returns: {
-          backend_ms: number
-          cache_status: string
-          city: string
-          country: string
-          created_at: string
+          area_delta: number
           current_page: string
-          decoded_size: number
+          current_rect: Json
           device_type: string
-          experience: string
-          har_data: Json
-          id: number
-          inp_rating: string
-          inp_value: number
-          lcp_rating: string
-          lcp_value: number
-          session_id: string
-          transfer_size: number
-          ttfb: number
+          distance_moved: number
+          dx: number
+          dy: number
+          involved_elements: Json
+          load_state: string
+          previous_rect: Json
+          row_id: number
+          target: string
+          time_ms: number
+          total_cls_value: number
+          value: number
+          viewport_ratio: number
         }[]
       }
-      refresh_rum_daily_distributions: {
-        Args: { p_day?: string }
-        Returns: undefined
+      rum_diagnostic_evidence_is_valid: {
+        Args: { p_evidence: Json }
+        Returns: boolean
       }
       rum_distributions_all_metrics: {
         Args: { p_domain_name: string; p_end: string; p_start: string }
@@ -1584,37 +1706,71 @@ export type Database = {
           poor_count: number
         }[]
       }
+      rum_inp_interactions: {
+        Args: { p_domain: string }
+        Returns: {
+          created_at: string
+          current_page: string
+          device_type: string
+          inp_value: number
+          input_delay: number
+          interaction_type: string
+          presentation_delay: number
+          processing_duration: number
+          rating: string
+          responsible_scripts: string
+          row_id: number
+          target_element: string
+        }[]
+      }
+      rum_lcp_candidates: {
+        Args: { p_domain: string; p_end?: string; p_start?: string }
+        Returns: {
+          asset_url: string
+          candidate_ttfb_ms: number
+          current_page: string
+          decoded_bytes: number
+          device_memory_gb: string
+          device_type: string
+          domain_name: string
+          element_render_delay_ms: number
+          fetch_priority: string
+          font_family: string
+          font_size: string
+          font_transfer_bytes: number
+          font_url: string
+          font_weight: string
+          image_height: number
+          image_width: number
+          is_lazy: boolean
+          lcp_rating: string
+          lcp_value: number
+          render_blockers: string
+          resource_load_delay_ms: number
+          resource_load_duration_ms: number
+          row_id: number
+          target: string
+          transfer_bytes: number
+        }[]
+      }
+      rum_metric_readings: {
+        Args: { p_domain: string; p_end?: string; p_start: string }
+        Returns: {
+          current_page: string
+          device_type: string
+          metric_name: string
+          metric_value: number
+          network_effective_type: string
+          rating: string
+          report_date: string
+          row_id: number
+        }[]
+      }
       set_email_reporting: {
         Args: { p_entries: Json; p_order_id: string }
         Returns: undefined
       }
       text_to_bytea: { Args: { data: string }; Returns: string }
-      third_party_domains: {
-        Args: { site_filter?: string; time_range?: string }
-        Returns: {
-          device_type: string
-          site_domain: string
-          top_domains: Json
-        }[]
-      }
-      top_landing_page: {
-        Args: { p_date_range: string; p_domain_name: string }
-        Returns: {
-          current_page: string
-          hits: number
-          previous_page: string
-        }[]
-      }
-      traffic_source: {
-        Args: never
-        Returns: {
-          count: number
-          day: string
-          device_type: string
-          domain: string
-          referral_domain: string
-        }[]
-      }
       ttfb_contributors: {
         Args: { p_domain: string }
         Returns: {
@@ -1633,6 +1789,10 @@ export type Database = {
         }[]
       }
       upsert_rum_metrics_batch: { Args: { payloads: Json }; Returns: undefined }
+      upsert_rum_metrics_batch_single: {
+        Args: { payloads: Json }
+        Returns: undefined
+      }
       urlencode:
         | { Args: { data: Json }; Returns: string }
         | {
@@ -1647,68 +1807,9 @@ export type Database = {
               error: true
             } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
-      user_happiness: {
-        Args: { p_date_range?: string; p_domain?: string }
-        Returns: {
-          avg_cls: number
-          avg_fcp: number
-          avg_inp: number
-          avg_lcp: number
-          avg_long_tasks: number
-          avg_performance_score: number
-          avg_slow_api_calls: number
-          avg_trackers: number
-          avg_ttfb: number
-          country_count: number
-          device_type: string
-          experience_quality: string
-          percentage_in_device_type: number
-          session_count: number
-        }[]
-      }
-      user_happiness_dist: {
-        Args: { domain_filter: string; end_date: string; start_date: string }
-        Returns: {
-          country_iso: string
-          device_type: string
-          happy_percentage: number
-          moderate_percentage: number
-          total_sessions: number
-          unhappy_percentage: number
-        }[]
-      }
-      ux_map_data: {
-        Args: { domain_url: string }
-        Returns: {
-          average_pct: number
-          bad_pct: number
-          country: string
-          device_type: string
-          good_pct: number
-          network: string
-          p75_cls: number
-          p75_inp: number
-          p75_lcp: number
-          p75_ttfb: number
-          total_sessions: number
-        }[]
-      }
       verify_website_user_match: {
         Args: { user_id_arg: string; website_name_arg: string }
         Returns: boolean
-      }
-      web_vitals: {
-        Args: { p_domain_name: string; p_time_range: string }
-        Returns: {
-          avg_pages_per_session: number
-          bounce_rate_percentage: number
-          country: string
-          device_type: string
-          total_page_views: number
-          total_sessions: number
-          unique_languages: number
-          unique_visitors: number
-        }[]
       }
     }
     Enums: {

@@ -294,12 +294,6 @@ export default function AppSidebar({
             title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
-          { title: "Trace", url: `/dashboard/rum/trace?site=${selectedSite}` },
-          { title: "Global UX", url: `/dashboard/rum/ux?site=${selectedSite}` },
-          {
-            title: "Analytics",
-            url: `/dashboard/rum/analytics?site=${selectedSite}`,
-          },
         ],
       },
       {

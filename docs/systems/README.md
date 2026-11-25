@@ -32,3 +32,4 @@ flowchart TD
 | [rum-injector-plugin.md](file:///home/victor/Projects/Speedy_Site_SaaS/docs/systems/rum-injector-plugin.md) | WordPress plugin architecture for automated RUM collector script injection |
 | [site-metadata-worker.md](file:///home/victor/Projects/Speedy_Site_SaaS/docs/systems/site-metadata-worker.md) | Cloudflare KV edge entitlement synchronization for RUM data ingestion |
 | [analytics-pipeline.md](file:///home/victor/Projects/Speedy_Site_SaaS/docs/systems/analytics-pipeline.md) | Analytics cron workers, aggregation pipeline, and edge read-path optimization |
+| [issue-knowledge-documents.md](issue-knowledge-documents.md) | Canonical issue-document schema, evidence requirements, publication thresholds, and Vectorize eligibility |

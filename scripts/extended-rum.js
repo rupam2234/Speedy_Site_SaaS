@@ -8,6 +8,12 @@ import {
   INPThresholds,
   LCPThresholds,
 } from "web-vitals/attribution";
+import { legacyEventsToV2 } from "../src/lib/rum/contract.js";
+import {
+  classifyDevice,
+  parseBrowserFamily,
+  parseOsFamily,
+} from "../src/lib/rum/normalize.js";
 
 const CONFIG = {
   API_URL: "https://buffer.speedy.site/collect",
@@ -18,7 +24,7 @@ const CONFIG = {
 
   // Resource waterfall + error compaction
   MAX_RESOURCES_TRACKED: 600, // raw buffer cap, not what gets sent
-  RESOURCE_SLOW_THRESHOLD: 100, // ms — only individually report resources slower than this
+  RESOURCE_SLOW_THRESHOLD: 100, // ms, only individually report resources slower than this
   MAX_DISTINCT_ERRORS: 20, // distinct error buckets kept per session (storms get counted, not duplicated)
 };
 
@@ -26,7 +32,7 @@ const FCPThresholds = CONFIG.FCP_THRESHOLDS;
 const TTFBThresholds = CONFIG.TTFB_THRESHOLDS;
 const siteDomain = location.hostname;
 
-let previousPage = document.referrer || null;
+let previousPage = null;
 let currentPage = location.pathname + location.search;
 
 const batchedData = [];
@@ -39,6 +45,7 @@ let worstCLS = null;
 
 let isFlushing = false;
 let hasFlushed = false;
+let lastSentINPValue = null;
 
 function createLongTaskTracker() {
   const buffer = [];
@@ -161,7 +168,7 @@ function createResourceTracker() {
 const resourceTracker = createResourceTracker();
 
 // ---- Error tracking (JS errors, unhandled rejections, failed resource loads) ----
-// Deduped into buckets so a throwing loop or a flaky CDN can't blow up the payload —
+// Deduped into buckets so a throwing loop or a flaky CDN can't blow up the payload:
 // repeats increment `count` on the existing bucket instead of creating new entries.
 
 const errorBuckets = new Map();
@@ -194,7 +201,7 @@ function handleGlobalError(event) {
   const target = event.target;
 
   // Resource load failures (img/script/link/etc.) fire 'error' too, but with
-  // event.target set to the failing element instead of window — they don't
+  // event.target set to the failing element instead of window, they don't
   // bubble, which is why this listener is registered with capture: true.
   if (target && target !== window && target.tagName) {
     const tag = target.tagName.toLowerCase();
@@ -259,6 +266,10 @@ if (!sessionId) {
     : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`; // Fallback for older browsers
   setCookie("sessionId", sessionId);
 }
+
+const pageviewId = crypto.randomUUID
+  ? crypto.randomUUID()
+  : `pv-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const elementSummaryCache = new Map();
 
@@ -539,8 +550,6 @@ function handleCLS(metric) {
     // })),
   };
 
-  const topShift = enrichedShifts[0];
-
   worstCLS = {
     type: "web-vital",
     siteDomain,
@@ -626,6 +635,8 @@ async function handleINP(metric) {
         .slice(0, 5),
     })),
   };
+
+  if (hasFlushed) flushINPContinuation();
 }
 
 function handleLCP(metric) {
@@ -683,14 +694,21 @@ function handleLCP(metric) {
       .getEntriesByType("resource")
       .filter((x) => normalize(x.name).includes(normalize(fontFamily)));
 
+    const primaryFontResource = fontResource.sort(
+      (a, b) => (b.transferSize || 0) - (a.transferSize || 0),
+    )[0];
     fontAttribution = {
       family: fontFamily,
       weight: styles.fontWeight,
       size: styles.fontSize,
-      fontData: fontResource.map((x) => ({
-        url: x.name ?? null,
-        transferSize: x.transferSize ?? null,
-      })),
+      fontData: primaryFontResource
+        ? [
+            {
+              url: primaryFontResource.name ?? null,
+              transferSize: primaryFontResource.transferSize ?? null,
+            },
+          ]
+        : [],
     };
   }
 
@@ -716,8 +734,10 @@ function handleLCP(metric) {
           width: findImage?.width ?? null,
           height: findImage?.height ?? null,
           isLazy:
+            findImage?.getAttribute("loading") === "lazy" ||
             findImage?.classList.contains("lazyloaded") ||
             findImage?.classList.contains("lazyload"),
+          fetchPriority: findImage?.fetchPriority ?? null,
         }),
 
         ...(fontAttribution && {
@@ -759,8 +779,12 @@ function handleTTFB(metric) {
 }
 
 function getDeviceType() {
-  const w = window.innerWidth;
-  return w <= 768 ? "mobile" : w <= 1024 ? "tablet" : "desktop";
+  return classifyDevice({
+    userAgent: navigator.userAgent,
+    userAgentData: navigator.userAgentData,
+    maxTouchPoints: navigator.maxTouchPoints,
+    viewportWidth: window.innerWidth,
+  });
 }
 
 function detectCacheStatus(nav) {
@@ -875,7 +899,7 @@ function collectPerformanceMetrics() {
 
 // ---- Resource waterfall (compact HAR-like summary) ----
 // Real HAR exports are huge because they carry full headers, cookies, and
-// sometimes response bodies. None of that is available to page JS anyway —
+// sometimes response bodies. None of that is available to page JS anyway:
 // PerformanceResourceTiming is the browser's own compact substitute, and the
 // functions below shrink it further: bucket-by-type for the overall shape,
 // itemize only the slow outliers, round everything to integer ms.
@@ -927,7 +951,7 @@ function summarizeResource(entry) {
     decodedSize: entry.decodedBodySize || 0,
     cached: entry.transferSize === 0 && entry.decodedBodySize > 0,
     protocol: entry.nextHopProtocol || null,
-    // Resource Timing L3 field — HTTP status of the request. Not yet
+    // Resource Timing L3 field: HTTP status of the request. Not yet
     // universally supported; comes through as null where the browser lacks it.
     status: entry.responseStatus ?? null,
     phases: getResourcePhases(entry),
@@ -1041,32 +1065,147 @@ function getRenderBlockers() {
   }
 }
 
+const clientContext = {
+  deviceType: getDeviceType(),
+  deviceMemory: navigator.deviceMemory || null,
+  connection: navigator.connection
+    ? {
+        effectiveType: navigator.connection.effectiveType,
+        downlink: navigator.connection.downlink,
+        rtt: navigator.connection.rtt,
+      }
+    : null,
+  browserFamily: parseBrowserFamily(navigator.userAgent),
+  osFamily: parseOsFamily(navigator.userAgent),
+  language: navigator.language,
+};
+
 (function collectClientMeta() {
   queueEvent({
     type: "client-info",
-    deviceType: getDeviceType(),
-    deviceMemory: navigator.deviceMemory || "unknown",
-    hardwareConcurrency: navigator.hardwareConcurrency || "unknown",
-    connection: navigator.connection
-      ? {
-          effectiveType: navigator.connection.effectiveType,
-          downlink: navigator.connection.downlink,
-          rtt: navigator.connection.rtt,
-        }
-      : null,
-    userAgent: navigator.userAgent,
-    language: navigator.language,
+    deviceType: clientContext.deviceType,
+    deviceMemory: clientContext.deviceMemory || "unknown",
+    connection: clientContext.connection,
+    language: clientContext.language,
   });
 })();
 
-function checkMetricsReady() {
-  // this checks for completion of vitals data to send on page unload, tab shift or page change
-  if (
-    worstCLS !== null &&
-    worstLCP !== null &&
-    (webVitalsINP !== null || maxCustomEntry !== null)
-  ) {
-    return true;
+function buildINPEvent() {
+  if (!webVitalsINP && !maxCustomEntry) return null;
+
+  let inpAttribution = {};
+  let inpValue = webVitalsINP
+    ? webVitalsINP.value
+    : maxCustomEntry
+      ? maxCustomEntry.duration
+      : null;
+  const attr = webVitalsINP?.attribution;
+  const topScript = getTopBlockingScript(webVitalsINP?.loaf || []);
+
+  if (webVitalsINP?.attribution) {
+    inpAttribution = {
+      target: attr?.target ? summarizeElement(attr.target) : "(unknown)",
+      eventType: attr.interactionType,
+      inputDelay: attr.inputDelay,
+      processingDuration: attr.processingDuration,
+      presentationDelay: attr.presentationDelay,
+      mainThreadFunctions: webVitalsINP.mainThreadBreakdown,
+      loaf: topScript
+        ? {
+            sourceURL: topScript.sourceURL,
+            duration: topScript.duration,
+            invoker: topScript.invoker,
+            type: topScript.type,
+            sourceCharPosition: topScript.sourceCharPosition,
+            layoutImpact: topScript.forcedStyleAndLayoutDuration,
+            isFirstParty: topScript.isFirstParty,
+          }
+        : null,
+    };
+  } else if (maxCustomEntry?.target) {
+    inpAttribution = {
+      target: maxCustomEntry?.target
+        ? summarizeElement(maxCustomEntry.target)
+        : "(unknown)",
+      eventType: maxCustomEntry.type,
+      inputDelay: maxCustomEntry.processingStart - maxCustomEntry.startTime,
+      processingTime:
+        maxCustomEntry.duration -
+        (maxCustomEntry.processingStart - maxCustomEntry.startTime),
+    };
+  } else {
+    inpAttribution = { target: "(unknown)", eventType: "unknown" };
+  }
+
+  if (inpValue === null) return null;
+  return {
+    type: "web-vital",
+    siteDomain,
+    name: "INP",
+    value: inpValue,
+    rating: classifyMetric(inpValue, INPThresholds),
+    attribution: inpAttribution,
+  };
+}
+
+function buildV2Payload(data, continuation = false) {
+  const payload = legacyEventsToV2(data, {
+    pageviewId,
+    sessionId,
+    currentPage,
+    previousPage,
+    referrer: document.referrer,
+    currentHostname: location.hostname,
+    userAgent: navigator.userAgent,
+    deviceType: clientContext.deviceType,
+    deviceMemory: clientContext.deviceMemory,
+    connection: clientContext.connection,
+    browserFamily: clientContext.browserFamily,
+    osFamily: clientContext.osFamily,
+    language: clientContext.language,
+    longTaskCount: longTaskTracker.get().length,
+    failedResourceCount: [...errorBuckets.values()].filter((error) => error.kind === "resource-error").length,
+  });
+
+  if (!continuation) return payload;
+  return {
+    ...payload,
+    facts: {
+      ...payload.facts,
+      client: {},
+      navigation: {},
+      vitals: payload.facts.vitals.inp ? { inp: payload.facts.vitals.inp } : {},
+      resources: {},
+      diagnostics: {},
+    },
+    evidence: {
+      lcp: [],
+      render_blockers: [],
+      slow_resources: [],
+      cls_shifts: [],
+      inp: payload.evidence.inp,
+      errors: [],
+    },
+  };
+}
+
+function sendMetricsPayload(data, continuation = false) {
+  if (!data.length) return;
+
+  const payload = JSON.stringify(buildV2Payload(data, continuation));
+
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(
+      CONFIG.API_URL,
+      new Blob([payload], { type: "text/plain;charset=UTF-8" }),
+    );
+  } else {
+    fetch(CONFIG.API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {});
   }
 }
 
@@ -1077,135 +1216,34 @@ function flushMetrics() {
   hasFlushed = true;
 
   try {
-    if (webVitalsINP || maxCustomEntry) {
-      let inpAttribution = {};
-      let inpValue = webVitalsINP
-        ? webVitalsINP.value
-        : maxCustomEntry
-          ? maxCustomEntry.duration
-          : null;
-      const attr = webVitalsINP?.attribution;
-      const topScript = getTopBlockingScript(webVitalsINP?.loaf || []);
-      // const inpTime = webVitalsINP?.startTime ?? maxCustomEntry?.startTime;
-
-      if (webVitalsINP?.attribution) {
-        inpAttribution = {
-          target: attr?.target ? summarizeElement(attr.target) : "(unknown)",
-          eventType: attr.interactionType,
-          inputDelay: attr.inputDelay,
-          processingDuration: attr.processingDuration,
-          presentationDelay: attr.presentationDelay,
-          mainThreadFunctions: webVitalsINP.mainThreadBreakdown,
-          loaf: topScript
-            ? {
-                sourceURL: topScript.sourceURL,
-                duration: topScript.duration,
-                invoker: topScript.invoker,
-                type: topScript.type,
-                sourceCharPosition: topScript.sourceCharPosition,
-                layoutImpact: topScript.layoutImpact,
-                isFirstParty: topScript.isFirstParty,
-              }
-            : null,
-        };
-      } else if (maxCustomEntry && maxCustomEntry.target) {
-        const inputDelay =
-          maxCustomEntry.processingStart - maxCustomEntry.startTime;
-        const processingTime = maxCustomEntry.duration - inputDelay;
-
-        inpAttribution = {
-          target: maxCustomEntry?.target
-            ? summarizeElement(maxCustomEntry.target)
-            : "(unknown)",
-          eventType: maxCustomEntry.name,
-          inputDelay: inputDelay,
-          processingDuration: processingTime,
-          loaf: topScript
-            ? {
-                sourceURL: topScript.sourceURL,
-                duration: topScript.duration,
-                invoker: topScript.invoker,
-                type: topScript.type,
-                sourceCharPosition: topScript.sourceCharPosition,
-                layoutImpact: topScript.layoutImpact,
-                isFirstParty: topScript.isFirstParty,
-              }
-            : null,
-        };
-      } else {
-        inpAttribution = { target: "(unknown)", eventType: "unknown" };
-      }
-
-      if (inpValue !== null) {
-        queueEvent({
-          type: "web-vital",
-          siteDomain,
-          name: "INP",
-          value: inpValue,
-          rating: classifyMetric(inpValue, INPThresholds),
-          attribution: inpAttribution,
-        });
-      }
+    const data = [...batchedData];
+    const inpEvent = buildINPEvent();
+    if (inpEvent) {
+      data.push(inpEvent);
+      lastSentINPValue = inpEvent.value;
     }
 
-    // aggregate CLS
-    if (worstCLS) batchedData.push(worstCLS);
-
-    //aggregate LCP
-    if (worstLCP) batchedData.push(worstLCP);
+    if (worstCLS) data.push(worstCLS);
+    if (worstLCP) data.push(worstLCP);
 
     const navigationTimingInfo = collectPerformanceMetrics();
+    if (navigationTimingInfo != null) data.push(navigationTimingInfo);
 
-    if (navigationTimingInfo != null) {
-      batchedData.push(navigationTimingInfo);
-    }
+    const renderBlockers = getRenderBlockers();
+    if (renderBlockers) data.push(renderBlockers);
 
-    const r_blockings = getRenderBlockers();
-
-    if (r_blockings) {
-      batchedData.push(r_blockings);
-    }
-
-    // compact resource waterfall (bucketed shape + top-N slow outliers)
     const resourceSummary = buildResourceSummary();
+    if (resourceSummary) data.push(resourceSummary);
 
-    if (resourceSummary) {
-      batchedData.push(resourceSummary);
-    }
-
-    // deduped JS / promise / resource-load errors
     if (errorBuckets.size > 0) {
-      batchedData.push({
+      data.push({
         type: "errors",
         siteDomain,
         errors: [...errorBuckets.values()],
       });
     }
 
-    // then we prep the payload
-    if (batchedData.length > 0) {
-      const payload = JSON.stringify({
-        sessionId,
-        siteDomain,
-        currentPage,
-        previousPage,
-        data: [...batchedData],
-      });
-
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(
-          CONFIG.API_URL,
-          new Blob([payload], { type: "application/json" }),
-        );
-      } else {
-        fetch(CONFIG.API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-          keepalive: true,
-        }).catch(() => {});
-      }
-    }
+    sendMetricsPayload(data);
   } finally {
     batchedData.length = 0;
     worstCLS = null;
@@ -1214,23 +1252,29 @@ function flushMetrics() {
   }
 }
 
-setTimeout(() => {
-  if (document.visibilityState === "visible") {
-    const isReady = checkMetricsReady();
-    if (isReady) flushMetrics();
-  }
-}, 20000); // flush after 20 seconds of page load
+function flushINPContinuation() {
+  if (isFlushing || !hasFlushed) return;
 
-// iOS Safari and modern browsers
+  const inpEvent = buildINPEvent();
+  if (!inpEvent || inpEvent.value <= (lastSentINPValue ?? 0)) return;
+
+  lastSentINPValue = inpEvent.value;
+  sendMetricsPayload([inpEvent], true);
+}
+
+setTimeout(() => {
+  if (document.visibilityState === "visible") flushMetrics();
+}, 20000);
+
 window.addEventListener("pagehide", () => {
   if (!hasFlushed) flushMetrics();
+  else flushINPContinuation();
 });
 
-// Android/Chrome and most browsers
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden" && !hasFlushed) {
-    flushMetrics();
-  }
+  if (document.visibilityState !== "hidden") return;
+  if (!hasFlushed) flushMetrics();
+  else flushINPContinuation();
 });
 
 // fallback

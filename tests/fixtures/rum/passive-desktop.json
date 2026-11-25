@@ -1,0 +1,60 @@
+{
+  "pageview_id": "pv-phase0-passive-desktop",
+  "sessionId": "session-phase0",
+  "siteDomain": "example.com",
+  "currentPage": "/",
+  "previousPage": null,
+  "data": [
+    {
+      "type": "client-info",
+      "deviceType": "desktop",
+      "deviceMemory": 8,
+      "hardwareConcurrency": 16,
+      "connection": {
+        "effectiveType": "4g",
+        "downlink": 10,
+        "rtt": 50
+      },
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+      "language": "en-US"
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "FCP",
+      "value": 1100,
+      "rating": "good",
+      "attribution": {}
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "TTFB",
+      "value": 420,
+      "rating": "good",
+      "attribution": {
+        "dnsLookup": 12,
+        "tcpConnection": 40,
+        "responseStart": 470,
+        "requestStart": 430
+      }
+    },
+    {
+      "type": "navigation-timings",
+      "timeToFirstByte": 420,
+      "backendResponseTime": 310,
+      "dnsLookup": 12,
+      "tcpConnectionTime": 40,
+      "tlsHandshakeTime": 20,
+      "requestQueueTime": 0,
+      "redirectDuration": 0,
+      "userConnectionTime": 72,
+      "cacheStatus": "disk-cache",
+      "serverTiming": [],
+      "experienceCategory": "good",
+      "transferSize": 28000,
+      "encodedBodySize": 190000,
+      "decodedBodySize": 250000
+    }
+  ]
+}

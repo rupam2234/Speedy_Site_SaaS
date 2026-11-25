@@ -11,8 +11,10 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit --skipLibCheck",
+    "db:new": "supabase migration new",
     "test": "node --import ./tests/register.mjs --test tests/*.test.mjs",
-    "build:extended-vitals": "npx esbuild scripts/extended-rum.js --bundle --minify --format=esm --outfile=public/rum.js",
+    "rum:phase0": "node scripts/rum-phase0-inventory.mjs && node scripts/rum-phase0-payload.mjs && node scripts/rum-phase0-baseline.mjs",
+    "build:extended-vitals": "esbuild scripts/extended-rum.js --bundle --minify --format=iife --outfile=cloudflare-workers/rum/src/rum.txt && esbuild scripts/extended-rum.js --bundle --minify --format=esm --outfile=public/rum.js",
     "build:journey": "npx esbuild scripts/journey.js --bundle --minify --format=iife --outfile=public/journey.min.js"
   },
   "dependencies": {
@@ -62,6 +64,7 @@
     "@types/react-date-range": "^1.4.10",
     "@types/react-dom": "^19",
     "crypto-js": "^4.2.0",
+    "esbuild": "0.25.4",
     "eslint-config-next": "15.3.3",
     "pg": "^8.23.1",
     "pg-connection-string": "^2.14.1",
