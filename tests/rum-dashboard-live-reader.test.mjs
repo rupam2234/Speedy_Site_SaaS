@@ -33,6 +33,33 @@ const siteContext = fs.readFileSync(
   ),
   "utf8"
 );
+const retentionSecurityMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261125021531_secure_and_batch_rum_retention.sql"
+  ),
+  "utf8"
+);
+const indexCleanupMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261125022142_drop_bloated_legacy_events_index.sql"
+  ),
+  "utf8"
+);
+const cleanupGuardMigration = fs.readFileSync(
+  path.join(
+    root,
+    "supabase",
+    "migrations",
+    "20261125023115_disable_raw_cleanup_until_cold_snapshots.sql"
+  ),
+  "utf8"
+);
 
 describe("live RUM dashboard reader contract", () => {
   it("reads history from canonical and historical metric facts", () => {
@@ -88,5 +115,40 @@ describe("live RUM dashboard reader contract", () => {
     assert.match(siteContext, /orderList\.some\(\(o\) => o\.website_name === siteFromUrl\)/);
     assert.match(siteContext, /\? siteFromUrl/);
     assert.match(siteContext, /if \(prev\) return prev/);
+  });
+
+  it("restricts raw cleanup and batches deletions", () => {
+    assert.match(
+      retentionSecurityMigration,
+      /REVOKE ALL ON FUNCTION public\.delete_old_rum_metrics\(\) FROM PUBLIC/
+    );
+    assert.match(
+      retentionSecurityMigration,
+      /REVOKE ALL ON FUNCTION public\.delete_old_rum_metrics\(\) FROM anon/
+    );
+    assert.match(
+      retentionSecurityMigration,
+      /REVOKE ALL ON FUNCTION public\.delete_old_rum_metrics\(\) FROM authenticated/
+    );
+    assert.match(
+      retentionSecurityMigration,
+      /GRANT EXECUTE ON FUNCTION public\.delete_old_rum_metrics\(\) TO service_role/
+    );
+    assert.match(retentionSecurityMigration, /LIMIT 5000/);
+    assert.match(
+      cleanupGuardMigration,
+      /Raw RUM cleanup is disabled until verified cold snapshots are available/
+    );
+    assert.match(
+      cleanupGuardMigration,
+      /GRANT EXECUTE ON FUNCTION public\.delete_old_rum_metrics\(\) TO service_role/
+    );
+  });
+
+  it("removes the obsolete bloated legacy events index", () => {
+    assert.match(
+      indexCleanupMigration,
+      /DROP INDEX IF EXISTS public\.idx_rum_resource_summary/
+    );
   });
 });

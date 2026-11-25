@@ -2,7 +2,7 @@
 
 > **Status:** Retired by ADR-0005
 > **Owner:** Speedy Site
-> **Last updated:** 2026-11-24
+> **Last updated:** 2026-11-25
 
 The former generic Analytics pipeline mirrored `rum_metrics` aggregates into
 Cloudflare D1 through `analytics-cron` and `traffic-source-cron`. It served
@@ -37,6 +37,18 @@ temporary legacy event fallback. New v2 rows no longer produce the legacy
 canonical and historical metric facts directly, so the dashboard does not wait
 for a materialized history refresh before showing newly collected traffic. The
 retained product surfaces are Web Vitals, Page Groups, Images, and Fonts.
+
+Raw cleanup is service-role-only and disabled until every deleted day has a
+verified cold snapshot. The obsolete GIN index on `rum_metrics.events` was
+removed because retained readers use typed canonical facts and historical
+JSONPath fallbacks, not JSONB containment searches. Production storage for
+`rum_metrics` fell from about 111 MB to 10.2 MB.
+
+The legacy `rum_history_new` projection is not a current source of truth. A
+production comparison found 7 missing device/metric groups, 1 extra group,
+and 17 value mismatches against the live canonical aggregation. The current
+reader therefore bypasses it. Any future cold-history tier must be rebuilt
+from raw canonical facts with an explicit snapshot contract.
 
 ## Verification
 

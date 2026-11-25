@@ -6,7 +6,21 @@
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
-> **Last updated:** 2026-11-24
+> **Last updated:** 2026-11-25
+---
+
+## 2026-11-25: RUM Retention Security and Storage Recovery
+
+**Problem:** The legacy `delete_old_rum_metrics()` cleanup function retained default public execution grants, allowing the anonymous PostgREST role to invoke raw-row deletion. Production also carried a 101 MB bloated GIN index on the legacy `events` JSON column even though retained canonical readers use typed facts and JSONPath fallbacks.
+
+**Changes:** Migration `20261125021531_secure_and_batch_rum_retention.sql` revokes execution from `PUBLIC`, `anon`, and `authenticated`, grants it only to `service_role`, and changes cleanup to bounded 5,000-row batches. Migration `20261125022142_drop_bloated_legacy_events_index.sql` drops `idx_rum_resource_summary` after confirming that no supported reader depends on JSONB containment searches. Migration `20261125023115_disable_raw_cleanup_until_cold_snapshots.sql` disables cleanup until every deleted day has a verified cold snapshot.
+
+**Impact:** Anonymous cleanup invocation now returns HTTP 401, and service-role cleanup refuses deletion until the cold snapshot pipeline is available. Removing the obsolete GIN index reduced the production `rum_metrics` footprint from about 111 MB to 10.2 MB while preserving all live rows. History, INP element, and LCP image readers returned HTTP 200 with their expected production rows after the change.
+
+**Where to verify:** `supabase/migrations/20261125021531_secure_and_batch_rum_retention.sql`, `supabase/migrations/20261125022142_drop_bloated_legacy_events_index.sql`, `tests/rum-dashboard-live-reader.test.mjs`, `docs/systems/analytics-pipeline.md`.
+
+**Interview one-liner:** "Closed an exposed raw-telemetry cleanup endpoint and recovered 101 MB of production storage by removing an obsolete legacy-events index."
+
 ---
 
 ## 2026-11-24: Focused RUM Dashboard and Generic Analytics Retirement
