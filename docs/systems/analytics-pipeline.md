@@ -33,8 +33,10 @@ status, validation, and revocation.
 Retained RUM readers query Supabase directly. Canonical version 2 rows use
 typed facts and bounded `diagnostic_evidence`; historical rows retain a
 temporary legacy event fallback. New v2 rows no longer produce the legacy
-`events` projection. The retained product surfaces are Web Vitals, Page Groups,
-Images, and Fonts.
+`events` projection. The Web Vitals history reader aggregates the normalized
+canonical and historical metric facts directly, so the dashboard does not wait
+for a materialized history refresh before showing newly collected traffic. The
+retained product surfaces are Web Vitals, Page Groups, Images, and Fonts.
 
 ## Verification
 
@@ -58,3 +60,8 @@ Images, and Fonts.
   gate accepts the active managed domain and rejects an unknown domain, and a
   controlled v2 beacon persisted canonical facts with `events = []`. The
   synthetic verification row was deleted and confirmed absent.
+- The Web Vitals history reader was migrated to normalized canonical facts on
+  2026-11-25. Production and local API probes now return newly collected data
+  through November 25 across desktop, mobile, and tablet, including the current
+  LCP, FCP, TTFB, CLS, and INP samples. URL-provided managed sites also take
+  precedence over stale session state on the dashboard.

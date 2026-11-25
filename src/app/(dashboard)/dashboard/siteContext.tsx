@@ -139,18 +139,16 @@ export default function SiteContextProvider({
   const handleInitialSiteSelection = useCallback(
     (orderList: OrderData[], siteFromUrl?: string | null) => {
       setSelectedSite((prev) => {
-        // An explicit selection always wins.
-        if (prev) return prev;
-
-        // The url is authoritative: use it only when the list actually has that
-        // site. Falling back to orderList[0] would silently switch the account
-        // to a different site whenever the list is stale (the 5-minute orders
-        // cache), which then fights the layout's url sync in a loop.
+        // The URL is authoritative when it names a managed site. This also
+        // replaces a stale sessionStorage selection restored before orders load.
         if (siteFromUrl) {
           return orderList.some((o) => o.website_name === siteFromUrl)
             ? siteFromUrl
             : prev;
         }
+
+        // Preserve an explicit or restored selection when the URL has no site.
+        if (prev) return prev;
 
         // Default to the first site in the array
         return orderList[0]?.website_name || "";
