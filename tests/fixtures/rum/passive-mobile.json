@@ -1,0 +1,98 @@
+{
+  "pageview_id": "pv-phase0-passive-mobile",
+  "sessionId": "session-phase0",
+  "siteDomain": "example.com",
+  "currentPage": "/products/widget",
+  "previousPage": "/",
+  "data": [
+    {
+      "type": "client-info",
+      "deviceType": "mobile",
+      "deviceMemory": 4,
+      "hardwareConcurrency": 8,
+      "connection": {
+        "effectiveType": "4g",
+        "downlink": 5,
+        "rtt": 100
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1",
+      "language": "en-US"
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "FCP",
+      "value": 1900,
+      "rating": "needs-improvement",
+      "attribution": {}
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "TTFB",
+      "value": 1100,
+      "rating": "needs-improvement",
+      "attribution": {
+        "dnsLookup": 25,
+        "tcpConnection": 80,
+        "responseStart": 1180,
+        "requestStart": 1100
+      }
+    },
+    {
+      "type": "web-vital",
+      "siteDomain": "example.com",
+      "name": "CLS",
+      "value": 0.08,
+      "rating": "needs-improvement",
+      "attribution": {
+        "largestShiftTarget": "div.hero",
+        "largestShiftTime": 1800,
+        "loadState": "complete",
+        "shifts": [
+          {
+            "element": "div.hero",
+            "elements": ["div.hero", "img.hero-image"],
+            "shift": { "dx": 0, "dy": 80, "direction": { "horizontal": "none", "vertical": "down" } },
+            "rect": { "previous": { "x": 0, "y": 0, "width": 390, "height": 400 }, "current": { "x": 0, "y": 80, "width": 390, "height": 400 } },
+            "impact": { "areaBefore": 156000, "distanceMoved": 80, "areaAfter": 156000, "areaDelta": 0, "viewportRatio": 0.52 }
+          }
+        ]
+      },
+      "debug": { "totalShifts": 1, "webVitalsValue": 0.08 }
+    },
+    {
+      "type": "navigation-timings",
+      "timeToFirstByte": 1100,
+      "backendResponseTime": 900,
+      "dnsLookup": 25,
+      "tcpConnectionTime": 80,
+      "tlsHandshakeTime": 40,
+      "requestQueueTime": 0,
+      "redirectDuration": 0,
+      "userConnectionTime": 145,
+      "cacheStatus": "unknown",
+      "serverTiming": [],
+      "experienceCategory": "slow_server",
+      "transferSize": 34000,
+      "encodedBodySize": 230000,
+      "decodedBodySize": 310000
+    },
+    {
+      "type": "resource-summary",
+      "siteDomain": "example.com",
+      "totalRequests": 18,
+      "totalTransferSize": 155000,
+      "byType": {
+        "script": { "count": 7, "totalTransferSize": 90000, "totalDuration": 2100 },
+        "img": { "count": 6, "totalTransferSize": 50000, "totalDuration": 1800 },
+        "css": { "count": 2, "totalTransferSize": 12000, "totalDuration": 400 },
+        "other": { "count": 3, "totalTransferSize": 3000, "totalDuration": 200 }
+      },
+      "slowest": [
+        { "url": "/wp-content/plugins/theme.js", "type": "script", "start": 900, "duration": 850, "transferSize": 42000, "decodedSize": 90000, "cached": false, "protocol": "h2", "status": 200, "phases": { "redirect": 0, "dns": 0, "connect": 0, "ssl": 0, "ttfb": 180, "download": 670 } },
+        { "url": "/wp-content/uploads/hero.webp", "type": "img", "start": 1100, "duration": 600, "transferSize": 30000, "decodedSize": 65000, "cached": false, "protocol": "h2", "status": 200, "phases": { "redirect": 0, "dns": 0, "connect": 0, "ssl": 0, "ttfb": 120, "download": 480 } }
+      ]
+    }
+  ]
+}

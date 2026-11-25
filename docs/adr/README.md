@@ -11,6 +11,9 @@ This directory maintains immutable records of architectural and technical decisi
 | **0001** | 2026-11-21 | [Initial System Architecture](0001-initial-architecture.md) | 🟢 Accepted | Standardized Modular Tiering |
 | **0002** | 2026-11-21 | [Order-Scoped Communication Channels](0002-order-communication-channels.md) | 🟢 Accepted | Order-Scoped Dual-Channel Native Architecture |
 | **0003** | 2026-11-23 | [Delayed Chat Email Notifications](0003-delayed-chat-email-notifications.md) | 🟢 Accepted | 15-Minute Grace Window with Supabase pg_cron Digest |
+| **0004** | 2026-11-23 | [Compact RUM Telemetry and RAG Knowledge Model](0004-compact-rum-telemetry-and-rag-knowledge-model.md) | 🟢 Accepted | Canonical Pageview Facts, Bounded Evidence, and Derived RAG Documents |
+| **0005** | 2026-11-24 | [Focused RUM Dashboard and Data Retirement](0005-focused-rum-dashboard-and-data-retirement.md) | 🟢 Accepted | Migrate Retained Readers, Then Retire Generic Surfaces and Legacy Projection |
+| **0006** | 2026-11-25 | [Hot and Cold RUM History Retention](0006-hot-cold-rum-history-retention.md) | 🟢 Accepted | 7-Day Raw Hot Tier with Verified Daily Cold Snapshots |
 
 ---
 

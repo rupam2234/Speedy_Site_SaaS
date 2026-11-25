@@ -1,0 +1,94 @@
+{
+  "generatedAt": "2026-11-24T14:14:05.553Z",
+  "source": "Supabase REST read-only aggregate queries",
+  "canonicalCutover": {
+    "workerVersion": "c9fad319-df44-41ab-9e3b-63c8aec63e0c",
+    "date": "2026-11-24",
+    "controlledBeaconVerified": true,
+    "controlledBeaconDeleted": true
+  },
+  "observation": {
+    "earliestRow": "2026-11-23T22:01:15.287Z",
+    "latestRow": "2026-11-24T12:52:36.509Z",
+    "calendarDaysRepresented": 2,
+    "completeUtcDaysAfterCanonicalCutover": 0,
+    "v1Rows": 4,
+    "v2Rows": 17,
+    "retainedV2RowsAfterCanonicalCutover": 0
+  },
+  "storage": {
+    "v1": {
+      "rows": 4,
+      "eventBytes": {
+        "mean": 8472,
+        "p50": 7470,
+        "p95": 11496,
+        "max": 11496
+      },
+      "sampledRowBytes": {
+        "mean": 8589,
+        "p50": 7587,
+        "p95": 11613,
+        "max": 11613
+      }
+    },
+    "v2BeforeCanonicalCutover": {
+      "rows": 17,
+      "eventBytes": {
+        "mean": 2645,
+        "p50": 2714,
+        "p95": 3277,
+        "max": 3277
+      },
+      "sampledRowBytes": {
+        "mean": 4475,
+        "p50": 4663,
+        "p95": 5233,
+        "max": 5233
+      }
+    }
+  },
+  "parity": {
+    "v2RowsChecked": 17,
+    "metricValuesCompared": 60,
+    "valueOrNormalizedRatingMismatches": 0
+  },
+  "rpcLatency": {
+    "samplesPerRpc": 7,
+    "successfulRpcs": 12,
+    "failedRpcs": 0,
+    "observedP50MsRange": {
+      "min": 386.76,
+      "max": 523.61
+    },
+    "observedP95MsRange": {
+      "min": 444.3,
+      "max": 622.16
+    },
+    "readers": [
+      { "name": "rum_metric_readings", "rows": 73, "p50Ms": 513.4, "p95Ms": 618.16 },
+      { "name": "get_rum_web_vitals_metrics", "rows": 4, "p50Ms": 511.22, "p95Ms": 621.32 },
+      { "name": "get_web_vital_counts_by_url", "rows": 15, "p50Ms": 447.41, "p95Ms": 622.16 },
+      { "name": "cwv_dist_by_connection", "rows": 2, "p50Ms": 386.76, "p95Ms": 444.3 },
+      { "name": "analyze_fcp_by_device", "rows": 5, "p50Ms": 470.59, "p95Ms": 567.82 },
+      { "name": "analyze_lcp_by_device", "rows": 0, "p50Ms": 513.89, "p95Ms": 546.68 },
+      { "name": "get_lcp_image_metrics", "rows": 4, "p50Ms": 481.09, "p95Ms": 546.45 },
+      { "name": "font_analysis", "rows": 1, "p50Ms": 490.63, "p95Ms": 513.62 },
+      { "name": "cls_elements", "rows": 2, "p50Ms": 510.2, "p95Ms": 556.13 },
+      { "name": "inp_elements", "rows": 8, "p50Ms": 416.67, "p95Ms": 522.65 },
+      { "name": "ttfb_contributors", "rows": 2, "p50Ms": 405.36, "p95Ms": 517.54 },
+      { "name": "page_performance_analysis", "rows": 16, "p50Ms": 523.61, "p95Ms": 575.82 }
+    ]
+  },
+  "gate": {
+    "status": "pending",
+    "requiredObservation": "At least seven complete UTC days of representative canonical-only production traffic",
+    "reason": "The current dataset has only two calendar days and no retained v2 row after the canonical cutover. It cannot support a representative full-cycle traffic, row-count, storage, or RPC-latency comparison.",
+    "destructiveMigrationApproved": false
+  },
+  "limitations": [
+    "RPC latency includes network and connection overhead.",
+    "Storage is measured from serialized REST payloads, not PostgreSQL TOAST compression size.",
+    "The controlled canonical-only beacon was deleted after verification, so no post-cutover row was retained."
+  ]
+}

@@ -8,7 +8,7 @@ This directory houses wire specifications, payload schemas, and communication ha
 
 | Protocol / Spec | Wire Transport | Endpoints | Description |
 | :--- | :--- | :--- | :--- |
-| [**RUM Beacon Transport**](rum-beacon-transport.md) | HTTPS POST / Beacon | `/collect` (buffer.speedy.site) | Real user monitoring beacon schema, Durable Object buffering, and flush payload |
+| [**RUM Beacon Transport**](rum-beacon-transport.md) | HTTPS POST / Beacon | `/collect` (buffer.speedy.site) | Real user monitoring beacon schemas, v2 canonical contract, Durable Object buffering, and flush payload |
 | [**WordPress Plugin HMAC Handshake**](wordpress-hmac-protocol.md) | HTTPS JSON POST | `/api/wordpress/hmac*`, `/api/wordpress/injection` | Domain verification handshake, signature generation, and dynamic RUM injection decisions |
 
 ---

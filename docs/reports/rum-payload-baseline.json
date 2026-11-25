@@ -1,0 +1,83 @@
+{
+  "generatedAt": "2026-11-23T23:20:26.562Z",
+  "targetBytes": 8192,
+  "note": "Fixture-derived v1 browser payload sizes. Production sizes require a captured browser beacon sample.",
+  "fixtures": [
+    {
+      "fixture": "interactive.json",
+      "bytes": 1556,
+      "kib": 1.52,
+      "eventCount": 5,
+      "eventTypes": [
+        "client-info",
+        "web-vital",
+        "web-vital",
+        "web-vital",
+        "navigation-timings"
+      ],
+      "forbiddenFields": [
+        "hardwareConcurrency",
+        "userAgent"
+      ],
+      "withinTarget": true
+    },
+    {
+      "fixture": "passive-desktop.json",
+      "bytes": 1052,
+      "kib": 1.03,
+      "eventCount": 4,
+      "eventTypes": [
+        "client-info",
+        "web-vital",
+        "web-vital",
+        "navigation-timings"
+      ],
+      "forbiddenFields": [
+        "hardwareConcurrency",
+        "userAgent"
+      ],
+      "withinTarget": true
+    },
+    {
+      "fixture": "passive-mobile.json",
+      "bytes": 2595,
+      "kib": 2.53,
+      "eventCount": 6,
+      "eventTypes": [
+        "client-info",
+        "web-vital",
+        "web-vital",
+        "web-vital",
+        "navigation-timings",
+        "resource-summary"
+      ],
+      "forbiddenFields": [
+        "hardwareConcurrency",
+        "userAgent"
+      ],
+      "withinTarget": true
+    },
+    {
+      "fixture": "slow-page.json",
+      "bytes": 3958,
+      "kib": 3.87,
+      "eventCount": 9,
+      "eventTypes": [
+        "client-info",
+        "web-vital",
+        "web-vital",
+        "web-vital",
+        "web-vital",
+        "navigation-timings",
+        "resource-summary",
+        "errors"
+      ],
+      "forbiddenFields": [
+        "hardwareConcurrency",
+        "userAgent",
+        "stack"
+      ],
+      "withinTarget": true
+    }
+  ]
+}

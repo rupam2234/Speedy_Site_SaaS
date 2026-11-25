@@ -6,7 +6,91 @@
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
-> **Last updated:** 2026-11-23
+> **Last updated:** 2026-11-25
+---
+
+## 2026-11-25: RUM Reader Cleanup and Canonical Distribution Read
+
+**Problem:** The focused RUM dashboard still had repository-defined SQL readers for removed or unused generic analytics surfaces. The live Web Vitals distributions route also depended on `rum_daily_distributions`, a legacy projection populated by an event-only refresher. Canonical v2 rows use typed facts with `events = []`, so the projection path could omit current traffic.
+
+**Changes:** Migration `20261125025407_retire_unused_rum_readers.sql` replaces `rum_distributions_all_metrics` with a canonical and historical raw-fact query over explicit UTC date boundaries, restricts it to `service_role`, and drops 13 legacy function signatures: 11 unused reader signatures, the obsolete origin-hit cleanup function, and the legacy distribution refresher. The migration does not drop tables, delete telemetry, or remove the `rum_metrics.events` column.
+
+**Impact:** The retained dashboard no longer depends on a stale legacy distribution projection for current traffic, while unused SQL readers and the origin-hit cleanup surface are removed. Stale tables and production-only RPCs remain for a separate dependency and retention audit.
+
+**Where to verify:** `supabase/migrations/20261125025407_retire_unused_rum_readers.sql`, `tests/rum-dashboard-live-reader.test.mjs`, `docs/reports/rum-events-reader-inventory.md`, `docs/systems/analytics-pipeline.md`.
+
+**Interview one-liner:** "Removed a legacy RUM SQL surface and replaced a stale materialized distribution path with canonical raw-fact aggregation."
+
+---
+
+## 2026-11-25: RUM Retention Security and Storage Recovery
+
+**Problem:** The legacy `delete_old_rum_metrics()` cleanup function retained default public execution grants, allowing the anonymous PostgREST role to invoke raw-row deletion. Production also carried a 101 MB bloated GIN index on the legacy `events` JSON column even though retained canonical readers use typed facts and JSONPath fallbacks.
+
+**Changes:** Migration `20261125021531_secure_and_batch_rum_retention.sql` revokes execution from `PUBLIC`, `anon`, and `authenticated`, grants it only to `service_role`, and changes cleanup to bounded 5,000-row batches. Migration `20261125022142_drop_bloated_legacy_events_index.sql` drops `idx_rum_resource_summary` after confirming that no supported reader depends on JSONB containment searches. Migration `20261125023115_disable_raw_cleanup_until_cold_snapshots.sql` disables cleanup until every deleted day has a verified cold snapshot.
+
+**Impact:** Anonymous cleanup invocation now returns HTTP 401, and service-role cleanup refuses deletion until the cold snapshot pipeline is available. Removing the obsolete GIN index reduced the production `rum_metrics` footprint from about 111 MB to 10.2 MB while preserving all live rows. History, INP element, and LCP image readers returned HTTP 200 with their expected production rows after the change.
+
+**Where to verify:** [`docs/reports/rum-storage-optimization-2026-11-25.md`](reports/rum-storage-optimization-2026-11-25.md), `supabase/migrations/20261125021531_secure_and_batch_rum_retention.sql`, `supabase/migrations/20261125022142_drop_bloated_legacy_events_index.sql`, `tests/rum-dashboard-live-reader.test.mjs`, `docs/systems/analytics-pipeline.md`.
+
+**Interview one-liner:** "Closed an exposed raw-telemetry cleanup endpoint and recovered 101 MB of production storage by removing an obsolete legacy-events index."
+
+---
+
+## 2026-11-24: Focused RUM Dashboard and Generic Analytics Retirement
+
+**Problem:** The RUM dashboard included Trace, generic Analytics, Global UX, and Cloudflare Enhancements. Those surfaces preserved legacy event parsing, duplicated telemetry projections, generic D1 analytics, and recurring Workers that did not support the focused WordPress performance optimization product. Retained surfaces also lacked a canonical v2 reader cutover, including the LCP and CLS evidence needed for image, font, and layout-shift explanations.
+
+**Changes:** ADR-0005 defines Web Vitals, Page Groups, Images, and Fonts as the retained product surfaces. The implementation expands bounded LCP and CLS evidence, migrates retained readers to typed facts and canonical evidence with historical fallbacks, removes the retired UI and APIs, drops removal-only RPCs, stops the deployed generic analytics cron Workers, and stops producing legacy `events` for new v2 rows. Corrective migrations `20261124123405_fix_retained_reader_production_errors.sql` and `20261124125351_fix_remaining_retained_reader_errors.sql` resolve production-only output-name and historical-shape failures found during parity verification. The collector Worker was updated to version `52839b51-0816-4edf-a7cc-3a7e90fc181c`, the entitlement Worker to version `56995b98-9029-43de-979d-84bb7df43a04`, and monotonic evidence-validator migrations corrected JSON-null handling, geometric key type resolution, array comparison typing, and PL/pgSQL record-field ambiguity. Migrations `20261125015224_migrate_canonical_rum_history_reader.sql` and `20261125015847_fix_canonical_rum_history_metric_keys.sql` move Web Vitals history to live normalized facts and restore the dashboard's lowercase metric keys.
+
+**Impact:** The retired product now has only Web Vitals, Page Groups, Images, and Fonts. Two scheduled Cloudflare Workers and their D1 read/write path were removed from source and deployment, eliminating recurring generic analytics work while preserving Supabase telemetry and retained diagnostic behavior. Production verification executed all 12 retained reader RPCs successfully, confirmed all 5 retired RPCs were absent, and found zero value or normalized-rating mismatches across 60 typed-versus-legacy metric comparisons on 17 v2 rows. Event-buffer Worker version `c9fad319-df44-41ab-9e3b-63c8aec63e0c` stores new v2 rows without the legacy event projection. A final controlled live beacon confirmed the full path through the served collector, entitlement gate, Durable Object buffer, and Supabase: the stored row had schema version 2, canonical device and Web Vital facts, and `events = []`. The live history reader now returns newly collected canonical traffic without waiting for a materialized refresh, and the local Web Vitals API returns current desktop, mobile, and tablet data for `feedingnature.com`. The physical `events` column drop remains a separately approved destructive migration.
+
+**Where to verify:** `docs/adr/0005-focused-rum-dashboard-and-data-retirement.md`, `docs/plans/2026-11-24_054436_focused_rum_dashboard_and_data_retirement.md`, `docs/reports/rum-events-reader-inventory.md`, `docs/systems/analytics-pipeline.md`.
+
+**Interview one-liner:** "Focused real-user monitoring on WordPress performance evidence, migrated the retained dashboards to bounded canonical diagnostics, and retired the generic analytics infrastructure."
+
+---
+
+## 2026-11-24: Compact RUM v2 Deployed and Duplicate-Safe in Production
+
+**Problem:** The committed compact RUM v2 implementation was not active in production. After deploying the event-buffer and collector Workers, a duplicate-pageview flush batch exposed a PostgreSQL cardinality error (`21000`) because one `ON CONFLICT DO UPDATE` statement proposed the same `pageview_id` more than once. The affected Durable Object could retain the failed buffer and retry it.
+
+**Changes:** Deployed the event-buffer Worker at version `42f0a870-3c4c-4db3-8abf-65497b7c8a33`, then the collector Worker at version `8a27927e-8d92-45d8-978b-c325f26a09c0`. The live cache-busted collector now emits the version 2 canonical envelope. Migration `20261124005400_dedupe_rum_upsert_batch.sql` changes the public batch RPC to apply each payload as a separate upsert through a service-role-only internal helper. This preserves first-party context, metric supersession, append-only legacy events, and shallow evidence merging.
+
+**Impact:** Version 2 telemetry now reaches Supabase canonical columns while legacy dashboards continue reading the compatibility projection. Retries and continuation beacons that share a `pageview_id` no longer fail the whole batch. Direct duplicate RPC tests and four-shard Worker tests now produce successful structured flush logs.
+
+**Where to verify:** `supabase/migrations/20261124005400_dedupe_rum_upsert_batch.sql`, `tests/rum-compact-migration.test.mjs`, `docs/protocols/rum-beacon-transport.md`, `docs/systems/site-metadata-worker.md`.
+
+**Interview one-liner:** "Deployed compact real-user telemetry end to end and hardened its continuation pipeline so retries merge safely instead of blocking a batch."
+
+---
+
+## 2026-11-24: Canonical RUM Collector and Edge Dual-Write
+
+**Problem:** The legacy collector sent a heterogeneous event array with raw user agents, duplicated domain fields, unbounded diagnostic detail, and no versioned canonical contract. The Worker could not reliably distinguish continuation facts from repeated first-party context, and malformed requests could bypass the declared body limit when `Content-Length` was absent.
+
+**Changes:** The browser collector now emits `schema_version: 2` from a stable `pageview_id`. Shared contract modules normalize page paths, external referrer hostnames, capability-based device class, coarse browser and OS families, navigation timings, Web Vitals, resource totals, and bounded diagnostic evidence. Raw user agents, hardware concurrency, URL credentials, fragments, unsafe query values, complete error stacks, and duplicated `siteDomain` fields no longer cross the Worker boundary. The event-buffer Worker accepts v1 and v2, derives tenant identity from authenticated Origin or Referer, checks actual body bytes, rejects unknown versions and malformed typed values, and writes typed canonical facts plus bounded evidence. It also generates a compact legacy `events` projection so current dashboards remain operational. Structured Worker logs expose payload version, accepted and rejected row counts, and Supabase latency without recording payloads.
+
+**Impact:** Representative v2 payloads remain below 8 KiB, privacy-sensitive fields are removed before transport, one pageview continues to merge into one row, and existing analytics can migrate to typed columns one reader at a time. INP continuation beacons now carry only newly observed metric and evidence fields.
+
+**Where to verify:** `scripts/extended-rum.js`, `src/lib/rum/`, `cloudflare-workers/event-buffer/src/index.js`, `tests/rum-compact-contract.test.mjs`, `docs/protocols/rum-beacon-transport.md`.
+
+**Interview one-liner:** "Replaced the RUM event blob with a validated, privacy-safe canonical contract while keeping every existing dashboard running through an automatic compatibility projection."
+
+---
+
+## 2026-11-23: Compact RUM Telemetry Schema
+
+**Problem:** The legacy `rum_metrics` model stored most facts inside a heterogeneous event array, which limited indexed analytics and made continuation merging depend on event shape.
+
+**Changes:** An additive migration adds nullable canonical columns for geography, device, network, navigation, Core Web Vitals, resource totals, and error counts, plus `schema_version`, normalized `referrer_domain`, and bounded 4 KiB diagnostic evidence. The upsert RPC now merges continuation beacons by the existing partial unique `pageview_id` target, preserves first-party context, allows later non-null metrics to supersede earlier values, appends legacy events, and shallow-merges diagnostic sections. A follow-up migration removes explicit `anon` and `authenticated` grants so only `service_role` can execute the RPC. Database types were regenerated from the live schema.
+
+**Impact:** Current dashboards and legacy rows remain readable without backfill, while future issue detection can query typed facts and retain bounded evidence for expert diagnosis. The migration was applied to the linked live Supabase database and verified with a reversible synthetic continuation test.
+
+**Where to verify:** `supabase/migrations/20261123233125_compact_rum_telemetry.sql`, `tests/rum-compact-migration.test.mjs`, `docs/systems/site-metadata-worker.md`.
+
+**Interview one-liner:** "Added a backward-compatible canonical RUM schema that makes pageview diagnostics queryable and evidence-efficient without disrupting legacy analytics."
+
 ---
 
 ## 2026-11-23: Delayed Chat Email Notifications (15-Minute Grace Window & Digest)
@@ -269,6 +353,24 @@ checkout button.
 **Impact:** ~160 KB index space freed, write paths slightly faster. No functional change.
 
 **Where to verify:** `npx supabase inspect db index-stats` -- the 10 dropped indexes no longer appear.
+
+---
+## 2026-11-23 · Passive RUM visits now reach Cloudflare and Supabase
+
+**Problem:** The live WordPress collector loaded on `feedingnature.com`, and its domain was correctly present in both Supabase and the Cloudflare entitlement KV, but a passive browser visit produced no `rum_metrics` row. The deployed collector waited for LCP, CLS, and INP before its 20-second flush. INP requires an interaction, so passive visits remained buffered until a page-hide event. The collector also had no `pageview_id`, and its `application/json` beacon triggered a CORS preflight that failed in the browser before the POST was sent.
+
+**Changes:**
+- The collector generates one stable `pageview_id` per pageview and includes it in every payload, allowing the existing `upsert_rum_metrics_batch` RPC to merge continuation beacons into one row.
+- Passive visits flush after 20 seconds without requiring INP. A later INP value is sent as a continuation beacon under the same `pageview_id`.
+- `navigator.sendBeacon` now uses `text/plain;charset=UTF-8` for a CORS-safelisted request. The Worker still parses JSON and derives authorization from Origin/Referer, so the security gate is unchanged.
+- The root collector build now generates both `public/rum.js` and the Worker-served `cloudflare-workers/rum/src/rum.txt` from one source, with `esbuild` declared as a root dev dependency.
+
+**Impact (before → after):**
+- Passive pageview: no browser POST and no database row -> browser POST accepted with HTTP 202 and one merged `rum_metrics` row.
+- Continuation data: no pageview identity -> stable UUID merge key for interaction metrics.
+- Collector delivery: separate, drifting artifacts -> one reproducible source build.
+
+**Verified:** `feedingnature.com` returned HTTP 200 with `rum.speedy.site/rum.js`; Cloudflare tail showed the browser POST accepted with HTTP 202 and no exceptions; Supabase contained one browser row with `pageview_id`, geo, client, web-vitals, navigation, render-blocker, and resource-summary events. Unknown domains remained rejected with HTTP 403.
 
 ---
 ## 2026-10-24 · Free tier site limit increased from 1 to 3
