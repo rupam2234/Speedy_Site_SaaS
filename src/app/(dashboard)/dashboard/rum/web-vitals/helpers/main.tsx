@@ -1,28 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSiteContext } from "../../../siteContext";
 import { cwv_ranges, scoreMetric } from "../../cwvRanges";
 import { CustomTooltip, LoadingAnimation } from "@/components/theme";
 import {
   RumCwvChart,
-  LCPelements,
-  CLSelements,
-  INPelements,
-  TTFBelements,
   getSidebarTooltip,
   Metric as MetricNorms,
 } from ".";
-import DetectedIssues from "./detectedIssues";
+import DeviceIssuePanels from "./deviceIssuePanels";
 import { BadgeInfo, InfoIcon } from "lucide-react";
-import {
-  cachedData,
-  cleanExpiredCache,
-  lazyload,
-  RumWebVitalToolbar,
-} from "@/components/utils";
-import { CLSelementData } from "@/app/api/rum/elements/cls/route";
-import { InpElementType } from "@/app/api/rum/elements/inp/route";
+import { cachedData, RumWebVitalToolbar } from "@/components/utils";
 
 interface Metric {
   name: string;
@@ -74,7 +63,7 @@ const RUM_CAPS: Record<MetricKey, { min: number; max: number }> = {
 };
 
 export default function Main() {
-  const { selectedSite, selectedSiteId, selectedDevice, rumDistribution, startDate, endDate } =
+  const { selectedSite, selectedDevice, rumDistribution, startDate, endDate } =
     useSiteContext();
   const [historyData, setRumHistoryData] = useState<any>();
   const [distData, setDistData] = useState<any>();
@@ -84,25 +73,6 @@ export default function Main() {
 
   const [sideBarObj, setSidebarObj] = useState<SidebarData>();
   const [XpScore, setXpScore] = useState<number | null>();
-  const [contributors, setContributors] = useState<any>();
-
-  const triggerLazyload = useRef(null);
-  const lazyloadKey = useRef<string | null>(null);
-  const hasRun = useRef(false);
-
-  useEffect(() => {
-    // clean up expired cache
-    const keys = [
-      "lcp-elements",
-      "cls-elements",
-      "inp-elements",
-      "ttfb-breakdown",
-    ];
-
-    keys.forEach((x) =>
-      cleanExpiredCache({ prefix: x, session_Storage: false }),
-    );
-  }, []);
 
   useEffect(() => {
     if (!selectedSite) return;
@@ -201,82 +171,6 @@ export default function Main() {
 
     setXpScore(xp * 100);
   }, [historyData, selectedDevice, rumDistribution]);
-
-  useEffect(() => {
-    const key = `${selectedSite}-${activeMetric}`;
-
-    if (lazyloadKey.current === key) return;
-
-    // load valid cached data or pull fresh
-    lazyload({
-      fn: AnalysisHandler,
-      refObj: triggerLazyload,
-      rootMargin: "200px",
-    });
-
-    lazyloadKey.current = key;
-    hasRun.current = false;
-  }, [activeMetric, selectedSite]);
-
-  const filteredContributors = useMemo(() => {
-    if (!contributors) return [];
-
-    const seen = new Set<string>();
-
-    switch (activeMetric) {
-      case "LCP":
-        return contributors
-          ?.filter((x: any) => x.device_type === selectedDevice)
-          .sort((a: any, b: any) => b.avg_lcp_value - a.avg_lcp_value)
-          .filter((x: any) => {
-            const key = x.element_target || "unknown";
-
-            // if (x.avg_lcp_value <= cwv_ranges.lcp[0]) return false;
-
-            if (seen.has(key)) return false;
-            seen.add(key);
-
-            return true;
-          });
-
-      case "CLS":
-        return contributors?.filter((x: CLSelementData) => {
-          if (x.dev_type !== selectedDevice?.toLowerCase()) return false;
-          // if (x.avg_magnitude <= 0.1) return false;
-          if (x.occ_count < 2) return false;
-
-          // if (seen.has(x.most_frequent_element)) return false;
-          // seen.add(x.primary_target);
-
-          return true;
-        });
-
-      case "INP":
-        return contributors?.filter((x: InpElementType) => {
-          if (x.device !== selectedDevice.toLowerCase()) return false;
-          // if (x.inp_value <= 200) return false;
-
-          if (seen.has(x.current_page)) {
-            return false;
-          }
-          seen.add(x.current_page);
-
-          return true;
-        });
-
-      case "TTFB":
-        return Array.isArray(contributors)
-          ? contributors.filter(
-              (x: any) =>
-                x.device_type === selectedDevice.toLowerCase() &&
-                x.p75_ttfb > 800,
-            )
-          : [];
-
-      default:
-        return [];
-    }
-  }, [activeMetric, contributors, selectedDevice]);
 
   const { selectedDist, totalEvents } = useMemo(() => {
     const selectedDist =
@@ -545,32 +439,9 @@ export default function Main() {
             </div>
           </div>
 
-          <div className="px-2 pt-3">
-            <DetectedIssues siteId={selectedSiteId} />
-          </div>
-
-          {/* Breakdown/Details placeholder */}
-          <div
-            ref={triggerLazyload}
-            className="px-2 min-h-96 mt-2 md:mt-7 py-4"
-          >
-            <p className="text-primary/80 text-[12px] mb-3 font-semibold">
-              These elements are currently impacting key Web Vitals metrics, and
-              optimizing them can lead to immediate improvements in performance.
-            </p>
-            {filteredContributors === undefined ? (
-              <></>
-            ) : activeMetric === "LCP" ? (
-              <LCPelements contributors={filteredContributors} />
-            ) : activeMetric === "CLS" ? (
-              <CLSelements contributors={filteredContributors} />
-            ) : activeMetric === "INP" ? (
-              <INPelements contributors={filteredContributors} />
-            ) : activeMetric === "TTFB" ? (
-              <TTFBelements contributors={filteredContributors} />
-            ) : (
-              <></>
-            )}
+          {/* Universal device issue panels */}
+          <div className="px-2 mt-2 md:mt-7 py-4">
+            <DeviceIssuePanels domain={selectedSite} />
           </div>
 
           {/* distributions accross various tabs */}
@@ -654,158 +525,6 @@ export default function Main() {
     }
   }
 
-  async function AnalysisHandler() {
-    if (hasRun.current) return; // prevent duplicate runs
-
-    const maxRetires = 3;
-    const sleep = (delay: number) => new Promise((rs) => setTimeout(rs, delay));
-
-    if (activeMetric === "LCP") {
-      try {
-        // setContributors([]);
-        const key = `lcp-elements:${selectedSite}`;
-
-        const { response } = await cachedData({
-          fn: async () => {
-            for (let attempt = 0; attempt < maxRetires; attempt++) {
-              const res = await fetch("/api/rum/elements/lcp", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  domain_name: selectedSite,
-                }),
-              });
-
-              const body: any = await res.json();
-
-              if (!res.ok) {
-                if (attempt < maxRetires - 1) {
-                  await sleep(3000 * (attempt + 1));
-                  continue;
-                }
-
-                throw new Error(body?.message || "Request failed");
-              }
-
-              return body;
-            }
-          },
-          key: key,
-          session_Storage: false,
-          ttl: 5 * 50 * 1000,
-        });
-        setContributors(response.data);
-      } catch (error: any) {
-        console.error(error.message);
-      }
-    } else if (activeMetric === "CLS") {
-      try {
-        setContributors([]);
-        const key = `cls-elements:${selectedSite}`;
-
-        const { response } = await cachedData({
-          fn: getClsElements,
-          key: key,
-          session_Storage: false,
-          ttl: 5 * 60 * 1000,
-        });
-
-        setContributors(response.data);
-      } catch (error) {
-        console.error("Failed to fetch distribution:", error);
-      }
-
-      async function getClsElements() {
-        const res = await fetch("/api/rum/elements/cls", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            domain: selectedSite,
-          }),
-        });
-
-        const body: any = await res.json();
-
-        if (!res.ok) {
-          throw new Error(body.message);
-        }
-        return body;
-      }
-    } else if (activeMetric === "INP") {
-      try {
-        setContributors([]);
-        const key = `inp-elements:${selectedSite}`;
-
-        const { response } = await cachedData({
-          fn: getInpElements,
-          key: key,
-          session_Storage: false,
-          ttl: 5 * 60 * 1000,
-        });
-
-        setContributors(response.data);
-      } catch (error) {
-        console.error("Failed to fetch distribution:", error);
-      }
-
-      async function getInpElements() {
-        const res = await fetch("/api/rum/elements/inp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            domain_name: selectedSite,
-          }),
-        });
-
-        const body: any = await res.json();
-
-        if (!res.ok) {
-          throw new Error(body.message);
-        }
-
-        return body;
-      }
-    } else if (activeMetric === "TTFB") {
-      try {
-        setContributors([]);
-
-        const key = `ttfb-breakdown:${selectedSite}`;
-
-        const { response } = await cachedData({
-          fn: getTtfbAnalysis,
-          key: key,
-          session_Storage: false,
-          ttl: 5 * 60 * 1000,
-        });
-
-        setContributors(response.data);
-      } catch (error: any) {
-        console.error(error.message ?? "Failed to fetch ttfb analysis");
-      }
-
-      async function getTtfbAnalysis() {
-        const res = await fetch("/api/rum/elements/ttfb", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            domain: selectedSite,
-            dateFrom: startDate,
-            dateTo: endDate,
-          }),
-        });
-
-        const body: any = await res.json();
-
-        if (!res.ok) {
-          throw new Error(body.message);
-        }
-
-        return body;
-      }
-    }
-
-    hasRun.current = true;
-  }
 
   //handles bad data or unrealstick bumps
   function winsorize(value: number, min: number, max: number): number {

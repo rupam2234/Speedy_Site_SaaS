@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-25T02:58:05.582Z",
+  "generatedAt": "2026-11-26T14:33:07.988Z",
   "source": "supabase/migrations and production application callers",
   "readers": [
     {
@@ -2203,62 +2203,82 @@
     {
       "function": "analyze_fcp_by_device",
       "source": "src/app/api/rum/elements/fcp/route.ts",
-      "line": 73
+      "line": 82
     },
     {
       "function": "analyze_lcp_by_device",
       "source": "src/app/api/rum/elements/lcp/route.ts",
-      "line": 18
+      "line": 27
+    },
+    {
+      "function": "analyze_lcp_by_device",
+      "source": "src/lib/rum/deviceIssueReader.ts",
+      "line": 34
     },
     {
       "function": "cls_elements",
       "source": "src/app/api/rum/elements/cls/route.ts",
-      "line": 37
+      "line": 46
+    },
+    {
+      "function": "cls_elements",
+      "source": "src/lib/rum/deviceIssueReader.ts",
+      "line": 35
     },
     {
       "function": "cwv_dist_by_connection",
       "source": "src/app/api/rum/rum-web-vitals/group-by-connection/route.ts",
-      "line": 20
+      "line": 29
     },
     {
       "function": "font_analysis",
       "source": "src/app/api/rum/fonts/analysis/route.ts",
-      "line": 18
+      "line": 27
     },
     {
       "function": "get_lcp_image_metrics",
       "source": "src/app/api/rum/lcp-images/route.ts",
-      "line": 24
+      "line": 33
     },
     {
       "function": "get_rum_web_vitals_metrics",
       "source": "src/app/api/rum/rum-web-vitals/route.ts",
-      "line": 73
+      "line": 82
     },
     {
       "function": "get_web_vital_counts_by_url",
       "source": "src/app/api/rum/rum-web-vitals/group-by-page/route.ts",
-      "line": 29
+      "line": 38
     },
     {
       "function": "inp_elements",
       "source": "src/app/api/rum/elements/inp/route.ts",
-      "line": 32
+      "line": 41
+    },
+    {
+      "function": "inp_elements",
+      "source": "src/lib/rum/deviceIssueReader.ts",
+      "line": 36
     },
     {
       "function": "page_performance_analysis",
       "source": "src/app/api/rum/page_performance/route.ts",
-      "line": 18
+      "line": 27
     },
     {
       "function": "ttfb_contributors",
       "source": "src/app/api/rum/elements/ttfb/route.ts",
-      "line": 24
+      "line": 33
+    },
+    {
+      "function": "ttfb_contributors",
+      "source": "src/lib/rum/deviceIssueReader.ts",
+      "line": 37
     }
   ],
   "summary": {
     "readerCount": 38,
-    "callerCount": 11,
+    "callerCount": 15,
     "referencedFieldCount": 98,
     "unusedCollectorTypes": [
       "error",

@@ -111,7 +111,10 @@ Supabase issue documents and bounded evidence
               |             v
               |        Grounded customer assistance
               |             |
-              v             v
+              |             v
+              |   Site-wide assistant page
+              |
+              v
 Approved issue documents and curated fix playbooks
               |
               v
@@ -123,14 +126,55 @@ authoritative diagnosis and workflow record. Vectorize is an auxiliary
 retrieval index over approved issue knowledge, never the source of truth. Raw
 pageviews and contributor rows are not embedded.
 
-The user-facing issue assistant runs in the Next.js application server. It
+The user-facing performance assistant runs in the Next.js application server. It
 authorizes the canonical site, verifies the site's live `managed_wp`
-entitlement, loads the published issue from Supabase, and then calls the
-`issue-knowledge` Worker. The Worker embeds the question with Workers AI and
-queries a 384-dimension cosine Vectorize index. Customer documents use the
-tenant UUID as namespace and are filtered by `siteId`. Curated remediation
-playbooks use a separate global namespace. Retrieved text is treated as
-untrusted background and cannot override authoritative issue facts.
+entitlement, loads the published issue facts and the per-device findings from
+Supabase and the retained readers, and then calls the `issue-knowledge` Worker.
+The Worker embeds the question with Workers AI and queries a 384-dimension
+cosine Vectorize index. Customer documents use the tenant UUID as namespace and
+are filtered by `siteId`. Curated remediation playbooks use a separate global
+namespace. Retrieved text is treated as untrusted background and cannot override
+authoritative site facts.
+
+The site-wide assistant lives at `/dashboard/rum/assistant`, as defined by
+[ADR-0009](../adr/0009-site-wide-rag-performance-assistant.md). One server
+context loader, `src/lib/rum/assistantContext.ts`, produces both the structured
+context panel and the model prompt, so the customer sees exactly the facts the
+model was given. `GET /api/rum/assistant` returns that context and
+`POST /api/rum/assistant` runs the conversation. The browser never supplies
+measurements, counts, scope, tenant, or retrieval namespace. Cloudflare cost is
+bounded at three layers: the answer and retrieval results are cached in
+Upstash, the Worker caches embeddings and retrieval results in the Workers Cache
+API, and the retrieval window is three matches per namespace. Site and user rate
+limits fail open so a cache outage never blocks the customer.
+
+The Web Vitals dashboard presents three universal device issue panels
+(desktop, mobile, tablet), as defined by
+[ADR-0008](../adr/0008-universal-device-issue-panels.md). A single
+authenticated request to `POST /api/rum/device-issues` reads the retained LCP,
+CLS, INP, and TTFB readers in parallel and returns a minimal issue list per
+device. Each row identifies the affected asset or element, the page, the
+supporting measurement, and a targeted fix. There is no per-metric or
+per-device element switch in this section, and the retired per-metric element
+drilldown components are no longer part of the dashboard. The Detected issues
+list has moved to the assistant page, so the dashboard keeps a single issue
+surface.
+
+The panels read the last seven days, which is the window used by the retained
+LCP element reader and by the distribution chart. Because the element reader
+only returns a `(page, element)` group that was observed at least five times, a
+device whose slow pageviews are spread across many pages produced no LCP row
+even when most of its pageviews were poor. The reader
+`analyze_lcp_device_rollup`, defined in
+[ADR-0010](../adr/0010-device-level-lcp-verdict-reader.md), closes that gap.
+It reports the LCP verdict per device over the same window and the same
+`public.rum_lcp_candidates` source, so the panel and the chart agree. A device
+with at least five pageviews and a p75 above 2.5 s gets a summary row that is
+ordered first in its device and rendered with a "Device wide" badge. The
+element rows remain alongside it, because the verdict names the symptom and
+the element rows name the cause. The rollup reader is service-role only and
+fails open, so a failure omits the device verdict without hiding the element
+issues.
 
 
 The implemented slice includes `rum_issue_documents`, `rum_issue_evidence`,

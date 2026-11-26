@@ -172,14 +172,23 @@ set, then loads current issue documents and aggregates from Supabase before
 generation. Retrieved text is untrusted reference material and cannot change
 tool permissions, tenant scope, workflow state, or authoritative evidence.
 
-The implemented customer flow lives in `src/app/api/rum/issues/[issueId]/assistant/route.ts`.
-It loads one published issue from Supabase before calling the
-`cloudflare-workers/issue-knowledge` Worker. The Worker uses Workers AI with
-`@cf/baai/bge-small-en-v1.5` and the `speedy-issue-knowledge` Vectorize index.
-Tenant namespaces isolate customer documents, the `siteId` metadata filter
-restricts those documents to the authorized site, and curated playbooks use a
-separate namespace. The model receives the current issue as authoritative
-facts and retrieved material only as untrusted reference.
+The implemented customer flow lives in `src/app/api/rum/assistant/route.ts`.
+It loads the published issue facts and the per-device findings from Supabase and
+the retained readers before calling the `cloudflare-workers/issue-knowledge`
+Worker. The Worker uses Workers AI with `@cf/baai/bge-small-en-v1.5` and the
+`speedy-issue-knowledge` Vectorize index. Tenant namespaces isolate customer
+documents, the `siteId` metadata filter restricts those documents to the
+authorized site, and curated playbooks use a separate namespace. The model
+receives the server-derived site facts as authoritative facts and retrieved
+material only as untrusted reference.
+
+Cloudflare cost is bounded at the Worker boundary as well. The Worker caches the
+embedding vector for a normalized question and caches the retrieval result in
+the Workers Cache API, and it retrieves the top three matches per namespace.
+Both caches degrade to a direct call when the cache is unavailable, so a cache
+outage costs latency rather than availability. The application layer adds an
+answer cache and a retrieval cache in Upstash, plus fixed-window site and user
+rate limits that fail open.
 
 The implementation plan is
-`docs/plans/2026-11-25_041449_evidence_first_issue_diagnosis_and_grounded_remediation.md`.
+`docs/plans/2026-11-26_120026_site_wide_rag_performance_assistant.md`.

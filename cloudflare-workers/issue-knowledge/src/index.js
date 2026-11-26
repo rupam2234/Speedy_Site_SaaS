@@ -3,6 +3,15 @@ const EMBEDDING_MODEL = "@cf/baai/bge-small-en-v1.5";
 const MAX_QUESTION_LENGTH = 1000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+// Cost guardrails. Workers AI inference and Vectorize queries are billed per
+// call, so embeddings and retrieval results are cached and the result window
+// stays small.
+const RETRIEVAL_TOP_K = 3;
+const EMBEDDING_CACHE_TTL_SECONDS = 60 * 30;
+const CURATED_EMBEDDING_CACHE_TTL_SECONDS = 60 * 60 * 24;
+const RETRIEVAL_CACHE_TTL_SECONDS = 60 * 15;
+const CACHE_ORIGIN = "https://issue-knowledge.internal";
+
 const CURATED_PLAYBOOKS = [
   {
     id: "slow-lcp-image",
@@ -65,6 +74,64 @@ async function embedText(env, text) {
   return vector;
 }
 
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+async function hashKey(value) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
+}
+
+async function cacheMatch(key) {
+  if (typeof caches === "undefined") return null;
+  try {
+    const response = await caches.default.match(`${CACHE_ORIGIN}/${key}`);
+    if (!response) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function cachePut(key, value, ttlSeconds) {
+  if (typeof caches === "undefined") return;
+  try {
+    await caches.default.put(
+      `${CACHE_ORIGIN}/${key}`,
+      new Response(JSON.stringify(value), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": `public, max-age=${ttlSeconds}`,
+        },
+      }),
+    );
+  } catch {
+    // A cache write failure only costs one extra embedding call next time.
+  }
+}
+
+/**
+ * Embeddings are the billed part of retrieval, so a repeated question reuses
+ * the cached vector instead of calling Workers AI again.
+ */
+async function embedTextCached(env, text, ttlSeconds) {
+  const normalized = normalizeText(text);
+  const key = `embedding:${await hashKey(normalized)}`;
+  const cached = await cacheMatch(key);
+  if (cached) return cached;
+
+  const vector = await embedText(env, text);
+  await cachePut(key, vector, ttlSeconds);
+  return vector;
+}
+
 function buildCuratedText(playbook) {
   return `${playbook.title}\nIssue type: ${playbook.issueType}\n${playbook.body}`;
 }
@@ -76,7 +143,11 @@ async function indexCuratedPlaybooks(env) {
     vectors.push({
       id: playbook.id,
       namespace: CURATED_NAMESPACE,
-      values: await embedText(env, buildCuratedText(playbook)),
+      values: await embedTextCached(
+        env,
+        buildCuratedText(playbook),
+        CURATED_EMBEDDING_CACHE_TTL_SECONDS,
+      ),
       metadata: {
         kind: "playbook",
         siteId: "all",
@@ -128,7 +199,11 @@ async function indexResolvedIssues(env) {
     vectors.push({
       id: `resolved-${issue.id}`,
       namespace: issue.tenant_id,
-      values: await embedText(env, buildIssueText(issue)),
+      values: await embedTextCached(
+        env,
+        buildIssueText(issue),
+        EMBEDDING_CACHE_TTL_SECONDS,
+      ),
       metadata: {
         kind: "resolved_issue",
         siteId: issue.site_id,
@@ -143,16 +218,27 @@ async function indexResolvedIssues(env) {
 }
 
 async function retrieve(env, body) {
-  const vector = await embedText(env, body.question);
+  const normalizedQuestion = normalizeText(body.question);
+  const cacheKey = `retrieval:${body.tenantId}:${body.siteId}:${await hashKey(
+    normalizedQuestion,
+  )}`;
+  const cached = await cacheMatch(cacheKey);
+  if (cached) return { matches: cached, cached: true };
+
+  const vector = await embedTextCached(
+    env,
+    body.question,
+    EMBEDDING_CACHE_TTL_SECONDS,
+  );
   const [tenantResults, curatedResults] = await Promise.all([
     env.VECTORIZE.query(vector, {
-      topK: 5,
+      topK: RETRIEVAL_TOP_K,
       namespace: body.tenantId,
       returnMetadata: "all",
       filter: { siteId: body.siteId },
     }),
     env.VECTORIZE.query(vector, {
-      topK: 5,
+      topK: RETRIEVAL_TOP_K,
       namespace: CURATED_NAMESPACE,
       returnMetadata: "all",
     }),
@@ -163,7 +249,8 @@ async function retrieve(env, body) {
     score: match.score,
     metadata: match.metadata || {},
   }));
-  return { matches };
+  await cachePut(cacheKey, matches, RETRIEVAL_CACHE_TTL_SECONDS);
+  return { matches, cached: false };
 }
 
 async function syncIndex(env) {

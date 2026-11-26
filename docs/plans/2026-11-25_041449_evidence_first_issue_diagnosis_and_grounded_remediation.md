@@ -420,7 +420,7 @@ The current official Workers AI listing shows a unit price of `$0.0202` per mill
 ### Phase 4: Issue-First Dashboard
 
 - [x] Add the detected-issues list as the primary Web Vitals presentation.
-- [x] Retain element cards under evidence drilldown.
+- [x] Replace the per-metric affected-elements switch with universal desktop, mobile, and tablet issue panels that mark the affected asset. (Delivered under [ADR-0008](../adr/0008-universal-device-issue-panels.md).)
 - [x] Display baked reason, confidence, scope, fix, expected result, and verification.
 - [x] Add issue detail and evidence views.
 - [ ] Add status and service-task actions.
@@ -566,3 +566,13 @@ Measure service outcomes, not AI response volume:
 - Deployed the Worker at `https://issue-knowledge.thespeedysite.workers.dev` and indexed four curated LCP and verification playbooks. No resolved customer issues are currently available to index.
 - Live validation confirmed HTTP 401 without the shared secret and tenant-scoped retrieval of the WP Rocket LCP image playbook as the top result for a representative question.
 - Evaluation suites, cross-tenant negative retrieval tests, rate limiting, and AI cost metrics remain pending.
+
+### 2026-11-26 00:00:00 UTC
+
+- Replaced the per-metric affected-elements drilldown with universal device issue panels for desktop, mobile, and tablet.
+- Added `POST /api/rum/device-issues`. It authorizes the domain server-side and reads the retained LCP, CLS, INP, and TTFB readers in one parallel query.
+- Added `src/lib/rum/deviceIssues.ts` for deterministic issue building, Core Web Vitals thresholds, asset identification and marking, and targeted fix guidance.
+- Removed the retired per-metric element drilldown components (`lcp.tsx`, `cls.tsx`, `inp.tsx`, `ttfb.tsx`, `types.ts`) and the lazy per-metric fetching in the Web Vitals page.
+- Added `tests/rum-device-issue-panels.test.mjs` covering device grouping, asset marking, threshold filtering, per-metric caps, reader authorization, and the absence of metric switching.
+- The per-metric element drilldown is no longer retained under the issue-first experience. The universal panels replace it and keep the same canonical evidence, threshold, and asset identification guarantees.
+- The prescribed workspace plan-manager script was unavailable on this Windows host. Plan headers, checklists, progress log, and master indexes were synchronized directly, following the precedent in this plan.

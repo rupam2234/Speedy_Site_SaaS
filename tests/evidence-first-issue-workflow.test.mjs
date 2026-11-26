@@ -39,31 +39,11 @@ const detectRoute = fs.readFileSync(
   "utf8",
 );
 const assistantRoute = fs.readFileSync(
-  path.join(
-    root,
-    "src",
-    "app",
-    "api",
-    "rum",
-    "issues",
-    "[issueId]",
-    "assistant",
-    "route.ts",
-  ),
+  path.join(root, "src", "app", "api", "rum", "assistant", "route.ts"),
   "utf8",
 );
-const issueAssistant = fs.readFileSync(
-  path.join(
-    root,
-    "src",
-    "app",
-    "(dashboard)",
-    "dashboard",
-    "rum",
-    "web-vitals",
-    "helpers",
-    "issueAssistant.tsx",
-  ),
+const assistantContext = fs.readFileSync(
+  path.join(root, "src", "lib", "rum", "assistantContext.ts"),
   "utf8",
 );
 const knowledgeWorker = fs.readFileSync(
@@ -171,14 +151,13 @@ describe("evidence-first RUM issue workflow", () => {
 
   it("keeps user issue assistance grounded and tenant-scoped", () => {
     assert.match(assistantRoute, /authorizeRumSite\(siteId\)/);
-    assert.match(assistantRoute, /\.eq\("is_published", true\)/);
-    assert.match(assistantRoute, /\.eq\("site_id", access\.site\.siteId\)/);
+    assert.match(assistantRoute, /loadAssistantSiteContext/);
+    assert.match(assistantContext, /\.eq\("is_published", true\)/);
+    assert.match(assistantContext, /\.eq\("site_id", siteId\)/);
     assert.match(assistantRoute, /hasLiveRumEntitlement/);
     assert.match(assistantRoute, /ISSUE_KNOWLEDGE_WORKER_URL/);
-    assert.match(assistantRoute, /AUTHORITATIVE ISSUE FACTS/);
+    assert.match(assistantRoute, /AUTHORITATIVE SITE FACTS/);
     assert.match(assistantRoute, /untrusted background/);
-    assert.match(issueAssistant, /Ask about this issue/);
-    assert.match(issueAssistant, /\/api\/rum\/issues\/\$\{issueId\}\/assistant/);
     assert.match(knowledgeWorker, /namespace: body\.tenantId/);
     assert.match(knowledgeWorker, /filter: \{ siteId: body\.siteId \}/);
     assert.match(knowledgeWorker, /CURATED_NAMESPACE/);

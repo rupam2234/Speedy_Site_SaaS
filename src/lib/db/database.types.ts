@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       cloudflare_auth: {
@@ -1607,6 +1632,26 @@ export type Database = {
           ttfb_ms: number
         }[]
       }
+      analyze_lcp_device_rollup: {
+        Args: { domain_filter: string }
+        Returns: {
+          device_type: string
+          distinct_pages: number
+          distinct_targets: number
+          good_count: number
+          needs_improvement_count: number
+          p50_lcp_value: number
+          p75_lcp_value: number
+          pageview_count: number
+          poor_count: number
+          poor_pages: number
+          top_target: string
+          top_target_count: number
+          top_target_p75: number
+          worst_page: string
+          worst_page_lcp: number
+        }[]
+      }
       bytea_to_text: { Args: { data: string }; Returns: string }
       cls_elements: {
         Args: { p_domain_name: string }
@@ -2296,6 +2341,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       email_verbosity: [

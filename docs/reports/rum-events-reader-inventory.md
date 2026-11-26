@@ -1,11 +1,11 @@
 # RUM Events Reader Inventory
 
-Generated at: 2026-11-25T02:58:05.582Z
+Generated at: 2026-11-26T14:33:07.988Z
 
 This inventory is generated from `scripts/rum-phase0-inventory.mjs`. It lists SQL functions that read `rum_metrics.events` and application callers of those functions.
 
 Readers: **38**
-Application callers: **11**
+Application callers: **15**
 
 ## SQL readers
 
@@ -54,17 +54,21 @@ Application callers: **11**
 
 | Function | Source |
 | :--- | :--- |
-| `analyze_fcp_by_device` | `src/app/api/rum/elements/fcp/route.ts:73` |
-| `analyze_lcp_by_device` | `src/app/api/rum/elements/lcp/route.ts:18` |
-| `cls_elements` | `src/app/api/rum/elements/cls/route.ts:37` |
-| `cwv_dist_by_connection` | `src/app/api/rum/rum-web-vitals/group-by-connection/route.ts:20` |
-| `font_analysis` | `src/app/api/rum/fonts/analysis/route.ts:18` |
-| `get_lcp_image_metrics` | `src/app/api/rum/lcp-images/route.ts:24` |
-| `get_rum_web_vitals_metrics` | `src/app/api/rum/rum-web-vitals/route.ts:73` |
-| `get_web_vital_counts_by_url` | `src/app/api/rum/rum-web-vitals/group-by-page/route.ts:29` |
-| `inp_elements` | `src/app/api/rum/elements/inp/route.ts:32` |
-| `page_performance_analysis` | `src/app/api/rum/page_performance/route.ts:18` |
-| `ttfb_contributors` | `src/app/api/rum/elements/ttfb/route.ts:24` |
+| `analyze_fcp_by_device` | `src/app/api/rum/elements/fcp/route.ts:82` |
+| `analyze_lcp_by_device` | `src/app/api/rum/elements/lcp/route.ts:27` |
+| `analyze_lcp_by_device` | `src/lib/rum/deviceIssueReader.ts:34` |
+| `cls_elements` | `src/app/api/rum/elements/cls/route.ts:46` |
+| `cls_elements` | `src/lib/rum/deviceIssueReader.ts:35` |
+| `cwv_dist_by_connection` | `src/app/api/rum/rum-web-vitals/group-by-connection/route.ts:29` |
+| `font_analysis` | `src/app/api/rum/fonts/analysis/route.ts:27` |
+| `get_lcp_image_metrics` | `src/app/api/rum/lcp-images/route.ts:33` |
+| `get_rum_web_vitals_metrics` | `src/app/api/rum/rum-web-vitals/route.ts:82` |
+| `get_web_vital_counts_by_url` | `src/app/api/rum/rum-web-vitals/group-by-page/route.ts:38` |
+| `inp_elements` | `src/app/api/rum/elements/inp/route.ts:41` |
+| `inp_elements` | `src/lib/rum/deviceIssueReader.ts:36` |
+| `page_performance_analysis` | `src/app/api/rum/page_performance/route.ts:27` |
+| `ttfb_contributors` | `src/app/api/rum/elements/ttfb/route.ts:33` |
+| `ttfb_contributors` | `src/lib/rum/deviceIssueReader.ts:37` |
 
 ## Collector event types not found in SQL readers
 

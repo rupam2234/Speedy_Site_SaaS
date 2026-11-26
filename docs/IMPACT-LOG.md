@@ -6,8 +6,50 @@
 > security, performance, reliability, product); each entry states problem,
 > changes, before/after impact, and where to verify; link details instead of
 > duplicating them.
-> **Last updated:** 2026-11-25
+> **Last updated:** 2026-11-26
 ---
+
+---
+
+## 2026-11-26: Device-Level LCP Verdict Reader
+
+**Problem:** The Web Vitals device panels and the LCP distribution chart read the same seven day window from the same candidate source but disagreed on the verdict. The element reader only returns a `(page, element)` group observed at least five times, so a device whose slow pageviews are spread across many pages showed no LCP issue even when most of its pageviews were poor. On feedingnature.com the chart reported desktop LCP at 63 percent poor over sixteen desktop pageviews with a p75 of 6278 ms, while the desktop panel showed no LCP issue at all. The service channel received no signal for a device with a systemic LCP problem, and the assistant had no device-level fact to ground an answer in.
+
+**Changes:** Added the additive migration `supabase/migrations/20261126124908_device_lcp_rollup_reader.sql` with the service-role RPC `analyze_lcp_device_rollup(domain_filter text)`, which reports the LCP verdict per device over the same window and the same `public.rum_lcp_candidates` source, including pageview, good, needs-improvement, and poor counts, p50 and p75, distinct pages and targets, poor pages, the slowest page, and the most repeated target. Added `buildLcpDeviceRollupIssue` and the `summary` flag to `src/lib/rum/deviceIssues.ts`, ordered the device verdict first within its device, and made the rollup call in `src/lib/rum/deviceIssueReader.ts` fail open so a rollup failure omits the device verdict without hiding the element issues. The assistant device facts now carry a `scope` of `device` or `element`, and the panel renders a "Device wide" badge and states the seven day window. Regenerated `src/lib/db/database.types.ts` from the live schema.
+
+**Impact:** The panel and the chart now agree, because they share the window and the source. A device with a mostly poor LCP is reported instead of looking healthy, so the service channel receives the signal and the assistant can ground an answer in the device verdict. The element diagnosis is unchanged and still names the cause, so the verdict and the cause are complementary rather than competing. The rollup returns one row per device and fails open, so the added reader cost is bounded and cannot take the panels down.
+
+> **Where to verify:** `docs/adr/0010-device-level-lcp-verdict-reader.md`, `supabase/migrations/20261126124908_device_lcp_rollup_reader.sql`, `src/lib/rum/deviceIssues.ts`, `src/lib/rum/deviceIssueReader.ts`, `src/app/(dashboard)/dashboard/rum/web-vitals/helpers/deviceIssuePanels.tsx`, `tests/rum-device-issue-panels.test.mjs`, `docs/protocols/rum-issue-api.md`.
+
+**Interview one-liner:** "Closed the gap where a device with mostly poor LCP was reported as healthy, by adding a device-level rollup reader that reads the same window and source as the distribution chart."
+
+---
+
+## 2026-11-26: Site-Wide RAG Performance Assistant
+
+**Problem:** The customer issue assistant was reachable only from inside one expanded issue, so site-wide questions such as "what should I fix first" or "which pages are slow on mobile" had no supporting device evidence and could not be asked. Every question also cost a fresh Workers AI embedding and Vectorize query with no caching at either the application or Worker boundary, and the dashboard carried two separate surfaces for the same published issue facts.
+
+**Changes:** Added `/dashboard/rum/assistant`, a two-column workspace that pairs a structured performance context panel with a conversation, plus a site-scoped `POST /api/rum/assistant` route and a `GET /api/rum/assistant` context route. Added `src/lib/rum/assistantContext.ts` as the single server loader that produces both the panel and the model prompt, `src/lib/rum/assistantCache.ts` for Upstash answer and retrieval caching with fail-open fixed-window rate limits, `src/lib/rum/entitlement.ts` for the managed WordPress entitlement gate, and `src/lib/rum/deviceIssueReader.ts` to share the retained RPC queries and deterministic grouping with the device issue panels route. Removed the Detected issues section from the Web Vitals page, the `detectedIssues` and `issueAssistant` components, and the per-issue `POST /api/rum/issues/<issue_id>/assistant` route, which the new route replaces through an optional issue focus. Added embedding and retrieval caching to the `issue-knowledge` Cloudflare Worker and lowered its retrieval window from five matches per namespace to three. Added the Performance Assistant entry to the Real User Monitoring sidebar group.
+
+**Impact:** Customers can now ask site-wide performance questions and see the exact facts the answer was grounded in beside the conversation, because one server loader feeds both the panel and the prompt. Browser input still cannot define a measurement, count, page, asset, scope, or tenant, so the evidence-first contract of ADR-0007 holds. Repeated questions no longer consume Workers AI inference or Vectorize queries at either the application or Worker layer, the retrieval window is smaller, and site and user rate limits bound the remaining spend. Cache and counter failures fail open, so a Redis or cache outage costs latency rather than availability. The dashboard no longer carries two surfaces for the same published issue facts.
+
+> **Where to verify:** `docs/adr/0009-site-wide-rag-performance-assistant.md`, `src/app/api/rum/assistant/route.ts`, `src/lib/rum/assistantContext.ts`, `src/lib/rum/assistantCache.ts`, `src/lib/rum/deviceIssueReader.ts`, `src/app/(dashboard)/dashboard/rum/assistant/`, `cloudflare-workers/issue-knowledge/src/index.js`, `tests/rum-site-assistant.test.mjs`, `docs/protocols/rum-issue-api.md`.
+
+**Interview one-liner:** "Moved the customer issue assistant into a site-wide RAG workspace with server-derived performance context and layered caching that keeps Cloudflare inference cost flat as usage grows."
+
+---
+
+## 2026-11-26: Universal Device Issue Panels
+
+**Problem:** The Web Vitals dashboard exposed per-metric affected-element drilldowns behind a metric and device switch. Customers had to know which metric to select before they could see what was actually hurting them, and the drilldowns buried the affected asset behind several interactions.
+
+**Changes:** Replaced the per-metric affected-elements section with three universal issue panels for desktop, mobile, and tablet. Added `POST /api/rum/device-issues`, which authorizes the domain server-side and reads the retained LCP, CLS, INP, and TTFB readers in one parallel query, then returns a minimal issue list per device. Added `src/lib/rum/deviceIssues.ts` for deterministic issue building, thresholding, asset identification, and fix guidance. Rows show the affected asset or element, the page, the measurement, and a targeted fix. Removed the retired per-metric element drilldown components (`lcp.tsx`, `cls.tsx`, `inp.tsx`, `ttfb.tsx`, `types.ts`) and their lazy per-metric fetching.
+
+**Impact:** One request now covers every metric and every device instead of one request per metric switch. Customers see only observations that exceed a Core Web Vitals threshold, so each panel stays short and every row is actionable. Asset type and label are identified from the retained reader output, which keeps the evidence-first contract intact because the panels are built from canonical facts and service-role readers rather than browser-selected rows.
+
+> **Where to verify:** `docs/adr/0008-universal-device-issue-panels.md`, `src/lib/rum/deviceIssues.ts`, `src/app/api/rum/device-issues/route.ts`, `src/app/(dashboard)/dashboard/rum/web-vitals/helpers/deviceIssuePanels.tsx`, `tests/rum-device-issue-panels.test.mjs`, `docs/protocols/rum-issue-api.md`.
+
+**Interview one-liner:** "Replaced metric-switched element drilldowns with PageSpeed-style issue panels per device that identify the affected asset and the fix in one place."
 
 ---
 

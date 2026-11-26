@@ -294,6 +294,10 @@ export default function AppSidebar({
             title: "Page Groups",
             url: `/dashboard/rum/pages?site=${selectedSite}`,
           },
+          {
+            title: "Performance Assistant",
+            url: `/dashboard/rum/assistant?site=${selectedSite}`,
+          },
         ],
       },
       {
